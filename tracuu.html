@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra cứu Hồ sơ Y tế - THPT Võ Thị Sáu</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png">
+    <link rel="icon" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" sizes="32x32" type="image/png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: var(--bg-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .lookup-container {
+            width: 100%;
+            max-width: 500px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: var(--text-gray);
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+        .back-link:hover { color: var(--primary); transform: translateX(-5px); }
+    </style>
+</head>
+<body>
+
+    <div class="lookup-container">
+        <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Quay lại trang chủ</a>
+        
+        <div class="form-card fade-in" style="padding: 40px 30px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <i class="fas fa-heartbeat fa-3x" style="color: #ef4444; margin-bottom: 15px;"></i>
+                <h2 style="color: var(--text-dark);">Cổng Tra Cứu Y Tế</h2>
+                <p style="color: var(--text-gray); font-size: 0.9rem; margin-top: 5px;">Hệ thống Y tế số THPT Võ Thị Sáu</p>
+            </div>
+
+            <!-- PHẦN NHẬP LIỆU -->
+            <div id="lookup-form">
+                <div class="input-group">
+                    <label>Họ và tên học sinh</label>
+                    <input type="text" id="lookup-name" placeholder="Nhập chính xác họ tên có dấu...">
+                </div>
+                <div class="input-group">
+                    <label>Mật khẩu (Mã Y Tế)</label>
+                    <input type="password" id="lookup-id" placeholder="VD: YT-12345">
+                </div>
+                <button onclick="performLookup()" class="btn btn-primary" style="width: 100%; justify-content: center; height: 50px; font-size: 1.1rem; margin-top: 10px;">
+                    <i class="fas fa-search"></i> Xem hồ sơ ngay
+                </button>
+            </div>
+
+            <!-- PHẦN HIỂN THỊ KẾT QUẢ -->
+            <div id="lookup-result" style="display: none;">
+                <!-- JS sẽ render kết quả vào đây -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Tải Firebase (Bắt buộc) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="config.js"></script> <!-- File chứa thông tin kết nối Database của bạn -->
+
+    <!-- CODE XỬ LÝ TRA CỨU ĐẶC BIỆT CHO TRANG NÀY -->
+    <script>
+        async function performLookup() {
+            const nameInput = document.getElementById('lookup-name').value.trim();
+            const idInput = document.getElementById('lookup-id').value.trim().toUpperCase(); 
+            const resultDiv = document.getElementById('lookup-result');
+            const formDiv = document.getElementById('lookup-form');
+
+            if (!nameInput || !idInput) {
+                return alert("Vui lòng nhập đầy đủ Họ tên và Mã Y tế!");
+            }
+
+            formDiv.style.display = 'none';
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div style="text-align:center; padding: 40px;"><i class="fas fa-spinner fa-spin fa-3x" style="color:var(--primary);"></i><p style="margin-top:15px; color: var(--text-gray);">Đang tìm kiếm trong cơ sở dữ liệu...</p></div>';
+
+            try {
+                // 1. Kiểm tra Hồ sơ học sinh
+                const studentDoc = await db.collection('yt_students').doc(idInput).get();
+
+                if (!studentDoc.exists || studentDoc.data().name.toLowerCase() !== nameInput.toLowerCase()) {
+                    resultDiv.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <i class="fas fa-exclamation-triangle fa-3x" style="color: #ef4444; margin-bottom: 15px;"></i>
+                            <h3 style="color: #ef4444; margin-bottom: 10px;">Không tìm thấy hồ sơ!</h3>
+                            <p style="color: var(--text-gray);">Họ tên hoặc Mã Y tế không khớp. Vui lòng kiểm tra lại.</p>
+                            <button onclick="resetForm()" class="btn" style="margin-top: 25px; background: #f1f5f9; width:100%; justify-content:center;">Tra cứu lại</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const student = studentDoc.data();
+
+                // 2. Lấy lịch sử khám bệnh
+                const visitsSnap = await db.collection('yt_visits').where('studentId', '==', idInput).get();
+                let visits = [];
+                visitsSnap.forEach(doc => visits.push(doc.data()));
+                visits.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+                // 3. Hiển thị Giao diện Kết quả
+                let html = `
+                    <div style="background: var(--success-grad); color: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+                        <h3 style="margin-bottom: 8px; font-size: 1.3rem;"><i class="fas fa-user-check"></i> ${student.name}</h3>
+                        <p style="margin: 0; opacity: 0.9; font-size: 0.95rem;">Lớp: ${student.class} | Mã YT: ${student.id}</p>
+                        <div style="margin-top: 12px; font-size: 0.9rem; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 12px;">
+                            Chiều cao: <strong>${student.height || '--'} cm</strong> &nbsp;|&nbsp; Cân nặng: <strong>${student.weight || '--'} kg</strong>
+                        </div>
+                    </div>
+                    
+                    <h4 style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; color: var(--text-dark); border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
+                        Lịch sử khám <span style="background: #e0e7ff; color: #4338ca; padding: 3px 12px; border-radius: 20px; font-size: 0.8rem;">${visits.length} lượt</span>
+                    </h4>
+                    
+                    <div style="max-height: 350px; overflow-y: auto; padding-right: 5px;">
+                `;
+
+                if (visits.length === 0) {
+                    html += '<div style="text-align:center; padding: 30px; background: #f8fafc; border-radius: 10px; color: var(--text-gray);">Học sinh này chưa có lịch sử khám bệnh tại phòng Y tế.</div>';
+                } else {
+                    visits.forEach(v => {
+                        const date = v.timestamp ? new Date(v.timestamp.seconds * 1000).toLocaleString('vi-VN') : 'Mới cập nhật';
+                        const noteHtml = v.note ? `<div style="margin-top:8px; padding-top:8px; border-top:1px dashed #cbd5e1; font-size:0.85rem; color:#64748b;"><i class="fas fa-pen"></i> Ghi chú: ${v.note}</div>` : '';
+                        
+                        html += `
+                            <div style="background: white; padding: 18px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 15px; border-left: 4px solid var(--primary); box-shadow: var(--shadow-sm);">
+                                <div style="font-weight: 600; color: #0f172a; margin-bottom: 10px; font-size: 0.9rem;">
+                                    <i class="far fa-clock" style="color: var(--text-gray);"></i> ${date}
+                                </div>
+                                <div style="font-size: 0.95rem; line-height: 1.6;">
+                                    <div><strong style="color: #ef4444;">Triệu chứng:</strong> ${v.symptom}</div>
+                                    <div style="margin-top: 5px;"><strong style="color: #10b981;">Xử lý:</strong> ${v.treatment}</div>
+                                    ${noteHtml}
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                // Thêm banner khuyến cáo đăng nhập
+                html += `
+                    <div style="margin-top: 25px; padding: 15px; background: #eff6ff; border: 1px dashed #3b82f6; border-radius: 10px; text-align: center;">
+                        <i class="fas fa-info-circle" style="color: #3b82f6; font-size: 1.5rem; margin-bottom: 10px;"></i>
+                        <p style="color: #1e293b; font-size: 0.9rem; margin-bottom: 10px;">Để xem hồ sơ y tế đầy đủ, thông tin hành chính chi tiết và gửi yêu cầu hỗ trợ, vui lòng đăng nhập vào Cổng Học Sinh.</p>
+                        <a href="https://yteso-thptvothisaubrvt.netlify.app/student" target="_blank" class="btn" style="background: #3b82f6; color: white; text-decoration: none; display: inline-flex; justify-content: center; font-size: 0.85rem; padding: 8px 15px;"><i class="fas fa-sign-in-alt"></i> Tới Cổng Học Sinh</a>
+                    </div>
+                </div>
+                <button onclick="resetForm()" class="btn" style="width: 100%; margin-top: 15px; background: #f1f5f9; color: var(--text-dark); justify-content: center; height: 45px;"><i class="fas fa-redo"></i> Tra cứu hồ sơ khác</button>
+                `;
+                
+                resultDiv.innerHTML = html;
+
+            } catch (err) {
+                resultDiv.innerHTML = `<div style="color: red; text-align: center; padding: 20px;">Lỗi kết nối CSDL: ${err.message}</div>
+                <button onclick="resetForm()" class="btn" style="margin-top: 20px; background: #f1f5f9; width:100%; justify-content:center;">Thử lại</button>`;
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('lookup-form').style.display = 'block';
+            document.getElementById('lookup-result').style.display = 'none';
+            document.getElementById('lookup-name').value = '';
+            document.getElementById('lookup-id').value = '';
+        }
+    </script>
+</body>
+</html>

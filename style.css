@@ -1,0 +1,593 @@
+/* WEBSITE PROJECT TO 3 - 11A4
+   DESIGNER: NGUYEN TINH
+   VERSION: 2.0 (FULL ADMIN & DASHBOARD)
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;800&family=Roboto:wght@300;400;500;700&display=swap');
+
+:root {
+    --primary-grad: linear-gradient(135deg, #0062ff 0%, #00d4ff 100%);
+    --admin-grad: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    --accent-grad: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+    --success-grad: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --bg-light: #f8fafc;
+    --white: #ffffff;
+    --text-dark: #1e293b;
+    --text-gray: #64748b;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+    --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.1);
+    --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1);
+    --radius-lg: 16px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: var(--bg-light);
+    color: var(--text-dark);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 700; }
+
+/* --- HEADER & HERO --- */
+.main-header {
+    background: var(--primary-grad);
+    color: white;
+    padding: 100px 20px;
+    text-align: center;
+    position: relative;
+    clip-path: polygon(0 0, 100% 0, 100% 85%, 0% 100%);
+    z-index: 1;
+}
+
+.main-header h1 { font-size: 2.5rem; margin-bottom: 15px; letter-spacing: -1px; }
+.main-header p { font-size: 1.2rem; opacity: 0.9; font-weight: 300; }
+
+/* --- SLIDER THÔNG BÁO --- */
+.announcement-slider {
+    max-width: 1100px;
+    margin: -60px auto 40px;
+    background: white;
+    height: 400px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    overflow: hidden;
+    z-index: 10;
+}
+
+.slide-item {
+    position: absolute;
+    width: 100%; height: 100%;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.8s ease-in-out;
+    background-size: cover;
+    background-position: center;
+}
+
+.slide-item.active { opacity: 1; visibility: visible; }
+
+.slide-content {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 60px 40px 40px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.9));
+    color: white;
+}
+
+/* --- ADMIN PANEL LAYOUT --- */
+.admin-wrapper {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 100vh;
+}
+
+.admin-sidebar {
+    background: var(--admin-grad);
+    padding: 40px 20px;
+    color: white;
+    position: sticky;
+    top: 0; height: 100vh;
+}
+
+.admin-tab-btn {
+    width: 100%;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    border: none;
+    background: rgba(255,255,255,0.05);
+    color: #cbd5e1;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: var(--transition);
+    display: flex; align-items: center; gap: 12px;
+}
+
+.admin-tab-btn.active {
+    background: var(--primary-grad);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,98,255,0.3);
+}
+
+.admin-main { padding: 40px; background: #f1f5f9; }
+
+/* --- FORMS & INPUTS --- */
+.form-card {
+    background: white;
+    padding: 35px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    margin-bottom: 30px;
+}
+
+.input-group { margin-bottom: 25px; }
+.input-group label { display: block; margin-bottom: 10px; font-weight: 700; color: var(--text-dark); font-size: 0.9rem; text-transform: uppercase; }
+.input-group input, .input-group textarea, .input-group select {
+    width: 100%;
+    padding: 14px 18px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.input-group input:focus { border-color: #0062ff; outline: none; box-shadow: 0 0 0 4px rgba(0,98,255,0.1); }
+/* Tìm và thay thế đoạn .card-desc cũ trong style.css */
+.card-desc { 
+    font-size: 0.9rem; 
+    color: #666; 
+    white-space: pre-wrap;       /* Quan trọng: Giúp hiển thị các dấu xuống dòng khi bạn nhấn Enter */
+    word-wrap: break-word; 
+    margin-bottom: 10px;
+    /* Nếu bạn muốn hiện toàn bộ nội dung, hãy xóa các dòng -webkit-line-clamp dưới đây */
+    display: -webkit-box; 
+    -webkit-line-clamp: 15;      /* Tăng số dòng hiển thị lên (ví dụ: 10 dòng) */
+    -webkit-box-orient: vertical; 
+    overflow: hidden; 
+}
+/* Thêm vào style.css nếu muốn các ô mô tả đều nhau */
+.card-body { 
+    padding: 15px; 
+    display: flex;
+    flex-direction: column;
+    min-height: 150px; /* Điều chỉnh con số này tùy theo ý bạn */
+}
+/* --- TABLES --- */
+.admin-table {
+    width: 100%; border-collapse: collapse;
+    background: white; border-radius: 12px; overflow: hidden;
+}
+
+.admin-table th { background: #f8fafc; padding: 18px; text-align: left; font-size: 0.8rem; text-transform: uppercase; color: var(--text-gray); border-bottom: 2px solid #e2e8f0; }
+.admin-table td { padding: 18px; border-bottom: 1px solid #f1f5f9; }
+
+/* --- BUTTONS --- */
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex; align-items: center; gap: 8px;
+}
+
+.btn-primary { background: var(--primary-grad); color: white; }
+.btn-danger { background: #ef4444; color: white; }
+.btn-success { background: var(--success-grad); color: white; }
+
+/* --- FOOTER --- */
+.footer {
+    background: #0f172a;
+    color: white;
+    padding: 80px 20px 40px;
+    text-align: center;
+    margin-top: 100px;
+}
+
+.footer .designer-tag {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 25px;
+    background: var(--primary-grad);
+    border-radius: 50px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+/* Modal View */
+.modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.9);
+    display: none; z-index: 1000;
+    justify-content: center; align-items: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background: white; width: 100%; max-width: 900px;
+    max-height: 90vh; border-radius: 20px; overflow-y: auto;
+    position: relative; padding: 40px;
+}
+
+/* Animations */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeIn 0.6s ease forwards; }
+/* Tối ưu hiển thị nội dung trộn lẫn */
+#modal-body-content {
+    white-space: pre-line; /* Tự động xuống dòng khi bạn nhấn Enter trong Admin */
+    word-wrap: break-word;
+}
+
+#modal-body-content iframe {
+    max-width: 100%; /* Đảm bảo video/file không bị tràn khỏi khung điện thoại */
+    border-radius: 10px;
+    margin: 15px 0;
+    display: block;
+}
+/* Thống kê truy cập */
+.visit-stats {
+    margin-top: 30px;
+    padding: 15px;
+    text-align: center;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px dashed #ccc;
+    color: #555;
+    font-size: 0.9rem;
+}
+
+#visit-count {
+    color: var(--primary);
+    font-size: 1.1rem;
+}
+/* Thay thế đoạn .toolbar và input#search cũ */
+.toolbar { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    margin-bottom: 20px; 
+    flex-wrap: wrap; /* Giúp các thành phần tự xuống dòng trên mobile */
+    gap: 10px; 
+}
+
+input#search { 
+    padding: 10px; 
+    flex: 1; /* Để thanh tìm kiếm chiếm hết không gian còn lại */
+    min-width: 200px; /* Không để nó quá nhỏ trên mobile */
+    border: 1px solid #ddd; 
+    border-radius: 5px; 
+    box-sizing: border-box;
+}
+/* Thay thế đoạn .grid cũ */
+.grid { 
+    display: grid; 
+    /* Đổi 300px thành 1fr để nó linh hoạt hơn trên màn hình hẹp */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+    gap: 20px; 
+}
+
+.container { 
+    max-width: 1000px; 
+    margin: 0 auto; 
+    padding: 15px; /* Giảm padding một chút để tiết kiệm diện tích trên mobile */
+}
+/* --- PHẦN THÊM MỚI VÀO CUỐI FILE STYLE.CSS --- */
+
+@media screen and (max-width: 600px) {
+    /* Header thu nhỏ lại cho gọn */
+    header { padding: 1.5rem 0.5rem; }
+    h1 { font-size: 1.4rem; }
+    
+    /* Thanh công cụ xếp dọc trên điện thoại */
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    input#search {
+        max-width: 100%;
+    }
+
+    .admin-btn {
+        text-align: center;
+    }
+
+    /* Các form đăng nhập/đăng bài rộng ra toàn màn hình */
+    .login-form, .post-form {
+        margin: 20px 10px;
+        padding: 20px;
+    }
+}
+/* 1. Thiết lập Header để chứa nút */
+header {
+    position: relative; /* Làm điểm tựa cho nút */
+    background: var(--primary);
+    color: white;
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
+/* 2. Style mới cho nút Admin trong Header */
+.admin-btn-header {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    text-decoration: none;
+    color: rgba(255,255,255,0.8);
+    border: 1px solid rgba(255,255,255,0.4);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    transition: 0.3s;
+}
+
+.admin-btn-header:hover {
+    background: white;
+    color: var(--primary);
+}
+
+/* 3. Sửa lại Toolbar để thanh tìm kiếm rộng hết cỡ */
+.toolbar {
+    margin-top: -25px; /* Đẩy thanh tìm kiếm lên một chút cho đẹp */
+    display: block; /* Chuyển về block để input chiếm 100% */
+}
+
+input#search {
+    width: 100%;
+    max-width: 100% !important; /* Ghi đè các giới hạn cũ */
+    height: 50px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+/* 4. Xử lý hiển thị trên Điện thoại (Mobile) */
+@media screen and (max-width: 600px) {
+    .admin-btn-header {
+        position: static; /* Bỏ chế độ nằm góc */
+        display: inline-block;
+        margin-top: 15px; /* Đẩy nút xuống dưới tiêu đề */
+        background: rgba(0,0,0,0.1);
+    }
+    
+    header {
+        padding: 2rem 1rem;
+    }
+}
+/* Suggest box cho tìm kiếm tên */
+.suggest-box { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; z-index: 100; max-height: 200px; overflow-y: auto; display: none; box-shadow: var(--shadow-md); }
+.suggest-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
+.suggest-item:hover { background: #f8fafc; color: #0062ff; } 
+
+.history-box { padding: 10px; background: #f1f5f9; border-radius: 5px; font-size: 0.85rem; color: #475569; min-height: 40px; }
+
+/* Bed Card */
+.bed-card { background: white; padding: 25px; border-radius: 15px; text-align: center; box-shadow: var(--shadow-sm); border-top: 6px solid #e2e8f0; }
+.bed-card.active { border-top-color: var(--accent-grad); }
+
+/* THIẾT LẬP IN A3 */
+/* THIẾT LẬP IN BÁO CÁO (Đã chuẩn hóa Font, Cỡ chữ 13.5 và NỀN TRẮNG tuyệt đối) */
+@media print {
+    img {
+        max-width: 100% !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    /* Ép nền tắng cho toàn bộ trang giấy */
+    html, body {
+        background-color: #ffffff !important;
+        background-image: none !important;
+    }
+
+    body * { visibility: hidden; }
+    
+    /* Cấu hình khu vực in */
+    #print-section, #print-section * { 
+        visibility: visible; 
+        font-family: "Times New Roman", Times, serif !important; 
+        color: black !important;
+    }
+    
+    #print-section { 
+        position: absolute; 
+        left: 0; 
+        top: 0; 
+        width: 100%; 
+        background-color: #ffffff !important; /* Xóa ám xám */
+    }
+    
+    @page { size: A3 landscape; margin: 15mm; }
+    
+    /* Bảng dữ liệu */
+    .print-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    .print-table th, .print-table td { 
+        border: 1px solid black; 
+        padding: 10px 8px; 
+        font-size: 13.5pt !important; 
+        line-height: 1.5;
+        background-color: #ffffff !important; /* Ép ô bảng màu trắng */
+    }
+    .print-table th { font-weight: bold; text-align: center; }
+    
+    /* Phần Header (Tiêu đề in) */
+    .print-header { text-align: center; margin-bottom: 25px; }
+    .print-header h1 { font-size: 20pt !important; margin-bottom: 5px; font-weight: bold; }
+    .print-header p { font-size: 13.5pt !important; font-style: italic; margin: 0; }
+    
+    /* Lặp lại tiêu đề bảng nếu in sang trang 2 */
+    .print-table thead { display: table-header-group; } 
+    
+    /* Chân trang */
+    .print-footer { 
+        position: fixed; bottom: 0; width: 100%; 
+        text-align: right; 
+        font-size: 12pt !important; 
+        border-top: 1px solid #000; 
+        padding-top: 5px; 
+        font-style: italic; 
+    }
+}
+/* Tối ưu Sidebar khi có nhiều nút */
+.admin-sidebar {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Cho phép cuộn nếu menu quá dài */
+}
+
+/* Đảm bảo icon có kích thước cố định để các chữ thẳng hàng */
+.admin-tab-btn i {
+    width: 20px;
+    text-align: center;
+}
+
+/* Hiệu ứng khi di chuột qua các nút y tế */
+.admin-tab-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+__________
+__________
+/* --- GIAO DIỆN CHO MOBILE (Dưới 768px) --- */
+@media (max-width: 767px) {
+    .main-header {
+        position: relative;
+        padding: 40px 20px; /* Thu ngắn header lại */
+        text-align: center;
+        color: white;
+          }
+    /* Thu ngắn Slider trên mobile */
+    .slider-container, .swiper-container {
+        height: 200px !important; /* Điều chỉnh chiều cao slider ngắn lại */
+    }
+}
+/* =========================================
+   VTS HEALTH AI CHATBOT BUBBLE
+   ========================================= */
+.chat-bot-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    background: var(--primary-grad);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    box-shadow: 0 10px 20px rgba(0, 98, 255, 0.4);
+    cursor: pointer;
+    z-index: 9999;
+    border: none;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.chat-bot-btn:hover { transform: scale(1.1); }
+
+.chat-window {
+    position: fixed;
+    bottom: 100px;
+    right: 30px;
+    width: 350px;
+    height: 500px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    z-index: 9998;
+    overflow: hidden;
+    transform: translateY(20px);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    border: 1px solid #e2e8f0;
+}
+.chat-window.active {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: all;
+}
+
+.chat-header {
+    background: var(--primary-grad);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.chat-header h3 { font-size: 1.1rem; margin: 0; }
+.chat-header p { font-size: 0.8rem; margin: 0; opacity: 0.8; }
+
+.chat-body {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.chat-msg {
+    max-width: 85%;
+    padding: 10px 15px;
+    border-radius: 15px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+.chat-msg.bot {
+    background: white;
+    color: var(--text-dark);
+    border: 1px solid #e2e8f0;
+    align-self: flex-start;
+    border-bottom-left-radius: 5px;
+}
+.chat-msg.user {
+    background: #0062ff;
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 5px;
+}
+
+.chat-footer {
+    padding: 15px;
+    background: white;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 10px;
+}
+.chat-footer input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid #cbd5e1;
+    border-radius: 20px;
+    outline: none;
+}
+.chat-footer button {
+    background: #10b981;
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+@media (max-width: 600px) {
+    .chat-window {
+        width: 90%;
+        right: 5%;
+        bottom: 90px;
+        height: 450px;
+    }
+}

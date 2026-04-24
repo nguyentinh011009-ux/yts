@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đang tải bài viết...</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png">
+    <link rel="icon" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" sizes="32x32" type="image/png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --post-bg: #ffffff;
+            --container-width: 850px;
+        }
+
+        body {
+            background-color: #f8fafc; /* Màu nền xám nhạt hiện đại */
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
+        /* Navbar tinh tế */
+        .post-nav {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px); /* Hiệu ứng kính mờ */
+            padding: 12px 0;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-content {
+            max-width: var(--container-width);
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: var(--text-gray);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .back-link:hover {
+            color: var(--primary);
+            transform: translateX(-5px);
+        }
+
+        .nav-logo {
+            height: 35px;
+            border-radius: 8px;
+        }
+
+        /* Container chính */
+        #post-detail-container {
+            max-width: var(--container-width);
+            margin: 40px auto;
+            padding: 0 20px;
+            min-height: 60vh;
+        }
+
+        /* Card nội dung bài viết */
+        .post-article-card {
+            background: var(--post-bg);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        /* Skeleton loading animation */
+        .loading-state {
+            text-align: center;
+            padding: 100px 0;
+            color: #94a3b8;
+        }
+
+        .spinner {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        /* Footer */
+        .post-footer {
+            background: #1e293b;
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+            margin-top: 80px;
+        }
+
+        .post-footer h3 {
+            letter-spacing: 2px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            #post-detail-container {
+                margin: 20px auto;
+            }
+            .post-article-card {
+                border-radius: 0; /* Full screen trên mobile */
+                border: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="post-nav">
+        <div class="nav-content">
+            <a href="index.html" class="back-link">
+                <i class="fas fa-arrow-left"></i> Quay lại
+            </a>
+            <a href="index.html">
+                <img src="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" alt="Nano Banana Logo" class="nav-logo">
+            </a>
+        </div>
+    </nav>
+
+    <main id="post-detail-container">
+        <div class="loading-state">
+            <i class="fas fa-circle-notch fa-spin spinner"></i>
+            <p>Đang chuẩn bị nội dung cho bạn...</p>
+        </div>
+    </main>
+
+    <footer class="post-footer">
+        <h3>Phòng Y tế- Trường Trung học Phổ thông Võ Thị Sáu</h3>
+        <p style="opacity: 0.6; font-size: 0.9rem;">Website phát triển bởi Văn Tính</p>
+        <div style="margin-top: 20px; font-size: 1.2rem; display: flex; justify-content: center; gap: 20px; opacity: 0.8;">
+        </div>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

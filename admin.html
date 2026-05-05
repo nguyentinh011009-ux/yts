@@ -57,25 +57,38 @@
                 <h2 style="font-size:1.5rem; color:white;">Y TẾ SỐ</h2>
                 <span style="font-size:0.7rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">THPT VÕ THỊ SÁU-BÀ RỊA VŨNG TÀU</span>
             </div>
-         <!-- BẮT ĐẦU: Khối hiển thị thông tin Admin -->
-            <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 25px; text-align: center; border: 1px solid rgba(255,255,255,0.1);">
-                <i class="fas fa-user-shield" style="font-size: 2rem; color: #0062ff; margin-bottom: 10px;"></i>
-                <div id="display-admin-name" style="font-weight: bold; color: white; font-size: 0.95rem; margin-bottom: 3px;"></div>
-                <div id="display-admin-email" style="color: #94a3b8; font-size: 0.8rem;">Đang tải...</div>
-            </div>
-            <!-- KẾT THÚC: Khối hiển thị thông tin Admin -->
+<!-- BẮT ĐẦU: Khối hiển thị thông tin Admin -->
+<div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 25px; text-align: center; border: 1px solid rgba(255,255,255,0.1); position: relative;">
+    <i class="fas fa-user-shield" style="font-size: 2rem; color: #0062ff; margin-bottom: 10px;"></i>
+    
+    <!-- CHUÔNG THÔNG BÁO TỪ FUSOFTX -->
+    <div style="position: absolute; top: 12px; right: 15px; cursor: pointer; transition: 0.2s;" onclick="toggleAdminNotiModal()" title="Thông báo hệ thống">
+        <i class="fas fa-bell" style="font-size: 1.3rem; color: #cbd5e1;" id="admin-bell-icon"></i>
+        <span id="admin-noti-badge" style="display:none; position: absolute; top: -2px; right: -2px; background: #ef4444; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #1e293b;"></span>
+    </div>
+
+    <div id="display-admin-name" style="font-weight: bold; color: white; font-size: 0.95rem; margin-bottom: 3px;"></div>
+    <div id="display-admin-email" style="color: #94a3b8; font-size: 0.8rem;">Đang tải...</div>
+</div>
+<!-- KẾT THÚC: Khối hiển thị thông tin Admin -->
             <nav>
     <p style="font-size: 0.7rem; color: #94a3b8; margin: 20px 0 10px 10px; text-transform: uppercase;">Nội dung</p>
     <button class="admin-tab-btn active" onclick="switchTab('tab-posts', this)">
         <i class="fas fa-edit"></i> Quản lý bài viết
     </button>
     <button class="admin-tab-btn" onclick="switchTab('tab-announce', this)">
-        <i class="fas fa-bullhorn"></i> Quản lý thông báo
+        <i class="fas fa-bullhorn"></i> Quản lý Slider
     </button>
 
     <p style="font-size: 0.7rem; color: #94a3b8; margin: 20px 0 10px 10px; text-transform: uppercase;">Tương tác</p>
     <button class="admin-tab-btn" onclick="switchTab('tab-yte-yeucau', this)">
         <i class="fas fa-envelope-open-text"></i> Hòm thư học sinh
+    </button>
+    <button class="admin-tab-btn" onclick="switchTab('tab-send-noti', this)">
+        <i class="fas fa-bell"></i> Quản lý thông báo
+    </button>
+    <button class="admin-tab-btn" onclick="switchTab('tab-fusoftx', this)">
+        <i class="fas fa-headset"></i> Hỗ trợ từ FUSoftX
     </button>
 
     <p style="font-size: 0.7rem; color: #94a3b8; margin: 20px 0 10px 10px; text-transform: uppercase;">Y tế số</p>
@@ -503,20 +516,120 @@
 
     </div>
 </section>
+<!-- TAB HÒM THƯ YÊU CẦU HỌC SINH -->
 <section id="tab-yte-yeucau" class="tab-pane" style="display:none;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2>Quản lý Ticket Hỗ Trợ</h2>
-        <!-- Bộ lọc cho Admin -->
-        <select id="ticket-filter" onchange="loadStudentTickets()" style="padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1;">
-            <option value="all">Tất cả yêu cầu</option>
-            <option value="pending">Chưa xử lý (Mới)</option>
-            <option value="processing">Đang xử lý</option>
-            <option value="resolved">Đã kết thúc</option>
-        </select>
+        <h2>Hòm thư Học sinh</h2>
     </div>
     
-    <div id="admin-ticket-list" style="display: flex; flex-direction: column; gap: 15px;">
-        <!-- JS sẽ đổ danh sách Ticket vào đây -->
+    <!-- BỘ LỌC THÔNG MINH (THỜI GIAN THỰC) -->
+    <div style="display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px;">
+        <button id="btn-flt-all" onclick="changeTicketFilter('all')" class="btn" style="background:#0062ff; color:white; border-radius:20px; padding:8px 20px;">
+            Tất cả <span id="badge-all" style="background:white; color:#0062ff; padding:2px 8px; border-radius:10px; font-size:0.75rem; margin-left:5px; font-weight:bold;">0</span>
+        </button>
+        <button id="btn-flt-pending" onclick="changeTicketFilter('pending')" class="btn" style="background:white; color:#64748b; border:1px solid #cbd5e1; border-radius:20px; padding:8px 20px;">
+            Mới / Chưa xử lý <span id="badge-pending" style="background:#f59e0b; color:white; padding:2px 8px; border-radius:10px; font-size:0.75rem; margin-left:5px; font-weight:bold;">0</span>
+        </button>
+        <button id="btn-flt-processing" onclick="changeTicketFilter('processing')" class="btn" style="background:white; color:#64748b; border:1px solid #cbd5e1; border-radius:20px; padding:8px 20px;">
+            Đang xử lý <span id="badge-processing" style="background:#e2e8f0; color:#475569; padding:2px 8px; border-radius:10px; font-size:0.75rem; margin-left:5px; font-weight:bold;">0</span>
+        </button>
+        <button id="btn-flt-resolved" onclick="changeTicketFilter('resolved')" class="btn" style="background:white; color:#64748b; border:1px solid #cbd5e1; border-radius:20px; padding:8px 20px;">
+            Đã đóng <span id="badge-resolved" style="background:#e2e8f0; color:#475569; padding:2px 8px; border-radius:10px; font-size:0.75rem; margin-left:5px; font-weight:bold;">0</span>
+        </button>
+    </div>
+    
+    <div class="form-card" style="padding: 0;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Học sinh</th>
+                    <th>Nội dung yêu cầu</th>
+                    <th>Thời gian</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="admin-ticket-list-table"></tbody>
+        </table>
+    </div>
+</section>
+<!-- TAB QUẢN LÝ THÔNG BÁO -->
+<section id="tab-send-noti" class="tab-pane" style="display:none;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>Quản lý Thông báo Y tế</h2>
+        <!-- NÚT GỌI FORM TẠO THÔNG BÁO -->
+        <button onclick="document.getElementById('box-new-noti').style.display='block'" class="btn btn-primary" style="background:#10b981; border:none;">
+            <i class="fas fa-plus"></i> Soạn thông báo mới
+        </button>
+    </div>
+
+    <!-- KHUNG TẠO THÔNG BÁO (Mặc định ẩn) -->
+    <div id="box-new-noti" class="form-card fade-in" style="display:none; background: #f0fdf4; border: 1px solid #10b981; border-left: 5px solid #10b981; margin-bottom: 30px;">
+        <h3 style="color: #059669; margin-top:0; margin-bottom: 15px;"><i class="fas fa-paper-plane"></i> Soạn thông báo mới</h3>
+        
+        <div class="input-group">
+            <label>Tiêu đề thông báo</label>
+            <input type="text" id="noti-title" placeholder="VD: Lịch tiêm ngừa uốn ván đợt 2">
+        </div>
+        
+        <div class="input-group">
+            <label>Nội dung chi tiết</label>
+            <textarea id="noti-content" rows="3" placeholder="Nhập nội dung chi tiết..."></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="input-group">
+                <label>Đối tượng nhận</label>
+                <select id="noti-target-type" onchange="toggleNotiTargetInput()" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                    <option value="all">Tất cả Học sinh toàn trường</option>
+                    <option value="grade">Theo Khối (VD: Khối 10)</option>
+                    <option value="class">Theo Lớp cụ thể (VD: 11A4)</option>
+                    <option value="student">Chọn Học sinh cụ thể (Chọn nhiều)</option>
+                </select>
+            </div>
+            
+            <div class="input-group" id="box-noti-target-value" style="display: none;">
+                <label id="lbl-noti-target-value">Nhập thông tin</label>
+                <input type="text" id="noti-target-value" placeholder="...">
+            </div>
+        </div>
+
+        <!-- KHU VỰC CHỌN HỌC SINH CỤ THỂ -->
+        <div id="box-noti-target-students" style="display: none; background: white; border: 1px dashed #cbd5e1; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <label style="font-weight: bold; color: #1e293b; display: block; margin-bottom: 8px;"><i class="fas fa-search"></i> Tìm và Chọn Học sinh</label>
+            <input type="text" id="noti-search-student-input" placeholder="Gõ tên, mã học sinh, hoặc lớp..." oninput="handleSearchStudentForNoti(this.value)" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1;">
+            
+            <div id="noti-search-results" style="max-height: 200px; overflow-y: auto; margin-top: 10px; border: 1px solid #e2e8f0; border-radius: 6px; display: none;"></div>
+            
+            <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">
+                <div style="font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 8px;">ĐÃ CHỌN (<span id="noti-selected-count">0</span> học sinh):</div>
+                <div id="noti-selected-list" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    <div style="font-size: 0.8rem; color: #94a3b8; font-style: italic;">Chưa chọn ai...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button onclick="sendStudentNotification()" class="btn btn-primary" style="background: #10b981; flex: 1; justify-content: center;"><i class="fas fa-paper-plane"></i> Gửi Thông Báo</button>
+            <button onclick="document.getElementById('box-new-noti').style.display='none'" class="btn" style="background: #e2e8f0; color: #475569;">Hủy</button>
+        </div>
+    </div>
+
+    <!-- DANH SÁCH THÔNG BÁO ĐÃ GỬI -->
+    <h3>Lịch sử đã gửi</h3>
+    <div class="form-card" style="padding: 0;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th style="width: 40%;">Tiêu đề thông báo</th>
+                    <th>Đối tượng nhận</th>
+                    <th>Thời gian gửi</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <!-- CHÚ Ý ID Ở ĐÂY, ĐÂY LÀ NƠI JS ĐỔ DỮ LIỆU VÀO -->
+            <tbody id="admin-noti-list-table"></tbody>
+        </table>
     </div>
 </section>
 <div id="print-section" style="display:none;"></div>
@@ -603,6 +716,9 @@
                     <input type="checkbox" id="col-id" checked style="width: 18px; height: 18px;"> Mã Y Tế
                 </label>
                 <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 500;">
+                    <input type="checkbox" id="col-stcode" checked style="width: 18px; height: 18px;"> Mã Học sinh
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 500;">
                     <input type="checkbox" id="col-note" checked style="width: 18px; height: 18px;"> Ghi chú lâm sàng
                 </label>
                 <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 500;">
@@ -651,6 +767,39 @@
         </div>
     </div>
 </div>
+<!-- TAB HỖ TRỢ TỪ ĐƠN VỊ CUNG CẤP -->
+<!-- TAB HỖ TRỢ TỪ ĐƠN VỊ CUNG CẤP -->
+<section id="tab-fusoftx" class="tab-pane" style="display:none;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>Kênh Hỗ trợ Kỹ thuật FUSoftX</h2>
+        <button onclick="document.getElementById('box-new-support').style.display='block'" class="btn btn-primary" style="background:#f59e0b; border:none;"><i class="fas fa-plus"></i> Tạo yêu cầu mới</button>
+    </div>
+
+    <!-- Hộp tạo yêu cầu mới -->
+    <div id="box-new-support" class="form-card" style="display:none; background:#fffbeb; border-left:4px solid #f59e0b;">
+        <h3 style="color:#d97706; margin-top:0;">Gửi Yêu cầu Kỹ thuật</h3>
+        <textarea id="sp-req-content" rows="3" placeholder="Mô tả chi tiết lỗi hoặc yêu cầu..."></textarea>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <button onclick="createFusoftxTicket()" class="btn" style="background:#f59e0b; color:white;">Gửi đi</button>
+            <button onclick="document.getElementById('box-new-support').style.display='none'" class="btn" style="background:#e2e8f0; color:#475569;">Hủy</button>
+        </div>
+    </div>
+    
+    <div class="form-card" style="padding: 0;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Mã Yêu cầu</th>
+                    <th>Nội dung cuối</th>
+                    <th>Trạng thái</th>
+                    <th>Cập nhật lần cuối</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="admin-fusoftx-tickets-table"></tbody>
+        </table>
+    </div>
+</section>
         </main>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -659,5 +808,73 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="config.js"></script>
     <script src="app.js"></script>
+<!-- POPUP: DANH SÁCH THÔNG BÁO TỪ FUSOFTX -->
+<div id="admin-noti-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 10001; align-items: flex-start; justify-content: flex-end; padding: 20px;">
+    <div class="form-card fade-in" style="width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto; position: relative; padding: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); margin-top: 50px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
+            <h3 style="margin: 0; color: #0062ff;"><i class="fas fa-bell"></i> Thông báo FUSoftX</h3>
+            <button onclick="toggleAdminNotiModal()" style="background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer;">&times;</button>
+        </div>
+        <div id="admin-notifications-list" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- JS đổ dữ liệu -->
+        </div>
+    </div>
+</div>
+
+<!-- POPUP: CHI TIẾT THÔNG BÁO -->
+<div id="admin-noti-detail-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 10005; align-items: center; justify-content: center; padding: 20px;">
+    <div class="form-card fade-in" style="width: 100%; max-width: 450px; position: relative; padding: 30px 20px;">
+        <button onclick="document.getElementById('admin-noti-detail-modal').style.display='none'" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer;">&times;</button>
+        <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 8px;" id="admin-detail-noti-sender"></div>
+        <h3 style="margin: 0 0 15px; color: #0062ff; font-size: 1.3rem;" id="admin-detail-noti-title"></h3>
+        <div style="font-size: 0.95rem; color: #334155; line-height: 1.6; background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; white-space: pre-wrap;" id="admin-detail-noti-content"></div>
+        <button id="btn-admin-read-inside" class="btn btn-primary" style="width: 100%; margin-top: 20px; justify-content: center;">
+            <i class="fas fa-check-circle"></i> Đã hiểu và Bỏ qua
+        </button>
+    </div>
+</div>
+<!-- === POPUP: XEM CHI TIẾT YÊU CẦU VÀ TRẢ LỜI HỌC SINH === -->
+<div id="ticket-detail-modal" class="modal" style="display:none; z-index: 10000; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); align-items: center; justify-content: center;">
+    <div class="form-card fade-in" style="width: 100%; max-width: 600px; margin: 20px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto;">
+        <button onclick="document.getElementById('ticket-detail-modal').style.display='none'" style="position:absolute; top:20px; right:20px; border:none; background:none; font-size:1.5rem; cursor:pointer; color:var(--text-gray);">&times;</button>
+        <h2 style="margin-bottom: 20px; color: #0062ff;"><i class="fas fa-envelope-open-text"></i> Xử lý Yêu cầu</h2>
+        
+        <div style="background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <div><span style="color:#64748b; font-size:0.85rem;">Học sinh:</span> <strong id="tk-detail-name"></strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Lớp:</span> <strong id="tk-detail-class" style="color:#0062ff;"></strong></div>
+            </div>
+            <div style="font-size: 0.85rem; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 10px; margin-top: 5px;">
+                <i class="far fa-clock"></i> Gửi lúc: <span id="tk-detail-time"></span>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="font-weight: bold; color: #1e293b; display: block; margin-bottom: 8px;">Nội dung học sinh hỏi:</label>
+            <div id="tk-detail-content" style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap;"></div>
+        </div>
+
+        <!-- KHU VỰC MỚI: NHẬP CÂU TRẢ LỜI -->
+        <div style="margin-bottom: 25px; padding: 15px; background: #f0fdf4; border: 1px solid #10b981; border-radius: 10px;">
+            <label style="font-weight: bold; color: #059669; display: block; margin-bottom: 8px;"><i class="fas fa-reply"></i> Phản hồi của Phòng Y Tế:</label>
+            <textarea id="tk-detail-reply" rows="3" placeholder="Nhập câu trả lời/hướng dẫn gửi lại cho học sinh..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #a7f3d0; outline: none; font-family: inherit; line-height: 1.5;"></textarea>
+            <p style="font-size: 0.8rem; color: #047857; margin-top: 8px; margin-bottom: 0;">*Học sinh sẽ nhận được thông báo ngay khi bạn bấm Lưu cập nhật.</p>
+        </div>
+
+        <div class="input-group">
+            <label>Trạng thái xử lý</label>
+            <select id="tk-detail-status" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: bold;">
+                <option value="pending" style="color: #ef4444;">Mới / Chưa xử lý</option>
+                <option value="processing" style="color: #3b82f6;">Đang xử lý</option>
+                <option value="resolved" style="color: #10b981;">Đã đóng / Xong</option>
+            </select>
+        </div>
+
+        <input type="hidden" id="tk-detail-id">
+        <button onclick="saveTicketStatus()" class="btn btn-primary" style="width: 100%; justify-content: center; height: 50px; background: #0062ff;">
+            <i class="fas fa-paper-plane"></i> Lưu cập nhật & Gửi phản hồi
+        </button>
+    </div>
+</div>
 </body>
 </html>

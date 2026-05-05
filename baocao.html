@@ -36,7 +36,7 @@
 
     <div id="main-content" style="max-width: 1200px; margin: 0 auto; display:none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h1 style="color: #1e293b;"><i class="fas fa-file-invoice"></i> TRUNG TÂM BÁO CÁO</h1>
+            <h1 style="color: #1e293b;"><i class="fas fa-file-invoice"></i> ĐIỂM DANH</h1>
             <a href="admin.html" class="btn" style="background: #e2e8f0; color: #475569; text-decoration:none;"><i class="fas fa-arrow-left"></i> Trở về Admin</a>
         </div>
 
@@ -47,7 +47,7 @@
 
 <!-- TAB 1: ĐIỂM DANH -->
         <div id="tab-diemdanh" class="bc-pane active form-card">
-            <h3 style="margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Chấm ngày nghỉ học sinh</h3>
+            <h3 style="margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Điểm danh học sinh nghỉ học</h3>
             
             <!-- ĐOẠN THÊM MỚI: TÌM KIẾM NHANH -->
             <div style="position: relative; margin-bottom: 25px; background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px dashed #94a3b8;">
@@ -62,7 +62,14 @@
 
             
             <div style="display: grid; grid-template-columns: 1fr 2fr 2fr; gap: 15px; margin-bottom: 15px;">
-                <div class="input-group"><label>Ngày nghỉ</label><input type="date" id="dd-date"></div>
+                <div class="input-group">
+    <label>Ngày nghỉ</label>
+    <div style="display: flex; gap: 5px;">
+        <button type="button" onclick="changeDate(-1)" class="btn" style="background:#e2e8f0; color:#475569; padding: 0 15px;" title="Ngày hôm trước"><i class="fas fa-chevron-left"></i></button>
+        <input type="date" id="dd-date" style="flex: 1;" onchange="loadAttendanceList()">
+        <button type="button" onclick="changeDate(1)" class="btn" style="background:#e2e8f0; color:#475569; padding: 0 15px;" title="Ngày hôm sau"><i class="fas fa-chevron-right"></i></button>
+    </div>
+</div>
                 <div class="input-group"><label>Lớp</label><input type="text" id="dd-class" placeholder="VD: 10A1" onblur="fetchStudentsForDD()"></div>
                 <div class="input-group"><label>Chọn Học sinh</label><select id="dd-student" style="width:100%; padding: 14px; border-radius: 10px;"><option value="">-- Nhập lớp trước --</option></select></div>
             </div>
@@ -78,11 +85,32 @@
             </div>
 
             <div id="benh-fields" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px; background: #fff1f2; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px dashed #ef4444;">
-                <div class="input-group" style="margin:0;"><label style="color:#ef4444;">Triệu chứng</label><input type="text" id="dd-symptom" placeholder="VD: Sốt cao, ho..."></div>
+                <div class="input-group" style="margin:0;"><label style="color:#ef4444;">Triệu chứng</label><input type="text" id="dd-symptom" placeholder="VD: Sốt cao, ho..." onkeydown="if(event.key === 'Enter') { event.preventDefault(); document.getElementById('dd-diagnosis').focus(); }"></div>
                 <div class="input-group" style="margin:0;"><label style="color:#ef4444;">Chẩn đoán (Bệnh)</label><input type="text" id="dd-diagnosis" list="benh-list" placeholder="Chọn hoặc nhập..."><datalist id="benh-list"><option value="Sốt xuất huyết"><option value="Tay chân miệng"><option value="Thủy đậu"><option value="Quai bị"></datalist></div>
             </div>
 
             <button onclick="saveAttendance()" class="btn btn-primary" style="width: 100%; justify-content: center;"><i class="fas fa-save"></i> Lưu điểm danh</button>
+	<!-- KHU VỰC HIỂN THỊ DANH SÁCH ĐÃ ĐIỂM DANH TRONG NGÀY -->
+<div style="margin-top: 30px; border-top: 2px dashed #cbd5e1; padding-top: 20px;">
+    <h3 id="dd-list-title" style="color: #0f172a; margin-bottom: 15px; font-size: 1.1rem;"><i class="fas fa-clipboard-list"></i> Danh sách điểm danh trong ngày</h3>
+    
+    <div style="overflow-x: auto;">
+        <table class="print-table" style="width: 100%; border-collapse: collapse; background: white; text-align: center; font-size: 0.9rem;">
+            <thead>
+                <tr style="background: #f8fafc;">
+                    <th style="padding: 10px; border: 1px solid #e2e8f0; width: 5%;">STT</th>
+                    <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: left;">Họ và Tên</th>
+                    <th style="padding: 10px; border: 1px solid #e2e8f0; width: 10%;">Lớp</th>
+                    <th style="padding: 10px; border: 1px solid #e2e8f0; width: 25%;">Lý do nghỉ</th>
+                    <th style="padding: 10px; border: 1px solid #e2e8f0; width: 15%;">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="dd-list-body">
+                <tr><td colspan="5" style="padding: 20px; color: #64748b;">Đang tải dữ liệu...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
         </div>
 
         <!-- TAB 2: XUẤT BÁO CÁO -->
@@ -129,6 +157,7 @@
                 document.getElementById('main-content').style.display = 'block';
                 document.getElementById('dd-date').valueAsDate = new Date();
                 loadAllStudentsCache();
+		loadAttendanceList();
             } else {
                 alert("Bạn chưa đăng nhập Admin hoặc không có quyền!");
                 window.location.href = "admin.html"; // Đá về trang chủ
@@ -300,59 +329,84 @@
         });
         // --- 3. LƯU ĐIỂM DANH ---
 // --- 3. LƯU ĐIỂM DANH ---
-        async function saveAttendance() {
-            const btn = document.querySelector('button[onclick="saveAttendance()"]');
-            const originalText = btn.innerHTML;
-            
-            try {
-                const date = document.getElementById('dd-date').value;
-                const sid = document.getElementById('dd-student').value;
-                const cls = document.getElementById('dd-class').value.trim().toUpperCase();
-                const reason = document.querySelector('input[name="dd-reason"]:checked')?.value;
-                
-                if(!date || !sid || !reason) return alert("Vui lòng nhập đủ Ngày, Học sinh và Lý do nghỉ!");
+async function saveAttendance() {
+    const btn = document.querySelector('button[onclick="saveAttendance()"]');
+    const originalText = btn.innerHTML;
+    
+    try {
+        const date = document.getElementById('dd-date').value;
+        const studentSelect = document.getElementById('dd-student');
+        const sid = studentSelect.value;
+        const sname = studentSelect.options[studentSelect.selectedIndex].text;
+        
+        const cls = document.getElementById('dd-class').value.trim().toUpperCase();
+        const reason = document.querySelector('input[name="dd-reason"]:checked')?.value;
+        
+        if(!date || !sid || !reason) return alert("Vui lòng nhập đủ Ngày, Học sinh và Lý do nghỉ!");
 
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
-                btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+        btn.disabled = true;
 
-                const hs = currentStudentsInClass.find(s => s.id === sid);
-                const data = {
-                    studentId: sid, 
-                    name: hs.name, 
-                    class: cls,
-                    date: date, // YYYY-MM-DD
-                    reason: reason,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                };
+        const data = {
+            studentId: sid, 
+            name: sname, 
+            class: cls,
+            date: date,
+            reason: reason,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            notificationId: null // THÊM TRƯỜNG MỚI ĐỂ LƯU ID THÔNG BÁO
+        };
 
-                if(reason === 'B') {
-                    const sym = document.getElementById('dd-symptom').value.trim();
-                    const diag = document.getElementById('dd-diagnosis').value.trim();
-                    if(!sym || !diag) throw new Error("Nghỉ bệnh phải nhập Triệu chứng và Chẩn đoán!");
-                    data.symptom = sym; 
-                    data.diagnosis = diag;
-                }
-
-                // Lưu vào database
-                await db.collection('yt_attendance').add(data);
-                
-                alert("✅ Lưu điểm danh thành công!");
-                
-                // Dọn dẹp ô nhập
-                document.getElementById('dd-symptom').value = '';
-                document.getElementById('dd-diagnosis').value = '';
-                document.querySelector('input[value="P"]').checked = true; // Reset về Có phép
-                toggleBenh(false);
-
-            } catch (error) {
-                console.error("Lỗi khi lưu:", error);
-                alert("❌ Lỗi: " + error.message); // In lỗi ra màn hình để biết tại sao
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
+        if(reason === 'B') {
+            const sym = document.getElementById('dd-symptom').value.trim();
+            const diag = document.getElementById('dd-diagnosis').value.trim();
+            if(!sym || !diag) throw new Error("Nghỉ bệnh phải nhập Triệu chứng và Chẩn đoán!");
+            data.symptom = sym; 
+            data.diagnosis = diag;
         }
-        // --- HÀM HỖ TRỢ XUẤT DỮ LIỆU ---
+
+        // BƯỚC 1: GỬI THÔNG BÁO TRƯỚC
+        try {
+            let notiContent = `Hệ thống ghi nhận bạn đã vắng mặt ngày ${new Date(date).toLocaleDateString('vi-VN')}.`;
+            if (reason === 'P') notiContent += "\nLý do: Có phép.";
+            if (reason === 'KP') notiContent += "\nLý do: Không phép.";
+            if (reason === 'B') notiContent += `\nLý do: Nghỉ bệnh (${data.diagnosis}).`;
+
+            const notiDoc = await db.collection('yt_notifications').add({
+                title: "Thông báo Điểm danh Vắng mặt",
+                content: notiContent,
+                targetType: "student",
+                targetValue: sid,
+                sender: "Giám thị / Phòng Y Tế",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // Lấy ID của thông báo vừa tạo và gán vào dữ liệu điểm danh
+            data.notificationId = notiDoc.id;
+
+        } catch(e) { console.error("Lỗi gửi thông báo điểm danh:", e); }
+        
+        // BƯỚC 2: LƯU ĐIỂM DANH (ĐÃ KÈM THEO ID THÔNG BÁO)
+        await db.collection('yt_attendance').add(data);
+        
+        alert("✅ Lưu điểm danh thành công!");
+        loadAttendanceList();
+        
+        // Dọn dẹp form
+        document.getElementById('dd-symptom').value = '';
+        document.getElementById('dd-diagnosis').value = '';
+        const pRadio = document.querySelector('input[name="dd-reason"][value="P"]');
+        if(pRadio) pRadio.checked = true;
+        toggleBenh(false);
+
+    } catch (error) {
+        console.error("Lỗi khi lưu:", error);
+        alert("❌ Lỗi: " + error.message);
+    } finally {
+        btn.innerHTML = '<i class="fas fa-save"></i> Lưu điểm danh';
+        btn.disabled = false;
+    }
+}        // --- HÀM HỖ TRỢ XUẤT DỮ LIỆU ---
         function getDaysInMonth(month, year) {
             return new Date(year, month, 0).getDate();
         }
@@ -760,6 +814,97 @@ async function fetchBaseData() {
                 alert("Đã xảy ra lỗi khi tạo báo cáo Mẫu 3. Lỗi: " + error.message);
             }
         }
+// ==========================================
+// TÍNH NĂNG XEM DANH SÁCH ĐIỂM DANH THEO NGÀY
+// ==========================================
+
+// 1. Hàm điều hướng qua lại giữa các ngày
+function changeDate(days) {
+    const dateInput = document.getElementById('dd-date');
+    if(!dateInput.value) dateInput.valueAsDate = new Date();
+    
+    let d = new Date(dateInput.value);
+    d.setDate(d.getDate() + days); 
+    
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    
+    dateInput.value = `${yyyy}-${mm}-${dd}`;
+    loadAttendanceList(); 
+}
+
+// 2. Hàm Tải danh sách điểm danh
+async function loadAttendanceList() {
+    const dateStr = document.getElementById('dd-date').value;
+    const tbody = document.getElementById('dd-list-body');
+    const title = document.getElementById('dd-list-title');
+    
+    if(!dateStr) return;
+
+    tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...</td></tr>';
+    const displayDate = new Date(dateStr).toLocaleDateString('vi-VN');
+
+    try {
+        const snap = await db.collection('yt_attendance').where('date', '==', dateStr).get();
+        
+        if(snap.empty) {
+            tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; color: #64748b;">Không có học sinh nào vắng mặt ngày ${displayDate}</td></tr>`;
+            title.innerHTML = `<i class="fas fa-clipboard-list"></i> Nghỉ học ngày ${displayDate} (0 HS)`;
+            return;
+        }
+
+        let records = [];
+        snap.forEach(doc => records.push({ id: doc.id, ...doc.data() }));
+        records.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+        let html = '';
+        records.forEach((d, index) => {
+            let reasonHtml = '';
+            if(d.reason === 'P') reasonHtml = '<span style="background:#eff6ff; color:#2563eb; padding:3px 8px; border-radius:5px; font-weight:bold;">Có phép</span>';
+            else if(d.reason === 'KP') reasonHtml = '<span style="background:#fef2f2; color:#ef4444; padding:3px 8px; border-radius:5px; font-weight:bold;">Không phép</span>';
+            else if(d.reason === 'B') reasonHtml = `<span style="background:#fffbeb; color:#d97706; padding:3px 8px; border-radius:5px; font-weight:bold;">Bệnh</span><div style="font-size:0.8rem; color:#64748b; margin-top:5px;">${d.diagnosis} (${d.symptom})</div>`;
+
+            html += `
+            <tr style="border-bottom: 1px solid #f1f5f9; transition:0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+                <td style="padding: 12px; border-right: 1px dashed #e2e8f0;">${index + 1}</td>
+                <td style="padding: 12px; font-weight: 500; text-align: left; border-right: 1px dashed #e2e8f0;">${d.name}</td>
+                <td style="padding: 12px; border-right: 1px dashed #e2e8f0; font-weight:bold; color:#64748b;">${d.class}</td>
+                <td style="padding: 12px; border-right: 1px dashed #e2e8f0;">${reasonHtml}</td>
+                <td style="padding: 12px;">
+                    <button type="button" onclick="deleteAttendance('${d.id}', '${d.name}', '${d.notificationId}')" class="btn" style="background: none; color: #ef4444; border: 1px solid #fca5a5; padding: 4px 10px; font-size: 0.8rem; margin:0 auto;"><i class="fas fa-trash-alt"></i> Hủy</button>
+                </td>
+            </tr>`;
+        });
+        
+        tbody.innerHTML = html;
+        title.innerHTML = `<i class="fas fa-clipboard-list"></i> Nghỉ học ngày ${displayDate} <span style="color:#ef4444;">(${records.length} HS)</span>`;
+
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; color: red;">Lỗi tải dữ liệu: ${err.message}</td></tr>`;
+    }
+}
+
+// 3. Hàm Xóa (Hủy điểm danh)
+// 3. Hàm Xóa (Hủy điểm danh) & TỰ ĐỘNG THU HỒI THÔNG BÁO
+async function deleteAttendance(docId, studentName, notificationId) {
+    if(confirm(`Hủy bỏ trạng thái nghỉ học của học sinh: ${studentName}?`)) {
+        try {
+            // Xóa bản ghi điểm danh
+            await db.collection('yt_attendance').doc(docId).delete();
+            
+            // Nếu có ID thông báo đi kèm, tiến hành xóa luôn thông báo đó
+            if (notificationId && notificationId !== 'null') {
+                await db.collection('yt_notifications').doc(notificationId).delete();
+                console.log(`Đã thu hồi thông báo ${notificationId}`);
+            }
+            
+            loadAttendanceList(); // Load lại danh sách ngay lập tức
+        } catch (err) {
+            alert("Lỗi khi xóa: " + err.message);
+        }
+    }
+}
 </script>
 </body>
 </html>

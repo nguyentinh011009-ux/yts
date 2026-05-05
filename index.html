@@ -17,24 +17,39 @@
 </head>
 <body>
 
-    <header class="main-header">
-            <h1>PHÒNG Y TẾ</h1>
-            <p><i class="fas fa-graduation-cap"></i>Trường Trung học Phổ Thông Võ Thị Sáu - Bà Rịa Vũng Tàu</p>
-        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px; position: relative; z-index: 2;">
-    <!-- NÚT MỚI: Cổng Học Sinh -->
-    <a href="student.html" class="btn" style="background: rgba(255,255,255,0.2); color: white; font-size: 0.9rem; border: 1px solid rgba(255,255,255,0.4); text-decoration:none; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-decoration: none;">
-        <i class="fas fa-user-graduate"></i> Học sinh
-    </a>
-    
-    <a href="tracuu.html" class="btn" style="background: rgba(255,255,255,0.2); color: var(--primary); font-size: 0.9rem; border: 1px solid rgba(255,255,255,0.4); text-decoration:none; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-decoration: none;">
-        <i class="fas fa-search-plus"></i> Tra cứu Hồ sơ
-    </a>
-    <a href="admin.html" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); text-decoration:none; font-size:0.9rem;">
-        <i class="fas fa-lock"></i> Admin
-    </a>
-</div>
+<!-- BẮT ĐẦU: HEADER GLASSMORPHISM -->
+    <header class="glass-header">
+        <!-- TRÁI: Logo & Tiêu đề -->
+        <div class="header-left">
+            <div class="header-logo">
+                <img src="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" alt="Logo">
+            </div>
+            <div class="header-titles">
+                <div class="title-top">Trường THPT Võ Thị Sáu - Bà rịa vũng tàu</div>
+                <div class="title-bottom">PHÒNG Y TẾ</div>
+            </div>
+        </div>
 
+        <!-- PHẢI: Menu Navigation & Profile -->
+        <div class="header-right">
+            <nav class="nav-links">
+                <a href="index.html" class="active"><i class="fas fa-home"></i> Trang chủ</a>
+                <div class="nav-divider"></div>
+                <a href="tracuu.html"><i class="fas fa-search-plus"></i> Tra cứu</a>
+                <div class="nav-divider"></div>
+                <a href="student.html"><i class="fas fa-user-graduate"></i> Học sinh</a>
+                <div class="nav-divider"></div>
+                <a href="admin.html"><i class="fas fa-user-shield"></i> Admin</a>
+            </nav>
+
+            <!-- Profile hiển thị khi đăng nhập -->
+            <div class="user-profile" id="top-user-profile" style="display: none;">
+                <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" id="top-user-avatar" alt="Avatar">
+                <span class="user-name" id="top-user-name">Đang tải...</span>
+            </div>
+        </div>
     </header>
+    <!-- KẾT THÚC: HEADER GLASSMORPHISM -->
 
     <section class="announcement-slider" id="main-slider">
         <div style="text-align:center; padding-top:150px; color:var(--text-gray);">

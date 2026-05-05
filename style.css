@@ -591,3 +591,137 @@ __________
         height: 450px;
     }
 }
+/* =========================================
+   TRANG CHỦ - GLASSMORPHISM HEADER 
+   ========================================= */
+body { padding-top: 85px; } /* Đẩy trang xuống tránh bị Header đè */
+
+.glass-header {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    padding: 10px 25px;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 10000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.5);
+}
+
+.header-left { display: flex; align-items: center; gap: 15px; }
+.header-logo {
+    width: 48px; height: 48px; border-radius: 12px; overflow: hidden; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08); background: white;
+}
+.header-logo img { width: 100%; height: 100%; object-fit: cover; }
+
+.header-titles { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.title-top { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.title-bottom { font-size: 1.15rem; font-weight: 900; color: #0062ff; letter-spacing: 4px; margin-left: 4px; line-height: 1; }
+
+.header-right { display: flex; align-items: center; gap: 20px; }
+.nav-links { display: flex; gap: 10px; align-items: center; }
+.nav-links a { text-decoration: none; color: #475569; font-weight: 600; font-size: 0.9rem; padding: 8px 15px; border-radius: 10px; transition: 0.3s; }
+.nav-links a:hover, .nav-links a.active { background: #f1f5f9; color: #0062ff; }
+.nav-divider { width: 1px; height: 18px; background: #cbd5e1; }
+
+.user-profile {
+    display: none; align-items: center; gap: 10px; background: #f8fafc; 
+    padding: 5px 15px 5px 5px; border-radius: 30px; border: 1px solid #e2e8f0;
+}
+.user-profile img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+.user-name { font-size: 0.85rem; font-weight: 700; color: #1e293b; }
+
+.announcement-slider { margin: 20px auto 40px !important; }
+
+@media screen and (max-width: 900px) {
+    .nav-links a i { margin-right: 0; }
+    .nav-links a { font-size: 0.85rem; padding: 8px 10px; }
+}
+/* Responsive cho Điện thoại - Tối ưu chống rớt dòng */
+/* =========================================
+   RESPONSIVE CHO ĐIỆN THOẠI (< 768px)
+   ========================================= */
+@media screen and (max-width: 768px) {
+    /* 1. Đẩy trang xuống vừa đủ với Header 2 dòng */
+    body { padding-top: 100px; } 
+
+    /* 2. Ép Header thành dạng Cột (2 dòng) */
+    .glass-header { 
+        flex-direction: column; 
+        align-items: flex-start; 
+        padding: 10px 15px; 
+        gap: 12px; /* Khoảng cách giữa dòng trên và dòng dưới */
+    }
+
+    /* --- DÒNG 1: LOGO & TIÊU ĐỀ --- */
+    .header-left { gap: 10px; }
+    .header-logo { width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0; }
+    
+    .header-titles { align-items: flex-start; }
+    .title-top { font-size: 0.6rem; letter-spacing: 0; white-space: nowrap; }
+    .title-bottom { font-size: 0.95rem; letter-spacing: 1px; margin-left: 0; white-space: nowrap; }
+
+    /* --- DÒNG 1 (GÓC PHẢI): USER PROFILE --- */
+    /* Dùng absolute để ép nó nhảy lên ngang hàng với Logo */
+    .user-profile { 
+        position: absolute; 
+        top: 12px; 
+        right: 15px; 
+        padding: 4px 10px 4px 4px;
+        gap: 6px;
+    }
+    .user-profile img { width: 28px; height: 28px; }
+    .user-name { 
+        font-size: 0.75rem; 
+        max-width: 70px; 
+        overflow: hidden; 
+        text-overflow: ellipsis; /* Hiện dấu ... nếu tên quá dài */
+        white-space: nowrap; 
+    }
+
+    /* --- DÒNG 2: CÁC NÚT BẤM (MENU) --- */
+    .header-right { 
+        width: 100%; 
+        gap: 0; 
+    }
+    
+    .nav-links { 
+        width: 100%;
+        display: flex; 
+        gap: 8px; 
+        /* Bật tính năng vuốt ngang nếu màn hình quá nhỏ không chứa đủ 4 nút */
+        overflow-x: auto; 
+        padding-bottom: 5px; 
+        scrollbar-width: none; /* Ẩn thanh cuộn Firefox */
+    }
+    .nav-links::-webkit-scrollbar { display: none; } /* Ẩn thanh cuộn Chrome/Safari */
+    
+    /* Giao diện các nút dạng viên thuốc (Pill) */
+    .nav-links a { 
+        display: flex; 
+        align-items: center;
+        gap: 5px;
+        font-size: 0.8rem; 
+        padding: 6px 14px; 
+        white-space: nowrap; 
+        background: #f1f5f9; /* Nền xám nhạt cho nút chưa chọn */
+        border-radius: 20px;
+    }
+    .nav-links a.active {
+        background: #e0e7ff; /* Nền xanh nhạt cho nút đang chọn */
+        color: #0062ff;
+        font-weight: 700;
+    }
+    
+    .nav-divider { display: none; } /* Ẩn hoàn toàn vạch kẻ ||| */
+
+    /* --- XÓA KHOẢNG TRỐNG GIỮA HEADER VÀ SLIDER --- */
+    .announcement-slider {
+        margin-top: 0 !important; /* Ép Slider dính sát vào mép dưới Header */
+        border-top-left-radius: 0; /* Vuông góc nối liền mạch với Header */
+        border-top-right-radius: 0;
+    }
+}

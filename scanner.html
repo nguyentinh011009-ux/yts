@@ -29,7 +29,7 @@
     <div class="container" id="camera-screen" style="display: none; justify-content: flex-start; padding-top: 50px;">
         <div style="display: flex; justify-content: space-between; width: 100%; max-width: 500px; margin-bottom: 20px;">
             <div style="font-weight: bold; color: #10b981;"><i class="fas fa-link"></i> Đã kết nối PC</div>
-            <button onclick="location.reload()" style="background: #ef4444; width: auto; padding: 5px 15px; font-size: 0.9rem;">Ngắt kết nối</button>
+            <button onclick="disconnectScanner()" style="background: #ef4444; width: auto; padding: 5px 15px; font-size: 0.9rem;">Ngắt kết nối</button>
         </div>
         
         <div id="reader"></div>
@@ -104,6 +104,24 @@
         }
 
         function onScanFailure(error) { /* Bỏ qua lỗi ko tìm thấy mã để tránh console đầy rác */ }
+// Hàm xử lý nút ngắt kết nối
+        async function disconnectScanner() {
+            const btn = document.querySelector('button[onclick="disconnectScanner()"]');
+            btn.innerHTML = "Đang ngắt...";
+            if (syncCode) {
+                try {
+                    await db.collection('yt_scanners').doc(syncCode).delete();
+                } catch(e) {}
+            }
+            location.reload(); // Tải lại trang sau khi xóa xong
+        }
+
+        // Lắng nghe sự kiện người dùng vuốt thoát web trên điện thoại
+        window.addEventListener('beforeunload', function (e) {
+            if (syncCode) {
+                db.collection('yt_scanners').doc(syncCode).delete();
+            }
+        });
     </script>
 </body>
 </html>

@@ -101,6 +101,9 @@
     <button class="admin-tab-btn" onclick="switchTab('tab-yte-dulieu', this)">
         <i class="fas fa-address-book"></i> Hồ sơ học sinh
     </button>
+    <a href="duoc.html" class="admin-tab-btn" style="text-decoration: none;">
+        <i class="fas fa-pills"></i> Kho Dược & Vật tư
+    </a>
     <button class="admin-tab-btn" onclick="switchTab('tab-yte-xuat', this)">
         <i class="fas fa-file-export"></i> Xuất báo cáo
     </button>
@@ -265,7 +268,7 @@
         <div class="input-group" style="grid-column: span 2; display: flex; gap: 15px; align-items: flex-end;">
             <div style="flex: 1; position: relative;">
                 <label>Họ và tên</label>
-                <input type="text" id="yt-name" placeholder="Nhập tên học sinh..." autocomplete="off" oninput="searchStudentSuggest(this.value)" onkeydown="moveToNext(event, 'yt-class')">
+                <input type="text" id="yt-name" placeholder="Nhập tên học sinh..." autocomplete="off" oninput="searchStudentSuggest(this.value)" onkeydown="handleNameInputKeydown(event)">
                 <div id="yt-suggest-box" class="suggest-box"></div>
             </div>
             <div style="width: 150px;">
@@ -287,6 +290,40 @@
         <div class="input-group" style="grid-column: span 2;">
             <label>Triệu chứng</label>
             <input type="text" id="yt-symptom" placeholder="Nhập triệu chứng..." onkeydown="moveToNext(event, 'yt-treatment')">
+        </div>
+<!-- TÍNH NĂNG MỚI: TÍCH HỢP CẤP THUỐC VÀ TRỪ KHO -->
+        <div class="input-group" style="grid-column: span 2; margin-top: 10px;">
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; color:#059669; font-weight:bold; background:#ecfdf5; padding:10px; border-radius:8px; border:1px dashed #10b981;">
+                <input type="checkbox" id="chk-cap-thuoc" onchange="toggleMedicineSection()" style="width:20px; height:20px; cursor:pointer;">
+                <i class="fas fa-pills"></i> CẤP THUỐC
+            </label>
+            
+            <div id="medicine-section" style="display:none; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #cbd5e1; margin-top:10px;">
+                <div style="display:flex; gap:10px; align-items:flex-end;">
+                    <div style="flex:2; position:relative;">
+                        <label style="font-size:0.85rem;">Tìm thuốc/Vật tư</label>
+                        <input type="text" id="med-search-input" placeholder="Gõ tên thuốc..." oninput="searchMedicineForReception(this.value)" autocomplete="off">
+                        <input type="hidden" id="med-selected-id">
+                        <input type="hidden" id="med-selected-name">
+                        <input type="hidden" id="med-selected-unit">
+                        <div id="med-suggest-box" class="suggest-box" style="top: 100%; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);"></div>
+                    </div>
+                    <div style="flex:1.5;">
+                        <label style="font-size:0.85rem;">Chọn Lô (HSD)</label>
+                        <select id="med-batch-select"><option value="">-- Trống --</option></select>
+                    </div>
+                    <div style="width:90px;">
+                        <label style="font-size:0.85rem;">Số lượng</label>
+                        <input type="number" id="med-qty-input" min="1" value="1">
+                    </div>
+                    <button type="button" class="btn btn-primary" style="background:#10b981; border:none; height:45px;" onclick="addMedicineToTreatment()">
+                        <i class="fas fa-plus"></i> Thêm
+                    </button>
+                </div>
+                
+                <!-- Danh sách thuốc đã chọn -->
+                <div id="med-pending-list" style="margin-top: 15px; display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
         </div>
         <div class="input-group" style="grid-column: span 2;">
             <label>Xử lý (Chọn hoặc tự nhập)</label>

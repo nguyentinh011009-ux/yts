@@ -594,7 +594,6 @@ __________
 /* =========================================
    TRANG CHỦ - GLASSMORPHISM HEADER 
    ========================================= */
-body { padding-top: 85px; } /* Đẩy trang xuống tránh bị Header đè */
 
 .glass-header {
     background: rgba(255, 255, 255, 0.85);
@@ -634,8 +633,10 @@ body { padding-top: 85px; } /* Đẩy trang xuống tránh bị Header đè */
 .user-profile img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
 .user-name { font-size: 0.85rem; font-weight: 700; color: #1e293b; }
 
-.announcement-slider { margin: 20px auto 40px !important; }
-
+.announcement-slider { margin: 85px auto 40px !important; }
+.page-has-header {
+    padding-top: 85px; 
+}
 @media screen and (max-width: 900px) {
     .nav-links a i { margin-right: 0; }
     .nav-links a { font-size: 0.85rem; padding: 8px 10px; }
@@ -645,8 +646,8 @@ body { padding-top: 85px; } /* Đẩy trang xuống tránh bị Header đè */
    RESPONSIVE CHO ĐIỆN THOẠI (< 768px)
    ========================================= */
 @media screen and (max-width: 768px) {
-    /* 1. Đẩy trang xuống vừa đủ với Header 2 dòng */
-    body { padding-top: 100px; } 
+    /* 1. Đẩy riêng trang chủ xuống vừa đủ với Header 2 dòng (Sửa body thành .page-has-header) */
+    .page-has-header { padding-top: 105px; } 
 
     /* 2. Ép Header thành dạng Cột (2 dòng) */
     .glass-header { 
@@ -717,11 +718,164 @@ body { padding-top: 85px; } /* Đẩy trang xuống tránh bị Header đè */
     }
     
     .nav-divider { display: none; } /* Ẩn hoàn toàn vạch kẻ ||| */
-
-    /* --- XÓA KHOẢNG TRỐNG GIỮA HEADER VÀ SLIDER --- */
+/* Tùy chỉnh Slider trên Mobile: Cách Header 50px và Thu hẹp chiều cao */
     .announcement-slider {
-        margin-top: 0 !important; /* Ép Slider dính sát vào mép dưới Header */
-        border-top-left-radius: 0; /* Vuông góc nối liền mạch với Header */
-        border-top-right-radius: 0;
+        margin-top: 110px !important; 
+        height: 220px !important; /* Ép chiều cao lùn xuống (tạo dáng banner nằm ngang) */
+    }
+
+    /* Vì khung Slider lùn đi, ta cần ép chữ và nút bên trong nhỏ lại cho cân đối */
+    .slide-content {
+        padding: 30px 20px 20px !important; /* Giảm khoảng trống bên trong */
+    }
+    .slide-content h2 {
+        font-size: 1.3rem !important; /* Thu nhỏ tiêu đề thông báo */
+        margin-bottom: 5px;
+    }
+    .slide-content .btn {
+        padding: 6px 15px !important; /* Thu nhỏ nút "Xem chi tiết" */
+        font-size: 0.8rem !important;
+        margin-top: 8px !important;
+    }
+}
+/* =========================================
+   NÂNG CẤP: GIAO DIỆN TIN TỨC TRÊN MOBILE (Thu nhỏ thẻ bài viết)
+   ========================================= */
+@media screen and (max-width: 768px) {
+    /* 1. Ép lưới hiển thị 2 cột thay vì 1 cột to tổ chảng trên điện thoại */
+    #pinned-grid, #main-grid {
+        grid-template-columns: repeat(2, 1fr) !important; 
+        gap: 12px !important; /* Giảm khoảng cách giữa các thẻ */
+    }
+
+    /* 2. Thu nhỏ chiều cao ảnh bìa (giảm từ 200px xuống 120px) */
+    .post-card img {
+        height: 120px !important; 
+    }
+
+    /* 3. Thu nhỏ khoảng trống (padding) bên trong thẻ */
+    .post-card > div {
+        padding: 10px !important; 
+    }
+
+    /* 4. Thu nhỏ Tiêu đề bài viết */
+    .post-card h3 {
+        font-size: 0.9rem !important; 
+        margin-bottom: 5px !important;
+        line-height: 1.4;
+        /* Tự động cắt thêm dấu ... nếu tiêu đề quá dài (giữ nguyên 2 dòng) */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* 5. Thu nhỏ Nội dung tóm tắt */
+    .post-card p {
+        font-size: 0.75rem !important; 
+        margin-bottom: 10px !important;
+        line-height: 1.4;
+        /* Chỉ hiển thị tối đa 3 dòng tóm tắt để thẻ không bị dài thòng lòong */
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* 6. Thu nhỏ nút bấm "Xem chi tiết" */
+    .post-card .btn {
+        padding: 6px 5px !important;
+        font-size: 0.75rem !important;
+        border-radius: 8px !important;
+    }
+}
+/* =========================================
+   NÂNG CẤP: GIAO DIỆN THẺ BÀI VIẾT (ĐỒNG BỘ CHIỀU CAO TOÀN DIỆN)
+   ========================================= */
+/* 1. Ép thẻ hiển thị theo cột linh hoạt (Flexbox) */
+.post-card {
+    background: white; 
+    border-radius: 15px; 
+    overflow: hidden; 
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Ép thẻ kéo dài ra cho bằng với thẻ cao nhất trong hàng */
+}
+
+.post-card-img {
+    width: 100%; 
+    height: 200px; 
+    object-fit: cover;
+}
+
+/* 2. Phần chứa chữ: Đẩy nội dung chiếm hết không gian trống */
+.post-card-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* Rất quan trọng: Bắt khu vực này co giãn lấp đầy khoảng trống */
+}
+
+/* 3. Tiêu đề: Thu nhỏ font chữ, ép khung cao đúng 2 dòng tăm tắp */
+.post-card-title {
+    font-size: 1.05rem; /* Đã thu nhỏ font chữ để chứa được nhiều chữ hơn */
+    line-height: 1.4;
+    height: 2.8em; /* THẦN CHÚ: Khung tiêu đề luôn cao ĐÚNG 2 dòng (1.4 x 2) */
+    margin-bottom: 10px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Nếu vượt quá 2 dòng sẽ tự động có dấu ... */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* 4. Nội dung tóm tắt: Ép chuẩn 2 dòng */
+.post-card-desc {
+    color: var(--text-gray); 
+    font-size: 0.85rem; /* Thu nhỏ chữ tóm tắt */
+    line-height: 1.5;
+    height: 3em; /* THẦN CHÚ: Khung tóm tắt luôn cao ĐÚNG 2 dòng (1.5 x 2) */
+    margin-bottom: 15px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Chặn ở mức 2 dòng và thêm ... */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+/* 5. Nút "Xem chi tiết": Ép dính chặt xuống đáy khung */
+.post-card-btn {
+    margin-top: auto; /* Thần chú: Đẩy mọi thứ khác lên trên, ép nút xuống sát đáy */
+    width: 100%; 
+    justify-content: center; 
+    text-decoration: none;
+}
+
+/* --- TÙY CHỈNH THU NHỎ CHO MÀN HÌNH ĐIỆN THOẠI --- */
+@media screen and (max-width: 768px) {
+    #pinned-grid, #main-grid {
+        grid-template-columns: repeat(2, 1fr) !important; 
+        gap: 12px !important;
+    }
+    
+    .post-card-img { height: 120px; }
+    .post-card-body { padding: 10px; }
+    
+/* Tùy chỉnh Tiêu đề trên Mobile */
+    .post-card-title {
+        font-size: 0.85rem !important; /* Ép font chữ thật nhỏ để vừa 2 dòng */
+        line-height: 1.4 !important;
+        height: 2.8em !important; /* Vẫn giữ khung chuẩn 2 dòng */
+    }
+    
+    /* Tùy chỉnh Nội dung tóm tắt trên Mobile */
+    .post-card-desc {
+        font-size: 0.75rem !important;
+        line-height: 1.4 !important;
+        height: 2.8em !important; /* Khung tóm tắt chuẩn 2 dòng */
+        margin-bottom: 12px !important;
+    }
+    .post-card-btn {
+        padding: 6px 5px !important;
+        font-size: 0.75rem !important;
+        border-radius: 8px !important;
     }
 }

@@ -116,6 +116,28 @@
                 border: none;
             }
         }
+/* Style cho nút chia sẻ nằm cạnh tiêu đề */
+        .share-btn-title {
+            background: #f1f5f9;
+            border: none;
+            color: #475569;
+            font-size: 1.1rem;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            margin-left: 10px; /* Khoảng cách với chữ tiêu đề */
+        }
+
+        .share-btn-title:hover {
+            background: #e2e8f0;
+            color: #2563eb; /* Chuyển màu xanh khi di chuột */
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body>
@@ -137,7 +159,6 @@
             <p>Đang chuẩn bị nội dung cho bạn...</p>
         </div>
     </main>
-
     <footer class="post-footer">
         <h3>Phòng Y tế- Trường Trung học Phổ thông Võ Thị Sáu</h3>
         <p style="opacity: 0.6; font-size: 0.9rem;">Website phát triển bởi Văn Tính</p>
@@ -150,5 +171,68 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="config.js"></script>
     <script src="app.js"></script>
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Thiết lập "Người quan sát" để chờ app.js render nội dung
+            const observer = new MutationObserver((mutations, obs) => {
+                const container = document.getElementById('post-detail-container');
+                
+                // Tìm thẻ tiêu đề (Thường trong web tin tức nó sẽ là thẻ <h1>)
+                const titleElement = container.querySelector('h1');
+
+                // Nếu tìm thấy tiêu đề VÀ nút chia sẻ chưa được tạo
+                if (titleElement && !document.getElementById('share-btn-title')) {
+                    
+                    // 1. Chỉnh CSS của tiêu đề để nó và nút nằm ngang hàng nhau
+                    titleElement.style.display = 'flex';
+                    titleElement.style.alignItems = 'center';
+                    // Nếu muốn nút nằm tít bên phải: dùng titleElement.style.justifyContent = 'space-between';
+
+                    // 2. Tạo nút chia sẻ
+                    const shareBtn = document.createElement('button');
+                    shareBtn.id = 'share-btn-title';
+                    shareBtn.className = 'share-btn-title';
+                    shareBtn.title = 'Chia sẻ bài viết';
+                    shareBtn.innerHTML = '<i class="fa-solid fa-arrow-up-from-bracket"></i>';
+
+                    // 3. Viết chức năng mở bảng chia sẻ của iPhone/Android
+                    shareBtn.addEventListener('click', async (e) => {
+                        e.preventDefault(); // Ngăn hành vi mặc định
+                        
+                        const shareData = {
+                            title: titleElement.innerText, // Lấy luôn text của tiêu đề bài viết
+                            text: 'Đọc bài viết này trên website Phòng Y tế THPT Võ Thị Sáu:',
+                            url: window.location.href
+                        };
+
+                        if (navigator.share) {
+                            try {
+                                await navigator.share(shareData);
+                            } catch (err) {
+                                console.log('Hủy chia sẻ: ', err);
+                            }
+                        } else {
+                            // Dự phòng cho thiết bị không hỗ trợ (Copy link)
+                            navigator.clipboard.writeText(window.location.href).then(() => {
+                                alert('Đã sao chép liên kết bài viết!');
+                            });
+                        }
+                    });
+
+                    // 4. Nhét nút vào ngay bên cạnh chữ của tiêu đề
+                    titleElement.appendChild(shareBtn);
+                    
+                    // 5. Ngừng quan sát để đỡ tốn tài nguyên máy
+                    obs.disconnect(); 
+                }
+            });
+
+            // Bắt đầu quan sát khu vực bài viết
+            observer.observe(document.getElementById('post-detail-container'), { 
+                childList: true, 
+                subtree: true 
+            });
+        });
+    </script>
 </body>
 </html>

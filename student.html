@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -121,7 +122,19 @@
         }
 
         #auth-section, #link-section, #dashboard-section { display: none; }
+/* ===== CSS NÂNG CẤP GIAO DIỆN BẢNG TIN (THÊM VÀO ĐÂY) ===== */
+        .health-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Mặc định 2 cột trên màn hình lớn */
+            gap: 20px;
+        }
 
+        /* Khi màn hình nhỏ hơn 640px (điện thoại, tablet nhỏ) */
+        @media (max-width: 640px) {
+            .health-stats-grid {
+                grid-template-columns: 1fr; /* Chuyển thành 1 cột duy nhất, tự động xếp dọc */
+            }
+        }
     </style>
 </head>
 <body>
@@ -138,7 +151,7 @@
                 <p style="font-size: 0.75rem; margin: 0; color: var(--st-text-muted);">THPT Võ Thị Sáu</p>
             </div>
         </div>
-        <a href="index.html" style="color: var(--st-text-muted); text-decoration: none; font-size: 0.9rem; background: #f1f5f9; padding: 8px 15px; border-radius: 20px;"><i class="fas fa-home"></i> Trang chủ</a>
+        <a href='/' style='color: var(--st-text-muted); text-decoration: none; font-size: 0.9rem; background: #f1f5f9; padding: 8px 15px; border-radius: 20px;'><i class="fas fa-home"></i> Trang chủ</a>
      
     </header>
 
@@ -278,8 +291,49 @@
                         <div id="st-bmi-status" style="text-align: center; margin-top: 15px; font-weight: bold; font-size: 1.1rem; padding: 10px; border-radius: 10px; background: #f8fafc;">--</div>
                     </div>
                 </div>
-            </div>
+<!-- Thống kê Y tế Học đường (MỚI THÊM) -->
+                <div class="st-card" style="margin-top: 25px;">
+                    <h3 id="st-stat-title" style="margin: 0 0 20px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+    			<i class="fas fa-chart-pie" style="color: #8b5cf6;"></i> Bản tin Y tế Học đường
+		    </h3>
+                    
+                    <div class="health-stats-grid">
+                        
+                        <!-- Cột 1: Trend Bệnh -->
+                        <div style="background: #fff1f2; padding: 15px; border-radius: 12px; border: 1px solid #ffe4e6;">
+                            <div style="font-size: 0.85rem; color: #e11d48; font-weight: bold; margin-bottom: 15px; text-transform: uppercase;">
+                                <i class="fas fa-fire-alt"></i> Triệu chứng phổ biến tháng qua
+                            </div>
+                            <div id="st-trending-symptoms">
+                                <div style="text-align:center; padding: 10px;"><i class="fas fa-spinner fa-spin" style="color:#e11d48;"></i> Đang tải...</div>
+                            </div>
+                        </div>
 
+                        <!-- Cột 2: Xếp hạng cá nhân -->
+                        <div style="background: #fdf4ff; padding: 15px; border-radius: 12px; border: 1px solid #fae8ff;">
+                            <div style="font-size: 0.85rem; color: #c026d3; font-weight: bold; margin-bottom: 15px; text-transform: uppercase;">
+                                <i class="fas fa-trophy"></i> Tần suất ghé phòng Y Tế
+                            </div>
+                            
+                            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+                                <div style="width: 50px; height: 50px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #c026d3; box-shadow: 0 4px 6px rgba(192, 38, 211, 0.1);">
+                                    <i class="fas fa-hashtag"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.85rem; color: #701a75;">Xếp hạng trong tháng gần nhất.</div>
+                                    <div style="font-size: 1.5rem; font-weight: bold; color: #a21caf;" id="st-my-rank">--</div>
+                                </div>
+                            </div>
+
+                            <div style="background: white; padding: 10px; border-radius: 8px; font-size: 0.9rem; color: #4a044e; margin-top: 15px;">
+                                Bạn đã khám tổng cộng <strong id="st-my-visits" style="color: #c026d3; font-size: 1.1rem;">0</strong> lần.
+                                <div id="st-rank-message" style="margin-top: 5px; font-size: 0.85rem; font-style: italic;">Đang tính toán...</div>
+                            </div>
+                        </div>
+
+                    </div>
+            </div>
+</div>
             <!-- TAB 2: LỊCH SỬ DẠNG TIMELINE -->
             <div id="tab-history" class="st-tab-pane">
                 <div class="st-card">
@@ -318,6 +372,8 @@
                     </div>
                 </div>
             </div>
+</div> <!-- Đóng dashboard-section -->
+    </div>
     <!-- FIREBASE -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
@@ -402,7 +458,7 @@ function loginStudentGoogle() {
                 document.getElementById('link-section').style.display = 'none';
                 document.getElementById('dashboard-section').style.display = 'block';
                 currentStudent = { id: snap.docs[0].id, ...snap.docs[0].data() };
-                renderTabInfo(); loadHistory(); loadTickets();loadAttendance();listenToNotifications();
+                renderTabInfo(); loadHistory(); loadTickets();loadAttendance();listenToNotifications();loadSchoolHealthStats();
             }
         }
 
@@ -703,13 +759,7 @@ function renderTabInfo() {
             });
             div.innerHTML = html;
         }
-// --- HỆ THỐNG NHẬN THÔNG BÁO ---
-        function toggleStudentNotiModal() {
-            const modal = document.getElementById('student-noti-modal');
-            modal.style.display = modal.style.display === 'none' || modal.style.display === '' ? 'flex' : 'none';
-            // Ẩn chấm đỏ khi đã mở xem
-            document.getElementById('noti-badge').style.display = 'none';
-        }
+
 
 // --- HỆ THỐNG NHẬN THÔNG BÁO (ĐÃ NÂNG CẤP) ---
         function toggleStudentNotiModal() {
@@ -841,6 +891,94 @@ function listenToNotifications() {
             // Vẽ Barcode
             JsBarcode("#st-barcode", scanData, { format: "CODE128", width: 2, height: 50, displayValue: true });
         }
+// --- RENDER THỐNG KÊ Y TẾ HỌC ĐƯỜNG (TRONG 1 THÁNG QUA) ---
+// --- RENDER THỐNG KÊ Y TẾ HỌC ĐƯỜNG (DỮ LIỆU CHỐT SỔ ĐẾN HÔM QUA) ---
+async function loadSchoolHealthStats() {
+    try {
+        const today = new Date();
+        const currentMonth = today.getMonth() + 1;
+        const currentYear = today.getFullYear();
+        const monthId = `${currentMonth.toString().padStart(2, '0')}-${currentYear}`; // VD: "05-2024"
+
+        // Đổi tiêu đề hiển thị tháng hiện tại
+        document.getElementById('st-stat-title').innerHTML = `<i class="fas fa-chart-pie" style="color: #8b5cf6;"></i> Bản tin Y tế tháng ${currentMonth}/${currentYear}`;
+
+        // Chỉ đọc ĐÚNG 1 DOCUMENT thống kê của tháng này
+        const docRef = await db.collection('yt_stats').doc(monthId).get();
+
+        if (!docRef.exists) {
+            document.getElementById('st-trending-symptoms').innerHTML = '<div style="font-size:0.9rem; color:#64748b;">Chưa có dữ liệu thống kê cho tháng này.</div>';
+            document.getElementById('st-my-visits').innerText = "0";
+            document.getElementById('st-my-rank').innerText = "N/A";
+            document.getElementById('st-rank-message').innerHTML = '<span style="color:#10b981;">Chưa có dữ liệu xét hạng tháng này.</span>';
+            return;
+        }
+
+        const data = docRef.data();
+        
+        // 1. RENDER BỆNH ĐANG HOT
+        let sympHTML = '';
+        let colors = ['#ef4444', '#f97316', '#f59e0b']; 
+        
+        if (data.topSymptoms && data.topSymptoms.length > 0) {
+            data.topSymptoms.slice(0, 3).forEach((item, index) => {
+                sympHTML += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 8px 12px; border-radius: 8px; margin-bottom: 8px;">
+                        <span style="font-size: 0.95rem; color: #1e293b; font-weight: 500;">
+                            <i class="fas fa-virus" style="color: ${colors[index] || '#94a3b8'}; margin-right: 5px;"></i> ${item.name}
+                        </span>
+                        <span style="background: #fff1f2; color: #e11d48; padding: 2px 8px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">
+                            ${item.count} ca
+                        </span>
+                    </div>
+                `;
+            });
+        } else {
+            sympHTML = '<div style="font-size:0.9rem; color:#64748b;">Chưa có thống kê</div>';
+        }
+        document.getElementById('st-trending-symptoms').innerHTML = sympHTML;
+
+        // 2. RENDER XẾP HẠNG CÁ NHÂN
+        let studentVisits = data.studentVisits || {};
+        let myVisitCount = studentVisits[currentStudent.id] || 0;
+        
+        // Chuyển Object thành Array để sắp xếp tìm thứ hạng
+        let sortedStudents = Object.keys(studentVisits).map(k => ({id: k, count: studentVisits[k]}));
+        sortedStudents.sort((a, b) => b.count - a.count);
+
+        let myRankIndex = sortedStudents.findIndex(s => s.id === currentStudent.id);
+        let myRank = myRankIndex !== -1 ? myRankIndex + 1 : 0;
+
+        document.getElementById('st-my-visits').innerText = myVisitCount;
+        const rankText = document.getElementById('st-my-rank');
+        const rankMsg = document.getElementById('st-rank-message');
+
+        if (myVisitCount === 0) {
+            rankText.innerText = "N/A";
+            rankMsg.innerHTML = '<span style="color:#10b981;">🎉 Tháng này bạn chưa phải xuống phòng Y tế lần nào!</span>';
+        } else {
+            rankText.innerText = "TOP " + myRank;
+            if (myRank <= 10) {
+                rankMsg.innerHTML = '<span style="color:#ef4444;"><i class="fas fa-exclamation-triangle"></i> Bạn lọt top khám bệnh nhiều nhất tháng. Hãy chú ý sức khỏe!</span>';
+            } else if (myRank <= 50) {
+                rankMsg.innerHTML = '<span style="color:#f59e0b;">Tháng này bạn ốm hơi nhiều đấy nhé!</span>';
+            } else {
+                rankMsg.innerHTML = '<span style="color:#10b981;">Sức khỏe của bạn đang ở mức ổn định.</span>';
+            }
+        }
+
+        // Hiển thị ngày và giờ cập nhật cuối cùng
+const lastUpdatedDateTime = data.lastUpdated.toDate().toLocaleString('vi-VN', {
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    day: '2-digit', month: '2-digit', year: 'numeric'
+});
+rankMsg.innerHTML += `<div style="margin-top: 8px; font-size: 0.75rem; color: #94a3b8;"><i class="fas fa-clock"></i> Cập nhật đến: ${lastUpdatedDateTime}</div>`;
+
+    } catch (error) {
+        console.error("Lỗi lấy dữ liệu thống kê: ", error);
+        document.getElementById('st-trending-symptoms').innerHTML = '<div style="color:red; font-size:0.85rem;">Lỗi tải dữ liệu.</div>';
+    }
+}
     </script>
 <!-- POPUP DANH SÁCH THÔNG BÁO -->
     <div id="student-noti-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 10001; align-items: flex-start; justify-content: flex-end; padding: 20px;">

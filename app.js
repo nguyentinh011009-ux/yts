@@ -7,6 +7,18 @@ let sliderInterval = null; // THÊM DÒNG NÀY VÀO
 let allPosts = [];
 
 // --- 2. HỆ THỐNG ĐĂNG NHẬP & BẢO MẬT ---
+// Hàm bóc tách nội dung thô (xóa sạch code CSS/HTML của AI)
+function getCleanSnippet(htmlContent) {
+    if (!htmlContent) return '';
+    let temp = document.createElement('div');
+    temp.innerHTML = htmlContent;
+    // Tìm và xóa vĩnh viễn các thẻ style, script
+    let styles = temp.querySelectorAll('style, script');
+    styles.forEach(s => s.remove());
+    // Chỉ lấy chữ thuần túy
+    let text = temp.textContent || temp.innerText || "";
+    return text.replace(/\s+/g, ' ').trim();
+}
 // Hàm chuyển đổi tiếng Việt có dấu thành không dấu để tìm kiếm
 function removeVietnameseTones(str) {
     if (!str) return "";
@@ -67,8 +79,10 @@ firebase.auth().onAuthStateChanged((user) => {
                 if(dashboard) {
                     dashboard.style.display = 'grid'; 
                     loadAdminPosts();
+                    loadPharmacyForReception();
                     loadAdminAnnouncements();
                     loadFusoftxNotis();
+		    runDailyStatisticAggregation();
 
                     const nameDisplay = document.getElementById('display-admin-name');
                     const emailDisplay = document.getElementById('display-admin-email');
@@ -306,17 +320,16 @@ function renderHome() {
             const p = { id: doc.id, ...doc.data() };
             allPosts.push(p);
             
-            const html = `
-                <div class="post-card fade-in" style="background:white; border-radius:15px; overflow:hidden; box-shadow:var(--shadow-sm);">
-                    <img src="${p.cover}" style="width:100%; height:200px; object-fit:cover;">
-                    <div style="padding:20px;">
-                        <h3 style="margin-bottom:10px; font-size:1.2rem;">${p.title}</h3>
-                        <p style="color:var(--text-gray); font-size:0.9rem; margin-bottom:20px;">${p.content.replace(/<[^>]*>?/gm, '').substring(0, 100)}...</p>
-                        <a href="post.html?id=${p.id}" class="btn btn-primary" style="width:100%; justify-content:center; text-decoration:none;">Xem chi tiết sản phẩm</a>
+const html = `
+                <div class="post-card fade-in">
+                    <img src="${p.cover}" class="post-card-img">
+                    <div class="post-card-body">
+                        <h3 class="post-card-title">${p.title}</h3>
+                        <p class="post-card-desc">${getCleanSnippet(p.content)}</p>
+                        <a href="post.html?id=${p.id}" class="btn btn-primary post-card-btn">Xem chi tiết</a>
                     </div>
                 </div>
-            `;
-            
+            `;            
             if (p.isPinned) pinnedGrid.innerHTML += html;
             else mainGrid.innerHTML += html;
         });
@@ -400,17 +413,16 @@ function searchPosts() {
     
     // Render lại dữ liệu đã lọc
     filtered.forEach(p => {
-        const html = `
-            <div class="post-card fade-in" style="background:white; border-radius:15px; overflow:hidden; box-shadow:var(--shadow-sm);">
-                <img src="${p.cover}" style="width:100%; height:200px; object-fit:cover;">
-                <div style="padding:20px;">
-                    <h3 style="margin-bottom:10px; font-size:1.2rem;">${p.title}</h3>
-                    <p style="color:var(--text-gray); font-size:0.9rem; margin-bottom:20px;">${p.content.replace(/<[^>]*>?/gm, '').substring(0, 100)}...</p>
-                    <a href="post.html?id=${p.id}" class="btn btn-primary" style="width:100%; justify-content:center; text-decoration:none;">Xem chi tiết sản phẩm</a>
+const html = `
+                <div class="post-card fade-in">
+                    <img src="${p.cover}" class="post-card-img">
+                    <div class="post-card-body">
+                        <h3 class="post-card-title">${p.title}</h3>
+                        <p class="post-card-desc">${getCleanSnippet(p.content)}</p>
+                        <a href="post.html?id=${p.id}" class="btn btn-primary post-card-btn">Xem chi tiết</a>
+                    </div>
                 </div>
-            </div>
-        `;
-        
+            `;        
         if (p.isPinned) pinnedGrid.innerHTML += html;
         else mainGrid.innerHTML += html;
     });
@@ -511,33 +523,149 @@ function moveToNext(event, nextId) {
     }
 }
 
-// 1. TÌM KIẾM HỌC SINH CÓ SẴN
+// ==================================================
+// 1. TÌM KIẾM HỌC SINH CÓ SẴN (BẢN NÂNG CẤP THÔNG MINH)
+// ==================================================
+let ytStudentsCache = null;    // Lưu cache để tìm siêu tốc không gọi Firebase nhiều lần
+let currentSuggestIndex = -1;  // Lưu vị trí đang chọn bằng phím mũi tên
+
 async function searchStudentSuggest(val) {
     const box = document.getElementById('yt-suggest-box');
-    if (val.length < 2) { box.style.display = 'none'; return; }
+    if (val.trim().length < 2) { 
+        box.style.display = 'none'; 
+        return; 
+    }
 
-    const snap = await db.collection('yt_students')
-        .where('name_search', '>=', val.toLowerCase())
-        .where('name_search', '<=', val.toLowerCase() + '\uf8ff').limit(5).get();
+    // 1. Tải danh sách học sinh vào RAM (Chỉ tải 1 lần duy nhất)
+    if (!ytStudentsCache) {
+        try {
+            const snap = await db.collection('yt_students').get();
+            ytStudentsCache = [];
+            snap.forEach(doc => ytStudentsCache.push({ id: doc.id, ...doc.data() }));
+        } catch (e) {
+            console.error("Lỗi tải cache tìm kiếm:", e);
+            return;
+        }
+    }
+
+    // 2. Thuật toán tìm kiếm thông minh (Bỏ dấu + Tách từ + Tìm lộn xộn)
+    // Ví dụ gõ: "A nguyễn 11" vẫn sẽ tìm ra "Nguyễn Văn A - Lớp 11A4"
+    const queryRaw = removeVietnameseTones(val.trim());
+    const searchTerms = queryRaw.split(/\s+/); // Tách từng chữ gõ vào thành mảng
+
+    const matched = ytStudentsCache.filter(st => {
+        // Gom tên, lớp, mã ID lại thành 1 chuỗi không dấu để tìm
+        const dataString = `${st.name_search} ${st.class.toLowerCase()} ${st.id.toLowerCase()}`;
+        // Yêu cầu chuỗi dataString phải chứa TẤT CẢ các từ mà người dùng gõ vào
+        return searchTerms.every(term => dataString.includes(term));
+    });
 
     box.innerHTML = '';
-    if (snap.empty) { box.style.display = 'none'; return; }
+    currentSuggestIndex = -1; // Reset vị trí phím mũi tên
 
-    snap.forEach(doc => {
-        const d = doc.data();
+    if (matched.length === 0) { 
+        box.innerHTML = '<div style="padding:10px; color:#ef4444; font-size:0.85rem;">Không tìm thấy!</div>';
+        box.style.display = 'block'; 
+        return; 
+    }
+
+    // Lấy tối đa 10 kết quả hiển thị
+    const results = matched.slice(0, 10);
+
+    results.forEach((d, index) => {
         const item = document.createElement('div');
         item.className = 'suggest-item';
-        item.innerHTML = `<strong>${d.name}</strong> - Lớp: ${d.class}`;
-        item.onclick = () => {
-            document.getElementById('yt-name').value = d.name;
-            document.getElementById('yt-class').value = d.class;
-            box.style.display = 'none';
-            checkStudentHistory();
+        item.style.padding = '10px 15px';
+        item.style.borderBottom = '1px solid #f1f5f9';
+        item.style.cursor = 'pointer';
+        
+        item.innerHTML = `<strong>${d.name}</strong> - Lớp: <span style="color:#0062ff; font-weight:bold;">${d.class}</span>`;
+
+        // Sự kiện khi rà chuột vào
+        item.onmouseover = () => {
+            currentSuggestIndex = index;
+            updateSuggestHighlight();
         };
+
+        // Sự kiện khi click chuột
+        item.onclick = () => { selectSuggestedStudent(d); };
+        
         box.appendChild(item);
     });
+    
     box.style.display = 'block';
 }
+
+// 3. Hàm xử lý Sự kiện Bàn phím (Lên, Xuống, Enter)
+function handleNameInputKeydown(event) {
+    const box = document.getElementById('yt-suggest-box');
+    const items = box.querySelectorAll('.suggest-item');
+
+    // Nếu hộp gợi ý đang ẩn -> Hành vi Enter sẽ nhảy sang ô nhập Lớp như cũ
+    if (box.style.display === 'none' || items.length === 0) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            document.getElementById('yt-class').focus();
+        }
+        return;
+    }
+
+    // Bấm mũi tên XUỐNG
+    if (event.key === "ArrowDown") {
+        event.preventDefault();
+        currentSuggestIndex++;
+        if (currentSuggestIndex >= items.length) currentSuggestIndex = 0; // Kịch khung thì quay về đầu
+        updateSuggestHighlight();
+    }
+    // Bấm mũi tên LÊN
+    else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        currentSuggestIndex--;
+        if (currentSuggestIndex < 0) currentSuggestIndex = items.length - 1; // Lên kịch trần thì vòng xuống cuối
+        updateSuggestHighlight();
+    }
+    // Bấm phím ENTER
+    else if (event.key === "Enter") {
+        event.preventDefault();
+        if (currentSuggestIndex > -1 && currentSuggestIndex < items.length) {
+            // Chọn đúng item đang được highlight
+            items[currentSuggestIndex].click();
+        } else {
+            // Nếu chưa bấm mũi tên lên/xuống mà ấn Enter -> Tự động chọn luôn thằng ĐẦU TIÊN
+            items[0].click();
+        }
+    }
+}
+
+// Hàm đổi màu thẻ đang được focus bằng bàn phím
+function updateSuggestHighlight() {
+    const box = document.getElementById('yt-suggest-box');
+    const items = box.querySelectorAll('.suggest-item');
+    items.forEach((item, index) => {
+        if (index === currentSuggestIndex) {
+            item.style.background = '#e0e7ff'; // Màu nền xanh nhạt khi highlight
+        } else {
+            item.style.background = 'white';
+        }
+    });
+}
+
+// Hàm chốt học sinh khi bấm click hoặc Enter
+function selectSuggestedStudent(student) {
+    document.getElementById('yt-name').value = student.name;
+    document.getElementById('yt-class').value = student.class;
+    
+    // Ẩn hộp thoại đi
+    document.getElementById('yt-suggest-box').style.display = 'none';
+    currentSuggestIndex = -1;
+    
+    // Gọi hàm load Lịch sử khám 
+    checkStudentHistory();
+    
+    // Đỉnh cao: Tự động nhảy con trỏ chuột thẳng xuống ô "Triệu chứng" luôn cho nhanh
+    document.getElementById('yt-symptom').focus();
+}
+// ==================================================
 
 // 2. TẠO MÃ QR VÀ ĐỢI CHỮ KÝ (REALTIME)
 async function startSignatureProcess() {
@@ -596,96 +724,113 @@ async function saveVisit(withSign) {
     if(!symptom) return alert("❌ Cảnh báo: Vui lòng nhập Triệu chứng của học sinh!");
     if(!treatment) return alert("❌ Cảnh báo: Vui lòng nhập Cách xử lý / Cấp thuốc!");
 
-    try {
-        // 👉 TÍNH NĂNG MỚI: KIỂM TRA TRẠNG THÁI GIƯỜNG TRƯỚC KHI LƯU
+try {
+        // KIỂM TRA TRẠNG THÁI GIƯỜNG
         if (bed) {
             const bedDoc = await db.collection('yt_beds').doc('bed_' + bed).get();
-            
-            // Nếu giường ĐÃ CÓ NGƯỜI sử dụng
             if (bedDoc.exists) {
                 const occupant = bedDoc.data();
-                
-                // Quét Database để lấy danh sách các giường đang bị chiếm dụng
                 const allBedsSnap = await db.collection('yt_beds').get();
                 let occupiedBeds = [];
                 allBedsSnap.forEach(doc => occupiedBeds.push(doc.id.replace('bed_', '')));
-                
-                // Trạm y tế có 3 giường (1, 2, 3) -> Lọc ra những giường không nằm trong danh sách chiếm dụng
-                const totalBeds = ['1', '2', '3'];
-                const emptyBeds = totalBeds.filter(b => !occupiedBeds.includes(b));
-                
-                let suggestionMsg = "";
-                if (emptyBeds.length > 0) {
-                    suggestionMsg = `💡 Gợi ý: Các giường hiện đang TRỐNG là Giường số ${emptyBeds.join(', ')}.`;
-                } else {
-                    suggestionMsg = `⚠️ Hiện tại TẤT CẢ các giường đều đã kín chỗ. Vui lòng trả giường trước khi tiếp nhận thêm.`;
-                }
-
-                // Chặn quá trình lưu và hiển thị thông báo cho Y tế biết
-                return alert(`❌ TỪ CHỐI TIẾP NHẬN:\n\nGiường số ${bed} hiện đang có học sinh ${occupant.name} (Lớp ${occupant.class}) sử dụng.\n\n${suggestionMsg}`);
+                const emptyBeds = ['1', '2', '3'].filter(b => !occupiedBeds.includes(b));
+                let suggestionMsg = emptyBeds.length > 0 ? `💡 Gợi ý: Các giường TRỐNG là: ${emptyBeds.join(', ')}.` : `⚠️ Hiện tại TẤT CẢ các giường đều đã kín chỗ.`;
+                return alert(`❌ TỪ CHỐI TIẾP NHẬN:\n\nGiường số ${bed} hiện đang có học sinh ${occupant.name} sử dụng.\n\n${suggestionMsg}`);
             }
         }
 
-        // 👉 NẾU GIƯỜNG TRỐNG (HOẶC KHÔNG LƯU GIƯỜNG) -> LƯU DỮ LIỆU BÌNH THƯỜNG
+        // TẠO BATCH FIREBASE ĐỂ LƯU ĐỒNG THỜI CẢ TIẾP NHẬN VÀ TRỪ KHO DƯỢC
+        const mainBatch = db.batch();
+
+        // 1. TẠO HOẶC LẤY ID HỌC SINH
         let studentId;
         const hsSnap = await db.collection('yt_students').where('name', '==', name).where('class', '==', className).get();
 
         if (hsSnap.empty) {
             studentId = `YT-${Math.floor(10000 + Math.random() * 90000)}`;
-            await db.collection('yt_students').doc(studentId).set({
-                id: studentId,
-                name: name, 
-                class: className, 
-                name_search: removeVietnameseTones(name), 
-                createdAt: new Date()
+            const newHSRef = db.collection('yt_students').doc(studentId);
+            mainBatch.set(newHSRef, {
+                id: studentId, name: name, class: className, 
+                name_search: removeVietnameseTones(name), createdAt: new Date()
             });
         } else {
             studentId = hsSnap.docs[0].id;
         }
 
-        // Lưu vào sổ khám
-        const visitDoc = await db.collection('yt_visits').add({
-            studentId: studentId, 
-            name: name, 
-            class: className, 
-            symptom: symptom, 
-            treatment: treatment,
-            note: note, 
-            sign: signImg,
-            bed: bed || null,
-            status: bed ? "staying" : "completed",
+        // 2. LƯU LƯỢT TIẾP NHẬN (VISIT)
+        const visitRef = db.collection('yt_visits').doc();
+        mainBatch.set(visitRef, {
+            studentId: studentId, name: name, class: className, 
+            symptom: symptom, treatment: treatment, note: note, 
+            sign: signImg, bed: bed || null, status: bed ? "staying" : "completed",
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-	// TỰ ĐỘNG GỬI THÔNG BÁO CHO HỌC SINH SAU KHI LƯU
+
+        // 3. XỬ LÝ TRỪ KHO THUỐC (NẾU CÓ CẤP PHÁT)
+        if (pendingMedicineDeductions.length > 0) {
+            // Gom nhóm cập nhật lô thuốc
+            let batchUpdates = {}; 
+            pendingMedicineDeductions.forEach(med => {
+                const item = ytPharmacyCache.find(i => i.id === med.itemId);
+                if(!batchUpdates[med.itemId]) batchUpdates[med.itemId] = JSON.parse(JSON.stringify(item.batches));
+                batchUpdates[med.itemId][med.batchIndex].qty -= med.qty;
+            });
+
+            // Ghi lệnh trừ kho
+            for (const [iId, newBatches] of Object.entries(batchUpdates)) {
+                mainBatch.update(db.collection('yt_pharmacy_items').doc(iId), { batches: newBatches });
+            }
+
+            // Ghi log Giao dịch Xuất kho (Để tab Quản lý Dược thấy được)
+            // Ghi log Giao dịch Xuất kho (Để tab Quản lý Dược thấy được)
+            const txId = "XK-" + Date.now().toString().slice(-6);
+            const txRef = db.collection('yt_pharmacy_transactions').doc(txId);
+            const activeUser = firebase.auth().currentUser; // Lấy dữ liệu user chuẩn từ Firebase
+            
+            mainBatch.set(txRef, {
+                id: txId, 
+                type: 'export', 
+                receiver: `${name} (${className})`, 
+                reason: "Cấp phát y tế tại phòng", 
+                notes: `Kèm theo Lượt khám Y tế`, 
+                items: pendingMedicineDeductions,
+                user: activeUser ? (activeUser.displayName || activeUser.email) : 'Hệ thống', // Đã sửa ở đây
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+
+        // 4. LƯU THÔNG TIN GIƯỜNG
+        if (bed) {
+            const bedRef = db.collection('yt_beds').doc('bed_' + bed);
+            mainBatch.set(bedRef, {
+                name: name, class: className, visitId: visitRef.id, startTime: new Date()
+            });
+        }
+
+        // 5. THỰC THI TOÀN BỘ DATA LÊN CLOUD
+        await mainBatch.commit();
+
+        // Gửi thông báo cho App học sinh
         try {
             await db.collection('yt_notifications').add({
                 title: "Thông báo Lượt khám Y tế",
                 content: `Bạn vừa được ghi nhận một lượt khám tại phòng Y tế.\n- Triệu chứng: ${symptom}\n- Xử lý: ${treatment}`,
-                targetType: "student",
-                targetValue: studentId, // Gửi đích danh cho học sinh này
-                sender: "Phòng Y Tế",
+                targetType: "student", targetValue: studentId, sender: "Phòng Y Tế", relatedVisitId: visitRef.id,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
-        } catch(e) { console.error("Lỗi gửi thông báo khám bệnh:", e); }
+        } catch(e) { console.error("Lỗi gửi thông báo:", e); }
 
-        // Gắn thông tin học sinh vào Giường
-        if (bed) {
-            await db.collection('yt_beds').doc('bed_' + bed).set({
-                name: name, class: className, visitId: visitDoc.id, startTime: new Date()
-            });
-        }
-
-        alert("✅ Tiếp nhận thành công!");
+        alert("✅ Tiếp nhận thành công! " + (pendingMedicineDeductions.length > 0 ? "\n(Đã tự động trừ kho thuốc)" : ""));
         resetReceptionForm(); 
+
     } catch(err) {
         alert("Lỗi khi lưu: " + err.message);
+        console.error(err);
     }
 }
 // ==========================================
 // HÀM DỌN DẸP MÀN HÌNH SAU KHI TIẾP NHẬN XONG
-// ==========================================
 function resetReceptionForm() {
-    // Xóa trắng các ô nhập
     document.getElementById('yt-name').value = "";
     document.getElementById('yt-class').value = "";
     document.getElementById('yt-symptom').value = "";
@@ -693,24 +838,27 @@ function resetReceptionForm() {
     document.getElementById('yt-note').value = "";
     document.getElementById('yt-bed').value = "";
 
-    // Ẩn nút Sửa nhanh và Reset ô Lịch sử
     document.getElementById('btn-quick-edit').style.display = 'none';
     currentReceptionStudent = null;
     const previewBox = document.getElementById('yt-history-preview');
     if (previewBox) previewBox.innerHTML = "Nhập tên và lớp để hệ thống kiểm tra...";
 
-    // Dọn dẹp khu vực QR Code
     document.getElementById('qr-area').style.display = 'none';
     document.getElementById('qrcode').innerHTML = "";
     document.getElementById('qr-link-input').value = "";
-    
     const sigResult = document.getElementById('signature-result');
     if (sigResult) { sigResult.src = ""; sigResult.style.display = 'none'; }
-    
     const btnFinal = document.getElementById('btn-final-save');
     if (btnFinal) btnFinal.style.display = 'none';
-
     if (signatureListener) { signatureListener(); signatureListener = null; }
+
+    // RESET PHẦN CẤP THUỐC
+    document.getElementById('chk-cap-thuoc').checked = false;
+    document.getElementById('medicine-section').style.display = 'none';
+    document.getElementById('med-search-input').value = '';
+    document.getElementById('med-batch-select').innerHTML = '<option value="">-- Trống --</option>';
+    pendingMedicineDeductions = [];
+    renderPendingMedicines();
     
     document.getElementById('yt-name').focus();
 }
@@ -835,32 +983,56 @@ function renderStudentTable(data) {
 // HỆ THỐNG XÓA HỒ SƠ (XÓA LẺ & XÓA TẬN GỐC)
 // ==========================================
 
-// 1. Hàm lõi: Quét và Xóa sạch hồ sơ + lịch sử khám + chữ ký + ĐIỂM DANH
+// 1. Hàm lõi: Quét và Xóa sạch "tận gốc" mọi dữ liệu liên quan đến học sinh
 async function deleteStudentCompletely(sid) {
-    // Tìm tất cả các lịch sử khám bệnh của học sinh này
-    const visitsSnap = await db.collection('yt_visits').where('studentId', '==', sid).get();
-    
-    // Tìm tất cả lịch sử điểm danh (nghỉ học) của học sinh này
-    const attendanceSnap = await db.collection('yt_attendance').where('studentId', '==', sid).get();
-    
-    // Dùng batch của Firebase để xóa cùng lúc nhiều dữ liệu cho an toàn
+    // Dùng batch của Firebase để thực thi tất cả các lệnh xóa cùng 1 lúc (Nhanh và An toàn)
     const batch = db.batch();
     
-    // Đưa lệnh xóa lịch sử khám vào batch
-    visitsSnap.forEach(doc => {
-        batch.delete(doc.ref);
+    // --- BƯỚC 1: TÌM VÀ XÓA LỊCH SỬ KHÁM BỆNH ---
+    const visitsSnap = await db.collection('yt_visits').where('studentId', '==', sid).get();
+    visitsSnap.forEach(doc => batch.delete(doc.ref));
+
+    // --- BƯỚC 2: TÌM VÀ XÓA LỊCH SỬ ĐIỂM DANH (NGHỈ HỌC) ---
+    const attendanceSnap = await db.collection('yt_attendance').where('studentId', '==', sid).get();
+    attendanceSnap.forEach(doc => batch.delete(doc.ref));
+
+    // --- BƯỚC 3: TÌM VÀ XÓA YÊU CẦU HỖ TRỢ (TICKETS/HÒM THƯ) ---
+    const ticketsSnap = await db.collection('yt_tickets').where('studentId', '==', sid).get();
+    ticketsSnap.forEach(doc => batch.delete(doc.ref));
+
+    // --- BƯỚC 4: TÌM VÀ XÓA THÔNG BÁO ĐƯỢC GỬI CHO HỌC SINH NÀY ---
+    // 4.1 - Xóa thông báo gửi RIÊNG cho 1 mình học sinh này
+    const notiSingleSnap = await db.collection('yt_notifications').where('targetValue', '==', sid).get();
+    notiSingleSnap.forEach(doc => batch.delete(doc.ref));
+
+    // 4.2 - Xử lý thông báo gửi NHÓM (Nhiều người, trong đó có học sinh này)
+    const notiArraySnap = await db.collection('yt_notifications').where('targetValue', 'array-contains', sid).get();
+    notiArraySnap.forEach(doc => {
+        // Không xóa cả bài thông báo (vì sẽ ảnh hưởng bạn khác), chỉ rút tên học sinh này ra khỏi danh sách nhận
+        batch.update(doc.ref, {
+            targetValue: firebase.firestore.FieldValue.arrayRemove(sid)
+        });
     });
 
-    // Đưa lệnh xóa lịch sử điểm danh vào batch (PHẦN THÊM MỚI)
-    attendanceSnap.forEach(doc => {
-        batch.delete(doc.ref);
+    // --- BƯỚC 5: GIẢI PHÓNG GIƯỜNG BỆNH (NẾU ĐANG NẰM) ---
+    const bedsSnap = await db.collection('yt_beds').get();
+    bedsSnap.forEach(doc => {
+        // Nếu giường đang lưu trữ visitId của học sinh này (thông qua việc quét lại visitsSnap ở bước 1)
+        const bedData = doc.data();
+        if (bedData.visitId) {
+            visitsSnap.forEach(visitDoc => {
+                if (visitDoc.id === bedData.visitId) {
+                    batch.delete(doc.ref); // Xóa giường trống
+                }
+            });
+        }
     });
-    
-    // Đưa lệnh xóa hồ sơ chính của học sinh vào batch
+
+    // --- BƯỚC 6: XÓA HỒ SƠ GỐC CỦA HỌC SINH ---
     const studentRef = db.collection('yt_students').doc(sid);
     batch.delete(studentRef);
 
-    // Thực thi toàn bộ lệnh xóa cùng 1 lúc
+    // THỰC THI TOÀN BỘ CÁC LỆNH TRÊN TRONG 1 TÍCH TẮC
     await batch.commit();
 }
 // 2. Hàm kích hoạt khi bấm nút THÙNG RÁC MÀU ĐỎ (Xóa 1 người)
@@ -1004,76 +1176,6 @@ async function executeBulkUpgrade() {
         }
     }
 }
-// --- TÍNH NĂNG CHỌN VÀ XÓA HÀNG LOẠT ---
-
-// 1. Bật/Tắt chế độ hiển thị ô Checkbox
-function toggleBulkDeleteMode() {
-    isBulkDeleteMode = !isBulkDeleteMode;
-    const toggleBtn = document.getElementById('btn-toggle-bulk-delete');
-    const confirmBtn = document.getElementById('btn-confirm-bulk-delete');
-    const checkboxes = document.querySelectorAll('.col-checkbox');
-
-    if (isBulkDeleteMode) {
-        // Bật chế độ
-        toggleBtn.innerHTML = '<i class="fas fa-times"></i> Hủy chế độ';
-        toggleBtn.style.background = '#fef2f2';
-        toggleBtn.style.color = '#ef4444';
-        confirmBtn.style.display = 'inline-flex';
-        checkboxes.forEach(el => el.style.display = 'table-cell');
-    } else {
-        // Tắt chế độ
-        toggleBtn.innerHTML = '<i class="fas fa-check-square"></i> Chọn xóa';
-        toggleBtn.style.background = '#e2e8f0';
-        toggleBtn.style.color = '#475569';
-        confirmBtn.style.display = 'none';
-        checkboxes.forEach(el => el.style.display = 'none');
-        
-        // Bỏ tick toàn bộ
-        document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = false);
-        document.getElementById('check-all-students').checked = false;
-    }
-}
-
-// 2. Checkbox: Chọn tất cả
-function toggleCheckAllStudents(source) {
-    const checkboxes = document.querySelectorAll('.student-checkbox');
-    checkboxes.forEach(cb => cb.checked = source.checked);
-}
-
-// 3. Thực thi Xóa những học sinh đã được tick chọn
-async function executeBulkDelete() {
-    const checkedBoxes = document.querySelectorAll('.student-checkbox:checked');
-    if (checkedBoxes.length === 0) {
-        return alert("Vui lòng tick chọn ít nhất 1 học sinh để xóa!");
-    }
-
-    if (confirm(`⚠️ CẢNH BÁO MẤT DỮ LIỆU SỐ LƯỢNG LỚN:\n\nBạn đang chuẩn bị xóa ${checkedBoxes.length} học sinh!\nToàn bộ HỒ SƠ, LỊCH SỬ KHÁM và CHỮ KÝ của các học sinh này sẽ bị XÓA VĨNH VIỄN khỏi hệ thống.\n\nHành động này KHÔNG THỂ HOÀN TÁC. Bạn có thực sự chắc chắn?`)) {
-        
-        const btn = document.getElementById('btn-confirm-bulk-delete');
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
-        btn.disabled = true;
-
-        try {
-            // Chạy vòng lặp xóa từng học sinh đã chọn
-            for (let box of checkedBoxes) {
-                await deleteStudentCompletely(box.value);
-            }
-
-            alert(`✅ Đã xóa tận gốc thành công ${checkedBoxes.length} hồ sơ!`);
-            
-            // Khôi phục nút và giao diện
-            btn.innerHTML = '<i class="fas fa-trash-alt"></i> Xóa đã chọn';
-            btn.disabled = false;
-            toggleBulkDeleteMode(); // Thoát chế độ chọn nhiều
-            loadStudentData(); // Load lại data
-            
-        } catch (e) {
-            alert("Đã xảy ra lỗi trong quá trình xóa: " + e.message);
-            btn.innerHTML = '<i class="fas fa-trash-alt"></i> Xóa đã chọn';
-            btn.disabled = false;
-        }
-    }
-}
 // Hàm lọc dữ liệu khi gõ vào ô tìm kiếm
 function filterStudentTable() {
     const keyword = removeVietnameseTones(document.getElementById('search-student-input').value);
@@ -1087,7 +1189,7 @@ function generateStudentId() {
     const randomNum = Math.floor(10000 + Math.random() * 90000);
     return `YT-${randomNum}`;
 }
-// 1. XEM LỊCH SỬ
+// 1. XEM LỊCH SỬ (Và Xóa Lượt Khám)
 async function viewHistory(sid, name) {
     const modal = document.getElementById('history-student-modal');
     const title = document.getElementById('history-modal-title');
@@ -1095,7 +1197,7 @@ async function viewHistory(sid, name) {
 
     title.innerText = `Lịch sử y tế: ${name.toUpperCase()}`;
     body.innerHTML = '<div style="text-align:center; padding:30px;"><i class="fas fa-spinner fa-spin fa-2x"></i><br>Đang tải dữ liệu...</div>';
-    modal.style.display = 'flex'; // Mở Popup
+    modal.style.display = 'flex'; 
 
     try {
         const snap = await db.collection('yt_visits').where('studentId', '==', sid).get();
@@ -1104,7 +1206,8 @@ async function viewHistory(sid, name) {
             body.innerHTML = "<p style='text-align:center; color:var(--text-gray); margin-top:20px;'>Học sinh chưa có lịch sử khám bệnh.</p>";
         } else {
             let visits = [];
-            snap.forEach(doc => visits.push(doc.data()));
+            // FIX LỖI: Lấy cả id của Document để truyền vào hàm Xóa
+            snap.forEach(doc => visits.push({ id: doc.id, ...doc.data() }));
             visits.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
             let html = '<ul style="list-style:none; padding:0; margin:0;">';
@@ -1114,7 +1217,11 @@ async function viewHistory(sid, name) {
                 
                 html += `
                     <li style="background:#f8fafc; padding:15px 20px; border-radius:10px; margin-bottom:15px; border-left:4px solid #0062ff; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                        <div style="font-weight:bold; color:#1e293b; margin-bottom:8px;">📅 ${time}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <div style="font-weight:bold; color:#1e293b;">📅 ${time}</div>
+                            <!-- THÊM NÚT XÓA LƯỢT KHÁM -->
+                            <button onclick="deleteSingleVisit('${d.id}', '${sid}', '${name}')" title="Xóa lượt khám này" style="background:#fee2e2; color:#ef4444; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.8rem;"><i class="fas fa-trash"></i> Xóa</button>
+                        </div>
                         <div style="color:#334155; line-height: 1.5;">
                             <strong>Triệu chứng:</strong> ${d.symptom} <br>
                             <strong>Xử lý:</strong> <span style="color:#059669; font-weight:500;">${d.treatment}</span>
@@ -1129,7 +1236,33 @@ async function viewHistory(sid, name) {
         body.innerHTML = `<p style="color:red; text-align:center;">Lỗi tải dữ liệu: ${err.message}</p>`;
     }
 }
+// Hàm Xóa 1 Lượt Khám Cụ Thể và thu hồi Thông Báo
+async function deleteSingleVisit(visitId, studentId, studentName) {
+    if(confirm("Bạn có chắc chắn muốn xóa Lượt Khám này?\n(Các thông báo đã gửi cho học sinh liên quan đến lượt khám này cũng sẽ bị thu hồi).")) {
+        try {
+            // 1. Xóa Lượt khám
+            await db.collection('yt_visits').doc(visitId).delete();
+            
+            // 2. Xóa các Thông báo liên quan đến lượt khám này
+            const notiSnap = await db.collection('yt_notifications').where('relatedVisitId', '==', visitId).get();
+            const batch = db.batch();
+            notiSnap.forEach(doc => batch.delete(doc.ref));
+            
+            // 3. Giải phóng Giường nếu lượt khám này đang nằm giường
+            const bedsSnap = await db.collection('yt_beds').where('visitId', '==', visitId).get();
+            bedsSnap.forEach(doc => batch.delete(doc.ref));
+            
+            await batch.commit();
 
+            // Làm mới lại bảng Lịch sử
+            viewHistory(studentId, studentName);
+            loadBeds(); // Làm mới danh sách giường
+            
+        } catch(e) {
+            alert("Lỗi khi xóa: " + e.message);
+        }
+    }
+}
 function closeHistoryModal() {
     document.getElementById('history-student-modal').style.display = 'none';
 }
@@ -1232,7 +1365,10 @@ async function saveStudentEdit() {
         } else {
             loadStudentData(); // Đang ở tab Quản lý thì load lại bảng
         }
-    } catch(e) { alert("Lỗi cập nhật: " + e.message); }
+        ytStudentsCache = null; 
+    window.allStudents = []; 
+    adminLookupCache = null;
+    allStudentsForNotiCache = [];} catch(e) { alert("Lỗi cập nhật: " + e.message); }
 }
 // Hàm hiển thị toàn bộ lịch sử & Mã Y Tế khi gõ tên học sinh
 // ==========================================
@@ -1407,6 +1543,7 @@ async function notifyParent(visitId, studentId) {
                     targetType: "student",
                     targetValue: studentId,
                     sender: "Phòng Y Tế",
+		    relatedVisitId: visitId,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
             } catch (err) {
@@ -1654,13 +1791,22 @@ function renderStudentTicketsTable() {
 }
 
 // 4. Hàm Xóa
+// 4. Hàm Xóa Yêu Cầu & Kéo theo xóa Thông Báo liên quan
 async function deleteStudentTicket(docId) {
-    if(confirm("Bạn có chắc chắn muốn xóa vĩnh viễn yêu cầu này không?")) {
-        try { await db.collection('yt_tickets').doc(docId).delete(); } 
-        catch(e) { alert("Lỗi khi xóa: " + e.message); }
+    if(confirm("Bạn có chắc chắn muốn xóa vĩnh viễn yêu cầu này không? Các thông báo phản hồi liên quan gửi cho học sinh cũng sẽ bị thu hồi.")) {
+        try { 
+            // 1. Xóa Yêu cầu (Ticket)
+            await db.collection('yt_tickets').doc(docId).delete(); 
+            
+            // 2. Xóa các Thông báo liên đới
+            const notiSnap = await db.collection('yt_notifications').where('relatedTicketId', '==', docId).get();
+            const batch = db.batch();
+            notiSnap.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            
+        } catch(e) { alert("Lỗi khi xóa: " + e.message); }
     }
 }
-// Hàm mở popup chi tiết Ticket (Load thêm câu trả lời cũ nếu có)
 function openTicketDetailPopup(id) {
     const ticket = cachedTickets.find(t => t.id === id);
     if (!ticket) return alert("Không tìm thấy dữ liệu!");
@@ -1708,8 +1854,9 @@ async function saveTicketStatus() {
                 title: "Phản hồi Yêu cầu Y tế của bạn",
                 content: `Phòng Y tế đã phản hồi lại yêu cầu của bạn với nội dung:\n\n"${adminReply}"\n\nTrạng thái hiện tại: ${statusText}`,
                 targetType: "student",
-                targetValue: ticket.studentId, // Gửi đích danh cho học sinh này
+                targetValue: ticket.studentId, 
                 sender: "Phòng Y Tế",
+                relatedTicketId: id, // <--- THÊM DÒNG NÀY ĐỂ LIÊN KẾT DỮ LIỆU
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
         }
@@ -2135,7 +2282,7 @@ async function executeExportStudents() {
             @page { size: A3 Landscape; margin: 10mm; }
             #print-section .print-table th, 
             #print-section .print-table td { 
-                font-size: 10pt !important; 
+                font-size: 10.5pt !important; 
                 padding: 6px 4px !important; 
             }
         `;
@@ -2877,7 +3024,7 @@ async function deleteNotification(docId) {
 
 // 1. Nhận thông báo từ FUSoftX
 // ==========================================
-// HỆ THỐNG CHUÔNG THÔNG BÁO TỪ FUSOFTX
+// HỆ THỐNG CHUÔNG THÔNG BÁO TỪ FUSOFTX (ĐÃ FIX LỖI)
 // ==========================================
 let adminFusoftxNotisCache = [];
 
@@ -2892,28 +3039,35 @@ function loadFusoftxNotis() {
     const listDiv = document.getElementById('admin-notifications-list');
     if(!listDiv) return;
 
-    // Lắng nghe cài đặt để biết thông báo nào Admin đã bấm "Bỏ qua"
     db.collection('settings').doc('admin_notis').onSnapshot(settingSnap => {
         let hiddenNotis = [];
         if (settingSnap.exists && settingSnap.data().hiddenNotis) {
             hiddenNotis = settingSnap.data().hiddenNotis;
         }
 
+        // Đã bỏ .orderBy và .where('targetType', 'in') để tránh lỗi Index của Firebase
         db.collection('yt_notifications')
           .where('sender', '==', 'FUSoftX')
-          .where('targetType', 'in', ['admin_only', 'all'])
-          .orderBy('timestamp', 'desc').onSnapshot(snap => {
-            let html = '';
-            adminFusoftxNotisCache = [];
-            let hasNew = false;
-
+          .onSnapshot(snap => {
+            let notis = [];
             snap.forEach(doc => {
                 const d = doc.data();
-                const notiId = doc.id;
-                adminFusoftxNotisCache.push({id: notiId, ...d});
+                // Tự lọc bằng Javascript
+                if(d.targetType === 'admin_only' || d.targetType === 'all') {
+                    notis.push({id: doc.id, ...d});
+                }
+            });
 
-                // Lọc: Nếu ID thông báo nằm trong mảng đã đọc -> Ẩn luôn
-                if (hiddenNotis.includes(notiId)) return;
+            // Tự sắp xếp mới nhất lên đầu bằng Javascript
+            notis.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+            adminFusoftxNotisCache = notis;
+            let html = '';
+            let hasNew = false;
+
+            notis.forEach(d => {
+                const notiId = d.id;
+                if (hiddenNotis.includes(notiId)) return; // Ẩn nếu đã đọc
                 
                 hasNew = true;
                 const time = d.timestamp ? new Date(d.timestamp.seconds * 1000).toLocaleString('vi-VN') : 'Mới';
@@ -2938,9 +3092,11 @@ function loadFusoftxNotis() {
                 listDiv.innerHTML = html;
                 if(hasNew) {
                     document.getElementById('admin-noti-badge').style.display = 'block';
-                    document.getElementById('admin-bell-icon').style.color = '#ef4444'; // Làm chuông sáng lên
+                    document.getElementById('admin-bell-icon').style.color = '#ef4444'; 
                 }
             }
+        }, error => {
+            console.error("Lỗi tải chuông thông báo:", error);
         });
     });
 }
@@ -2965,7 +3121,6 @@ function openAdminNotiDetail(notiId) {
 
 async function markAdminNotiAsRead(notiId) {
     try {
-        // Lưu ID thông báo vào mảng để ẩn khỏi danh sách chung của Phòng Y Tế
         await db.collection('settings').doc('admin_notis').set({
             hiddenNotis: firebase.firestore.FieldValue.arrayUnion(notiId)
         }, { merge: true });
@@ -3051,3 +3206,219 @@ async function deleteFusoftxSupportTicket(docId) {
         }
     }
 }
+// HÀM CHỐT SỔ THỐNG KÊ (DÀNH CHO ADMIN)
+    async function runDailyStatisticAggregation() {
+        console.log("Checking if daily stats aggregation is needed...");
+        try {
+            const today = new Date();
+            const currentMonth = today.getMonth() + 1;
+            const currentYear = today.getFullYear();
+            const monthId = `${currentMonth.toString().padStart(2, '0')}-${currentYear}`;
+
+            const statRef = db.collection('yt_stats').doc(monthId);
+            const statDoc = await statRef.get();
+
+            // Kiểm tra xem hôm nay đã cập nhật chưa?
+            if (statDoc.exists) {
+                const lastUpdated = statDoc.data().lastUpdated.toDate();
+                if (lastUpdated.getDate() === today.getDate() && 
+                    lastUpdated.getMonth() === today.getMonth() &&
+                    lastUpdated.getFullYear() === today.getFullYear()) {
+                    console.log("Dữ liệu thống kê đã được cập nhật hôm nay rồi. Bỏ qua.");
+                    return { status: 'skipped', message: 'Đã cập nhật hôm nay.' };
+                }
+            }
+
+            console.log("Bắt đầu tính toán chốt sổ dữ liệu Y tế...");
+            const startOfMonth = new Date(currentYear, currentMonth - 1, 1);
+            const endOfYesterday = new Date();
+            endOfYesterday.setHours(0, 0, 0, 0);
+
+            const snap = await db.collection('yt_visits')
+                .where('timestamp', '>=', startOfMonth)
+                .where('timestamp', '<', endOfYesterday)
+                .get();
+
+            let symptomCounts = {};
+            let studentVisitCounts = {};
+
+            snap.forEach(doc => {
+                const v = doc.data();
+                if (v.symptom) {
+                    let symps = v.symptom.toLowerCase().split(/[,+\/]+|\s+và\s+/g);
+                    symps.forEach(s => {
+                        let cleanS = s.trim();
+                        if (cleanS.length > 0) {
+                            cleanS = cleanS.charAt(0).toUpperCase() + cleanS.slice(1);
+                            symptomCounts[cleanS] = (symptomCounts[cleanS] || 0) + 1;
+                        }
+                    });
+                }
+                if (v.studentId) {
+                    studentVisitCounts[v.studentId] = (studentVisitCounts[v.studentId] || 0) + 1;
+                }
+            });
+
+            let topSymptomsArray = Object.keys(symptomCounts)
+                .map(k => ({ name: k, count: symptomCounts[k] }))
+                .sort((a, b) => b.count - a.count);
+
+            await statRef.set({
+                monthInfo: monthId,
+                lastUpdated: new Date(),
+                topSymptoms: topSymptomsArray,
+                studentVisits: studentVisitCounts
+            }, { merge: true }); // Dùng merge để không ghi đè cấu trúc doc
+
+            console.log(`Đã chốt sổ thành công dữ liệu cho tháng ${monthId}`);
+            return { status: 'success', message: `Chốt sổ thành công dữ liệu tháng ${currentMonth}/${currentYear}!` };
+
+        } catch (error) {
+            console.error("Lỗi khi chạy hàm chốt sổ thống kê: ", error);
+            return { status: 'error', message: 'Có lỗi xảy ra: ' + error.message };
+        }
+    }
+// ==========================================
+// TÍCH HỢP XUẤT KHO DƯỢC TẠI BÀN TIẾP NHẬN
+// ==========================================
+let ytPharmacyCache = []; // Bộ nhớ đệm danh mục thuốc
+let pendingMedicineDeductions = []; // Danh sách thuốc chuẩn bị cấp phát
+
+// 1. Tải danh mục thuốc ngầm khi Admin đăng nhập
+function loadPharmacyForReception() {
+    db.collection('yt_pharmacy_items').onSnapshot(snap => {
+        ytPharmacyCache = [];
+        snap.forEach(doc => ytPharmacyCache.push({ id: doc.id, ...doc.data() }));
+    });
+}
+
+// Bật tắt khu vực chọn thuốc
+function toggleMedicineSection() {
+    const isChecked = document.getElementById('chk-cap-thuoc').checked;
+    document.getElementById('medicine-section').style.display = isChecked ? 'block' : 'none';
+}
+
+// 2. Tìm kiếm thuốc (Autocomplete)
+function searchMedicineForReception(val) {
+    const box = document.getElementById('med-suggest-box');
+    if (val.trim().length < 2) { box.style.display = 'none'; return; }
+
+    const keyword = removeVietnameseTones(val.trim());
+    const matched = ytPharmacyCache.filter(item => {
+        // Lọc những thuốc/vật tư còn lô hàng có số lượng > 0
+        const hasStock = item.batches && item.batches.some(b => parseFloat(b.qty) > 0);
+        return hasStock && removeVietnameseTones(item.name).includes(keyword);
+    });
+
+    box.innerHTML = '';
+    if (matched.length === 0) {
+        box.innerHTML = '<div style="padding:10px; color:#ef4444; font-size:0.85rem;">Không tìm thấy hoặc Đã hết hàng!</div>';
+    } else {
+        matched.forEach(d => {
+            const el = document.createElement('div');
+            el.className = 'suggest-item';
+            el.innerHTML = `<strong>${d.name}</strong> <span style="font-size:0.8rem; color:#64748b;">(${d.type==='drug'?'Thuốc':'Vật tư'})</span>`;
+            el.onclick = () => selectMedicineForReception(d);
+            box.appendChild(el);
+        });
+    }
+    box.style.display = 'block';
+}
+
+// 3. Chọn thuốc -> Hiển thị các Lô hàng
+function selectMedicineForReception(item) {
+    document.getElementById('med-search-input').value = item.name;
+    document.getElementById('med-selected-id').value = item.id;
+    document.getElementById('med-selected-name').value = item.name;
+    document.getElementById('med-selected-unit').value = item.unit;
+    document.getElementById('med-suggest-box').style.display = 'none';
+
+    const batchSelect = document.getElementById('med-batch-select');
+    batchSelect.innerHTML = '<option value="">-- Chọn Lô --</option>';
+    
+    if (item.batches) {
+        item.batches.forEach((b, index) => {
+            if (parseFloat(b.qty) > 0) {
+                let expDisplay = b.expiry ? `HSD: ${b.expiry}` : "Không HSD";
+                let expAlert = (b.expiry && new Date(b.expiry) < new Date()) ? ' [HẾT HẠN]' : '';
+                
+                batchSelect.innerHTML += `<option value="${index}">Lô ${b.lot} (Tồn: ${b.qty}) - ${expDisplay}${expAlert}</option>`;
+            }
+        });
+    }
+}
+// 4. Nhấn Thêm -> Ghi nhận & Chèn chữ vào ô Xử lý
+function addMedicineToTreatment() {
+    const id = document.getElementById('med-selected-id').value;
+    const name = document.getElementById('med-selected-name').value;
+    const unit = document.getElementById('med-selected-unit').value;
+    const batchIndex = document.getElementById('med-batch-select').value;
+    const qty = parseFloat(document.getElementById('med-qty-input').value);
+
+    if (!id || batchIndex === "" || isNaN(qty) || qty <= 0) {
+        return alert("Vui lòng chọn Thuốc, Lô và nhập Số lượng hợp lệ!");
+    }
+
+    const item = ytPharmacyCache.find(i => i.id === id);
+    const batch = item.batches[batchIndex];
+
+    if (qty > parseFloat(batch.qty)) {
+        return alert(`Kho không đủ! Lô ${batch.lot} hiện chỉ còn ${batch.qty} ${batch.unit}.`);
+    }
+
+    // Lưu vào mảng để chờ trừ kho khi bấm "Xác nhận"
+    pendingMedicineDeductions.push({
+        itemId: id,
+        itemName: name,
+        batchIndex: batchIndex,
+        lot: batch.lot,
+        qty: qty,
+        unit: unit || batch.unit
+    });
+
+    renderPendingMedicines();
+
+    // Tự động nối chữ vào ô "Xử lý"
+    const treatmentInput = document.getElementById('yt-treatment');
+    let currentText = treatmentInput.value.trim();
+    let textToAdd = `Cấp: ${name} (${qty} ${unit || batch.unit})`;
+    
+    if (currentText === "") {
+        treatmentInput.value = textToAdd;
+    } else {
+        treatmentInput.value = currentText + ", " + textToAdd;
+    }
+
+    // Reset ô nhập để thêm thuốc khác
+    document.getElementById('med-search-input').value = '';
+    document.getElementById('med-selected-id').value = '';
+    document.getElementById('med-batch-select').innerHTML = '<option value="">-- Trống --</option>';
+    document.getElementById('med-qty-input').value = 1;
+}
+
+function renderPendingMedicines() {
+    const list = document.getElementById('med-pending-list');
+    list.innerHTML = '';
+    pendingMedicineDeductions.forEach((med, index) => {
+        list.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:8px 12px; border:1px solid #e2e8f0; border-radius:6px; font-size:0.85rem;">
+                <div><strong style="color:#0f172a;">${med.itemName}</strong> <span style="color:#64748b;">(Lô: ${med.lot})</span></div>
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <strong style="color:#10b981;">${med.qty} ${med.unit}</strong>
+                    <i class="fas fa-trash" style="color:#ef4444; cursor:pointer;" onclick="removePendingMed(${index})"></i>
+                </div>
+            </div>
+        `;
+    });
+}
+
+function removePendingMed(index) {
+    pendingMedicineDeductions.splice(index, 1);
+    renderPendingMedicines();
+}
+
+// Ẩn box tìm kiếm khi click ngoài
+document.addEventListener('click', function(e) {
+    const box = document.getElementById('med-suggest-box');
+    if (box && e.target.id !== 'med-search-input') box.style.display = 'none';
+});

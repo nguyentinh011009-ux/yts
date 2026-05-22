@@ -1,5 +1,5 @@
 /* SYSTEM CORE LOGIC - VTS HEALTH SYSTEM CONFIGURATION
-   Author: Nguyễn Tính & Team 3
+   Author: Nguyễn Tính
 */
 
 let currentAdmin = null;
@@ -14,22 +14,26 @@ const ADMIN_EMAILS = [
     "nguyentinh52009@gmail.com"
 ];
 
+// Tìm đoạn mã này ở đầu file system.js và sửa lại:
 firebase.auth().onAuthStateChanged((user) => {
     const loadingScreen = document.getElementById('sys-auth-loading');
     const mainContainer = document.getElementById('sys-main-container');
 
     if (user && ADMIN_EMAILS.includes(user.email)) {
         currentAdmin = user;
-        loadingScreen.style.display = 'none';
-        mainContainer.style.display = 'block';
+        // 👉 Chỉ xử lý ẩn/hiện giao diện cấu hình nếu đang ở đúng trang system.html
+        if (loadingScreen) loadingScreen.style.display = 'none';
+        if (mainContainer) mainContainer.style.display = 'block';
         
-        // Khởi động cài đặt giao diện ban đầu
         initBackupSettings();
         loadAuditLogs();
         checkAndExecuteAutoBackup();
     } else {
-        alert("⛔ BẢO MẬT: Bạn không có quyền cấu hình hệ thống!");
-        window.location.href = "admin.html";
+        // 👉 SỬA DÒNG NÀY: Chỉ cảnh báo và đẩy về admin.html NẾU admin đang cố tình truy cập vào trang system.html trái phép
+        if (window.location.pathname.includes("system.html")) {
+            alert("⛔ BẢO MẬT: Bạn không có quyền cấu hình hệ thống!");
+            window.location.href = "admin.html";
+        }
     }
 });
 

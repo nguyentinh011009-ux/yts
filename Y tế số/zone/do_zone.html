@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài Test</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png">
+    <link rel="icon" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" sizes="32x32" type="image/png">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+        /* Thiết lập cuộn mượt cho máy tính/máy tính bảng */
+        html { scroll-behavior: smooth; }
+        
+        .test-layout { display: grid; grid-template-columns: 1fr 300px; gap: 30px; max-width: 1200px; margin: 120px auto 40px; padding: 0 20px; }
+        
+        /* Box Câu hỏi */
+        .q-box { background: white; padding: 25px; border-radius: 15px; box-shadow: var(--shadow-sm); margin-bottom: 20px; border-left: 4px solid #cbd5e1; transition: 0.3s; scroll-margin-top: 140px; }
+        .q-box.answered { border-left-color: #10b981; } 
+        .q-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; color: #1e293b; line-height: 1.5; }
+        
+        /* Đáp án */
+        .opt-label { display: block; padding: 12px 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; font-size: 0.95rem; }
+        .opt-label:hover { background: #f1f5f9; border-color: #94a3b8; }
+        .opt-label input { margin-right: 10px; transform: scale(1.2); cursor: pointer; }
+        input[type="radio"]:checked + span { font-weight: bold; color: #0062ff; }
+        .opt-label:has(input[type="radio"]:checked) { background: #eff6ff; border-color: #0062ff; }
+
+        /* Bảng Sidebar (Máy tính) */
+        .sidebar-panel { background: white; padding: 20px; border-radius: 15px; box-shadow: var(--shadow-sm); position: sticky; top: 100px; }
+        .tracker-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 15px; max-height: 400px; overflow-y: auto; padding-right: 5px; }
+        
+        /* Nút chuyển câu trong Tracker */
+        .track-item { aspect-ratio: 1; border: 1px solid #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: bold; color: #64748b; cursor: pointer; transition: 0.2s; }
+        .track-item:hover { background: #f1f5f9; border-color: #3b82f6; color: #3b82f6; }
+        .track-item.done { background: #10b981; color: white; border-color: #10b981; }
+        .track-item.current-active { border: 2px solid #ef4444; background: #fef2f2; color: #ef4444; transform: scale(1.1); } /* Hiệu ứng câu đang chọn */
+
+        /* Nút điều hướng (Chỉ hiện trên điện thoại) */
+        .mobile-nav-btns { display: none; justify-content: space-between; margin-top: 20px; gap: 15px; }
+        .nav-btn { flex: 1; padding: 15px; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; background: #f1f5f9; color: #475569; transition: 0.2s; }
+        .nav-btn:active { background: #e2e8f0; }
+        .nav-btn.primary { background: #3b82f6; color: white; }
+        .nav-btn.primary:active { background: #2563eb; }
+
+        /* Kết quả Modal */
+        .result-modal { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.9); z-index: 10000; align-items: center; justify-content: center; padding: 20px; }
+        /* Kết quả Modal (Đã thêm cuộn) */
+        .result-modal { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.9); z-index: 10000; align-items: center; justify-content: center; padding: 20px; }
+        .result-card { background: white; padding: 40px; border-radius: 20px; max-width: 500px; width: 100%; text-align: center; max-height: 85vh; overflow-y: auto; }
+        
+        /* Làm đẹp thanh cuộn cho result-card (Tùy chọn) */
+        .result-card::-webkit-scrollbar { width: 6px; }
+        .result-card::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        /* ======= GIAO DIỆN ĐIỆN THOẠI ======= */
+        /* ======= GIAO DIỆN ĐIỆN THOẠI (ÉP CỨNG SIÊU MỎNG) ======= */
+        @media (max-width: 768px) {
+            .test-layout { grid-template-columns: 1fr; margin-top: 90px; padding-bottom: 140px !important; } 
+            
+            .q-box { display: none; margin-bottom: 0; border: none; padding: 15px 10px; }
+            .q-box.active-mobile { display: block; animation: fadeIn 0.3s ease; }
+            @keyframes fadeIn { from { opacity: 0; transform: translateX(15px); } to { opacity: 1; transform: translateX(0); } }
+
+            .mobile-nav-btns { display: flex; margin-top: 10px; gap: 10px; }
+            .nav-btn { padding: 12px; font-size: 0.95rem; }
+
+            /* Ép Sidebar thành thanh siêu mỏng */
+            .sidebar-panel { 
+                position: fixed !important; 
+                bottom: 0 !important; 
+                left: 0 !important; 
+                top: auto !important;
+                width: 100% !important; 
+                height: auto !important; /* Cấm giãn chiều cao */
+                border-radius: 15px 15px 0 0 !important; 
+                box-shadow: 0 -4px 15px rgba(0,0,0,0.15) !important; 
+                padding: 10px 15px 15px 15px !important; /* Xóa sạch khoảng trắng thừa ở đáy */
+                margin: 0 !important;
+                background: white !important;
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 8px !important; 
+                z-index: 99999 !important; 
+            }
+            
+            /* Ép hàng thông tin không có lề thừa */
+            .sidebar-top-info { 
+                display: flex !important; justify-content: space-between !important; align-items: center !important; 
+                margin: 0 !important; padding: 0 !important; border: none !important; 
+            }
+            #timer-display { font-size: 1.1rem !important; margin: 0 !important; }
+            
+            /* Ép dải số câu hỏi nhỏ lại */
+            .tracker-grid { 
+                display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; 
+                gap: 8px !important; margin: 0 !important; padding: 0 0 5px 0 !important;
+                height: auto !important;
+            }
+            .track-item { 
+                min-width: 36px !important; height: 36px !important; 
+                font-size: 0.9rem !important; flex-shrink: 0 !important; margin: 0 !important; 
+            }
+            
+            /* Ép Nút nộp bài bóp nhỏ lại, xóa cái margin-top bị dư */
+            .btn-submit-test { 
+                padding: 12px !important; 
+                font-size: 1rem !important; 
+                margin: 0 !important; /* ĐÂY LÀ THỦ PHẠM CHÍNH GÂY TRỐNG TRÊN ĐIỆN THOẠI */
+                height: auto !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="glass-header">
+        <div class="header-left">
+            <div class="header-titles">
+                <div class="title-top">LÀM BÀI KHẢO SÁT</div>
+                <div class="title-bottom" id="header-test-title">Đang tải...</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="user-profile" style="display: flex;">
+                <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" id="top-user-avatar">
+                <span class="user-name" id="top-user-name">Đang tải...</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="test-layout">
+        
+        <!-- ================= CỘT TRÁI ================= -->
+        <div> <!-- Thẻ này bọc chung câu hỏi và nút điều hướng -->
+            
+            <div id="questions-render-area">
+                <div style="text-align:center; padding: 50px;"><i class="fas fa-spinner fa-spin fa-2x"></i> Đang chuẩn bị bài test...</div>
+            </div>
+            
+            <div class="mobile-nav-btns">
+                <button class="nav-btn" onclick="changeQuestion(-1)" id="btn-prev">
+                    <i class="fas fa-chevron-left"></i> Câu trước
+                </button>
+                <button class="nav-btn primary" onclick="changeQuestion(1)" id="btn-next">
+                    Câu tiếp <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            
+        </div> <!-- KẾT THÚC CỘT TRÁI -->
+
+        <!-- ================= CỘT PHẢI ================= -->
+        <div> <!-- Thẻ này bọc sidebar -->
+            <div class="sidebar-panel">
+                <div class="sidebar-top-info" style="border-bottom:1px solid #e2e8f0; padding-bottom:15px;">
+                    <div style="font-weight:bold; font-size:0.95rem; color:#475569;">
+                        Tiến độ: <span id="progress-text" style="color:var(--primary);">0/0</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <i class="far fa-clock fa-lg" style="color:#ef4444;"></i>
+                        <div id="timer-display" style="font-size:1.5rem; font-weight:900; font-family:monospace; color:#1e293b;">--:--</div>
+                    </div>
+                </div>
+
+                <div class="tracker-grid" id="tracker-grid"></div>
+
+                <button onclick="submitTest()" class="btn btn-success btn-submit-test" style="width:100%; justify-content:center; margin-top:20px; padding:15px; font-size:1.1rem; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);">
+                    <i class="fas fa-paper-plane"></i> NỘP BÀI NGAY
+                </button>
+            </div>
+        </div> <!-- KẾT THÚC CỘT PHẢI -->
+
+    </div> <!-- KẾT THÚC TEST-LAYOUT -->
+
+    <!-- POPUP KẾT QUẢ TÍNH ĐIỂM -->
+    <div class="result-modal" id="result-modal">
+        <div class="result-card">
+            <i class="fas fa-medal fa-4x" style="color:#f59e0b; margin-bottom:20px;"></i>
+            <h2 style="margin-bottom:10px;">Hoàn thành Bài Test!</h2>
+            <div style="font-size: 3rem; font-weight: 900; color: var(--primary); margin: 15px 0;" id="rs-score">0đ</div>
+            
+            <div style="background: #f8fafc; padding: 20px; border-radius: 15px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
+                <h3 id="rs-title" style="color: #059669; margin-bottom: 10px;">--</h3>
+                <p id="rs-advice" style="color: #475569; font-size: 0.95rem;">--</p>
+            </div>
+
+            <a href="zone.html" class="btn btn-primary" style="width:100%; justify-content:center;"><i class="fas fa-home"></i> Trở về Trung tâm Test</a>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="../assets/config.js"></script>
+    <script src="../assets/js/app.js"></script>
+
+    <script>
+        let currentStudent = null;
+        let testData = null;
+
+        // Lấy ID bài test từ URL
+	const urlParams = new URLSearchParams(window.location.search);
+	const testId = urlParams.get('id') || urlParams.get('testId');
+
+        // 1. KIỂM TRA ĐĂNG NHẬP (Giống file zone)
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (user) {
+                if(!testId) { alert("Lỗi: Không tìm thấy bài test!"); window.location.href="zone.html"; return; }
+                
+                document.getElementById('top-user-avatar').src = user.photoURL || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+                const snap = await db.collection('yt_students').where('linkedEmail', '==', user.email).get();
+                
+                if (snap.empty) {
+                    alert("Bạn chưa liên kết Hồ sơ Y tế!"); window.location.href = "../student.html";
+                } else {
+                    currentStudent = { id: snap.docs[0].id, ...snap.docs[0].data(), email: user.email };
+                    document.getElementById('top-user-name').innerText = currentStudent.name;
+                    loadTest(); // Bắt đầu tải đề thi
+                }
+            } else {
+                window.location.href = "../student.html";
+            }
+        });
+
+        // 2. TẢI ĐỀ THI VÀ RENDER
+        async function loadTest() {
+            try {
+                const doc = await db.collection('yt_tests').doc(testId).get();
+                if(!doc.exists || !doc.data().isActive) {
+                    alert("Bài test không tồn tại hoặc đã bị khóa!"); window.location.href="zone.html"; return;
+                }
+                
+                testData = doc.data();
+                document.getElementById('header-test-title').innerText = testData.title;
+
+                renderQuestions();
+                setupTimer();
+            } catch(e) { alert("Lỗi tải đề thi: " + e.message); }
+        }
+
+        // 3. VẼ CÂU HỎI VÀ ĐÁP ÁN CHUNG
+        let totalQ = 0;
+        let currentQIndex = 1; // Biến lưu câu hỏi hiện tại đang xem
+
+        // 3. VẼ CÂU HỎI VÀ ĐÁP ÁN CHUNG
+        function renderQuestions() {
+            const area = document.getElementById('questions-render-area');
+            const tracker = document.getElementById('tracker-grid');
+            let qHtml = ''; let tHtml = '';
+            
+            totalQ = testData.questions.length;
+
+            testData.questions.forEach((q, index) => {
+                const qNum = index + 1;
+                
+                // Vẽ Ô Track (Thêm hàm onclick = jumpToQuestion)
+                tHtml += `<div class="track-item" id="track-${qNum}" onclick="jumpToQuestion(${qNum})">${qNum}</div>`;
+
+                let optHtml = '';
+                testData.globalOptions.forEach((opt) => {
+                    // Thêm tự động chuyển câu khi chọn đáp án (Tiện lợi cho đt)
+                    optHtml += `
+                        <label class="opt-label">
+                            <input type="radio" name="ans_${qNum}" value="${opt.points}" onchange="markAnswered(${qNum})">
+                            <span>${opt.text}</span>
+                        </label>
+                    `;
+                });
+
+                // Lớp 'active-mobile' dùng cho câu đầu tiên
+                let activeClass = qNum === 1 ? 'active-mobile' : '';
+                
+                qHtml += `
+                    <div class="q-box ${activeClass}" id="qbox-${qNum}">
+                        <div class="q-title"><span style="color:var(--primary);">Câu ${qNum}/${totalQ}:</span> <br> ${q.text}</div>
+                        <div>${optHtml}</div>
+                    </div>
+                `;
+            });
+
+            area.innerHTML = qHtml;
+            tracker.innerHTML = tHtml;
+            document.getElementById('progress-text').innerText = `0/${totalQ}`;
+            
+            updateUIAfterJump(); // Cập nhật màu sắc nút
+        }
+
+        // 4. THEO DÕI TIẾN ĐỘ CHỌN ĐÁP ÁN
+        function markAnswered(qNum) {
+            document.getElementById(`qbox-${qNum}`).classList.add('answered');
+            document.getElementById(`track-${qNum}`).classList.add('done');
+            
+            // Cập nhật số lượng
+            const total = testData.questions.length;
+            const answered = document.querySelectorAll('.track-item.done').length;
+            document.getElementById('progress-text').innerText = `${answered}/${total}`;
+        }
+	// THEO DÕI TIẾN ĐỘ CHỌN ĐÁP ÁN (Đã sửa lại một chút)
+        function markAnswered(qNum) {
+            document.getElementById(`qbox-${qNum}`).classList.add('answered');
+            document.getElementById(`track-${qNum}`).classList.add('done');
+            
+            const answered = document.querySelectorAll('.track-item.done').length;
+            document.getElementById('progress-text').innerText = `${answered}/${totalQ}`;
+
+            // (Tùy chọn) Tự động nhảy sang câu tiếp theo sau khi tick 0.5 giây trên ĐT
+            if(window.innerWidth <= 768 && currentQIndex < totalQ) {
+                setTimeout(() => { changeQuestion(1); }, 400);
+            }
+        }
+
+        // ĐIỀU HƯỚNG: Bấm Next / Prev
+        function changeQuestion(step) {
+            let newQ = currentQIndex + step;
+            if(newQ >= 1 && newQ <= totalQ) {
+                jumpToQuestion(newQ);
+            }
+        }
+
+        // ĐIỀU HƯỚNG: Nhảy thẳng đến câu (khi bấm vào tracker)
+        function jumpToQuestion(qNum) {
+            currentQIndex = qNum;
+
+            // 1. Xử lý hiển thị trên Điện thoại (Ẩn/Hiện)
+            document.querySelectorAll('.q-box').forEach(box => box.classList.remove('active-mobile'));
+            document.getElementById(`qbox-${qNum}`).classList.add('active-mobile');
+
+            // 2. Xử lý cuộn trên Máy tính (Cuộn mượt đến câu đó)
+            if (window.innerWidth > 768) {
+                document.getElementById(`qbox-${qNum}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            updateUIAfterJump();
+        }
+
+        // Cập nhật trạng thái Nút bấm & Tracker
+        function updateUIAfterJump() {
+            // Xóa highlight cũ, thêm highlight mới vào Tracker
+            document.querySelectorAll('.track-item').forEach(item => item.classList.remove('current-active'));
+            const activeTrack = document.getElementById(`track-${currentQIndex}`);
+            if(activeTrack) {
+                activeTrack.classList.add('current-active');
+                // Tự động cuộn thanh tracker ngang trên đt đến số đó
+                activeTrack.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+
+            // Ẩn hiện nút Prev/Next
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+            if(btnPrev && btnNext) {
+                btnPrev.style.visibility = currentQIndex === 1 ? 'hidden' : 'visible';
+                
+                if (currentQIndex === totalQ) {
+                    btnNext.innerHTML = `<i class="fas fa-check-circle"></i> Đã đến câu cuối`;
+                    btnNext.classList.remove('primary');
+                } else {
+                    btnNext.innerHTML = `Câu tiếp <i class="fas fa-chevron-right"></i>`;
+                    btnNext.classList.add('primary');
+                }
+            }
+        }
+        // 5. NỘP BÀI VÀ TÍNH ĐIỂM (ĐÃ FIX LỖI)
+// 5. NỘP BÀI, TÍNH ĐIỂM & CHUẨN BỊ DATA CHO AI
+        async function submitTest() {
+            const btnSubmit = document.querySelector('.btn-submit-test');
+            const totalQuestions = testData.questions.length;
+            const answered = document.querySelectorAll('input[type="radio"]:checked');
+
+            if(answered.length < totalQuestions) {
+                if(!confirm(`Bạn mới làm ${answered.length}/${totalQuestions} câu. Vẫn muốn nộp bài chứ?`)) return;
+            }
+
+            btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang chấm điểm...';
+            btnSubmit.disabled = true;
+
+            let totalScore = 0;
+            let answerDetails = []; // Mảng lưu lại toàn bộ câu hỏi và đáp án học sinh chọn để gửi cho AI
+
+            // Lấy điểm và trích xuất nội dung học sinh đã chọn
+            document.querySelectorAll('.q-box').forEach((box, index) => {
+                let checkedOpt = box.querySelector('input[type="radio"]:checked');
+                if(checkedOpt) {
+                    totalScore += Number(checkedOpt.value);
+                    // Lấy text câu hỏi và text đáp án
+                    let qText = box.querySelector('.q-title').innerText.replace(/\n/g, ' ').trim();
+                    let ansText = checkedOpt.nextElementSibling.innerText.trim();
+                    answerDetails.push(`${qText} => Chọn: ${ansText}`);
+                }
+            });
+
+            // So sánh với Luật Điểm
+            let resultTitle = "Đã ghi nhận kết quả";
+            let defaultAdvice = "Bạn đã hoàn thành bài khảo sát.";
+            if(testData.resultRules && testData.resultRules.length > 0) {
+                const rule = testData.resultRules.find(r => totalScore >= r.minScore && totalScore <= r.maxScore);
+                if(rule) {
+                    resultTitle = rule.title;
+                    defaultAdvice = rule.advice;
+                }
+            }
+
+            // Đẩy lên Firebase (Thêm mảng answerDetails và cờ aiAdvice)
+            try {
+                const docRef = await db.collection('yt_test_results').add({
+                    studentId: currentStudent.id || "N/A",
+                    studentName: currentStudent.name || "Khách",
+                    studentEmail: currentStudent.email || "N/A",
+                    studentClass: currentStudent.class || "Chưa cập nhật",
+                    testId: testId,
+                    testTitle: testData.title || "Bài test không tên",
+                    score: totalScore,
+                    resultTitle: resultTitle,
+                    systemAdvice: defaultAdvice, // Lời khuyên gốc của hệ thống (Backup)
+                    answerDetails: answerDetails, // Đóng gói gửi cho AI
+                    aiAdvice: "pending", // Cờ báo hiệu AI chưa phân tích xong
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // Chuyển hướng thẳng sang trang Kết quả riêng (Không dùng popup nữa)
+                window.location.href = `result.html?id=${docRef.id}`;
+
+            } catch (e) {
+                alert("Lỗi lưu kết quả: " + e.message);
+                btnSubmit.innerHTML = '<i class="fas fa-paper-plane"></i> NỘP BÀI NGAY';
+                btnSubmit.disabled = false;
+            }
+        }
+        // 6. ĐỒNG HỒ ĐẾM NGƯỢC (Nếu Admin có cài đặt timeLimit > 0)
+        function setupTimer() {
+            const timeLimit = testData.timeLimit;
+            if(!timeLimit || timeLimit <= 0) {
+                document.getElementById('timer-display').innerText = "Tự do";
+                return;
+            }
+
+            let timeLeft = timeLimit * 60; // Đổi ra giây
+            const display = document.getElementById('timer-display');
+
+            const timerId = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(timerId);
+                    alert("Đã hết thời gian làm bài! Hệ thống tự động nộp bài.");
+                    submitTest();
+                } else {
+                    let m = Math.floor(timeLeft / 60);
+                    let s = timeLeft % 60;
+                    display.innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+                    if(timeLeft <= 60) display.style.color = "red"; // Đỏ khi còn 1 phút
+                    timeLeft--;
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch sử</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png">
+    <link rel="icon" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" sizes="32x32" type="image/png">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .history-card {
+            background: white; padding: 20px; border-radius: 15px; 
+            border-left: 5px solid #10b981; box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            display: flex; justify-content: space-between; align-items: center; 
+            cursor: pointer; transition: 0.3s;
+        }
+        .history-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .attempt-code { font-family: monospace; font-size: 0.85rem; font-weight: bold; color: #64748b; background: #f1f5f9; padding: 3px 8px; border-radius: 5px; }
+        
+        @media (max-width: 768px) {
+            main { margin-top: 130px !important; }
+            .history-card { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .score-box { width: 100%; text-align: left !important; display: flex; justify-content: space-between; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="glass-header">
+        <div class="header-left">
+            <div class="header-logo"><img src="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" alt="Logo"></div>
+            <div class="header-titles">
+                <div class="title-top">Trường THPT Võ Thị Sáu - Bà rịa vũng tàu</div>
+                <div class="title-bottom">PHÒNG Y TẾ</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <nav class="nav-links">
+                <a href="../index.html"><i class="fas fa-home"></i></a>
+                <a href="zone.html" class="active"><i class="fas fa-arrow-left"></i> Quay lại Test</a>
+            </nav>
+            <div class="user-profile" style="display: flex;">
+                <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" id="top-user-avatar">
+                <span class="user-name" id="top-user-name">Đang tải...</span>
+            </div>
+        </div>
+    </header>
+
+    <main style="max-width:1000px; margin: 120px auto 40px; padding:0 20px;">
+        
+        <div style="text-align: center; margin-bottom: 30px;">
+            <i class="fas fa-history fa-3x" style="color: #f59e0b; margin-bottom: 10px;"></i>
+            <h2>LỊCH SỬ LÀM BÀI KIỂM TRA SỨC KHỎE</h2>
+            <p style="color: #64748b;">Nhấn vào từng lượt để xem chi tiết kết quả</p>
+        </div>
+
+        <!-- DANH SÁCH LỊCH SỬ -->
+        <div id="history-list" style="display:flex; flex-direction:column; gap:15px;">
+            <div style="text-align:center; padding: 40px; color: var(--text-gray);">
+                <i class="fas fa-spinner fa-spin fa-2x"></i><br>Đang tải dữ liệu...
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL CHI TIẾT KẾT QUẢ -->
+    <div id="detail-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:99999; align-items:center; justify-content:center; padding: 15px;">
+        <div class="modal-content fade-in" style="background: white; border-radius: 20px; width: 100%; max-width: 500px; padding: 30px; position: relative;">
+            
+            <button onclick="document.getElementById('detail-modal').style.display='none'" style="position:absolute; top:15px; right:15px; border:none; background:#f1f5f9; width:35px; height:35px; border-radius:50%; font-size:1.2rem; cursor:pointer; color:#64748b;">&times;</button>
+            
+            <div style="text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #cbd5e1;">
+                <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 5px;">Mã lượt test: <span id="md-id" class="attempt-code">--</span></div>
+                <h3 id="md-test-title" style="color: #1e293b; font-size: 1.3rem;">--</h3>
+                <div style="font-size: 0.85rem; color: #64748b; margin-top: 5px;"><i class="far fa-clock"></i> Nộp lúc: <span id="md-time">--</span></div>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 25px;">
+                <div style="display: inline-block; background: #f0fdf4; border: 2px solid #10b981; padding: 20px 40px; border-radius: 20px;">
+                    <div style="font-size: 0.9rem; color: #059669; font-weight: bold; text-transform: uppercase;">Tổng Điểm</div>
+                    <div id="md-score" style="font-size: 3rem; font-weight: 900; color: #10b981; line-height: 1;">0</div>
+                </div>
+            </div>
+
+            <div style="background: #f8fafc; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 8px;">
+                <h4 style="color: #3b82f6; margin-bottom: 8px; font-size: 1.1rem;"><i class="fas fa-clipboard-check"></i> Kết quả phân tích:</h4>
+                <div id="md-result-title" style="font-weight: bold; color: #1e293b; font-size: 1.05rem; margin-bottom: 5px;">--</div>
+                <div id="md-advice" style="color: #475569; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap;">--</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="../assets/config.js"></script>
+    <script src="../assets/js/app.js"></script>
+
+    <script>
+        let globalHistoryData = []; // Biến lưu trữ data để đẩy vào Modal
+
+        // 1. KIỂM TRA ĐĂNG NHẬP
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (user) {
+                document.getElementById('top-user-avatar').src = user.photoURL || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+                
+                const snap = await db.collection('yt_students').where('linkedEmail', '==', user.email).get();
+                if (snap.empty) {
+                    window.location.href = "../student.html";
+                } else {
+                    let currentStudent = snap.docs[0].data();
+                    document.getElementById('top-user-name').innerText = currentStudent.name;
+                    loadHistory(user.email);
+                }
+            } else {
+                window.location.href = "../student.html";
+            }
+        });
+
+        // 2. TẢI DỮ LIỆU LỊCH SỬ (ĐÃ FIX ĐỂ TẠO LINK RIÊNG)
+        function loadHistory(email) {
+            db.collection('yt_test_results')
+              .where('studentEmail', '==', email)
+              .orderBy('timestamp', 'desc')
+              .onSnapshot(snap => {
+                  const container = document.getElementById('history-list');
+                  if(snap.empty) {
+                      container.innerHTML = `<div style="background:white; padding:40px; text-align:center; border-radius:15px;"><i class="fas fa-box-open fa-3x" style="color:#cbd5e1; margin-bottom:15px;"></i><br>Bạn chưa thực hiện bài test nào.</div>`;
+                      return;
+                  }
+
+                  let html = '';
+
+                  snap.forEach((doc) => {
+                      const data = doc.data();
+                      const timeString = data.timestamp ? data.timestamp.toDate().toLocaleString('vi-VN', {hour: '2-digit', minute:'2-digit', day:'2-digit', month:'2-digit', year:'numeric'}) : "Vừa xong";
+                      const shortCode = doc.id.substring(0, 8).toUpperCase();
+
+                      // FIX: Bấm vào thẻ sẽ chuyển hướng sang trang result.html kèm theo ID kết quả
+                      html += `
+                      <div class="history-card" onclick="window.location.href='result.html?id=${doc.id}'">
+                          <div>
+                              <div style="margin-bottom:8px;">
+                                  <span class="attempt-code">#${shortCode}</span>
+                                  <span style="font-size:0.85rem; color:#64748b; margin-left:10px;"><i class="far fa-clock"></i> ${timeString}</span>
+                              </div>
+                              <div style="font-size:1.15rem; font-weight:bold; color:#1e293b; margin-bottom: 5px;">${data.testTitle}</div>
+                              <div style="color:#059669; font-size:0.9rem;"><i class="fas fa-check-circle"></i> ${data.resultTitle}</div>
+                          </div>
+                          <div class="score-box" style="text-align:right;">
+                              <div style="font-size:1.8rem; font-weight:900; color:#10b981;">${data.score}</div>
+                              <div style="font-size:0.8rem; color:#64748b; text-transform:uppercase; font-weight:bold;">Điểm</div>
+                          </div>
+                      </div>`;
+                  });
+                  container.innerHTML = html;
+              });
+        }
+
+        // 3. MỞ MODAL CHI TIẾT
+        function openDetail(index) {
+            const data = globalHistoryData[index];
+            
+            document.getElementById('md-id').innerText = "#" + data.docId.substring(0, 8).toUpperCase();
+            document.getElementById('md-test-title').innerText = data.testTitle;
+            document.getElementById('md-time').innerText = data.timeString;
+            document.getElementById('md-score').innerText = data.score;
+            document.getElementById('md-result-title').innerText = data.resultTitle;
+            
+            // Xử lý nếu Admin có lưu trường advice (lời khuyên) trên Firebase. 
+            // Nếu data cũ không có advice thì để chuỗi mặc định.
+            document.getElementById('md-advice').innerText = data.advice || "Đã ghi nhận kết quả thành công vào hồ sơ y tế của bạn.";
+
+            document.getElementById('detail-modal').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>

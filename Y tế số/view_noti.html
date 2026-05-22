@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản trị hệ thống Y tế số</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png">
+    <link rel="icon" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" sizes="32x32" type="image/png">
+    <title>Thông báo Y Tế Số</title>
+    <!-- Font chữ Inter phong cách hiện đại (Giống Apple) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background-color: #f1f5f9;
+            position: relative;
+            overflow-x: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+            color: #334155;
+        }
+
+        /* KHU VỰC BACKGROUND MÀU NƯỚC CHUYỂN ĐỘNG TRƠN TRU */
+        .ambient-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            background: #f8fafc;
+        }
+        .color-blob {
+            position: absolute;
+            filter: blur(80px);
+            opacity: 0.6;
+            border-radius: 50%;
+            animation: float-around 15s infinite alternate ease-in-out;
+        }
+        .blob-1 {
+            top: -10%; left: -10%; width: 50vw; height: 50vw;
+            background: #bae6fd; /* Xanh nhạt */
+        }
+        .blob-2 {
+            bottom: -10%; right: -10%; width: 45vw; height: 45vw;
+            background: #ddd6fe; /* Tím nhạt */
+            animation-duration: 20s;
+            animation-direction: alternate-reverse;
+        }
+        .blob-3 {
+            top: 40%; left: 60%; width: 30vw; height: 30vw;
+            background: #bbf7d0; /* Xanh ngọc */
+            animation-duration: 12s;
+        }
+
+        @keyframes float-around {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(5%, 10%) scale(1.1); }
+            100% { transform: translate(-5%, 5%) scale(0.9); }
+        }
+
+        /* HIỆU ỨNG KÍNH MỜ (GLASSMORPHISM) */
+        .glass-canvas {
+            width: 100%;
+            max-width: 850px;
+            background: rgba(255, 255, 255, 0.2); 
+            backdrop-filter: blur(25px); 
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.5); 
+            border-radius: 30px;
+            padding: 50px;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.05);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fade-in-up 0.8s ease forwards;
+        }
+
+        @keyframes fade-in-up {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* BỐ CỤC HEADER MỚI (LOGO NẰM CẠNH TIÊU ĐỀ) */
+        .header-area {
+            display: flex;
+            align-items: center; /* Căn giữa theo chiều dọc */
+            gap: 20px; /* Khoảng cách giữa logo và chữ */
+            margin-bottom: 20px;
+        }
+
+        .header-area img {
+            width: 75px;
+            height: 75px;
+            object-fit: cover;
+            border-radius: 16px;
+            flex-shrink: 0; /* Không cho logo bị bóp méo khi tiêu đề quá dài */
+            box-shadow: 0 8px 15px rgba(0,0,0,0.08);
+        }
+
+        h1.title {
+            /* Kích thước chữ mặc định (Sẽ được JS can thiệp nếu quá dài) */
+            font-size: clamp(1.4rem, 3.5vw, 2.2rem); 
+            font-weight: 700;
+            line-height: 1.35;
+            margin: 0;
+            text-align: left;
+            background: linear-gradient(135deg, #0f172a 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            word-wrap: break-word; /* Tự động xuống dòng nếu chữ liền nhau quá dài */
+        }
+
+        /* THẺ META CĂN TRÁI CHO ĐỒNG BỘ */
+        .meta-tags {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-start; 
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+            padding-left: 95px; /* Thụt vào bằng đúng chiều rộng Logo + Gap */
+        }
+        .tag {
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #475569;
+            backdrop-filter: blur(10px);
+        }
+
+        .divider {
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, #e2e8f0, transparent);
+            margin: 0 0 35px;
+        }
+
+        /* ĐỊNH DẠNG ĐẸP CHO MÃ HTML TRONG THÔNG BÁO */
+        .html-content {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: #334155;
+        }
+        .html-content p { margin-bottom: 15px; }
+        .html-content strong { color: #0f172a; font-weight: 600; }
+        .html-content ul, .html-content ol { margin-left: 25px; margin-bottom: 15px; }
+        .html-content li { margin-bottom: 8px; }
+        .html-content a { color: #3b82f6; text-decoration: none; border-bottom: 1px dashed #3b82f6; transition: 0.2s; }
+        .html-content a:hover { color: #2563eb; border-bottom-style: solid; }
+
+        /* Loader */
+        .loading-state {
+            text-align: center;
+            padding: 100px 0;
+            color: #64748b;
+        }
+
+        /* Responsive Mobile */
+        @media (max-width: 600px) {
+            .glass-canvas { padding: 30px 20px; border-radius: 20px; }
+            .header-area img { width: 60px; height: 60px; }
+            .meta-tags { padding-left: 0; } /* Trả về lề 0 trên điện thoại */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Đèn chiếu sáng / vệt màu ở nền -->
+    <div class="ambient-bg">
+        <div class="color-blob blob-1"></div>
+        <div class="color-blob blob-2"></div>
+        <div class="color-blob blob-3"></div>
+    </div>
+
+    <!-- Khung kính chứa nội dung -->
+    <div class="glass-canvas">
+        
+        <!-- TRẠNG THÁI LOADING -->
+        <div id="noti-loading" class="loading-state">
+            <i class="fas fa-circle-notch fa-spin fa-3x" style="color: #3b82f6; margin-bottom: 20px;"></i>
+            <p style="font-size: 1.1rem; font-weight: 500;">Đang giải mã thông báo...</p>
+        </div>
+
+        <!-- NỘI DUNG CHÍNH (Sẽ hiện khi load xong) -->
+        <div id="noti-content-area" style="display: none;">
+            
+            <!-- HEADER BỐ CỤC NGANG: LOGO + TIÊU ĐỀ -->
+            <div class="header-area">
+                <img src="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1777715077/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" alt="Y Tế Số">
+                <h1 class="title" id="vn-title"></h1>
+            </div>
+
+            <!-- Các thẻ Meta (Người gửi, Thời gian) -->
+            <div class="meta-tags">
+                <div class="tag"><i class="fas fa-paper-plane" style="color: #0ea5e9;"></i> Từ: <strong id="vn-sender" style="color: #0f172a;"></strong></div>
+                <div class="tag"><i class="far fa-clock" style="color: #8b5cf6;"></i> <span id="vn-time"></span></div>
+            </div>
+            
+            <!-- Vạch phân cách -->
+            <div class="divider"></div>
+
+            <!-- Khung render HTML nội dung thông báo -->
+            <div class="html-content" id="vn-content"></div>
+
+            <!-- Nút đóng -->
+<!-- Nút trở về thông minh (Tự nhận diện ai đang mở) -->
+            <div style="margin-top: 50px; text-align: center;">
+                <button onclick="goBackSafely()" style="padding: 10px 30px; border-radius: 25px; background: rgba(255,255,255,0.6); color: #475569; border: 1px solid rgba(255,255,255,0.8); cursor: pointer; font-weight: 600; font-family: inherit; font-size: 0.95rem; backdrop-filter: blur(10px); transition: 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.9)'" onmouseout="this.style.background='rgba(255,255,255,0.6)'">
+                    <i class="fas fa-arrow-left"></i> Trở về
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kết nối Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="assets/config.js"></script>
+
+    <script>
+        async function loadNotification() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            const loadingEl = document.getElementById('noti-loading');
+            
+            if(!id) {
+                loadingEl.innerHTML = '<i class="fas fa-exclamation-circle fa-3x" style="color: #ef4444; margin-bottom: 20px;"></i><p>Không tìm thấy mã thông báo (Thiếu ID).</p>';
+                return;
+            }
+
+            try {
+                const doc = await db.collection('yt_notifications').doc(id).get();
+                if(doc.exists) {
+                    const d = doc.data();
+                    
+                    // Gán dữ liệu meta
+                    document.getElementById('vn-sender').innerText = d.sender || "Hệ thống";
+                    document.getElementById('vn-time').innerText = d.timestamp ? new Date(d.timestamp.seconds * 1000).toLocaleString('vi-VN', {hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric'}) : 'Vừa xong';
+                    
+                    // XỬ LÝ TIÊU ĐỀ: Tự động thu nhỏ nếu chữ quá dài
+                    const titleEl = document.getElementById('vn-title');
+                    titleEl.innerText = d.title;
+                    
+                    const charCount = d.title.length;
+                    if (charCount > 100) {
+                        titleEl.style.fontSize = "clamp(1rem, 2.2vw, 1.3rem)"; // Siêu dài -> Chữ nhỏ gọn
+                    } else if (charCount > 60) {
+                        titleEl.style.fontSize = "clamp(1.2rem, 2.8vw, 1.6rem)"; // Dài vừa -> Chữ vừa
+                    }
+                    // Nếu ngắn (<60 ký tự) sẽ dùng CSS mặc định clamp(1.4rem, 3.5vw, 2.2rem)
+                    
+                    // Gán nội dung HTML
+                    document.getElementById('vn-content').innerHTML = d.content;
+                    
+                    // Đổi giao diện
+                    loadingEl.style.display = 'none';
+                    document.getElementById('noti-content-area').style.display = 'block';
+                    
+                    // Đổi title của tab duyệt web
+                    document.title = d.title;
+                } else {
+                    loadingEl.innerHTML = '<i class="fas fa-trash-alt fa-3x" style="color: #94a3b8; margin-bottom: 20px;"></i><p>Thông báo này đã bị thu hồi hoặc không còn tồn tại.</p>';
+                }
+            } catch(e) {
+                loadingEl.innerHTML = '<i class="fas fa-wifi fa-3x" style="color: #f59e0b; margin-bottom: 20px;"></i><p>Lỗi kết nối máy chủ. Vui lòng thử lại.</p>';
+                console.error(e);
+            }
+        }
+        
+        // Chạy hàm khi trang vừa load xong
+        window.onload = loadNotification;
+// Hàm quay lại an toàn
+        function goBackSafely() {
+            // Nếu có lịch sử trang trước đó (mở cùng 1 tab)
+            if (window.history.length > 1 && document.referrer !== "") {
+                window.history.back();
+            } else {
+                // Nếu mở bằng tab mới hoặc lỗi, mặc định cho về trang chủ để không bị kẹt
+                window.location.href = 'index.html'; 
+            }
+        }
+    </script>
+</body>
+</html>

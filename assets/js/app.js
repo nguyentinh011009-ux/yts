@@ -117,6 +117,7 @@ function handleEmailLogin() {
 
     firebase.auth().signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
+		writeAuditLog("LOGIN", "yt_auth", userCredential.user.uid, `Tài khoản ${email} đăng nhập hệ thống thành công bằng Email.`);
             // Thành công (hàm onAuthStateChanged ở trên sẽ tự động ẩn form)
             btn.innerHTML = originalText;
             btn.disabled = false;
@@ -153,6 +154,7 @@ function handleGoogleLogin() {
             
             // Nếu email không có trong danh sách -> Hiện thông báo lỗi
             if (!ALLOWED_ADMIN_EMAILS.includes(userEmail)) {
+		writeAuditLog("LOGIN", "yt_auth", result.user.uid, `Tài khoản Admin ${userEmail} đăng nhập thành công qua Google.`);
                 alert(`⛔ BẢO MẬT HỆ THỐNG:\n\nTài khoản (${userEmail}) không có quyền truy cập trang Quản trị!\nVui lòng liên hệ Admin: Văn Tính để được cấp quyền.`);
             } else {
                 alert(`✅ Đăng nhập thành công: ${userEmail}`);
@@ -165,17 +167,22 @@ function handleGoogleLogin() {
         });
 }
 // --- Hàm 3: Đăng xuất ---
-function handleLogout() {
+// Sửa lại hàm handleLogout dùng chung của bạn:
+async function handleLogout() {
     if(confirm("Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?")) {
+        const currentUser = firebase.auth().currentUser;
+        
+        if (currentUser) {
+            // 👉 BẮT BUỘC: Gọi ghi log với await để đảm bảo ghi xong lên mây rồi mới thoát hẳn tài khoản
+            await writeAuditLog("LOGOUT", "yt_auth", currentUser.uid, `Tài khoản Admin ${currentUser.email} đã đăng xuất khỏi hệ thống.`);
+        }
+
         firebase.auth().signOut().then(() => {
-            // onAuthStateChanged sẽ tự động đá ra ngoài form đăng nhập
-            // Xóa rỗng các ô input để an toàn
             document.getElementById('admin-email-input').value = '';
             document.getElementById('admin-pass-input').value = '';
         });
     }
 }
-
 // --- 3. QUẢN LÝ BÀI VIẾT (CRUD) ---
 function showPostEditor(postId = null) {
     document.getElementById('post-editor').style.display = 'block';

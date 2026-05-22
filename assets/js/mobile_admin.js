@@ -1,0 +1,1079 @@
+/* MOBILE ADMIN ENGINE - Y TẾ SỐ VTS
+   Xử lý: Xác thực Vân tay/PIN, Tìm kiếm, Tiếp nhận di động, Canvas Chữ ký
+*/
+
+// --- 1. BIẾN TOÀN CỤC & TRẠNG THÁI ---
+let currentAdminUser = null;
+let activeStudentData = null;
+let signatureCanvas, signatureCtx;
+let isDrawing = false;
+let videoStream = null;
+let isFlashOn = false;
+
+// Thuốc & Vật tư
+let pharmacyCache = [];
+let selectedMedicines = [];
+
+// Trạng thái Passcode
+let setupPasscodeArray = [];
+let confirmPasscodeArray = [];
+let loginPasscodeArray = [];
+
+// Chống trôi header/footer khi cuộn
+let lastScrollTop = 0;
+
+// --- 2. KHỞI TẠO HỆ THỐNG ---
+window.addEventListener('DOMContentLoaded', () => {
+    initPasscodeKeyboards();
+    checkDeviceRegistration();
+    initScrollBehavior();
+});
+
+// --- 3. QUẢN LÝ ĐĂNG KÝ & BẢO MẬT THIẾT BỊ ---
+function checkDeviceRegistration() {
+    const isRegistered = localStorage.getItem('vts_mobile_registered');
+    
+    if (isRegistered === 'true') {
+        // THIẾT BỊ ĐÃ ĐĂNG KÝ: Yêu cầu mở khóa bằng Vân tay/FaceID hoặc mã PIN cũ
+        showAuthStep('step-login');
+        
+        // Tự động gọi xác thực Vân tay/Face ID ngay lập tức nếu thiết bị đã bật
+        if (localStorage.getItem('vts_mobile_biometric') === 'true') {
+            document.getElementById('btn-bio-trigger').style.display = 'block';
+            setTimeout(triggerBiometricAuth, 500); 
+        }
+    } else {
+        // THIẾT BỊ MỚI: Bắt đầu luồng đăng ký 1 lần duy nhất
+        showAuthStep('step-google-login');
+    }
+}
+
+function showAuthStep(stepId) {
+    document.querySelectorAll('.auth-card').forEach(card => card.style.display = 'none');
+    document.getElementById(stepId).style.display = 'block';
+}
+
+// Khởi tạo phím số
+function initPasscodeKeyboards() {
+    const createKeyboard = (containerId, onKeyPress) => {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        for (let i = 1; i <= 9; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'key-btn';
+            btn.innerText = i;
+            btn.onclick = () => onKeyPress(i);
+            container.appendChild(btn);
+        }
+        
+        // Thêm nút phụ bên trái
+        const leftBtn = document.createElement('button');
+        leftBtn.className = 'key-btn empty-key';
+        container.appendChild(leftBtn);
+
+        // Phím 0
+        const zeroBtn = document.createElement('button');
+        zeroBtn.className = 'key-btn';
+        zeroBtn.innerText = '0';
+        zeroBtn.onclick = () => onKeyPress(0);
+        container.appendChild(zeroBtn);
+
+        // Phím xóa (X)
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'key-btn icon-key';
+        deleteBtn.innerHTML = '<i class="fas fa-backspace"></i>';
+        deleteBtn.onclick = () => onKeyPress('delete');
+        container.appendChild(deleteBtn);
+    };
+
+    createKeyboard('setup-keyboard', handleSetupPIN);
+    createKeyboard('confirm-keyboard', handleConfirmPIN);
+    createKeyboard('login-keyboard', handleLoginPIN);
+}
+
+// Google Login
+// Cập nhật hàm xác thực Google trong file mobile_admin.js
+function handleGoogleAuth() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    
+    // Đặt cấu hình persistence để Firebase nhớ tài khoản vô hạn trên thiết bị di động
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .then(() => {
+            return firebase.auth().signInWithPopup(provider);
+        })
+        .then((result) => {
+            const ALLOWED_EMAILS = [
+                "nguyentinh011009@gmail.com", "tomizy09icloud@gmail.com",
+                "nguyenthixuandongvts@gmail.com", "yte.thptvothisaubrvt@gmail.com", "nguyentinh52009@gmail.com"
+            ];
+            
+            if (ALLOWED_EMAILS.includes(result.user.email)) {
+                currentAdminUser = result.user;
+                // Nhớ tên và avatar lên local storage
+                localStorage.setItem('vts_cached_admin_name', result.user.displayName || result.user.email.split('@')[0]);
+                if (result.user.photoURL) {
+                    localStorage.setItem('vts_cached_admin_avatar', result.user.photoURL);
+                }
+                
+                // Chuyển sang bước tạo mã khóa mới (Chỉ tạo duy nhất một lần này)
+                showAuthStep('step-set-passcode');
+            } else {
+                alert("Tài khoản của bạn không được phân quyền quản trị!");
+                firebase.auth().signOut();
+            }
+        })
+        .catch(err => {
+            alert("Lỗi xác thực Google: " + err.message);
+        });
+}
+
+// PIN Setup
+function handleSetupPIN(key) {
+    updatePINArray(key, setupPasscodeArray, 'setup-dots');
+    if (setupPasscodeArray.length === 6) {
+        setTimeout(() => {
+            showAuthStep('step-confirm-passcode');
+        }, 300);
+    }
+}
+
+function handleConfirmPIN(key) {
+    updatePINArray(key, confirmPasscodeArray, 'confirm-dots');
+    if (confirmPasscodeArray.length === 6) {
+        const setupStr = setupPasscodeArray.join('');
+        const confirmStr = confirmPasscodeArray.join('');
+        if (setupStr === confirmStr) {
+            localStorage.setItem('vts_mobile_pin', setupStr);
+            localStorage.setItem('vts_mobile_registered', 'true');
+            setTimeout(() => {
+                showAuthStep('step-biometric-setup');
+            }, 300);
+        } else {
+            alert("Mã PIN không khớp. Hãy thử tạo lại!");
+            setupPasscodeArray = [];
+            confirmPasscodeArray = [];
+            updateDots('setup-dots', 0);
+            updateDots('confirm-dots', 0);
+            showAuthStep('step-set-passcode');
+        }
+    }
+}
+
+function handleLoginPIN(key) {
+    updatePINArray(key, loginPasscodeArray, 'login-dots');
+    if (loginPasscodeArray.length === 6) {
+        const storedPIN = localStorage.getItem('vts_mobile_pin');
+        const inputPIN = loginPasscodeArray.join('');
+        if (storedPIN === inputPIN) {
+            enterSystem();
+        } else {
+            alert("Mã PIN không chính xác!");
+            loginPasscodeArray = [];
+            updateDots('login-dots', 0);
+        }
+    }
+}
+
+function updatePINArray(key, array, dotsId) {
+    if (key === 'delete') {
+        array.pop();
+    } else if (array.length < 6) {
+        array.push(key);
+    }
+    updateDots(dotsId, array.length);
+}
+
+function updateDots(dotsId, length) {
+    const dots = document.querySelectorAll(`#${dotsId} span`);
+    dots.forEach((dot, index) => {
+        if (index < length) {
+            dot.classList.add('filled');
+        } else {
+            dot.classList.remove('filled');
+        }
+    });
+}
+
+// Vân tay sinh trắc học (Simulation WebAuthn/Biometric API bảo mật cục bộ)
+// Thay thế hàm enableBiometric cũ để hệ thống thực hiện đăng ký tạo khóa gốc
+async function enableBiometric(agree) {
+    if (agree) {
+        if (!window.PublicKeyCredential) {
+            alert("Thiết bị hoặc trình duyệt không hỗ trợ bảo mật chuẩn WebAuthn!");
+            enterSystem();
+            return;
+        }
+
+        const options = {
+            publicKey: {
+                challenge: new Uint8Array([1, 9, 0, 9, 2, 0, 0, 5]),
+                rp: { name: "Hệ thống Y Tế Số VTS" },
+                user: { id: new Uint8Array([1]), name: "admin", displayName: "Admin VTS" },
+                pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+                authenticatorSelection: {
+                    authenticatorAttachment: "platform", // Ép buộc sử dụng TouchID/FaceID hoặc Vân tay của thiết bị
+                    userVerification: "required"
+                }
+            }
+        };
+
+        try {
+            // Thực hiện tạo khóa truy cập gốc trên thiết bị (Chỉ xuất hiện bảng thông báo tạo 1 lần này)
+            const credential = await navigator.credentials.create(options);
+            if (credential) {
+                // Mã hóa ID của khóa vừa tạo và lưu lại vào bộ nhớ thiết bị
+                const rawId = new Uint8Array(credential.rawId);
+                const base64Id = btoa(String.fromCharCode.apply(null, rawId));
+                
+                localStorage.setItem('vts_biometric_cred_id', base64Id);
+                localStorage.setItem('vts_mobile_biometric', 'true');
+                alert("✅ Kích hoạt xác thực sinh trắc học thành công!");
+            }
+        } catch (err) {
+            console.error("Lỗi đăng ký sinh trắc học thiết bị:", err);
+            localStorage.setItem('vts_mobile_biometric', 'false');
+            alert("Không thể thiết lập khóa truy cập gốc. Bạn vẫn có thể sử dụng mã PIN để đăng nhập bình thường.");
+        }
+    } else {
+        localStorage.setItem('vts_mobile_biometric', 'false');
+    }
+    enterSystem();
+}
+
+// Thay thế hàm triggerBiometricAuth cũ để hệ thống chỉ gọi xác thực quét Vân tay/FaceID khớp với khóa cũ
+async function triggerBiometricAuth() {
+    if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+        showAuthStep('step-login');
+        return;
+    }
+
+    const credentialId = localStorage.getItem('vts_biometric_cred_id');
+    if (!credentialId || !window.PublicKeyCredential) {
+        showAuthStep('step-login');
+        return;
+    }
+
+    try {
+        // Giải mã ID khóa đã được thiết lập trước đó trên thiết bị
+        const rawId = Uint8Array.from(atob(credentialId), c => c.charCodeAt(0));
+
+        const options = {
+            publicKey: {
+                challenge: new Uint8Array([1, 9, 0, 9, 2, 0, 0, 5]),
+                allowCredentials: [{
+                    id: rawId,
+                    type: "public-key"
+                }],
+                userVerification: "required"
+            }
+        };
+
+        // Gọi quét Vân tay/FaceID để so khớp với khóa đã lưu (Không yêu cầu tạo mới)
+        const assertion = await navigator.credentials.get(options);
+        if (assertion) {
+            enterSystem();
+        }
+    } catch (err) {
+        console.warn("Xác thực quét vân tay/FaceID thất bại hoặc bị hủy:", err);
+        showAuthStep('step-login'); // Chuyển về màn hình nhập PIN nếu quét thất bại hoặc hủy quét
+    }
+}
+
+function enterSystem() {
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('search-screen').style.display = 'block';
+    
+    // Tự động khôi phục dữ liệu Admin hiển thị trên Header (Dùng session lưu trữ)
+    const cachedAdminName = localStorage.getItem('vts_cached_admin_name') || 'Quản trị viên';
+    const cachedAdminAvatar = localStorage.getItem('vts_cached_admin_avatar') || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+    
+    document.getElementById('admin-display-name').innerText = cachedAdminName;
+    document.getElementById('admin-avatar').src = cachedAdminAvatar;
+
+    // Đọc trạng thái tài khoản từ Firebase để cập nhật thông tin mới nhất
+    firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+            const adminName = user.displayName || user.email.split('@')[0];
+            const adminAvatar = user.photoURL || cachedAdminAvatar;
+            
+            document.getElementById('admin-display-name').innerText = adminName;
+            document.getElementById('admin-avatar').src = adminAvatar;
+            
+            // Lưu đệm lại để mở khóa nhanh không cần chờ mạng tải profile
+            localStorage.setItem('vts_cached_admin_name', adminName);
+            localStorage.setItem('vts_cached_admin_avatar', adminAvatar);
+        }
+    });
+
+    loadPharmacyData();
+}
+
+// --- 4. HÀM TÌM KIẾM HỌC SINH (CHỈ CHẠY KHI NHẤN NÚT TÌM KIẾM) ---
+async function searchStudent() {
+    const inputVal = document.getElementById('student-search-input').value.trim();
+    const resultsContainer = document.getElementById('student-results-list');
+    
+    if (inputVal.length === 0) {
+        alert("Vui lòng nhập từ khóa tìm kiếm!");
+        return;
+    }
+
+    resultsContainer.innerHTML = '<div style="text-align:center; padding: 30px;"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Đang tìm...</p></div>';
+
+    try {
+        const snap = await db.collection('yt_students').get();
+        const matched = [];
+        const normalizedInput = removeVietnameseTones(inputVal.toLowerCase());
+
+        snap.forEach(doc => {
+            const data = doc.data();
+            const nameSearch = removeVietnameseTones(data.name || '').toLowerCase();
+            const classSearch = (data.class || '').toLowerCase();
+            const idSearch = doc.id.toLowerCase();
+
+            if (nameSearch.includes(normalizedInput) || classSearch.includes(normalizedInput) || idSearch.includes(normalizedInput)) {
+                matched.push({ id: doc.id, ...data });
+            }
+        });
+
+        document.getElementById('results-count').innerText = `Kết quả tìm kiếm (${matched.length})`;
+
+        if (matched.length === 0) {
+            resultsContainer.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-user-times"></i>
+                    <p>Không tìm thấy học sinh nào!</p>
+                </div>`;
+            return;
+        }
+
+        resultsContainer.innerHTML = '';
+        matched.forEach(hs => {
+            resultsContainer.innerHTML += `
+                <div class="student-row-card" onclick="loadStudentToTask('${hs.id}')">
+                    <div class="st-left-info">
+                        <h4>${hs.name}</h4>
+                        <span>Lớp: ${hs.class}</span>
+                        <small>Mã YT: ${hs.id}</small>
+                    </div>
+                    <button class="btn-action-go">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>`;
+        });
+
+    } catch (e) {
+        alert("Lỗi tìm kiếm học sinh: " + e.message);
+    }
+}
+
+// Tải thông tin học sinh vào màn tác vụ
+// Thay thế hàm loadStudentToTask trong file mobile_admin.js của bạn:
+async function loadStudentToTask(studentId) {
+    try {
+        const doc = await db.collection('yt_students').doc(studentId).get();
+        if (doc.exists) {
+            activeStudentData = { id: doc.id, ...doc.data() };
+            
+            // ĐƯA LÊN ĐẦU: Gán dữ liệu cho Header ngay lập tức để tránh lỗi ngắt luồng
+            if (document.getElementById('active-student-name')) {
+                document.getElementById('active-student-name').innerText = activeStudentData.name || 'Không rõ';
+            }
+            if (document.getElementById('active-student-class')) {
+                document.getElementById('active-student-class').innerText = "Lớp: " + (activeStudentData.class || 'N/A');
+            }
+
+            // Gán dữ liệu cho Tab 1: Tiếp nhận (Bọc try-catch nhỏ tránh lỗi dữ liệu trống)
+            try {
+                if (document.getElementById('rec-id')) document.getElementById('rec-id').innerText = activeStudentData.id;
+                if (document.getElementById('rec-code')) document.getElementById('rec-code').innerText = activeStudentData.studentCode || 'Không có';
+                if (document.getElementById('rec-gender')) document.getElementById('rec-gender').innerText = activeStudentData.gender || 'Chưa rõ';
+                
+                if (document.getElementById('rec-dob')) {
+                    document.getElementById('rec-dob').innerText = activeStudentData.dob ? new Date(activeStudentData.dob).toLocaleDateString('vi-VN') : 'Chưa cập nhật';
+                }
+                if (document.getElementById('rec-phone')) document.getElementById('rec-phone').innerText = activeStudentData.phone || 'Chưa cập nhật';
+                if (document.getElementById('rec-parent-phone')) document.getElementById('rec-parent-phone').innerText = activeStudentData.parentPhone || 'Chưa cập nhật';
+                if (document.getElementById('rec-address')) {
+                    document.getElementById('rec-address').innerText = activeStudentData.street ? `${activeStudentData.street}, ${activeStudentData.ward || ''}, ${activeStudentData.city || ''}` : 'Chưa cập nhật';
+                }
+                if (document.getElementById('rec-height')) document.getElementById('rec-height').innerText = activeStudentData.height ? `${activeStudentData.height} cm` : 'Chưa cập nhật';
+                if (document.getElementById('rec-weight')) document.getElementById('rec-weight').innerText = activeStudentData.weight ? `${activeStudentData.weight} kg` : 'Chưa cập nhật';
+                if (document.getElementById('rec-email')) document.getElementById('rec-email').innerText = activeStudentData.linkedEmail || 'Chưa liên kết app';
+
+                // Tính toán BMI tự động
+                if (document.getElementById('rec-bmi')) {
+                    if (activeStudentData.height && activeStudentData.weight) {
+                        const h = parseFloat(activeStudentData.height) / 100;
+                        const w = parseFloat(activeStudentData.weight);
+                        const bmi = (w / (h * h)).toFixed(1);
+                        document.getElementById('rec-bmi').innerText = bmi;
+                    } else {
+                        document.getElementById('rec-bmi').innerText = 'Chưa tính';
+                    }
+                }
+            } catch (err) {
+                console.warn("Lỗi gán dữ liệu hành chính: ", err);
+            }
+            
+            const warningAlert = document.getElementById('rec-warning');
+            if (warningAlert) {
+                if (activeStudentData.medicalNote) {
+                    warningAlert.innerText = `Cảnh báo dị ứng/Bệnh lý: ${activeStudentData.medicalNote}`;
+                    warningAlert.style.display = 'block';
+                } else {
+                    warningAlert.style.display = 'none';
+                }
+            }
+
+            // Gán dữ liệu cho Tab 2 (Bọc an toàn)
+            try {
+                if (document.getElementById('edit-student-id')) document.getElementById('edit-student-id').value = activeStudentData.id;
+                if (document.getElementById('edit-student-code')) document.getElementById('edit-student-code').value = activeStudentData.studentCode || '';
+                if (document.getElementById('edit-student-name')) document.getElementById('edit-student-name').value = activeStudentData.name || '';
+                if (document.getElementById('edit-student-class')) document.getElementById('edit-student-class').value = activeStudentData.class || '';
+                if (document.getElementById('edit-student-dob')) document.getElementById('edit-student-dob').value = activeStudentData.dob || '';
+                if (document.getElementById('edit-student-gender')) document.getElementById('edit-student-gender').value = activeStudentData.gender || 'Nam';
+                if (document.getElementById('edit-student-phone')) document.getElementById('edit-student-phone').value = activeStudentData.phone || '';
+                if (document.getElementById('edit-student-parent-phone')) document.getElementById('edit-student-parent-phone').value = activeStudentData.parentPhone || '';
+                if (document.getElementById('edit-student-street')) document.getElementById('edit-student-street').value = activeStudentData.street || '';
+                if (document.getElementById('edit-student-ward')) document.getElementById('edit-student-ward').value = activeStudentData.ward || '';
+                if (document.getElementById('edit-student-city')) document.getElementById('edit-student-city').value = activeStudentData.city || 'Thành phố Hồ Chí Minh';
+                if (document.getElementById('edit-student-height')) document.getElementById('edit-student-height').value = activeStudentData.height || '';
+                if (document.getElementById('edit-student-weight')) document.getElementById('edit-student-weight').value = activeStudentData.weight || '';
+                if (document.getElementById('edit-student-email')) document.getElementById('edit-student-email').value = activeStudentData.linkedEmail || '';
+                if (document.getElementById('edit-student-medical-note')) document.getElementById('edit-student-medical-note').value = activeStudentData.medicalNote || '';
+            } catch (err) {
+                console.warn("Lỗi gán dữ liệu Tab 2: ", err);
+            }
+
+            // Tải Tab 3: Lịch sử khám
+            loadStudentHistory(studentId);
+
+            // Chuyển màn hình tác vụ
+            document.getElementById('search-screen').style.display = 'none';
+            document.getElementById('task-screen').style.display = 'block';
+            
+            // Kích hoạt tab Tiếp nhận mặc định
+            switchTaskTab('pane-reception', document.querySelector('.bottom-nav-bar button.center-btn'));
+            setTimeout(initSignaturePad, 500); 
+        }
+    } catch (e) {
+        alert("Lỗi tải hồ sơ học sinh: " + e.message);
+    }
+}
+
+// Quay về tìm kiếm
+function backToSearch() {
+    document.getElementById('task-screen').style.display = 'none';
+    document.getElementById('search-screen').style.display = 'block';
+    activeStudentData = null;
+}
+
+// --- 5. BOTTOM TABS NẰM SÁT MÀN HÌNH ---
+function switchTaskTab(paneId, btn) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.bottom-nav-bar button').forEach(b => b.classList.remove('active'));
+
+    document.getElementById(paneId).classList.add('active');
+    btn.classList.add('active');
+
+    // Nếu quay về tab vẽ thì khởi tạo lại pad
+    if (paneId === 'pane-reception') {
+        setTimeout(initSignaturePad, 200);
+    }
+}
+
+// --- 6. KHỞI TẠO VẼ CHỮ KÝ TRỰC TIẾP TRÊN MÀN HÌNH ---
+function initSignaturePad() {
+    signatureCanvas = document.getElementById('signature-pad');
+    if (!signatureCanvas) return;
+    
+    // Set kích thước chuẩn tương ứng tỉ lệ màn hình thực tế
+    signatureCanvas.width = signatureCanvas.parentElement.clientWidth;
+    signatureCanvas.height = signatureCanvas.parentElement.clientHeight;
+    
+    signatureCtx = signatureCanvas.getContext('2d');
+    signatureCtx.lineWidth = 3;
+    signatureCtx.lineJoin = 'round';
+    signatureCtx.lineCap = 'round';
+    signatureCtx.strokeStyle = '#000000';
+
+    // Xử lý sự kiện Touch di động
+    signatureCanvas.addEventListener('touchstart', (e) => {
+        isDrawing = true;
+        const pos = getTouchPos(signatureCanvas, e);
+        signatureCtx.beginPath();
+        signatureCtx.moveTo(pos.x, pos.y);
+        e.preventDefault();
+    }, { passive: false });
+
+    signatureCanvas.addEventListener('touchmove', (e) => {
+        if (!isDrawing) return;
+        const pos = getTouchPos(signatureCanvas, e);
+        signatureCtx.lineTo(pos.x, pos.y);
+        signatureCtx.stroke();
+        e.preventDefault();
+    }, { passive: false });
+
+    signatureCanvas.addEventListener('touchend', () => {
+        isDrawing = false;
+    });
+}
+
+function getTouchPos(canvasDom, touchEvent) {
+    const rect = canvasDom.getBoundingClientRect();
+    return {
+        x: touchEvent.touches[0].clientX - rect.left,
+        y: touchEvent.touches[0].clientY - rect.top
+    };
+}
+
+function clearSignature() {
+    if (signatureCtx && signatureCanvas) {
+        signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+    }
+}
+
+// --- 7. CẤP PHÁT THUỐC TỰ ĐỘNG ---
+function loadPharmacyData() {
+    db.collection('yt_pharmacy_items').onSnapshot(snap => {
+        pharmacyCache = [];
+        snap.forEach(doc => pharmacyCache.push({ id: doc.id, ...doc.data() }));
+    });
+}
+
+function toggleMedicineSection() {
+    const checked = document.getElementById('chk-use-medicine').checked;
+    document.getElementById('medicine-selection-box').style.display = checked ? 'block' : 'none';
+}
+
+function searchMedicine(val) {
+    const box = document.getElementById('med-suggest-box');
+    if (val.trim().length < 2) { box.style.display = 'none'; return; }
+
+    const keyword = removeVietnameseTones(val.trim()).toLowerCase();
+    const matched = pharmacyCache.filter(item => {
+        const hasStock = item.batches && item.batches.some(b => parseFloat(b.qty) > 0);
+        return hasStock && removeVietnameseTones(item.name || '').toLowerCase().includes(keyword);
+    });
+
+    box.innerHTML = '';
+    if (matched.length === 0) {
+        box.innerHTML = '<div style="padding:10px; font-size:0.8rem; color:red;">Hết thuốc hoặc không có!</div>';
+    } else {
+        matched.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'suggest-item';
+            div.innerText = item.name;
+            div.onclick = () => selectMedicine(item);
+            box.appendChild(div);
+        });
+    }
+    box.style.display = 'block';
+}
+
+function selectMedicine(item) {
+    document.getElementById('med-search-input').value = item.name;
+    document.getElementById('med-suggest-box').style.display = 'none';
+    
+    const batchSelect = document.getElementById('med-batch-select');
+    batchSelect.innerHTML = '<option value="">Chọn lô</option>';
+    
+    if (item.batches) {
+        item.batches.forEach((b, index) => {
+            if (parseFloat(b.qty) > 0) {
+                batchSelect.innerHTML += `<option value="${index}">Lô ${b.lot} (Tồn: ${b.qty})</option>`;
+            }
+        });
+    }
+    
+    // Gán dữ liệu tạm lên select để phục vụ hàm thêm
+    batchSelect.dataset.itemId = item.id;
+    batchSelect.dataset.itemName = item.name;
+    batchSelect.dataset.unit = item.unit;
+}
+
+function addMedicine() {
+    const select = document.getElementById('med-batch-select');
+    const itemId = select.dataset.itemId;
+    const itemName = select.dataset.itemName;
+    const unit = select.dataset.unit;
+    const batchIdx = select.value;
+    const qty = parseFloat(document.getElementById('med-qty-input').value);
+
+    if (!itemId || batchIdx === "" || isNaN(qty) || qty <= 0) {
+        alert("Vui lòng chọn thuốc, lô và nhập số lượng đúng!");
+        return;
+    }
+
+    const item = pharmacyCache.find(i => i.id === itemId);
+    const batchSelected = item.batches[batchIdx];
+
+    if (qty > parseFloat(batchSelected.qty)) {
+        alert("Số lượng tồn kho không đủ để cấp!");
+        return;
+    }
+
+    selectedMedicines.push({
+        itemId,
+        itemName,
+        batchIndex: batchIdx,
+        lot: batchSelected.lot,
+        qty,
+        unit
+    });
+
+    renderSelectedMedicines();
+
+// Thay thế đoạn cuối hàm addMedicine() để tự động điền danh sách thuốc
+const treatmentInput = document.getElementById('yt-treatment');
+// Chỉ lấy tên thuốc và số lượng ghép lại
+const textAppend = `Cấp ${itemName} (${qty} ${unit})`;
+
+let currentVal = treatmentInput.value.trim();
+if (currentVal === "") {
+    treatmentInput.value = textAppend;
+} else {
+    // Nếu trong ô xử lý đã có chữ thì thêm dấu phẩy ngăn cách
+    treatmentInput.value = currentVal + ", " + textAppend;
+}
+
+    // Reset form cấp
+    document.getElementById('med-search-input').value = '';
+    select.innerHTML = '<option value="">Chọn lô</option>';
+}
+
+function renderSelectedMedicines() {
+    const container = document.getElementById('med-pending-list');
+    container.innerHTML = '';
+    selectedMedicines.forEach((m, idx) => {
+        container.innerHTML += `
+            <div class="med-item-row">
+                <span><strong>${m.itemName}</strong> (Lô ${m.lot}) - ${m.qty} ${m.unit}</span>
+                <i class="fas fa-trash" onclick="removeSelectedMed(${idx})"></i>
+            </div>`;
+    });
+}
+
+function removeSelectedMed(idx) {
+    selectedMedicines.splice(idx, 1);
+    renderSelectedMedicines();
+}
+
+// --- 8. HOÀN THÀNH TIẾP NHẬN ---
+async function saveReception() {
+    const symptom = document.getElementById('yt-symptom').value.trim();
+    const treatment = document.getElementById('yt-treatment').value.trim();
+    const note = document.getElementById('yt-note').value.trim();
+    
+    if (!symptom) return alert("Vui lòng nhập triệu chứng!");
+    if (!treatment) return alert("Vui lòng nhập cách xử lý!");
+
+    // Chuyển Canvas vẽ thành dạng ảnh base64
+    const signImg = signatureCanvas ? signatureCanvas.toDataURL() : '';
+
+    try {
+        const batch = db.batch();
+
+        // 1. Thêm bản ghi lượt tiếp nhận
+        const visitRef = db.collection('yt_visits').doc();
+        batch.set(visitRef, {
+            studentId: activeStudentData.id,
+            name: activeStudentData.name,
+            class: activeStudentData.class,
+            symptom,
+            treatment,
+            note,
+            sign: signImg,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // 2. Trừ kho thuốc nếu có cấp phát
+        if (selectedMedicines.length > 0) {
+            let pharmacyUpdates = {};
+            selectedMedicines.forEach(m => {
+                const itemInCache = pharmacyCache.find(pc => pc.id === m.itemId);
+                if (!pharmacyUpdates[m.itemId]) {
+                    pharmacyUpdates[m.itemId] = JSON.parse(JSON.stringify(itemInCache.batches));
+                }
+                pharmacyUpdates[m.itemId][m.batchIndex].qty -= m.qty;
+            });
+
+            for (const [id, batches] of Object.entries(pharmacyUpdates)) {
+                batch.update(db.collection('yt_pharmacy_items').doc(id), { batches });
+            }
+
+            // Ghi Log giao dịch xuất thuốc
+            const txId = "XK-M-" + Date.now().toString().slice(-6);
+            const txRef = db.collection('yt_pharmacy_transactions').doc(txId);
+            batch.set(txRef, {
+                id: txId,
+                type: 'export',
+                receiver: `${activeStudentData.name} (${activeStudentData.class})`,
+                reason: "Tiếp nhận cấp thuốc di động",
+                notes: `Liên kết đợt khám ${visitRef.id}`,
+                items: selectedMedicines,
+                user: firebase.auth().currentUser ? firebase.auth().currentUser.email : "Mobile Admin",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+
+        await batch.commit();
+        alert("✅ Tiếp nhận lượt khám thành công!");
+        
+        // Reset các trường
+        document.getElementById('yt-symptom').value = '';
+        document.getElementById('yt-note').value = '';
+        document.getElementById('chk-use-medicine').checked = false;
+        toggleMedicineSection();
+        selectedMedicines = [];
+        renderSelectedMedicines();
+        clearSignature();
+
+        // Quay lại màn hình chính
+        backToSearch();
+
+    } catch (e) {
+        alert("Có lỗi xảy ra: " + e.message);
+    }
+}
+
+// --- 9. CHỈNH SỬA THÔNG TIN CHI TIẾT ---
+// Thay thế hoàn toàn hàm saveStudentProfile() cũ trong mobile_admin.js
+async function saveStudentProfile() {
+    // Đọc chính xác ID của học sinh đang chỉnh sửa
+    const sid = document.getElementById('edit-student-id').value;
+    if (!sid) {
+        alert("Không tìm thấy mã định danh học sinh!");
+        return;
+    }
+
+    const studentCode = document.getElementById('edit-student-code').value.trim();
+    const name = document.getElementById('edit-student-name').value.trim();
+    const className = document.getElementById('edit-student-class').value.trim();
+    const dob = document.getElementById('edit-student-dob').value;
+    const gender = document.getElementById('edit-student-gender').value;
+    const phone = document.getElementById('edit-student-phone').value.trim();
+    const parentPhone = document.getElementById('edit-student-parent-phone').value.trim();
+    const street = document.getElementById('edit-student-street').value.trim();
+    const ward = document.getElementById('edit-student-ward').value.trim();
+    const city = document.getElementById('edit-student-city').value;
+    const height = document.getElementById('edit-student-height').value.trim();
+    const weight = document.getElementById('edit-student-weight').value.trim();
+    const medicalNote = document.getElementById('edit-student-medical-note').value.trim();
+
+    if (!name || !className) {
+        alert("Họ tên và Lớp học sinh không được phép để trống!");
+        return;
+    }
+
+    try {
+        const payload = {
+            studentCode, 
+            name, 
+            class: className, 
+            dob, 
+            gender, 
+            phone,
+            parentPhone, 
+            street, 
+            ward,
+            city,
+            height, 
+            weight, 
+            medicalNote,
+            name_search: removeVietnameseTones(name)
+        };
+
+        // Ghi dữ liệu cập nhật lên Firestore
+        await db.collection('yt_students').doc(sid).update(payload);
+        alert("✅ Đã cập nhật thông tin hồ sơ học sinh thành công!");
+        
+        // Làm mới dữ liệu hiện hành trên RAM thiết bị
+        activeStudentData = { ...activeStudentData, ...payload };
+        
+        // Gọi lại hàm để cập nhật hiển thị đồng bộ sang Tab 1 (Tóm tắt)
+        loadStudentToTask(sid);
+    } catch (e) {
+        alert("Lỗi khi thực hiện lưu hồ sơ: " + e.message);
+    }
+}
+
+// --- 10. XEM LỊCH SỬ KHÁM ---
+async function loadStudentHistory(studentId) {
+    const container = document.getElementById('visit-history-list');
+    container.innerHTML = '<div style="text-align:center;"><i class="fas fa-spinner fa-spin"></i> Đang tải lịch sử...</div>';
+
+    try {
+        const snap = await db.collection('yt_visits').where('studentId', '==', studentId).get();
+        if (snap.empty) {
+            container.innerHTML = '<p style="text-align:center; color:gray;">Chưa có lịch sử khám bệnh trước đây.</p>';
+            return;
+        }
+
+        let list = [];
+        snap.forEach(doc => list.push(doc.data()));
+        // Sắp xếp thời gian mới nhất lên đầu
+        list.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+        container.innerHTML = '';
+        list.forEach(item => {
+            const time = item.timestamp ? new Date(item.timestamp.seconds * 1000).toLocaleString('vi-VN') : 'Vừa xong';
+            container.innerHTML += `
+                <div class="timeline-item">
+                    <div class="timeline-date">${time}</div>
+                    <div class="timeline-desc">
+                        <strong>Triệu chứng:</strong> ${item.symptom} <br>
+                        <strong>Hướng xử lý:</strong> <span style="color:green;">${item.treatment}</span>
+                        ${item.note ? `<br><i>Ghi chú: ${item.note}</i>` : ''}
+                    </div>
+                </div>`;
+        });
+    } catch (e) {
+        container.innerHTML = '<p style="color:red;">Lỗi khi tải lịch sử khám.</p>';
+    }
+}
+
+// --- 11. ĐIỀU HƯỚNG SCROLL THÔNG MINH (ẨN/HIỆN KHI CUỘN) ---
+function initScrollBehavior() {
+    window.addEventListener('scroll', () => {
+        let st = window.pageYOffset || document.documentElement.scrollTop;
+        const header = document.querySelector('.glass-header');
+        const bottomNav = document.getElementById('app-bottom-nav');
+
+        if (st > lastScrollTop && st > 100) {
+            // Cuộn xuống -> Ẩn
+            if(header) header.classList.add('scroll-hide-header');
+            if(bottomNav) bottomNav.classList.add('scroll-hide-nav');
+        } else {
+            // Cuộn lên -> Hiện
+            if(header) header.classList.remove('scroll-hide-header');
+            if(bottomNav) bottomNav.classList.remove('scroll-hide-nav');
+        }
+        lastScrollTop = st <= 0 ? 0 : st;
+    }, { passive: true });
+}
+
+// --- 12. CAMERA QUÉT QR MÃ VẠCH ---
+function openQRScanner() {
+    document.getElementById('scanner-modal').classList.add('active');
+    
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(stream => {
+        videoStream = stream;
+        const video = document.getElementById('scanner-video');
+        video.srcObject = stream;
+        video.setAttribute("playsinline", true);
+        video.play();
+        requestAnimationFrame(tickQRScan);
+    }).catch(err => {
+        alert("Không thể khởi động Camera: " + err.message);
+        closeQRScanner();
+    });
+}
+
+function tickQRScan() {
+    const video = document.getElementById('scanner-video');
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert",
+        });
+
+        if (code) {
+            // Đã nhận diện được mã
+            let scannedData = code.data.trim();
+            if (scannedData.toLowerCase().startsWith('yt-')) {
+                scannedData = scannedData.toUpperCase();
+            }
+            closeQRScanner();
+            loadStudentToTask(scannedData);
+            return;
+        }
+    }
+    if (videoStream) {
+        requestAnimationFrame(tickQRScan);
+    }
+}
+
+function closeQRScanner() {
+    document.getElementById('scanner-modal').classList.remove('active');
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+    }
+}
+
+function toggleCameraFlash() {
+    if (videoStream) {
+        const track = videoStream.getVideoTracks()[0];
+        isFlashOn = !isFlashOn;
+        track.applyConstraints({
+            advanced: [{ torch: isFlashOn }]
+        }).catch(() => {
+            alert("Thiết bị không hỗ trợ Đèn Flash!");
+        });
+    }
+}
+
+// --- 13. SETTINGS & LOGOUT ---
+function toggleSettingsDropdown() {
+    const dd = document.getElementById('settings-dropdown');
+    dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
+}
+
+function toggleBiometricsSetting() {
+    const active = localStorage.getItem('vts_mobile_biometric') === 'true';
+    localStorage.setItem('vts_mobile_biometric', !active);
+    alert(!active ? "Đã bật đăng nhập bằng vân tay!" : "Đã tắt đăng nhập bằng vân tay!");
+    toggleSettingsDropdown();
+}
+
+// --- ĐỒNG BỘ LOGIC CÀI ĐẶT BẬT/TẮT SINH TRẮC HỌC ---
+
+// 1. Hàm cập nhật trạng thái hiển thị nút gạt (On/Off) trên giao diện
+function updateSettingsUI() {
+    const isBioEnabled = localStorage.getItem('vts_mobile_biometric') === 'true';
+    const toggleSwitch = document.getElementById('bio-toggle-switch');
+    
+    if (toggleSwitch) {
+        if (isBioEnabled) {
+            toggleSwitch.classList.add('active'); // Gạt nút sang ON
+        } else {
+            toggleSwitch.classList.remove('active'); // Gạt nút sang OFF
+        }
+    }
+}
+
+// 2. Đồng bộ trạng thái nút gạt khi người dùng bấm mở menu Settings
+function toggleSettingsDropdown() {
+    const dd = document.getElementById('settings-dropdown');
+    if (dd) {
+        const isOpen = dd.style.display === 'block';
+        dd.style.display = isOpen ? 'none' : 'block';
+        if (!isOpen) {
+            updateSettingsUI(); // Đọc dữ liệu cục bộ để hiển thị đúng trạng thái nút gạt
+        }
+    }
+}
+
+// 3. Xử lý bật/tắt thiết lập bảo mật sinh trắc học
+async function toggleBiometricsSetting() {
+    const isBioEnabled = localStorage.getItem('vts_mobile_biometric') === 'true';
+    
+    if (!isBioEnabled) {
+        // ĐANG TẮT -> TIẾN HÀNH BẬT: Đăng ký tạo khóa gốc
+        if (!window.PublicKeyCredential) {
+            alert("Thiết bị hoặc trình duyệt không hỗ trợ sinh trắc học chuẩn WebAuthn!");
+            return;
+        }
+
+        const options = {
+            publicKey: {
+                challenge: new Uint8Array([1, 9, 0, 9, 2, 0, 0, 5]),
+                rp: { name: "Hệ thống Y Tế Số VTS" },
+                user: { id: new Uint8Array([1]), name: "admin", displayName: "Admin VTS" },
+                pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+                authenticatorSelection: {
+                    authenticatorAttachment: "platform", // Kích hoạt phần cứng Vân tay/FaceID thiết bị
+                    userVerification: "required"
+                }
+            }
+        };
+
+        try {
+            const credential = await navigator.credentials.create(options);
+            if (credential) {
+                const rawId = new Uint8Array(credential.rawId);
+                const base64Id = btoa(String.fromCharCode.apply(null, rawId));
+                
+                localStorage.setItem('vts_biometric_cred_id', base64Id);
+                localStorage.setItem('vts_mobile_biometric', 'true');
+                alert("✅ Đã kích hoạt bảo mật Vân tay/FaceID thành công!");
+            }
+        } catch (err) {
+            console.error("Lỗi đăng ký sinh trắc học:", err);
+            localStorage.setItem('vts_mobile_biometric', 'false');
+            alert("Không thể thiết lập khóa truy cập sinh trắc học trên thiết bị.");
+        }
+    } else {
+        // ĐANG BẬT -> TIẾN HÀNH TẮT TÍNH NĂNG
+        localStorage.setItem('vts_mobile_biometric', 'false');
+        alert("Đã tắt tính năng đăng nhập sinh trắc học thành công!");
+    }
+    
+    updateSettingsUI(); // Đồng bộ trạng thái gạt sau khi xử lý thành công
+}
+
+function handleLogout() {
+    if (confirm("Đăng xuất tài khoản quản trị khỏi thiết bị?")) {
+        localStorage.clear();
+        firebase.auth().signOut().then(() => {
+            location.reload();
+        });
+    }
+}
+
+function goToHome() {
+    if (confirm("Quay về trang thông tin chung?")) {
+        window.location.href = "mobile_admin.html";
+    }
+}
+
+// Loại bỏ dấu tiếng Việt
+function removeVietnameseTones(str) {
+    if (!str) return "";
+    str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+    str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+    str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+    str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+    str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+    str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+    str = str.replace(/đ/g, "d");
+    str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+    str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+    str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+    str = str.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+    str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+    str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+    str = str.replace(/Đ/g, "D");
+    return str;
+}
+// Tính năng khóa màn hình khi thoát ứng dụng hoặc đổi tab (như app ngân hàng)
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+        // Khi người dùng thoát ra màn hình chính hoặc chuyển ứng dụng, khóa trạng thái phiên
+        sessionStorage.setItem('vts_mobile_session_locked', 'true');
+    }
+});
+
+// Kiểm tra khóa khi ứng dụng hoạt động trở lại
+window.addEventListener('pageshow', () => {
+    const isRegistered = localStorage.getItem('vts_mobile_registered');
+    const isSessionLocked = sessionStorage.getItem('vts_mobile_session_locked');
+    
+    if (isRegistered === 'true' && isSessionLocked === 'true') {
+        // Reset trạng thái nhập PIN
+        loginPasscodeArray = [];
+        updateDots('login-dots', 0);
+        showAuthStep('step-login');
+        
+        // Tự động gọi quét sinh trắc học nếu đã bật
+        if (localStorage.getItem('vts_mobile_biometric') === 'true') {
+            triggerBiometricAuth();
+        }
+    }
+});
+
+// Cập nhật hàm enterSystem để mở khóa phiên hoạt động
+const originalEnterSystem = enterSystem;
+enterSystem = function() {
+    sessionStorage.removeItem('vts_mobile_session_locked');
+    originalEnterSystem();
+};

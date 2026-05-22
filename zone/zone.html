@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài kiểm tra sức khỏe</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png">
+    <link rel="icon" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" sizes="32x32" type="image/png">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- HEADER GLASSMORPHISM GỐC -->
+    <header class="glass-header">
+        <div class="header-left">
+            <div class="header-logo"><img src="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" alt="Logo"></div>
+            <div class="header-titles">
+                <div class="title-top">Trường THPT Võ Thị Sáu - Bà rịa vũng tàu</div>
+                <div class="title-bottom">PHÒNG Y TẾ</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <nav class="nav-links">
+                <a href="../index.html"><i class="fas fa-home"></i> Trang chủ</a>
+                <div class="nav-divider"></div>
+                <a href="../student.html"><i class="fas fa-user-graduate"></i> Hồ sơ</a>
+                <div class="nav-divider"></div>
+                <a href="zone.html" class="active"><i class="fas fa-file-lines"></i> Bài Test</a>
+		<div class="nav-divider"></div>
+                <a href="test_admin.html"><i class="fas fa-sliders-h"></i> Quản trị</a>
+             </nav>
+            <div class="user-profile" id="top-user-profile" style="display: flex;">
+                <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" id="top-user-avatar">
+                <span class="user-name" id="top-user-name">Đang tải...</span>
+            </div>
+        </div>
+<style>
+    /* --- CSS TỐI ƯU CHO ĐIỆN THOẠI --- */
+    @media (max-width: 768px) {
+        /* Chỉnh lại khoảng cách thân trang để không bị Header đè */
+        main {
+            margin-top: 160px !important; 
+            padding: 0 15px !important;
+        }
+
+        /* Tối ưu Banner Xin chào */
+        .welcome-banner {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            padding: 25px 20px !important;
+            position: relative;
+            overflow: hidden;
+        }
+        .welcome-banner h2 {
+            font-size: 1.6rem !important; /* Thu nhỏ chữ xin chào */
+            line-height: 1.3;
+            word-break: break-word;
+        }
+        .welcome-banner .info-text {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            font-size: 0.95rem;
+        }
+        /* Chỉnh cái Icon y tế khổng lồ mờ xuống làm nền */
+        .welcome-banner i.fa-notes-medical {
+            position: absolute;
+            right: -20px;
+            bottom: -20px;
+            font-size: 8rem !important;
+            opacity: 0.1 !important;
+        }
+
+        /* Tối ưu Tiêu đề mục */
+        .section-title {
+            font-size: 1.3rem !important;
+            align-items: flex-start !important;
+        }
+        .section-title span {
+            margin-top: 10px; /* Căn chỉnh thanh màu gạch ngang */
+        }
+
+        /* Tối ưu Card Bài Test */
+        .test-row-card {
+            display: flex;
+            flex-direction: column;
+            padding: 20px !important;
+            border-radius: 15px !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            background: white;
+            border: 1px solid #f1f5f9;
+        }
+        .test-row-title {
+            font-size: 1.3rem !important; /* Chữ tên bài test vừa phải hơn */
+            line-height: 1.4 !important;
+            margin: 10px 0 15px 0 !important;
+        }
+        .test-row-meta {
+            display: flex;
+            flex-direction: column !important; /* Xếp dọc thời gian & hạn chót */
+            gap: 10px !important;
+            margin-bottom: 20px;
+        }
+        .test-row-meta span {
+            background: #f8fafc; /* Tạo khối màu xám nhạt như trong ảnh số 2 */
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .test-row-action {
+            width: 100%;
+        }
+        .test-row-action button {
+            width: 100%; /* Nút làm bài full viền */
+            padding: 15px !important;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+    }
+/* --- HIỆU ỨNG NÚT KÍNH TRONG SUỐT (LIQUID GLASS) --- */
+        .glass-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 25px;
+            background: rgba(255, 255, 255, 0.15); /* Nền trắng mờ */
+            backdrop-filter: blur(15px); /* Làm nhòe viền sau (Glass effect) */
+            -webkit-backdrop-filter: blur(15px); /* Hỗ trợ Safari */
+            border: 1px solid rgba(255, 255, 255, 0.4); /* Viền trắng mảnh */
+            border-top: 1px solid rgba(255, 255, 255, 0.7); /* Viền trên sáng hơn tạo độ bóng */
+            border-left: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 16px;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 1rem;
+            text-decoration: none;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1), inset 0 0 10px rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        /* Hiệu ứng trôi chảy khi di chuột */
+        .glass-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.8);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.15), inset 0 0 15px rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        .glass-btn:active { transform: translateY(0); }
+
+        /* Tối ưu nút kính trên Mobile */
+        @media (max-width: 768px) {
+            .glass-btn {
+                margin-top: 20px;
+                width: 100%; /* Kéo dài full trên đt */
+                padding: 12px;
+            }
+        }
+</style>
+    </header>
+
+    <main style="max-width:1200px; margin: 120px auto 40px; padding:0 20px;">
+        
+        <!-- THÔNG TIN HỌC SINH ĐÃ LIÊN KẾT & NÚT LỊCH SỬ KÍNH -->
+        <div class="welcome-banner" style="position: relative; overflow: hidden; background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); padding: 35px 40px; border-radius: 20px; color: white; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3); margin-bottom: 40px;">
+            
+            <!-- Icon chìm dưới nền -->
+            <i class="fas fa-notes-medical" style="position: absolute; right: -20px; bottom: -40px; font-size: 14rem; opacity: 0.1; z-index: 1;"></i>
+
+            <!-- Khu vực chữ bên trái -->
+            <div style="z-index: 2;">
+                <h2 style="font-size: 2.2rem; margin: 0 0 10px 0; font-weight: 800; line-height: 1.3;">Xin chào,<br><span id="st-name">--</span>! 👋</h2>
+                <p class="info-text" style="opacity: 0.9; margin-top: 15px; font-size: 0.95rem;">
+                    <span><i class="fas fa-id-badge" style="width: 20px;"></i> Mã Y Tế: <strong id="st-id">--</strong></span>
+                    <span style="margin-left: 15px; display: inline-block;"><i class="fas fa-users" style="width: 20px;"></i> Lớp: <strong id="st-class">--</strong></span>
+                </p>
+            </div>
+
+            <!-- Khu vực Nút Kính bên phải -->
+            <div style="z-index: 2;">
+                <a href="test_history.html" class="glass-btn">
+                    <i class="fas fa-history" style="font-size: 1.1rem;"></i> Lịch sử
+                </a>
+            </div>
+            
+        </div>
+
+        <h2 style="margin-bottom:20px; display:flex; align-items:center; gap:15px;">
+            <span style="width:50px; height:4px; background:var(--primary-grad); border-radius:2px;"></span>
+            ❤️ Kiểm Tra Sức Khỏe 
+        </h2>
+
+        <!-- LƯỚI DANH SÁCH BÀI TEST -->
+        <div id="test-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:30px;">
+            <div style="text-align:center; grid-column: 1/-1; padding: 40px; color: var(--text-gray);">
+                <i class="fas fa-spinner fa-spin fa-3x"></i><p>Đang tải dữ liệu...</p>
+            </div>
+        </div>
+<!-- BẮT ĐẦU: THÊM ĐOẠN CODE NÀY VÀO TRƯỚC THẺ </main> -->
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="../assets/config.js"></script>
+    <script src="../assets/js/app.js"></script>
+
+    <script>
+        let currentStudent = null;
+
+        // 1. KIỂM TRA ĐĂNG NHẬP & LIÊN KẾT HỒ SƠ
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (user) {
+                document.getElementById('top-user-avatar').src = user.photoURL || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+                
+                // Kiểm tra xem Email này đã liên kết hồ sơ y tế chưa
+                const snap = await db.collection('yt_students').where('linkedEmail', '==', user.email).get();
+                if (snap.empty) {
+                    alert("⚠️ Bạn chưa liên kết Hồ sơ Y tế! Vui lòng quay lại trang 'Hồ sơ' để liên kết trước khi làm bài test.");
+                    window.location.href = "../student.html"; // Ép quay về trang student
+                } else {
+                    currentStudent = { id: snap.docs[0].id, ...snap.docs[0].data(), email: user.email };
+                    document.getElementById('top-user-name').innerText = currentStudent.name;
+                    document.getElementById('st-name').innerText = currentStudent.name;
+                    document.getElementById('st-id').innerText = currentStudent.id;
+                    document.getElementById('st-class').innerText = currentStudent.class;
+                    
+                    loadAvailableTests(); // Load bài test
+                }
+            } else {
+                alert("Vui lòng đăng nhập trước!");
+                window.location.href = "../student.html";
+            }
+        });
+
+        // 2. TẢI DANH SÁCH BÀI TEST ĐANG MỞ
+      // 2. TẢI DANH SÁCH BÀI TEST ĐANG MỞ
+function loadAvailableTests() {
+    db.collection('yt_tests').where('isActive', '==', true).get().then(snap => {
+        const container = document.getElementById('test-grid'); 
+        
+        if (snap.empty) {
+            container.innerHTML = `<div style="width:100%; text-align:center; padding:50px; background:white; border-radius:15px;"><i class="fas fa-box-open fa-3x" style="color:#cbd5e1; margin-bottom:15px;"></i><br>Hiện tại không có bài test nào.</div>`;
+            return;
+        }
+
+        // Bỏ hết CSS dạng lưới cũ của thẻ cha, ép nó thành Flex Column
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.gap = '20px';
+
+        let html = '';
+        snap.forEach(doc => {
+            const t = { id: doc.id, ...doc.data() }; 
+            
+            // Xử lý hiển thị ngày khóa test
+            let expireText = "Không thời hạn";
+            if (t.expiresAt) {
+                const dateObj = new Date(t.expiresAt);
+                expireText = dateObj.toLocaleString('vi-VN', {hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric'});
+            }
+
+            html += `
+            <div class="test-row-card">
+                <!-- Khu vực chữ bên trái -->
+                <div class="test-row-info">
+                    <div class="test-row-code" style="font-size: 0.85rem; font-weight: 700; color: #1e293b; letter-spacing: 1px;">MÃ BÀI TEST: ${t.id}</div>
+                    <div class="test-row-title" style="font-size: 1.5rem; font-weight: 700; color: #0f172a; margin: 15px 0;">${t.title}</div>
+                    
+                    <div class="test-row-meta">
+                        <span><i class="fas fa-stopwatch" style="color:#3b82f6;"></i> ${t.timeLimit > 0 ? t.timeLimit + ' phút' : 'Tự do'}</span>
+                        <span><i class="fas fa-calendar-times" style="color:#ef4444;"></i> Khóa lúc: ${expireText}</span>
+                    </div>
+                </div>
+
+                <!-- Khu vực Nút bấm bên phải -->
+                <div class="test-row-action">
+                    <button onclick='openTestInfoPopup(${JSON.stringify(t).replace(/'/g, "&#39;")})' class="btn btn-primary" style="background: #0ea5e9; color: white; border: none; font-weight: 600; cursor: pointer;">
+                        <i class="fas fa-pencil-alt"></i> Làm bài ngay
+                    </button>
+                </div>
+            </div>
+        `;
+        });
+        
+        container.innerHTML = html;
+    });
+}
+// 3. HÀM MỞ POPUP THÔNG TIN BÀI TEST
+        function openTestInfoPopup(testData) {
+            // Đổ dữ liệu text vào Popup
+            document.getElementById('popup-title').innerText = testData.title;
+            document.getElementById('popup-desc').innerText = testData.description || "Bài test này chưa có mô tả chi tiết.";
+
+            // Xử lý thời gian làm bài
+            let timeText = testData.timeLimit > 0 ? testData.timeLimit + " phút" : "Tự do";
+            
+            // Xử lý số lượng câu hỏi (nếu có)
+            let questionCount = testData.questions ? testData.questions.length : "?";
+
+            // Đổ thông số vào giao diện
+            document.getElementById('popup-stats').innerHTML = `
+                <div>
+                    <i class="fas fa-clock" style="color: #3b82f6; font-size:1.5rem; margin-bottom:5px;"></i><br>
+                    <span style="color:#64748b; font-size:0.85rem;">Thời gian</span><br>
+                    <strong style="color:#1e293b;">${timeText}</strong>
+                </div>
+                <div>
+                    <i class="fas fa-list-ol" style="color: #f59e0b; font-size:1.5rem; margin-bottom:5px;"></i><br>
+                    <span style="color:#64748b; font-size:0.85rem;">Số câu hỏi</span><br>
+                    <strong style="color:#1e293b;">${questionCount} câu</strong>
+                </div>
+            `;
+
+            // Gắn link chuyển hướng cho nút "Bắt đầu làm bài"
+            document.getElementById('popup-start-btn').href = `do_zone.html?testId=${testData.id}`;
+
+            // Hiển thị Popup (dùng display flex để căn giữa)
+            document.getElementById('test-info-modal').style.display = 'flex';
+        }
+
+        // 4. HÀM ĐÓNG POPUP
+        function closeTestInfoPopup() {
+            document.getElementById('test-info-modal').style.display = 'none';
+        }
+    </script>
+<!-- DÁN ĐOẠN NÀY VÀO SÁT TRÊN THẺ </body> -->
+
+<!-- POPUP HIỂN THỊ THÔNG TIN CHI TIẾT BÀI TEST -->
+<div id="test-info-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:99999; align-items:center; justify-content:center;">
+    
+    <!-- Hộp trắng chứa nội dung (Đã thêm max-height và overflow-y để cuộn được nếu chữ dài) -->
+    <div class="modal-content fade-in" style="background: white; border-radius: 15px; position: relative; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; padding: 40px 30px 30px 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        
+        <!-- Nút đóng Popup -->
+        <button onclick="closeTestInfoPopup()" style="position:absolute; top:15px; right:15px; border:none; background:rgba(0,0,0,0.05); width: 35px; height: 35px; border-radius: 50%; font-size:1.5rem; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center; z-index: 10;">&times;</button>
+        
+        <i class="fas fa-file-alt fa-3x" style="color: #3b82f6; margin-bottom: 15px;"></i>
+        
+        <h2 id="popup-title" style="margin-bottom: 15px; font-size: 1.4rem; color: #1e293b; line-height: 1.4;">--</h2>
+        
+        <p id="popup-desc" style="font-size: 0.95rem; color: #64748b; line-height: 1.6; margin-bottom: 25px; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; padding: 15px 0;">--</p>
+
+        <div id="popup-stats" style="display: flex; justify-content: space-around; font-size: 1rem; margin-bottom: 30px;">
+            <!-- Dữ liệu sẽ được JS chèn vào đây -->
+        </div>
+        
+        <a id="popup-start-btn" href="#" class="btn btn-primary" style="display: inline-flex; width: 100%; justify-content: center; padding: 15px; font-size: 1.1rem; border-radius: 10px; background: #3b82f6; color: white; text-decoration: none; align-items: center; gap: 10px; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);">
+            <i class="fas fa-play-circle"></i> Bắt Đầu Làm Bài
+        </a>
+    </div>
+</div>
+</body>
+</html>

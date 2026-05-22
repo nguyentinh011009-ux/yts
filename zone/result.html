@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kết Quả Bài Test | Y Tế VTS</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png">
+    <link rel="icon" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" sizes="32x32" type="image/png">
+    <!-- Thư viện chụp ảnh màn hình xuất ra File -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Thư viện giải mã Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <style>
+        body { background: #f1f5f9; }
+        
+        /* Đã ép cứng chiều rộng 550px để xuất ảnh đồng bộ trên mọi thiết bị */
+        /* Khung hiển thị linh hoạt trên màn hình */
+        #capture-area {
+            background: white;
+            padding: 40px; /* Padding lớn trên máy tính */
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            position: relative;
+            overflow: hidden;
+            border-top: 8px solid #10b981;
+            width: 100%; /* Co dãn theo màn hình */
+            max-width: 600px; /* Không rộng quá 600px trên máy tính */
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        /* Tối ưu hóa khoảng cách trên điện thoại dưới 600px */
+        @media (max-width: 600px) {
+            #capture-area {
+                padding: 25px 20px; /* Thu nhỏ padding để tăng diện tích hiển thị chữ */
+                border-radius: 12px;
+            }
+            #rs-score {
+                font-size: 3rem !important; /* Điểm số vừa phải trên điện thoại */
+            }
+        }
+
+        /* Dấu mộc bản quyền mờ chìm */
+        .watermark {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 5rem;
+            font-weight: 900;
+            color: rgba(0, 0, 0, 0.03);
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .action-btns {
+            display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;
+            max-width: 550px;
+            margin: 0 auto;
+        }
+
+        /* --- ĐỊNH DẠNG VĂN BẢN ĐÃ GIẢI MÃ TỪ AI --- */
+        #rs-advice h1, #rs-advice h2, #rs-advice h3 {
+            color: #1e293b;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-family: 'Roboto', sans-serif;
+        }
+        #rs-advice h3 { font-size: 1.15rem; border-bottom: 1px dashed #e2e8f0; padding-bottom: 5px; }
+        #rs-advice p {
+            margin-bottom: 12px;
+            line-height: 1.6;
+            color: #334155;
+            font-size: 0.95rem;
+        }
+        #rs-advice ul, #rs-advice ol {
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+        #rs-advice li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+            color: #334155;
+            font-size: 0.95rem;
+        }
+        #rs-advice strong {
+            color: #0f172a;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <main style="max-width: 600px; margin: 40px auto; padding: 0 15px; box-sizing: border-box;">
+        
+        <!-- Nút quay về -->
+        <a href="test_history.html" style="text-decoration: none; color: #64748b; display: inline-block; margin-bottom: 20px; font-weight: bold;">
+            <i class="fas fa-arrow-left"></i> Quay lại lịch sử
+        </a>
+
+        <div id="loading-box" style="text-align: center; padding: 50px;">
+            <i class="fas fa-spinner fa-spin fa-3x" style="color: #3b82f6;"></i>
+            <p style="margin-top: 15px; color: #64748b;">Đang tải kết quả...</p>
+        </div>
+
+        <!-- KHUNG BỌC HIỆU ỨNG CO DÃN TRÊN MOBILE -->
+        <div id="wrapper-parent" style="width: 100%; display: flex; justify-content: center; overflow: visible;">
+            
+            <!-- VÙNG SẼ ĐƯỢC CHỤP ẢNH TẢI VỀ -->
+            <div id="capture-area" style="display: none; flex-shrink: 0;">
+                <div class="watermark">Y TẾ VTS</div>
+                
+                <!-- Tiêu đề chứng nhận -->
+                <div style="text-align: center; margin-bottom: 30px; position: relative; z-index: 1;">
+                    <img src="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" width="60" style="margin-bottom:10px; border-radius: 12px;" crossorigin="anonymous">
+                    <div style="font-size: 0.85rem; color: #64748b; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Phiếu Kết Quả Test Y Tế</div>
+                    <h2 id="rs-test-title" style="color: #1e293b; margin-top: 5px; font-size: 1.4rem;">--</h2>
+                </div>
+
+                <!-- Thông tin học sinh -->
+                <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e1; margin-bottom: 30px; display: flex; justify-content: space-between; flex-wrap: wrap; position: relative; z-index: 1;">
+                    <div>
+                        <div style="font-size: 0.85rem; color: #64748b;">Họ và tên</div>
+                        <div id="rs-student-name" style="font-weight: bold; color: #1e293b; font-size: 1.1rem;">--</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 0.85rem; color: #64748b;">Mã lượt / Lớp</div>
+                        <div style="font-weight: bold; color: #1e293b;"><span id="rs-attempt">--</span> / <span id="rs-class">--</span></div>
+                    </div>
+                </div>
+
+                <!-- Điểm số nổi bật -->
+                <div style="text-align: center; margin-bottom: 30px; position: relative; z-index: 1;">
+                    <div style="display: inline-block; background: #f0fdf4; border: 2px solid #10b981; padding: 20px 50px; border-radius: 20px;">
+                        <div style="font-size: 0.9rem; color: #059669; font-weight: bold; letter-spacing: 1px;">TỔNG ĐIỂM</div>
+                        <div id="rs-score" style="font-size: 3.5rem; font-weight: 900; color: #10b981; line-height: 1.2; margin-top: 5px; display: block; font-family: Arial, sans-serif;">0</div>
+                    </div>
+                </div>
+
+                <!-- BỘ KHUNG KẾT LUẬN & PHÂN TÍCH AI -->
+                <div style="display: flex; flex-direction: column; gap: 15px; position: relative; z-index: 1;">
+                    
+                    <!-- 1. Kết luận chung từ hệ thống -->
+                    <div style="background: #f8fafc; border-left: 4px solid #f59e0b; padding: 20px; border-radius: 10px;">
+                        <h4 style="color: #f59e0b; margin-bottom: 5px; font-size: 1rem;"><i class="fas fa-flag-checkered"></i> KẾT LUẬN CHUNG:</h4>
+                        <div id="rs-result-title" style="color: #1e293b; font-size: 1.15rem; font-weight: bold;">--</div>
+                    </div>
+
+                    <!-- 2. Lời khuyên Cá nhân hóa từ AI -->
+                    <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; border-radius: 10px;">
+                        <h4 style="color: #3b82f6; margin-bottom: 10px; font-size: 1rem;"><i class="fas fa-robot"></i> PHÂN TÍCH & LỜI KHUYÊN (AI):</h4>
+                        
+                        <!-- Khung đang chờ AI -->
+                        <div id="ai-loading-box" style="display: none; color: #64748b; font-size: 0.95rem; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-circle-notch fa-spin" style="color: #3b82f6;"></i>
+                            <span>AI của Y Tế VTS đang đọc đáp án và phân tích...<br><small>(Vui lòng chờ vài giây, nội dung sẽ tự động xuất hiện)</small></span>
+                        </div>
+
+                        <!-- Khung đã có kết quả AI -->
+                        <div id="rs-advice" style="display: none; text-align: left;">--</div>
+                    </div>
+
+                </div>
+
+                <div style="text-align: center; margin-top: 20px; font-size: 0.75rem; color: #94a3b8; font-style: italic; position: relative; z-index: 1;">
+                    Kết quả được ghi nhận lúc: <span id="rs-time">--</span>
+                </div>
+
+            </div> <!-- KẾT THÚC VÙNG CHỤP ẢNH -->
+        </div>
+
+        <!-- CÁC NÚT TÍNH NĂNG CHIA SẺ -->
+        <div id="action-tools" class="action-btns" style="display: none; margin-top: 20px;">
+            <button onclick="downloadImage()" class="btn btn-success" style="padding: 15px 25px; font-size: 1rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+                <i class="fas fa-download"></i> Tải Hình Ảnh (Lưu Máy)
+            </button>
+            <button onclick="copyLink()" class="btn btn-primary" style="padding: 15px 25px; font-size: 1rem; border-radius: 12px;">
+                <i class="fas fa-link"></i> Copy Link
+            </button>
+        </div>
+
+    </main>
+
+    <!-- FIREBASE SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="../assets/config.js"></script>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const resultId = urlParams.get('id');
+
+        let isGenerating = false; 
+
+        if(!resultId) {
+            alert("Lỗi: Không tìm thấy đường dẫn kết quả!");
+            window.location.href = "test_history.html";
+        } else {
+            loadResultDataLive();
+        }
+
+
+        function loadResultDataLive() {
+            db.collection('yt_test_results').doc(resultId).onSnapshot((doc) => {
+                if(!doc.exists) {
+                    document.getElementById('loading-box').innerHTML = "<i class='fas fa-exclamation-triangle fa-3x' style='color:#ef4444;'></i><p>Kết quả này không tồn tại hoặc đã bị xóa!</p>";
+                    return;
+                }
+
+                const data = doc.data();
+
+                // Đổ dữ liệu cơ bản
+                document.getElementById('rs-test-title').innerText = data.testTitle;
+                document.getElementById('rs-student-name').innerText = data.studentName;
+                document.getElementById('rs-class').innerText = data.studentClass;
+                document.getElementById('rs-attempt').innerText = "#" + doc.id.substring(0, 8).toUpperCase();
+                document.getElementById('rs-score').innerText = data.score;
+                document.getElementById('rs-result-title').innerText = data.resultTitle;
+                document.getElementById('rs-time').innerText = data.timestamp ? data.timestamp.toDate().toLocaleString('vi-VN') : "N/A";
+
+                // XỬ LÝ PHẦN AI ADVICE
+                const aiLoadingBox = document.getElementById('ai-loading-box');
+                const adviceText = document.getElementById('rs-advice');
+
+                if (data.aiAdvice === "pending") {
+                    aiLoadingBox.style.display = "flex";
+                    adviceText.style.display = "none";
+                    if (!isGenerating) {
+                        triggerAIEngine(doc.id, data);
+                    }
+                } else {
+                    aiLoadingBox.style.display = "none";
+                    adviceText.style.display = "block";
+                    const rawAdvice = data.aiAdvice || data.systemAdvice || data.advice || "Không có lời khuyên cụ thể.";
+                    adviceText.innerHTML = marked.parse(rawAdvice);
+                }
+
+                // Tắt màn hình loading tổng, hiện thẻ kết quả
+                document.getElementById('loading-box').style.display = "none";
+                document.getElementById('capture-area').style.display = "block";
+                document.getElementById('action-tools').style.display = "flex";
+                
+                // Kích hoạt đo đạc màn hình ngay khi dữ liệu được đổ xong
+
+            }, (error) => {
+                alert("Lỗi tải dữ liệu. Vui lòng kiểm tra lại quyền truy cập hoặc đăng nhập.");
+                console.error(error);
+            });
+        }
+
+        // HÀM GỌI AI TRỰC TIẾP LÊN CLOUDFLARE WORKER CỦA BẠN
+        async function triggerAIEngine(docId, data) {
+            isGenerating = true;
+            try {
+                const prompt = `
+                    Bạn là một chuyên gia tâm lý và cán bộ y tế học đường.
+                    Hãy phân tích và đưa ra lời khuyên cá nhân hóa cho học sinh dựa trên kết quả bài khảo sát sau:
+                    - Tên bài khảo sát: "${data.testTitle}"
+                    - Tổng điểm: ${data.score}
+                    - Kết luận sơ bộ từ hệ thống: "${data.resultTitle}"
+                    Dưới đây là chi tiết các câu trả lời của học sinh:
+                    ${data.answerDetails ? data.answerDetails.join('\n') : 'Không có chi tiết'}
+                    
+                    Yêu cầu:
+                    1. Xưng hô thân thiện (VD: "Chào em...").
+                    2. Phân tích ngắn gọn tại sao em lại có kết quả này dựa trên các đáp án đã chọn.
+                    3. Đưa ra 2-3 lời khuyên cụ thể, tích cực, dễ áp dụng.
+                    4. Viết dưới 300 từ, văn phong ấm áp, động viên.
+                `;
+
+                const AI_SERVER_URL = "https://vts-health-ai.yte-thptvothisaubrvt.workers.dev";
+                
+                const response = await fetch(AI_SERVER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+
+                if (!response.ok) throw new Error("Mất kết nối với máy chủ AI.");
+
+                const aiResult = await response.json();
+                
+                if (aiResult.error) {
+                    throw new Error(aiResult.error.message);
+                }
+
+                let aiResponseText = "";
+                
+                if (aiResult.text) {
+                    aiResponseText = aiResult.text;
+                } else if (aiResult.candidates && aiResult.candidates[0] && aiResult.candidates[0].content) {
+                    aiResponseText = aiResult.candidates[0].content.parts[0].text;
+                } else if (aiResult.choices && aiResult.choices[0] && aiResult.choices[0].message) {
+                    aiResponseText = aiResult.choices[0].message.content;
+                } else {
+                    throw new Error("Không nhận diện được định dạng trả về của AI.");
+                }
+
+                await db.collection('yt_test_results').doc(docId).update({
+                    aiAdvice: aiResponseText
+                });
+
+            } catch (error) {
+                console.error("Lỗi xử lý AI: ", error);
+                await db.collection('yt_test_results').doc(docId).update({
+                    aiAdvice: `[LỖI PHÂN TÍCH] - Hệ thống gặp sự cố kết nối với AI. Lời khuyên tạm thời từ hệ thống: ${data.systemAdvice || "Vui lòng liên hệ cán bộ y tế."}`
+                }).catch(e => console.error("Lỗi cập nhật ngược: ", e));
+            } finally {
+                isGenerating = false;
+            }
+        }
+
+        // TÍNH NĂNG TẢI ẢNH (Bảo toàn tuyệt đối kích thước xuất ra trên mọi thiết bị)
+        function downloadImage() {
+            const captureDiv = document.getElementById('capture-area');
+            const btn = document.querySelector('button[onclick="downloadImage()"]');
+            
+            if(document.getElementById('ai-loading-box').style.display === "flex") {
+                alert("Vui lòng chờ AI phân tích xong rồi mới tải ảnh về nhé!");
+                return;
+            }
+
+            let originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tạo ảnh...';
+            
+            // 🌟 BƯỚC ÉP KÍCH THƯỚC CHUẨN ĐỂ XUẤT ẢNH CÂN ĐỐI
+            const originalWidth = captureDiv.style.width;
+            const originalMaxWidth = captureDiv.style.maxWidth;
+            const originalPadding = captureDiv.style.padding;
+
+            // Khóa cứng kích thước 600px để ảnh xuất ra luôn cân đối, đẹp mắt
+            captureDiv.style.width = '600px';
+            captureDiv.style.maxWidth = '600px';
+            captureDiv.style.padding = '40px';
+
+            setTimeout(() => {
+                html2canvas(captureDiv, { 
+                    scale: 2, // Nhân đôi độ nét (Ảnh xuất ra sẽ có chiều rộng thực tế là 1200px siêu nét)
+                    useCORS: true, 
+                    allowTaint: true,
+                    backgroundColor: "#ffffff" 
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = `Ket_Qua_Test_${document.getElementById('rs-attempt').innerText}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    
+                    // 🌟 KHÔI PHỤC LẠI trạng thái hiển thị mượt mà trên di động
+                    captureDiv.style.width = originalWidth;
+                    captureDiv.style.maxWidth = originalMaxWidth;
+                    captureDiv.style.padding = originalPadding;
+                    btn.innerHTML = originalText;
+                }).catch(err => {
+                    alert("Có lỗi khi tạo ảnh.");
+                    captureDiv.style.width = originalWidth;
+                    captureDiv.style.maxWidth = originalMaxWidth;
+                    captureDiv.style.padding = originalPadding;
+                    btn.innerHTML = originalText;
+                });
+            }, 2000); // Chờ 100ms để trình duyệt cập nhật lại layout cứng
+        }
+
+        function copyLink() {
+            const link = window.location.href;
+            navigator.clipboard.writeText(link).then(() => {
+                alert("Đã copy link!");
+            });
+        }
+    </script>
+</body>
+</html>

@@ -300,12 +300,19 @@ async function writeAuditLog(action, targetCollection, targetId, description) {
         console.log("🛠️ Dev Mode: localhost detected. Skip writing audit log.");
         return; 
     }
-    if (!currentAdmin) return;
+
+    // 👉 THAY THẾ ĐOẠN KIỂM TRA CŨ BẰNG CƠ CHẾ DỰ PHÒNG THÔNG MINH NÀY:
+    const activeUser = currentAdmin || firebase.auth().currentUser;
+    if (!activeUser) {
+        console.warn("Skip writing audit log: No authenticated user found.");
+        return; // Chỉ thoát nếu thực sự không có tài khoản nào đang đăng nhập
+    }
+
     try {
         await db.collection('yt_audit_logs').add({
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            userId: currentAdmin.email,
-            userName: currentAdmin.displayName || "Quản trị viên",
+            userId: activeUser.email,
+            userName: activeUser.displayName || "Quản trị viên", // Sẽ lấy tên từ tài khoản Google
             action: action,
             target: targetCollection,
             targetId: targetId,

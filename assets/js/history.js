@@ -172,3 +172,16 @@ async function notifyParentMobile(visitId, studentId) {
         }
     }
 }
+// 👉 BỘ LỌC CHẶN VĂNG SAFARI TRÊN DI ĐỘNG (GIỮ APP LUÔN CHẠY TRONG PWA)
+if (("standalone" in window.navigator) && window.navigator.standalone) {
+    document.addEventListener('click', function(e) {
+        let target = e.target;
+        while (target && target.nodeName !== 'A') {
+            target = target.parentNode;
+        }
+        if (target && target.href && !target.target && target.hostname === window.location.hostname) {
+            e.preventDefault();
+            window.location.href = target.href; // Quay về ngầm bên trong App
+        }
+    }, false);
+}

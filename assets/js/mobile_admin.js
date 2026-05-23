@@ -33,12 +33,12 @@ window.addEventListener('DOMContentLoaded', () => {
 function checkDeviceRegistration() {
     const isRegistered = localStorage.getItem('vts_mobile_registered');
     
-    // 👉 THÊM DÒNG NÀY: Kiểm tra xem trong phiên làm việc này admin đã nhập mã PIN chưa
+    // 👉 ĐỌC TRẠNG THÁI: Kiểm tra xem trong phiên này đã mở khóa thành công lần nào chưa
     const isUnlocked = sessionStorage.getItem('vts_mobile_unlocked') === 'true';
 
     if (isRegistered === 'true') {
         if (isUnlocked) {
-            // 👉 NẾU ĐÃ MỞ KHÓA RỒI -> VÀO THẲNG HỆ THỐNG KHÔNG HỎI PIN NỮA
+            // 👉 NẾU ĐÃ MỞ KHÓA -> VÀO THẲNG HỆ THỐNG KHÔNG HỎI PIN NỮA
             enterSystem();
         } else {
             showAuthStep('step-login');
@@ -285,8 +285,12 @@ async function triggerBiometricAuth() {
 function enterSystem() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('search-screen').style.display = 'block';
+    
+    // 👉 GHI NHỚ PHIÊN: Lưu trạng thái mở khóa thành công vào bộ nhớ tạm của tab
     sessionStorage.setItem('vts_mobile_unlocked', 'true');
+    
     loadMasterCryptoKey();
+    
     // Tự động khôi phục dữ liệu Admin hiển thị trên Header (Dùng session lưu trữ)
     const cachedAdminName = localStorage.getItem('vts_cached_admin_name') || 'Quản trị viên';
     const cachedAdminAvatar = localStorage.getItem('vts_cached_admin_avatar') || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
@@ -315,7 +319,6 @@ function enterSystem() {
 
     loadPharmacyData();
 }
-
 // --- 4. HÀM TÌM KIẾM HỌC SINH (CHỈ CHẠY KHI NHẤN NÚT TÌM KIẾM) ---
 async function searchStudent() {
     const inputVal = document.getElementById('student-search-input').value.trim();

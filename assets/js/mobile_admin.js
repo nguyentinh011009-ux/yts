@@ -282,7 +282,7 @@ async function triggerBiometricAuth() {
 function enterSystem() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('search-screen').style.display = 'block';
-    
+    loadMasterCryptoKey();
     // Tự động khôi phục dữ liệu Admin hiển thị trên Header (Dùng session lưu trữ)
     const cachedAdminName = localStorage.getItem('vts_cached_admin_name') || 'Quản trị viên';
     const cachedAdminAvatar = localStorage.getItem('vts_cached_admin_avatar') || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
@@ -330,8 +330,15 @@ async function searchStudent() {
             const nameSearch = removeVietnameseTones(data.name || '').toLowerCase();
             const classSearch = (data.class || '').toLowerCase();
             const idSearch = doc.id.toLowerCase();
+	    const phoneSearch = decryptField(data.phone) || "";
+            const parentPhoneSearch = decryptField(data.parentPhone) || "";
 
-            if (nameSearch.includes(normalizedInput) || classSearch.includes(normalizedInput) || idSearch.includes(normalizedInput)) {
+            if (nameSearch.includes(normalizedInput) || 
+                classSearch.includes(normalizedInput) || 
+                idSearch.includes(normalizedInput) ||
+                phoneSearch.includes(normalizedInput) ||
+                parentPhoneSearch.includes(normalizedInput)) {
+                
                 matched.push({ id: doc.id, ...data });
             }
         });
@@ -392,11 +399,9 @@ async function loadStudentToTask(studentId) {
                 if (document.getElementById('rec-dob')) {
                     document.getElementById('rec-dob').innerText = activeStudentData.dob ? new Date(activeStudentData.dob).toLocaleDateString('vi-VN') : 'Chưa cập nhật';
                 }
-                if (document.getElementById('rec-phone')) document.getElementById('rec-phone').innerText = activeStudentData.phone || 'Chưa cập nhật';
-                if (document.getElementById('rec-parent-phone')) document.getElementById('rec-parent-phone').innerText = activeStudentData.parentPhone || 'Chưa cập nhật';
-                if (document.getElementById('rec-address')) {
-                    document.getElementById('rec-address').innerText = activeStudentData.street ? `${activeStudentData.street}, ${activeStudentData.ward || ''}, ${activeStudentData.city || ''}` : 'Chưa cập nhật';
-                }
+                if (document.getElementById('rec-phone')) document.getElementById('rec-phone').innerText = decryptField(activeStudentData.phone) || 'Chưa cập nhật';
+		if (document.getElementById('rec-parent-phone')) document.getElementById('rec-parent-phone').innerText = decryptField(activeStudentData.parentPhone) || 'Chưa cập nhật';
+		if (document.getElementById('rec-address')) { document.getElementById('rec-address').innerText = activeStudentData.street ? `${decryptField(activeStudentData.street)}, ${activeStudentData.ward || ''}, ${activeStudentData.city || ''}` : 'Chưa cập nhật';}
                 if (document.getElementById('rec-height')) document.getElementById('rec-height').innerText = activeStudentData.height ? `${activeStudentData.height} cm` : 'Chưa cập nhật';
                 if (document.getElementById('rec-weight')) document.getElementById('rec-weight').innerText = activeStudentData.weight ? `${activeStudentData.weight} kg` : 'Chưa cập nhật';
                 if (document.getElementById('rec-email')) document.getElementById('rec-email').innerText = activeStudentData.linkedEmail || 'Chưa liên kết app';
@@ -434,9 +439,9 @@ async function loadStudentToTask(studentId) {
                 if (document.getElementById('edit-student-class')) document.getElementById('edit-student-class').value = activeStudentData.class || '';
                 if (document.getElementById('edit-student-dob')) document.getElementById('edit-student-dob').value = activeStudentData.dob || '';
                 if (document.getElementById('edit-student-gender')) document.getElementById('edit-student-gender').value = activeStudentData.gender || 'Nam';
-                if (document.getElementById('edit-student-phone')) document.getElementById('edit-student-phone').value = activeStudentData.phone || '';
-                if (document.getElementById('edit-student-parent-phone')) document.getElementById('edit-student-parent-phone').value = activeStudentData.parentPhone || '';
-                if (document.getElementById('edit-student-street')) document.getElementById('edit-student-street').value = activeStudentData.street || '';
+                if (document.getElementById('edit-student-phone')) document.getElementById('edit-student-phone').value = decryptField(activeStudentData.phone) || '';
+		if (document.getElementById('edit-student-parent-phone')) document.getElementById('edit-student-parent-phone').value = decryptField(activeStudentData.parentPhone) || '';
+		if (document.getElementById('edit-student-street')) document.getElementById('edit-student-street').value = decryptField(activeStudentData.street) || '';
                 if (document.getElementById('edit-student-ward')) document.getElementById('edit-student-ward').value = activeStudentData.ward || '';
                 if (document.getElementById('edit-student-city')) document.getElementById('edit-student-city').value = activeStudentData.city || 'Thành phố Hồ Chí Minh';
                 if (document.getElementById('edit-student-height')) document.getElementById('edit-student-height').value = activeStudentData.height || '';
@@ -770,21 +775,21 @@ async function saveStudentProfile() {
 
     try {
         const payload = {
-            studentCode, 
-            name, 
-            class: className, 
-            dob, 
-            gender, 
-            phone,
-            parentPhone, 
-            street, 
-            ward,
-            city,
-            height, 
-            weight, 
-            medicalNote,
-            name_search: removeVietnameseTones(name)
-        };
+    studentCode, 
+    name, 
+    class: className, 
+    dob, 
+    gender, 
+    phone: encryptField(phone),
+    parentPhone: encryptField(parentPhone), 
+    street: encryptField(street), 
+    ward,
+    city,
+    height, 
+    weight, 
+    medicalNote,
+    name_search: removeVietnameseTones(name)
+};
 
         // Ghi dữ liệu cập nhật lên Firestore
         await db.collection('yt_students').doc(sid).update(payload);

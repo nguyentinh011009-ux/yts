@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Quản lý giường</title>
+    
+    <!-- Sử dụng chung CSS di động lồng ghép -->
+    <link rel="stylesheet" href="../assets/css/mobile_admin.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Thư viện mã hóa giải mã SĐT phụ huynh -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="../assets/js/crypto.js"></script>
+    
+    <style>
+        /* Tối ưu hóa lưới hiển thị giường bệnh cho màn hình dọc điện thoại */
+        .mobile-bed-grid { display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px; }
+        .mobile-bed-card { padding: 15px; border-radius: 14px; border: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
+        .mobile-bed-card.empty { border-left: 5px solid #10b981; background: #f0fdf4; }
+        .mobile-bed-card.occupied { border-left: 5px solid #ef4444; background: #fff1f2; }
+    </style>
+</head>
+<body style="background: #f1f5f9; padding: 20px;" class="page-has-header">
+
+    <!-- MÀN HÌNH CHỜ XÁC THỰC -->
+    <div id="hist-auth-loading" style="position:fixed; inset:0; background:white; z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column;">
+        <i class="fas fa-spinner fa-spin fa-2x" style="color:#0062ff; margin-bottom:15px;"></i>
+        <h3>Đang tải dữ liệu phòng bệnh...</h3>
+    </div>
+
+    <div id="hist-main-container" style="display: none;">
+        <!-- Header có nút quay về di động -->
+        <header class="glass-header">
+            <div class="header-left">
+                <button class="btn-back-main" onclick="window.location.href='mobile_admin.html'">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="header-admin-info">
+                    <span>Quản lý giường</span>
+                    <small>Dữ liệu thời gian thực</small>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content" style="padding-top: 20px;">
+            <!-- 1. KHU VỰC QUẢN LÝ GIƯỜNG BỆNH DI ĐỘNG -->
+            <div class="card">
+                <div class="card-header"><i class="fas fa-bed" style="color: #ef4444;"></i> Trạng thái giường bệnh</div>
+                <div class="mobile-bed-grid" id="mobile-beds-render">
+                    <!-- JS sẽ tự động vẽ 3 giường bệnh tại đây -->
+                </div>
+            </div>
+
+            <!-- 2. KHU VỰC NHẬT KÝ TIẾP NHẬN HÔM NAY -->
+            <div class="card" style="margin-top: 25px;">
+                <div class="card-header"><i class="fas fa-notes-medical" style="color: #0ea5e9;"></i> Nhật ký tiếp nhận hôm nay</div>
+                <div id="today-visits-render" style="display: flex; flex-direction: column; gap: 12px;">
+                    <!-- JS vẽ danh sách học sinh khám hôm nay tại đây -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- SDK Firebase & Script -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    
+    <script src="../assets/config.js"></script>
+    <script src="../assets/js/history.js"></script>
+</body>
+</html>

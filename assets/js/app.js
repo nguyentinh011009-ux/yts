@@ -75,6 +75,7 @@ firebase.auth().onAuthStateChanged((user) => {
         if (user) {
             // KIỂM TRA BẢO MẬT ADMIN
             if (ALLOWED_ADMIN_EMAILS.includes(user.email)) {
+		loadMasterCryptoKey();
                 if(loginOverlay) loginOverlay.style.display = 'none';
                 if(dashboard) {
                     dashboard.style.display = 'grid'; 
@@ -1326,9 +1327,9 @@ try {
             
             if(d.dob) document.getElementById('edit-hs-dob').value = d.dob;
             if(d.gender) document.getElementById('edit-hs-gender').value = d.gender;
-            if(d.phone) document.getElementById('edit-hs-phone').value = d.phone;
-            if(d.parentPhone) document.getElementById('edit-hs-parent-phone').value = d.parentPhone;
-            if(d.street) document.getElementById('edit-hs-street').value = d.street;
+	    if (d.phone) document.getElementById('edit-hs-phone').value = decryptField(d.phone);
+	    if (d.parentPhone) document.getElementById('edit-hs-parent-phone').value = decryptField(d.parentPhone);
+	    if (d.street) document.getElementById('edit-hs-street').value = decryptField(d.street);
             if(d.ward) document.getElementById('edit-hs-ward').value = d.ward;
             if(d.height) document.getElementById('edit-hs-height').value = d.height;
             if(d.weight) document.getElementById('edit-hs-weight').value = d.weight;
@@ -1341,24 +1342,25 @@ try {
 async function saveStudentEdit() {
     const sid = document.getElementById('edit-hs-id').value;
     
-    // Đã sửa lại lỗi dấu chấm phẩy và tên biến ở đây
-    const dataToSave = {
-        studentCode: document.getElementById('edit-hs-code').value.trim(), 
-        name: document.getElementById('edit-hs-name').value.trim(),
-        class: document.getElementById('edit-hs-class').value.trim(),
-        name_search: removeVietnameseTones(document.getElementById('edit-hs-name').value.trim()),
-        dob: document.getElementById('edit-hs-dob').value,
-        gender: document.getElementById('edit-hs-gender').value,
-        phone: document.getElementById('edit-hs-phone').value.trim(),
-        parentPhone: document.getElementById('edit-hs-parent-phone').value.trim(),
-        street: document.getElementById('edit-hs-street').value.trim(),
-        ward: document.getElementById('edit-hs-ward').value.trim(),
-        city: document.getElementById('edit-hs-city').value,
-        height: document.getElementById('edit-hs-height').value.trim(),
-        weight: document.getElementById('edit-hs-weight').value.trim(),
-        medicalNote: document.getElementById('edit-hs-medical-note').value.trim()
-    };
-
+// Tìm đến nơi khai báo dataToSave và sửa:
+const dataToSave = {
+    studentCode: document.getElementById('edit-hs-code').value.trim(), 
+    name: document.getElementById('edit-hs-name').value.trim(),
+    class: document.getElementById('edit-hs-class').value.trim(),
+    dob: document.getElementById('edit-hs-dob').value,
+    gender: document.getElementById('edit-hs-gender').value,
+    
+    // 👉 MÃ HÓA CÁC TRƯỜNG NÀY TRƯỚC KHI LƯU
+    phone: encryptField(document.getElementById('edit-hs-phone').value.trim()),
+    parentPhone: encryptField(document.getElementById('edit-hs-parent-phone').value.trim()),
+    street: encryptField(document.getElementById('edit-hs-street').value.trim()),
+    
+    ward: document.getElementById('edit-hs-ward').value.trim(),
+    city: document.getElementById('edit-hs-city').value,
+    height: document.getElementById('edit-hs-height').value.trim(),
+    weight: document.getElementById('edit-hs-weight').value.trim(),
+    medicalNote: document.getElementById('edit-hs-medical-note').value.trim()
+};
     if (!dataToSave.name || !dataToSave.class) return alert("❌ Tên và lớp không được để trống!");
 
     try {
@@ -1409,17 +1411,19 @@ async function checkStudentHistory() {
             btnQuickEdit.style.display = 'inline-flex';
 
             // Hiển thị Thông tin hành chính
-            let adminInfoHTML = `
-                <div style="background: white; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 10px; font-size: 0.85rem;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <div>🎂 Ngày sinh: <strong>${st.dob ? new Date(st.dob).toLocaleDateString('vi-VN') : '--'}</strong></div>
-                        <div>⚥ Giới tính: <strong>${st.gender || '--'}</strong></div>
-                        <div>📞 SĐT HS: <strong>${st.phone || '--'}</strong></div>
-                        <div>👨‍👩‍👧 SĐT PH: <strong>${st.parentPhone || '--'}</strong></div>
-                        <div style="grid-column: span 2;">🏠 Đ/c: <strong>${st.street ? `${st.street}, ${st.ward}, ${st.city}` : '--'}</strong></div>
-                    </div>
-                </div>
-            `;
+            // Tìm đến nơi vẽ HTML thông tin hành chính và sửa lại:
+let adminInfoHTML = `
+    <div style="background: white; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 10px; font-size: 0.85rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div>🎂 Ngày sinh: <strong>${st.dob ? new Date(st.dob).toLocaleDateString('vi-VN') : '--'}</strong></div>
+            <div>⚥ Giới tính: <strong>${st.gender || '--'}</strong></div>
+            <!-- 👉 GIẢI MÃ KHI HIỂN THỊ -->
+            <div>📞 SĐT HS: <strong>${decryptField(st.phone) || '--'}</strong></div>
+            <div>👨‍👩‍👧 SĐT PH: <strong>${decryptField(st.parentPhone) || '--'}</strong></div>
+            <div style="grid-column: span 2;">🏠 Đ/c: <strong>${st.street ? `${decryptField(st.street)}, ${st.ward}, ${st.city}` : '--'}</strong></div>
+        </div>
+    </div>
+`;
 
             // Xử lý Cảnh báo Y tế
             let warningHTML = st.medicalNote ? `<div style="background: #fee2e2; border-left: 4px solid #ef4444; padding: 8px; margin-top: 10px; color: #991b1b; font-size: 0.85rem; border-radius: 4px;"><strong style="color: #ef4444;"><i class="fas fa-exclamation-triangle"></i> CẢNH BÁO:</strong> ${st.medicalNote}</div>` : '';
@@ -1533,7 +1537,7 @@ async function notifyParent(visitId, studentId) {
     }
 
     // 2. Hiển thị Popup xác nhận kèm Số điện thoại
-    const confirmMessage = `📞 SỐ ĐIỆN THOẠI PHỤ HUYNH:\n👤 Học sinh: ${studentName}\n👉 Số điện thoại: ${parentPhone}\n\nSau khi gọi xong, nhấn "OK" để xác nhận đã báo Phụ huynh!`;
+    const confirmMessage = `📞 SỐ ĐIỆN THOẠI PHỤ HUYNH:\n👤 Học sinh: ${studentName}\n👉 Số điện thoại: ${decryptField(parentPhone)}\n\nSau khi gọi xong, nhấn "OK" để xác nhận đã báo Phụ huynh!`;
 
     if (confirm(confirmMessage)) {
         try {

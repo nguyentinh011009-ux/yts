@@ -110,68 +110,92 @@
         <!-- KHUNG BỌC HIỆU ỨNG CO DÃN TRÊN MOBILE -->
         <div id="wrapper-parent" style="width: 100%; display: flex; justify-content: center; overflow: visible;">
             
-            <!-- VÙNG SẼ ĐƯỢC CHỤP ẢNH TẢI VỀ -->
-            <div id="capture-area" style="display: none; flex-shrink: 0;">
-                <div class="watermark">Y TẾ VTS</div>
-                
-                <!-- Tiêu đề chứng nhận -->
-                <div style="text-align: center; margin-bottom: 30px; position: relative; z-index: 1;">
-                    <img src="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" width="60" style="margin-bottom:10px; border-radius: 12px;" crossorigin="anonymous">
-                    <div style="font-size: 0.85rem; color: #64748b; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Phiếu Kết Quả Test Y Tế</div>
-                    <h2 id="rs-test-title" style="color: #1e293b; margin-top: 5px; font-size: 1.4rem;">--</h2>
-                </div>
-
-                <!-- Thông tin học sinh -->
-                <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e1; margin-bottom: 30px; display: flex; justify-content: space-between; flex-wrap: wrap; position: relative; z-index: 1;">
-                    <div>
-                        <div style="font-size: 0.85rem; color: #64748b;">Họ và tên</div>
-                        <div id="rs-student-name" style="font-weight: bold; color: #1e293b; font-size: 1.1rem;">--</div>
-                    </div>
-                    <div style="text-align: right;">
-                        <div style="font-size: 0.85rem; color: #64748b;">Mã lượt / Lớp</div>
-                        <div style="font-weight: bold; color: #1e293b;"><span id="rs-attempt">--</span> / <span id="rs-class">--</span></div>
-                    </div>
-                </div>
-
-                <!-- Điểm số nổi bật -->
-                <div style="text-align: center; margin-bottom: 30px; position: relative; z-index: 1;">
-                    <div style="display: inline-block; background: #f0fdf4; border: 2px solid #10b981; padding: 20px 50px; border-radius: 20px;">
-                        <div style="font-size: 0.9rem; color: #059669; font-weight: bold; letter-spacing: 1px;">TỔNG ĐIỂM</div>
-                        <div id="rs-score" style="font-size: 3.5rem; font-weight: 900; color: #10b981; line-height: 1.2; margin-top: 5px; display: block; font-family: Arial, sans-serif;">0</div>
-                    </div>
-                </div>
-
-                <!-- BỘ KHUNG KẾT LUẬN & PHÂN TÍCH AI -->
-                <div style="display: flex; flex-direction: column; gap: 15px; position: relative; z-index: 1;">
-                    
-                    <!-- 1. Kết luận chung từ hệ thống -->
-                    <div style="background: #f8fafc; border-left: 4px solid #f59e0b; padding: 20px; border-radius: 10px;">
-                        <h4 style="color: #f59e0b; margin-bottom: 5px; font-size: 1rem;"><i class="fas fa-flag-checkered"></i> KẾT LUẬN CHUNG:</h4>
-                        <div id="rs-result-title" style="color: #1e293b; font-size: 1.15rem; font-weight: bold;">--</div>
-                    </div>
-
-                    <!-- 2. Lời khuyên Cá nhân hóa từ AI -->
-                    <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; border-radius: 10px;">
-                        <h4 style="color: #3b82f6; margin-bottom: 10px; font-size: 1rem;"><i class="fas fa-robot"></i> PHÂN TÍCH & LỜI KHUYÊN (AI):</h4>
-                        
-                        <!-- Khung đang chờ AI -->
-                        <div id="ai-loading-box" style="display: none; color: #64748b; font-size: 0.95rem; display: flex; align-items: center; gap: 10px;">
-                            <i class="fas fa-circle-notch fa-spin" style="color: #3b82f6;"></i>
-                            <span>AI của Y Tế VTS đang đọc đáp án và phân tích...<br><small>(Vui lòng chờ vài giây, nội dung sẽ tự động xuất hiện)</small></span>
-                        </div>
-
-                        <!-- Khung đã có kết quả AI -->
-                        <div id="rs-advice" style="display: none; text-align: left;">--</div>
-                    </div>
-
-                </div>
-
-                <div style="text-align: center; margin-top: 20px; font-size: 0.75rem; color: #94a3b8; font-style: italic; position: relative; z-index: 1;">
-                    Kết quả được ghi nhận lúc: <span id="rs-time">--</span>
-                </div>
-
-            </div> <!-- KẾT THÚC VÙNG CHỤP ẢNH -->
+<!-- VÙNG SẼ ĐƯỢC CHỤP ẢNH TẢI VỀ (Ép tỷ lệ A4 chuẩn) -->
+<div id="capture-area" style="display: none; background: #ffffff; padding: 45px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); position: relative; overflow: hidden; border: 1px solid #e2e8f0; width: 100%; max-width: 800px; margin: 0 auto; box-sizing: border-box;">
+    
+    <!-- Watermark nền mờ bản quyền -->
+    <div class="watermark" style="position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 6rem; font-weight: 900; color: rgba(37, 99, 235, 0.02); white-space: nowrap; pointer-events: none; z-index: 0;">Y TẾ SỐ VTS</div>
+    
+    <!-- 1. TIÊU ĐỀ ĐẦU TRANG (Header góc trái lồng ghép Logo) -->
+    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; position: relative; z-index: 1;">
+        <img src="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" width="65" height="65" style="border-radius: 12px; object-fit: cover; border: 2px solid #3b82f6;" crossorigin="anonymous">
+        <div style="text-align: left;">
+            <div style="font-size: 1rem; font-weight: 800; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px;">TRƯỜNG THPT VÕ THỊ SÁU-BÀ RỊA VŨNG TÀU</div>
+            <div style="font-size: 0.9rem; font-weight: 700; color: #2563eb; letter-spacing: 2px; text-transform: uppercase; margin-top: 2px;">PHÒNG Y TẾ</div>
         </div>
+    </div>
+
+    <!-- 2. ĐƯỜNG KẺ GRADIENT TRANG TRÍ -->
+    <div style="width: 100%; height: 4px; background: linear-gradient(90deg, #0ea5e9, #2563eb, #d946ef); border-radius: 2px; margin-bottom: 35px; position: relative; z-index: 1;"></div>
+    
+    <!-- 3. TIÊU ĐỀ CHÍNH CỦA PHIẾU -->
+    <div style="text-align: center; margin-bottom: 35px; position: relative; z-index: 1;">
+        <h1 style="font-size: 1.65rem; font-weight: 850; color: #0f172a; text-transform: uppercase; letter-spacing: 1px; line-height: 1.4; margin: 0;">KẾT QUẢ KIỂM TRA SỨC KHỎE</h1>
+        <p style="font-size: 1.1rem; color: #475569; font-weight: 600; margin-top: 5px; text-transform: uppercase; letter-spacing: 0.5px;">Qua bài đánh giá trực tuyến</p>
+    </div>
+
+    <!-- 4. THÔNG TIN HỌC SINH & BÀI TEST -->
+    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px; position: relative; z-index: 1; text-align: left;">
+        
+        <!-- Thẻ 1: Thông tin Học sinh -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-size: 0.75rem; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;"><i class="fas fa-user-graduate"></i> Thông tin học sinh</div>
+                <div id="rs-student-name" style="font-size: 1.2rem; font-weight: bold; color: #0f172a;">--</div>
+            </div>
+            <div style="font-size: 0.95rem; color: #475569; font-weight: 500; background: #e0e7ff; color: #2563eb; padding: 4px 12px; border-radius: 20px;">Lớp: <strong id="rs-class">--</strong></div>
+        </div>
+
+        <!-- Thẻ 2: Thông tin Bài đánh giá -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 14px; display: flex; flex-direction: column; gap: 4px;">
+            <div style="font-size: 0.75rem; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;"><i class="fas fa-file-alt"></i> Thông tin bài đánh giá</div>
+            <div id="rs-test-title" style="font-size: 1.05rem; font-weight: bold; color: #0f172a; line-height: 1.4;">--</div>
+            <div style="font-size: 0.8rem; color: #64748b; display: flex; gap: 20px; border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 4px;">
+                <span>Mã bài làm: <strong id="rs-test-id" style="color: #1e293b;">--</strong></span>
+                <span>Mã lượt làm bài: <strong id="rs-attempt" style="color: #6366f1;">--</strong></span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 5. KẾT QUẢ ĐIỂM SỐ & PHÂN LOẠI (Widget Trung Tâm) -->
+    <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 2px solid #10b981; border-radius: 20px; padding: 22px 30px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.05); position: relative; z-index: 2;">
+        <div style="text-align: center; flex-shrink: 0; width: 140px;">
+            <div style="font-size: 0.8rem; font-weight: bold; color: #047857; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 3px;">TỔNG ĐIỂM</div>
+            <div id="rs-score" style="font-size: 3.5rem; font-weight: 900; color: #10b981; line-height: 1; font-family: Arial, sans-serif;">0</div>
+        </div>
+        <div style="width: 2px; height: 65px; background: #bbf7d0;"></div>
+        <div style="flex-grow: 1; padding-left: 30px; text-align: left;">
+            <div style="font-size: 0.8rem; font-weight: bold; color: #047857; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 3px;">KẾT LUẬN SƠ BỘ</div>
+            <div id="rs-result-title" style="font-size: 1.25rem; font-weight: bold; color: #1e293b; line-height: 1.4;">--</div>
+        </div>
+    </div>
+
+    <!-- 6. PHÂN TÍCH CHUYÊN SÂU & LỜI KHUYÊN AI -->
+    <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; border-left: 6px solid #3b82f6; border-radius: 18px; padding: 25px; text-align: left; position: relative; z-index: 1;">
+        <div style="font-size: 0.9rem; font-weight: bold; color: #1d4ed8; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;"><i class="fas fa-robot"></i> PHÂN TÍCH CHUYÊN SÂU & LỜI KHUYÊN</div>
+        
+        <div id="ai-loading-box" style="display: flex; align-items: center; gap: 10px; color: #475569; font-size: 0.95rem;">
+            <i class="fas fa-circle-notch fa-spin" style="color: #3b82f6;"></i>
+            <span>Trí tuệ nhân tạo VTS đang đọc đáp án và phân tích lời khuyên...</span>
+        </div>
+        
+        <div id="rs-advice" style="display: none; line-height: 1.6; color: #1e293b; font-size: 0.95rem;"></div>
+        
+        <!-- Dòng chú thích in nghiêng chân trang AI -->
+        <div style="margin-top: 20px; font-size: 0.75rem; color: #64748b; font-style: italic; border-top: 1px dashed #bfdbfe; padding-top: 10px; line-height: 1.4;">
+            * Nội dung phân tích và lời khuyên trên được tạo tự động bởi trí tuệ nhân tạo cá nhân hóa, vui lòng tham khảo dưới sự hướng dẫn chuyên môn của cán bộ y tế trường học.
+        </div>
+    </div>
+
+    <!-- 7. THỜI GIAN HOÀN THÀNH & THÔNG TIN HỆ THỐNG -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 35px; font-size: 0.8rem; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 15px; position: relative; z-index: 1;">
+        <span>Ngày hoàn thành bài đánh giá: <strong id="rs-time" style="color: #475569;">--</strong></span>
+        <span style="font-style: italic; font-weight: 500;">Xuất tự động từ Hệ thống Y tế số</span>
+    </div>
+
+</div>
+ </div>
 
         <!-- CÁC NÚT TÍNH NĂNG CHIA SẺ -->
         <div id="action-tools" class="action-btns" style="display: none; margin-top: 20px;">
@@ -207,14 +231,15 @@
 
         function loadResultDataLive() {
             db.collection('yt_test_results').doc(resultId).onSnapshot((doc) => {
-                if(!doc.exists) {
-                    document.getElementById('loading-box').innerHTML = "<i class='fas fa-exclamation-triangle fa-3x' style='color:#ef4444;'></i><p>Kết quả này không tồn tại hoặc đã bị xóa!</p>";
-                    return;
-                }
+    if(!doc.exists) {
+        document.getElementById('loading-box').innerHTML = "<i class='fas fa-exclamation-triangle fa-3x' style='color:#ef4444;'></i><p>Kết quả này không tồn tại hoặc đã bị xóa!</p>";
+        return;
+    }
 
                 const data = doc.data();
 
                 // Đổ dữ liệu cơ bản
+		document.getElementById('rs-test-id').innerText = data.testId || "--";
                 document.getElementById('rs-test-title').innerText = data.testTitle;
                 document.getElementById('rs-student-name').innerText = data.studentName;
                 document.getElementById('rs-class').innerText = data.studentClass;
@@ -318,55 +343,65 @@
         }
 
         // TÍNH NĂNG TẢI ẢNH (Bảo toàn tuyệt đối kích thước xuất ra trên mọi thiết bị)
-        function downloadImage() {
-            const captureDiv = document.getElementById('capture-area');
-            const btn = document.querySelector('button[onclick="downloadImage()"]');
+function downloadImage() {
+    const captureDiv = document.getElementById('capture-area');
+    const btn = document.querySelector('button[onclick="downloadImage()"]');
+    
+    if (document.getElementById('ai-loading-box').style.display === "flex") {
+        alert("Vui lòng chờ trí tuệ nhân tạo VTS hoàn thành phân tích trước khi tải ảnh nhé!");
+        return;
+    }
+
+    let originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xuất ảnh...';
+    btn.disabled = true;
+    
+    // 👉 1. LƯU LẠI KÍCH THƯỚC TRÊN MÀN HÌNH ĐIỆN THOẠI
+    const originalWidth = captureDiv.style.width;
+    const originalMaxWidth = captureDiv.style.maxWidth;
+    const originalPadding = captureDiv.style.padding;
+    const originalBorder = captureDiv.style.border;
+
+    // 👉 2. KHÓA CỨNG CHIỀU RỘNG CHUẨN A4 (794px), GIẢI PHÓNG CHIỀU CAO (AUTO) ĐỂ KHÔNG MẤT CHỮ
+    captureDiv.style.width = '794px';
+    captureDiv.style.maxWidth = '794px';
+    captureDiv.style.padding = '40px';
+    captureDiv.style.border = 'none'; // Ẩn viền khi xuất ảnh
+
+    setTimeout(() => {
+        html2canvas(captureDiv, { 
+            scale: 2, // Đảm bảo ảnh xuất ra có độ nét cực cao khi Zoom
+            useCORS: true, 
+            allowTaint: true,
+            backgroundColor: "#ffffff" 
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `Phieu_Ket_Qua_Danh_Gia_VTS_${document.getElementById('rs-attempt').innerText}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
             
-            if(document.getElementById('ai-loading-box').style.display === "flex") {
-                alert("Vui lòng chờ AI phân tích xong rồi mới tải ảnh về nhé!");
-                return;
-            }
-
-            let originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tạo ảnh...';
+            // 👉 3. KHÔI PHỤC LẠI GIAO DIỆN TRÊN ĐIỆN THOẠI
+            captureDiv.style.width = originalWidth;
+            captureDiv.style.maxWidth = originalMaxWidth;
+            captureDiv.style.padding = originalPadding;
+            captureDiv.style.border = originalBorder;
             
-            // 🌟 BƯỚC ÉP KÍCH THƯỚC CHUẨN ĐỂ XUẤT ẢNH CÂN ĐỐI
-            const originalWidth = captureDiv.style.width;
-            const originalMaxWidth = captureDiv.style.maxWidth;
-            const originalPadding = captureDiv.style.padding;
-
-            // Khóa cứng kích thước 600px để ảnh xuất ra luôn cân đối, đẹp mắt
-            captureDiv.style.width = '600px';
-            captureDiv.style.maxWidth = '600px';
-            captureDiv.style.padding = '40px';
-
-            setTimeout(() => {
-                html2canvas(captureDiv, { 
-                    scale: 2, // Nhân đôi độ nét (Ảnh xuất ra sẽ có chiều rộng thực tế là 1200px siêu nét)
-                    useCORS: true, 
-                    allowTaint: true,
-                    backgroundColor: "#ffffff" 
-                }).then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = `Ket_Qua_Test_${document.getElementById('rs-attempt').innerText}.png`;
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                    
-                    // 🌟 KHÔI PHỤC LẠI trạng thái hiển thị mượt mà trên di động
-                    captureDiv.style.width = originalWidth;
-                    captureDiv.style.maxWidth = originalMaxWidth;
-                    captureDiv.style.padding = originalPadding;
-                    btn.innerHTML = originalText;
-                }).catch(err => {
-                    alert("Có lỗi khi tạo ảnh.");
-                    captureDiv.style.width = originalWidth;
-                    captureDiv.style.maxWidth = originalMaxWidth;
-                    captureDiv.style.padding = originalPadding;
-                    btn.innerHTML = originalText;
-                });
-            }, 2000); // Chờ 100ms để trình duyệt cập nhật lại layout cứng
-        }
-
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }).catch(err => {
+            alert("Có lỗi trong quá trình xuất ảnh: " + err.message);
+            console.error(err);
+            
+            captureDiv.style.width = originalWidth;
+            captureDiv.style.maxWidth = originalMaxWidth;
+            captureDiv.style.padding = originalPadding;
+            captureDiv.style.border = originalBorder;
+            
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    }, 1000); 
+}
         function copyLink() {
             const link = window.location.href;
             navigator.clipboard.writeText(link).then(() => {

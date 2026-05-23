@@ -142,8 +142,9 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <!-- File config.js đã chứa sẵn lệnh khởi tạo và biến db rồi -->
-    <script src="../assets/config.js"></script> 
-    
+    <script src="../assets/config.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="../assets/js/crypto.js"></script>  
     <script>
         // --- 1. BẢO MẬT ADMIN ---
         const ALLOWED_ADMIN_EMAILS = [
@@ -151,11 +152,12 @@
             "nguyenthixuandongvts@gmail.com", "yte.thptvothisaubrvt@gmail.com", "nguyentinh52009@gmail.com"
         ];
         
-        firebase.auth().onAuthStateChanged((user) => {
+        firebase.auth().onAuthStateChanged(async (user) => {
             if (user && ALLOWED_ADMIN_EMAILS.includes(user.email)) {
                 document.getElementById('security-loading').style.display = 'none';
                 document.getElementById('main-content').style.display = 'block';
                 document.getElementById('dd-date').valueAsDate = new Date();
+		await loadMasterCryptoKey();
                 loadAllStudentsCache();
 		loadAttendanceList();
             } else {
@@ -262,14 +264,13 @@
             const matched = allStudentsCache.filter(s => {
                 const name = removeVietnameseTones(s.name || "");
                 const cls = removeVietnameseTones(s.class || "");
-                const phone = s.phone || "";
-                const pPhone = s.parentPhone || "";
+                const phone = decryptField(s.phone) || "";
+        	const pPhone = decryptField(s.parentPhone) || "";
                 
                 // Thêm 2 biến quét Mã HS và Mã YT
                 const maHS = removeVietnameseTones(s.studentCode || ""); 
                 const maYT = removeVietnameseTones(s.id || "");
 
-                // Trả về true nếu từ khóa gõ vào khớp với BẤT KỲ thông tin nào ở trên
                 return name.includes(q) || cls.includes(q) || phone.includes(q) || pPhone.includes(q) || maHS.includes(q) || maYT.includes(q);
             }).slice(0, 15); // Chỉ hiển thị tối đa 15 người để tránh lag giao diện
 
@@ -285,7 +286,7 @@
                                 <strong style="color:#0f172a; font-size:15px;">${s.name}</strong> - Lớp: <span style="color:#ef4444; font-weight:bold;">${s.class}</span><br>
                                 <small style="color:#64748b; line-height:1.6;">
                                     Mã HS: <span style="color:#2563eb; font-weight:600;">${s.studentCode || 'Chưa có'}</span> | Mã YT: ${s.id} <br>
-                                    SĐT: ${s.phone || s.parentPhone || 'Trống'} | Giới tính: ${s.gender || 'Trống'}
+                                    SĐT: ${decryptField(s.phone) || decryptField(s.parentPhone) || 'Trống'} | Giới tính: ${s.gender || 'Trống'}
                                 </small>
                             </div>
                             <button style="background:#2563eb; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">Chọn <i class="fas fa-check"></i></button>
@@ -712,9 +713,9 @@ async function fetchBaseData() {
                             <td>${hs.class}</td>
                             <td>${hs.gender === 'Nam' ? namSinh : ''}</td>
                             <td>${hs.gender === 'Nữ' ? namSinh : ''}</td>
-                            <td class="txt-left">${hs.street || ''}</td>
+                            <td class="txt-left">${decryptField(hs.street) || ''}</td>
                             <td>${hs.ward || ''}</td>
-                            <td>${hs.phone || hs.parentPhone || ''}</td>
+                            <td>${decryptField(hs.phone) || decryptField(hs.parentPhone) || ''}</td>
                             <td>${r.diagnosis === '0' ? '' : r.diagnosis}</td>
                             <td>${r.symptom || ''}</td>
                             <td>${r.taiTruong}</td>
@@ -791,9 +792,9 @@ async function fetchBaseData() {
                         <td>${hs.class || ''}</td>
                         <td>${hs.gender === 'Nam' ? namSinh : ''}</td>
                         <td>${hs.gender === 'Nữ' ? namSinh : ''}</td>
-                        <td class="txt-left">${hs.street || ''}</td>
+                        <td class="txt-left">${decryptField(hs.street) || ''}</td>
                         <td>${hs.ward || ''}</td>
-                        <td>${hs.phone || hs.parentPhone || ''}</td>
+                        <td>${decryptField(hs.phone) || decryptField(hs.parentPhone) || ''}</td>
                         <td>${ep.diagnosis}</td>
                         <td style="font-size: 11pt !important;">${dateFormatted}</td>
                         <td style="font-weight:bold;">${ep.daysCount}</td>

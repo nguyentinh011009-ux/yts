@@ -33,21 +33,24 @@ window.addEventListener('DOMContentLoaded', () => {
 function checkDeviceRegistration() {
     const isRegistered = localStorage.getItem('vts_mobile_registered');
     
+    // 👉 THÊM DÒNG NÀY: Kiểm tra xem trong phiên làm việc này admin đã nhập mã PIN chưa
+    const isUnlocked = sessionStorage.getItem('vts_mobile_unlocked') === 'true';
+
     if (isRegistered === 'true') {
-        // THIẾT BỊ ĐÃ ĐĂNG KÝ: Yêu cầu mở khóa bằng Vân tay/FaceID hoặc mã PIN cũ
-        showAuthStep('step-login');
-        
-        // Tự động gọi xác thực Vân tay/Face ID ngay lập tức nếu thiết bị đã bật
-        if (localStorage.getItem('vts_mobile_biometric') === 'true') {
-            document.getElementById('btn-bio-trigger').style.display = 'block';
-            setTimeout(triggerBiometricAuth, 500); 
+        if (isUnlocked) {
+            // 👉 NẾU ĐÃ MỞ KHÓA RỒI -> VÀO THẲNG HỆ THỐNG KHÔNG HỎI PIN NỮA
+            enterSystem();
+        } else {
+            showAuthStep('step-login');
+            if (localStorage.getItem('vts_mobile_biometric') === 'true') {
+                document.getElementById('btn-bio-trigger').style.display = 'block';
+                setTimeout(triggerBiometricAuth, 500); 
+            }
         }
     } else {
-        // THIẾT BỊ MỚI: Bắt đầu luồng đăng ký 1 lần duy nhất
         showAuthStep('step-google-login');
     }
 }
-
 function showAuthStep(stepId) {
     document.querySelectorAll('.auth-card').forEach(card => card.style.display = 'none');
     document.getElementById(stepId).style.display = 'block';
@@ -282,11 +285,16 @@ async function triggerBiometricAuth() {
 function enterSystem() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('search-screen').style.display = 'block';
+    sessionStorage.setItem('vts_mobile_unlocked', 'true');
     loadMasterCryptoKey();
     // Tự động khôi phục dữ liệu Admin hiển thị trên Header (Dùng session lưu trữ)
     const cachedAdminName = localStorage.getItem('vts_cached_admin_name') || 'Quản trị viên';
     const cachedAdminAvatar = localStorage.getItem('vts_cached_admin_avatar') || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-    
+    const hasMobileLogged = sessionStorage.getItem('vts_mobile_session_logged');
+    if (!hasMobileLogged && currentAdminUser) {
+        writeAuditLog("LOGIN_MOBILE", "yt_auth", currentAdminUser.uid, `Tài khoản ${currentAdminUser.email} đăng nhập thành công bằng thiết bị di động.`);
+        sessionStorage.setItem('vts_mobile_session_logged', 'true');
+    }
     document.getElementById('admin-display-name').innerText = cachedAdminName;
     document.getElementById('admin-avatar').src = cachedAdminAvatar;
 
@@ -1018,13 +1026,15 @@ async function toggleBiometricsSetting() {
 
 function handleLogout() {
     if (confirm("Đăng xuất tài khoản quản trị khỏi thiết bị?")) {
+        sessionStorage.removeItem('vts_mobile_unlocked');
+        sessionStorage.removeItem('vts_mobile_session_logged');
+        
         localStorage.clear();
         firebase.auth().signOut().then(() => {
             location.reload();
         });
     }
 }
-
 function goToHome() {
     if (confirm("Quay về trang thông tin chung?")) {
         window.location.href = "mobile_admin.html";

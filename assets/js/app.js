@@ -42,7 +42,7 @@ function removeVietnameseTones(str) {
 // PHẦN. HỆ THỐNG XÁC THỰC (FIREBASE AUTH)
 // ==========================================
 // --- Theo dõi trạng thái đăng nhập tự động (Thông minh) ---
-firebase.auth().onAuthStateChanged((user) => {
+firebase.auth().onAuthStateChanged(async (user) => {
     
     // 1. LOGIC XỬ LÝ THANH HEADER (Áp dụng cho mọi trang có dùng chung Header)
     const topProfileBox = document.getElementById('top-user-profile');
@@ -65,7 +65,8 @@ firebase.auth().onAuthStateChanged((user) => {
         if (user) {
             // KIỂM TRA BẢO MẬT ADMIN
             if (ALLOWED_ADMIN_EMAILS.includes(user.email)) {
-		loadMasterCryptoKey();
+		await loadMasterCryptoKey();
+                checkAndExecuteAutoBackup();
                 if(loginOverlay) loginOverlay.style.display = 'none';
                 if(dashboard) {
                     dashboard.style.display = 'grid'; 
@@ -73,7 +74,7 @@ firebase.auth().onAuthStateChanged((user) => {
                     loadPharmacyForReception();
                     loadAdminAnnouncements();
                     loadFusoftxNotis();
-		    runDailyStatisticAggregation();
+		            runDailyStatisticAggregation();
 
                     const nameDisplay = document.getElementById('display-admin-name');
                     const emailDisplay = document.getElementById('display-admin-email');

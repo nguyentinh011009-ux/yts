@@ -1,0 +1,1436 @@
+        function normalizeToFullYear(yearStr) {
+            let year = parseInt(yearStr);
+            if (isNaN(year)) return new Date().getFullYear();
+            if (year < 100) {
+                return 2000 + year;
+            }
+            return year;
+        }
+
+        // HÀM MỚI: Thống nhất định dạng, thêm số 0 và xử lý mọi trường hợp
+        function formatDateString(dateInput) {
+            if (!dateInput) return '';
+            let dateStr = String(dateInput);
+
+            // 1. Xử lý số sê-ri của Excel
+            if (!isNaN(dateStr) && !dateStr.includes('/') && !dateStr.includes('-')) {
+                let serial = Number(dateStr);
+                if (serial > 10000) { // Chỉ xử lý các số lớn, tránh nhầm lẫn với số lượng
+                    // Sử dụng UTC để tránh lỗi lệch múi giờ
+                    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+                    const jsDate = new Date(excelEpoch.getTime() + serial * 24 * 60 * 60 * 1000);
+                    const day = String(jsDate.getUTCDate()).padStart(2, '0');
+                    const month = String(jsDate.getUTCMonth() + 1).padStart(2, '0');
+                    const year = jsDate.getUTCFullYear();
+                    return `${day}/${month}/${year}`;
+                }
+            }
+
+            // 2. Chuẩn hóa chuỗi ngày tháng (Thêm số 0)
+            let parts = dateStr.split('/');
+            if (parts.length === 2) { // Định dạng mm/yyyy
+                let month = String(parts[0]).padStart(2, '0');
+                let year = normalizeToFullYear(parts[1]);
+                return `${month}/${year}`;
+            } else if (parts.length === 3) { // Định dạng dd/mm/yyyy
+                let day = String(parts[0]).padStart(2, '0');
+                let month = String(parts[1]).padStart(2, '0');
+                let year = normalizeToFullYear(parts[2]);
+                return `${day}/${month}/${year}`;
+            }
+
+            // 3. Xử lý định dạng yyyy-mm-dd (từ input type="date")
+            if (dateStr.includes('-')) {
+                let p = dateStr.split('-');
+                return `${p[2]}/${p[1]}/${p[0]}`;
+            }
+
+            return dateStr; // Trả về nguyên bản nếu không nhận dạng được
+        }
+	// --- HÀM BỔ SUNG ĐỂ SỬA LỖI TRỐNG BẢNG ---
+function formatDisplayDate(dateStr) {
+    if (!dateStr) return '';
+    // Tận dụng luôn hàm formatDateString có sẵn của bạn để chuẩn hóa ngày tháng
+    return formatDateString(dateStr);
+}
+        function isExpiredDate(dateStr) {
+            if (!dateStr) return false;
+            let now = new Date();
+            now.setHours(0,0,0,0);
+
+            // Xử lý dữ liệu số sê-ri của Excel
+            if (typeof dateStr === 'number') {
+                const excelEpoch = new Date(1899, 11, 30);
+                const jsDate = new Date(excelEpoch.getTime() + dateStr * 86400000);
+                return jsDate < now;
+            }
+
+            let parts = dateStr.split('/');
+            
+            // Xử lý dữ liệu cũ (yyyy-mm-dd)
+            if (dateStr.includes('-')) { 
+                let p = dateStr.split('-');
+                return new Date(p[0], p[1]-1, p[2]) < now;
+            }
+            
+            // Xử lý mm/yyyy (Hết hạn vào ngày cuối cùng của tháng đó)
+            if (parts.length === 2) {
+                let month = parseInt(parts[0]);
+                let year = normalizeToFullYear(parts[1]); // <-- ĐÃ SỬ DỤNG BỘ DỊCH
+                return new Date(year, month, 0) < now; 
+            } 
+            // Xử lý dd/mm/yyyy
+            else if (parts.length === 3) {
+                let day = parseInt(parts[0]), month = parseInt(parts[1]);
+                let year = normalizeToFullYear(parts[2]); // <-- ĐÃ SỬ DỤNG BỘ DỊCH
+                return new Date(year, month-1, day) < now;
+            }
+            return false;
+        }
+	function normalizeToFullYear(yearStr) {
+            let year = parseInt(yearStr);
+            if (isNaN(year)) return new Date().getFullYear(); // Nếu không phải số, trả về năm hiện tại
+            if (year < 100) {
+                // Quy tắc: Nếu năm < 100 (VD: 29, 30) thì tự động cộng thêm 2000
+                return 2000 + year;
+            }
+            return year; // Nếu là năm 4 chữ số (2029) thì giữ nguyên
+        }
+        // --- 1. XÁC THỰC ADMIN BẢO MẬT ---
+        let currentUser = null;
+
+        firebase.auth().onAuthStateChanged((user) => {
+            const loader = document.getElementById('auth-loading');
+            const wrapper = document.getElementById('main-wrapper');
+            if (user && ALLOWED_ADMIN_EMAILS.includes(user.email)) {
+                currentUser = user;
+                loader.style.display = 'none';
+                wrapper.style.display = 'flex';
+                document.getElementById('rpt-year').value = new Date().getFullYear();
+                loadCatalog();
+                loadTransactions('export');
+                loadTransactions('import');
+		loadTransactions('adjust');
+            } else {
+                alert("Bạn không có quyền truy cập Kho Dược!");
+                window.location.href = 'admin.html';
+            }
+        });
+
+        // --- HÀM THUẬT TOÁN ĐIỀU HƯỚNG BẰNG BÀN PHÍM (ENTER / LÊN / XUỐNG) ---
+        function pharmaKeyNav(e) {
+            // Bỏ qua nếu không phải các phím điều hướng
+            if (e.key !== 'Enter' && e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+
+            const currentElement = e.target;
+            
+            // Xử lý khi nhấn Enter ở các ô input thông thường (Top level)
+            if (currentElement.classList.contains('nav-main') && e.key === 'Enter') {
+                e.preventDefault();
+                const allNavMains = Array.from(currentElement.closest('.form-card').querySelectorAll('.nav-main'));
+                const currentIndex = allNavMains.indexOf(currentElement);
+                if (currentIndex > -1 && currentIndex < allNavMains.length - 1) {
+                    allNavMains[currentIndex + 1].focus();
+                } else if (currentIndex === allNavMains.length - 1) {
+                    // Nếu là ô cuối cùng của khối top -> Nhảy xuống dòng nhập liệu đầu tiên của lưới
+                    const firstGridInput = currentElement.closest('.form-card').querySelector('.nav-grid');
+                    if (firstGridInput) firstGridInput.focus();
+                }
+                return;
+            }
+
+            // Xử lý điều hướng dạng Lưới (Matrix) trong các thẻ batch-grid-row
+            const currentRow = currentElement.closest('.batch-grid-row');
+            if (!currentRow) return;
+
+            // Tìm class định danh cột của ô hiện tại (VD: nav-col-1)
+            const colClass = Array.from(currentElement.classList).find(c => c.startsWith('nav-col-'));
+            if (!colClass) return;
+
+            const container = currentRow.parentElement;
+            const allRows = Array.from(container.querySelectorAll('.batch-grid-row'));
+            const rowIndex = allRows.indexOf(currentRow);
+
+            if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                e.preventDefault();
+                if (e.key === 'Enter' && !currentElement.classList.contains('nav-last')) {
+                    // Nếu bấm Enter nhưng chưa phải ô cuối cùng của dòng -> Nhảy sang ô ngang bên phải
+                    const inputsInRow = Array.from(currentRow.querySelectorAll('.nav-grid'));
+                    const idx = inputsInRow.indexOf(currentElement);
+                    if(idx < inputsInRow.length - 1) inputsInRow[idx + 1].focus();
+                } else {
+                    // Nhảy xuống dòng dưới (Cùng cột)
+                    if (rowIndex < allRows.length - 1) {
+                        const target = allRows[rowIndex + 1].querySelector(`.${colClass}`);
+                        if(target) target.focus();
+                    } else if (e.key === 'Enter') {
+                        // NẾU ĐANG Ở DÒNG CUỐI MÀ BẤM ENTER -> TỰ ĐỘNG THÊM DÒNG MỚI
+                        const btnAdd = container.nextElementSibling;
+                        if(btnAdd && btnAdd.tagName === 'BUTTON') {
+                            btnAdd.click();
+                            // Tự focus vào ô đầu tiên của dòng vừa tạo (Sau một chút delay DOM)
+                            setTimeout(() => {
+                                const newRows = container.querySelectorAll('.batch-grid-row');
+                                const lastRow = newRows[newRows.length - 1];
+                                if(lastRow) {
+                                    const firstInp = lastRow.querySelector('.nav-grid');
+                                    if(firstInp) firstInp.focus();
+                                }
+                            }, 50);
+                        }
+                    }
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (rowIndex > 0) {
+                    const target = allRows[rowIndex - 1].querySelector(`.${colClass}`);
+                    if(target) target.focus();
+                } else {
+                    // Nếu đang ở dòng đầu mà bấm Lên -> Nhảy ngược lên ô nhập liệu chung
+                    const topInputs = Array.from(currentElement.closest('.form-card').querySelectorAll('.nav-main'));
+                    if(topInputs.length > 0) topInputs[topInputs.length - 1].focus();
+                }
+            }
+        }
+
+        // --- 2. GIAO DIỆN CHUYỂN TAB ---
+        function switchPharmTab(tabId, btn) {
+            document.querySelectorAll('.tab-pane').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        // --- 3. QUẢN LÝ DANH MỤC & LÔ (CATALOG) ---
+        let catalogData = [];
+
+        function loadCatalog() {
+            db.collection('yt_pharmacy_items').onSnapshot(snap => {
+                catalogData = [];
+                snap.forEach(doc => catalogData.push({ id: doc.id, ...doc.data() }));
+                catalogData.sort((a, b) => {
+                    if (a.type !== b.type) return a.type === 'drug' ? -1 : 1;
+                    return a.name.localeCompare(b.name, 'vi');
+                });
+                renderCatalogTable();
+            });
+        }
+
+        function renderCatalogTable() {
+            const term = (document.getElementById('search-catalog').value || '').toLowerCase();
+            const tbody = document.getElementById('catalog-tbody');
+            tbody.innerHTML = '';
+
+            let filtered = catalogData.filter(i => i.name.toLowerCase().includes(term));
+
+            filtered.forEach(item => {
+                const typeTag = item.type === 'drug' 
+                    ? '<span style="background:#eff6ff; color:#2563eb; padding:5px 10px; border-radius:6px; font-size:0.8rem; font-weight:bold;"><i class="fas fa-pills"></i> Thuốc</span>' 
+                    : '<span style="background:#fffbeb; color:#d97706; padding:5px 10px; border-radius:6px; font-size:0.8rem; font-weight:bold;"><i class="fas fa-band-aid"></i> Vật tư</span>';
+                
+                let batchesHtml = '<div style="display:flex; flex-direction:column; gap:5px;">';
+                let totalQty = 0;
+                // THAY THẾ ĐOẠN (item.batches || []).forEach(b => { ... }) BẰNG ĐOẠN NÀY:
+                (item.batches || []).forEach(b => {
+                    let expDisplay = "Không HSD";
+                    let isExpired = false;
+                    let bgStr = 'background:#f8fafc; border-color:#e2e8f0;';
+                    let expAlert = '';
+
+                    if (b.expiry) {
+                        expDisplay = formatDisplayDate(b.expiry);
+                        isExpired = isExpiredDate(b.expiry); // Dùng hàm mới an toàn hơn
+                        if (isExpired) {
+                            bgStr = 'background:#fef2f2; color:#ef4444; border-color:#fecaca;';
+                            expAlert = '<strong style="color:red;">(HẾT HẠN)</strong>';
+                        }
+                    }
+
+                    batchesHtml += `
+                        <div style="border:1px solid; border-radius:6px; padding:6px 10px; font-size:0.85rem; ${bgStr} display:flex; justify-content:space-between;">
+                            <span>Lô: <strong>${b.lot || 'Không có'}</strong> &nbsp;|&nbsp; HSD: ${expDisplay} ${expAlert}</span>
+                            <span>SL: <strong>${b.qty}</strong> ${b.unit}</span>
+                        </div>
+                    `;
+                    totalQty += parseFloat(b.qty);
+                });
+                batchesHtml += `</div><div style="margin-top:10px; text-align:right; font-weight:bold; color:#0f172a; font-size:0.95rem;">TỔNG TỒN: <span style="color:#2563eb;">${totalQty} ${item.unit}</span></div>`;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${typeTag}</td>
+                        <td style="font-size:1.05rem; font-weight:bold; color:#1e293b;">${item.name}</td>
+                        <td style="color:#475569;">${item.manufacturer || '--'}</td>
+                        <td>${item.batches && item.batches.length > 0 ? batchesHtml : '<span style="background:#f1f5f9; padding:5px 10px; border-radius:6px; font-size:0.85rem; color:#94a3b8;">Hết hàng / Trống</span>'}</td>
+                        <td>
+                            <div style="display: flex; justify-content: flex-end; gap: 8px; flex-wrap: nowrap;">
+                                <button onclick="editItem('${item.id}')" class="btn btn-sm" style="background:#e0e7ff; color:#3b82f6; padding:8px 12px; white-space: nowrap;"><i class="fas fa-edit"></i> Sửa</button>
+                                <button onclick="deleteItem('${item.id}')" class="btn btn-sm" style="background:#fee2e2; color:#ef4444; padding:8px 12px; white-space: nowrap;"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- FORM THÊM/SỬA SẢN PHẨM ---
+        function openItemModal() {
+            document.getElementById('item-id').value = '';
+            document.getElementById('item-type').value = 'drug';
+            document.getElementById('item-name').value = '';
+            document.getElementById('item-nsx').value = '';
+            document.getElementById('item-unit').value = '';
+            document.getElementById('batch-container').innerHTML = '';
+            document.getElementById('item-modal-title').innerHTML = '<i class="fas fa-capsules"></i> Thêm Dược phẩm / Vật tư mới';
+            addBatchRow();
+            document.getElementById('modal-item').style.display = 'flex';
+            setTimeout(() => { document.getElementById('item-name').focus(); }, 100);
+        }
+function addBatchRow(lot='', mfgDate='', expiry='', qty='', unit='') {
+            const container = document.getElementById('batch-container');
+            const row = document.createElement('div');
+            row.className = 'batch-grid-row';
+            row.innerHTML = `
+                <div><label class="pharma-label">Số lô</label><input type="text" class="pharma-input b-lot nav-grid nav-col-1" placeholder="(Bỏ trống nếu không có)" value="${lot}" onkeydown="pharmaKeyNav(event)"></div>
+                
+                <div>
+                    <label class="pharma-label">Ngày SX</label>
+                    <div style="position:relative; width:100%;">
+                        <input type="text" class="pharma-input b-mfg nav-grid nav-col-2" style="padding-right:30px;" placeholder="MM/YYYY hoặc gõ/chọn..." value="${formatDisplayDate(mfgDate)}" onkeydown="pharmaKeyNav(event)">
+                        <input type="date" tabindex="-1" style="position:absolute; right:0; top:0; width:30px; height:100%; opacity:0; cursor:pointer;" onchange="if(this.value) this.previousElementSibling.value = this.value.split('-').reverse().join('/')">
+                        <i class="fas fa-calendar-alt" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); color:#94a3b8; pointer-events:none;"></i>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="pharma-label">Hạn SD</label>
+                    <div style="position:relative; width:100%;">
+                        <input type="text" class="pharma-input b-exp nav-grid nav-col-3" style="padding-right:30px;" placeholder="MM/YYYY hoặc gõ/chọn..." value="${formatDisplayDate(expiry)}" onkeydown="pharmaKeyNav(event)">
+                        <input type="date" tabindex="-1" style="position:absolute; right:0; top:0; width:30px; height:100%; opacity:0; cursor:pointer;" onchange="if(this.value) this.previousElementSibling.value = this.value.split('-').reverse().join('/')">
+                        <i class="fas fa-calendar-alt" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); color:#94a3b8; pointer-events:none;"></i>
+                    </div>
+                </div>
+
+                <div><label class="pharma-label">Số lượng</label><input type="number" class="pharma-input b-qty nav-grid nav-col-4" value="${qty}" onkeydown="pharmaKeyNav(event)"></div>
+                <div><label class="pharma-label">Đơn vị</label><input type="text" class="pharma-input b-unit nav-grid nav-col-5 nav-last" placeholder="(Mặc định)" value="${unit}" onkeydown="pharmaKeyNav(event)"></div>
+                <button onclick="this.parentElement.remove()" style="background:none; border:none; color:#ef4444; cursor:pointer; padding-bottom:12px;" title="Xóa dòng"><i class="fas fa-trash-alt fa-lg"></i></button>
+            `;
+            container.appendChild(row);
+        }
+async function editItem(id) {
+            const item = catalogData.find(i => i.id === id);
+            if(!item) return;
+            document.getElementById('item-id').value = item.id;
+            document.getElementById('item-type').value = item.type;
+            document.getElementById('item-name').value = item.name;
+            document.getElementById('item-nsx').value = item.manufacturer || '';
+            document.getElementById('item-unit').value = item.unit;
+            document.getElementById('item-modal-title').innerHTML = '<i class="fas fa-edit"></i> Cập nhật Thông tin Sản phẩm';
+            
+            const bc = document.getElementById('batch-container');
+            bc.innerHTML = '';
+            if(item.batches) {
+                // ĐÃ FIX LỖI Ở ĐÂY: Truyền đúng thứ tự mfgDate và expiry
+                item.batches.forEach(b => addBatchRow(b.lot, b.mfgDate || '', b.expiry || '', b.qty, b.unit));
+            } else {
+                addBatchRow();
+            }
+            document.getElementById('modal-item').style.display = 'flex';
+        }
+
+        async function saveItem() {
+            const id = document.getElementById('item-id').value;
+            const data = {
+                type: document.getElementById('item-type').value,
+                name: document.getElementById('item-name').value.trim(),
+                manufacturer: document.getElementById('item-nsx').value.trim(),
+                unit: document.getElementById('item-unit').value.trim(),
+                batches: []
+            };
+
+            if(!data.name) return alert("Vui lòng điền tên sản phẩm!");
+
+            document.querySelectorAll('#batch-container .batch-grid-row').forEach(row => {
+                const lot = row.querySelector('.b-lot').value.trim();
+                const mfgDate = row.querySelector('.b-mfg').value.trim(); 
+                const expiry = row.querySelector('.b-exp').value.trim();
+                const qty = parseFloat(row.querySelector('.b-qty').value) || 0;
+                const unit = row.querySelector('.b-unit').value.trim() || data.unit;
+                
+                // CHỈ CẦN SỐ LƯỢNG > 0 LÀ CHO PHÉP LƯU (Bỏ qua bắt buộc số lô)
+                if(qty > 0) {
+                    data.batches.push({ lot: lot || "", mfgDate, expiry, qty, unit });
+                }
+            });
+
+            try {
+                if(id) {
+                    await db.collection('yt_pharmacy_items').doc(id).update(data);
+                } else {
+                    data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                    await db.collection('yt_pharmacy_items').add(data);
+                }
+                document.getElementById('modal-item').style.display = 'none';
+                alert("Đã lưu thông tin vào CSDL!");
+            } catch(e) { alert("Lỗi hệ thống: " + e.message); }
+        }
+        async function deleteItem(id) {
+            if(confirm("CẢNH BÁO: Xóa sản phẩm sẽ xóa luôn toàn bộ số lượng tồn kho của nó. Có tiếp tục?")) {
+                await db.collection('yt_pharmacy_items').doc(id).delete();
+            }
+        }
+
+        // --- 4. TẠO LỆNH XUẤT KHO ---
+        function openExportModal() {
+            document.getElementById('exp-receiver').value = '';
+            document.getElementById('exp-reason').value = '';
+            document.getElementById('exp-notes').value = '';
+            document.getElementById('exp-items-container').innerHTML = '';
+            addExportRow();
+            document.getElementById('modal-export').style.display = 'flex';
+            setTimeout(() => { document.getElementById('exp-receiver').focus(); }, 100);
+        }
+
+function addExportRow() {
+            const container = document.getElementById('exp-items-container');
+            const rowId = 'exp_row_' + Date.now();
+            
+            let itemOptions = '<option value="">-- Tìm / Chọn sản phẩm --</option>';
+            catalogData.forEach(i => {
+                if(i.batches && i.batches.length > 0) itemOptions += `<option value="${i.id}">${i.name}</option>`;
+            });
+
+            const row = document.createElement('div');
+            row.className = 'batch-grid-row export-row';
+            row.id = rowId;
+            row.innerHTML = `
+                <div><label class="pharma-label">Sản phẩm xuất</label><select id="${rowId}_select" class="pharma-input exp-item" onchange="updateBatchOptions('${rowId}')">${itemOptions}</select></div>
+                <div><label class="pharma-label">Chọn Lô (Có sẵn)</label><select class="pharma-input exp-batch nav-grid nav-col-2" onkeydown="pharmaKeyNav(event)"><option value="">-- Chọn lô --</option></select></div>
+                <div><label class="pharma-label">Số lượng trừ</label><input type="number" class="pharma-input exp-qty nav-grid nav-col-3 nav-last" min="1" onkeydown="pharmaKeyNav(event)"></div>
+                <button type="button" onclick="this.parentElement.remove()" style="height: 44px; background: #fef2f2; border: 1px solid #fecaca; color: #ef4444; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" title="Xóa dòng"><i class="fas fa-trash-alt"></i></button>
+            `;
+            container.appendChild(row);
+
+            // Khởi tạo công cụ Gõ để tìm kiếm
+            new TomSelect(`#${rowId}_select`, { create: false, sortField: { field: "text", direction: "asc" } });
+        }
+        function updateBatchOptions(rowId) {
+            const row = document.getElementById(rowId);
+            const itemId = row.querySelector('.exp-item').value;
+            const batchSelect = row.querySelector('.exp-batch');
+            batchSelect.innerHTML = '<option value="">-- Chọn lô --</option>';
+            
+            if(itemId) {
+                const item = catalogData.find(i => i.id === itemId);
+                // THAY THẾ KHÚC NÀY
+                item.batches.forEach((b, index) => {
+                    if(b.qty > 0) {
+                        let expDisplay = b.expiry ? `HSD: ${formatDisplayDate(b.expiry)}` : "Không HSD";
+                        let expAlert = isExpiredDate(b.expiry) ? ' [HẾT HẠN]' : '';
+                        let lotDisplay = b.lot ? `Lô ${b.lot}` : "Không có Lô";
+                        batchSelect.innerHTML += `<option value="${index}">${lotDisplay} (Tồn: ${b.qty} ${b.unit}) - ${expDisplay}${expAlert}</option>`;
+                     }
+                });
+         }
+     }
+
+
+        async function processExport() {
+            const receiver = document.getElementById('exp-receiver').value.trim();
+            const reason = document.getElementById('exp-reason').value.trim();
+	    const isDamaged = document.getElementById('exp-is-damaged').checked;
+            const notes = document.getElementById('exp-notes').value.trim();
+
+            if(!receiver || !reason) return alert("Vui lòng điền tên người nhận và lý do xuất!");
+
+            const rows = document.querySelectorAll('#exp-items-container .batch-grid-row');
+            let exportItems = [];
+            let isValid = true;
+            let batchUpdates = {}; 
+
+            rows.forEach(row => {
+                const itemSelect = row.querySelector('.exp-item');
+                const batchSelect = row.querySelector('.exp-batch');
+                const qtyInput = row.querySelector('.exp-qty');
+
+                const itemId = itemSelect.value;
+                const batchIndex = batchSelect.value;
+                const qty = parseFloat(qtyInput.value);
+
+                if(!itemId || batchIndex === "" || isNaN(qty) || qty <= 0) { isValid = false; return; }
+
+                const item = catalogData.find(i => i.id === itemId);
+                const batch = item.batches[batchIndex];
+
+                if(qty > batch.qty) {
+                    alert(`Vượt quá tồn kho! SP: ${item.name} - Lô: ${batch.lot} (Chỉ còn ${batch.qty})`);
+                    isValid = false; return;
+                }
+
+                exportItems.push({ 
+                    itemId: itemId, 
+                    itemName: item.name, 
+                    lot: batch.lot || "", 
+                    mfgDate: batch.mfgDate || "", 
+                    expiry: batch.expiry || "", 
+                    qty: qty, 
+                    unit: batch.unit || "" 
+                });
+
+                if(!batchUpdates[itemId]) batchUpdates[itemId] = JSON.parse(JSON.stringify(item.batches));
+                batchUpdates[itemId][batchIndex].qty -= qty;
+            });
+
+            if(!isValid) return;
+            if(exportItems.length === 0) return alert("Bạn chưa cấu hình xuất sản phẩm nào!");
+
+            const txId = "XK-" + Date.now().toString().slice(-6);
+
+            try {
+                const batch = db.batch();
+                const txRef = db.collection('yt_pharmacy_transactions').doc(txId);
+                batch.set(txRef, {
+                    id: txId, type: 'export', receiver, reason, notes, items: exportItems,
+                    user: currentUser.displayName || currentUser.email,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                for (const [iId, newBatches] of Object.entries(batchUpdates)) {
+                    batch.update(db.collection('yt_pharmacy_items').doc(iId), { batches: newBatches });
+                }
+
+                await batch.commit();
+                document.getElementById('modal-export').style.display = 'none';
+                printTransaction(txId, 'export', receiver, reason, notes, exportItems, currentUser.displayName || currentUser.email, new Date());
+
+            } catch(e) { alert("Lỗi khi xuất kho: " + e.message); }
+        }
+
+        // --- 5. TẠO LỆNH NHẬP KHO ---
+        function openImportModal() {
+            document.getElementById('imp-notes').value = '';
+            document.getElementById('imp-items-container').innerHTML = '';
+            addImportRow();
+            document.getElementById('modal-import').style.display = 'flex';
+            setTimeout(() => { document.getElementById('imp-notes').focus(); }, 100);
+        }
+
+function addImportRow() {
+            const container = document.getElementById('imp-items-container');
+            const rowId = 'imp_row_' + Date.now();
+            let itemOptions = '<option value="">-- Tìm / Chọn sản phẩm --</option>';
+            catalogData.forEach(i => itemOptions += `<option value="${i.id}">${i.name}</option>`);
+
+            const row = document.createElement('div');
+            row.className = 'batch-grid-row import-row';
+            row.id = rowId;
+            row.innerHTML = `
+                <div><label class="pharma-label">Sản phẩm</label><select id="${rowId}_select" class="pharma-input imp-item">${itemOptions}</select></div>
+                <div><label class="pharma-label">Số lô</label><input type="text" class="pharma-input imp-lot nav-grid nav-col-2" placeholder="(Không bắt buộc)" onkeydown="pharmaKeyNav(event)"></div>
+                <div><label class="pharma-label">Ngày SX</label><input type="text" class="pharma-input imp-mfg nav-grid nav-col-3" placeholder="dd/mm/yyyy..." onkeydown="pharmaKeyNav(event)"></div>
+                <div><label class="pharma-label">Hạn SD</label><input type="text" class="pharma-input imp-exp nav-grid nav-col-4" placeholder="dd/mm/yyyy..." onkeydown="pharmaKeyNav(event)"></div>
+                <div><label class="pharma-label">Số lượng</label><input type="number" class="pharma-input imp-qty nav-grid nav-col-5" min="1" onkeydown="pharmaKeyNav(event)"></div>
+                <div><label class="pharma-label">Đơn vị</label><input type="text" class="pharma-input imp-unit nav-grid nav-col-6 nav-last" onkeydown="pharmaKeyNav(event)"></div>
+                <button type="button" onclick="this.parentElement.remove()" style="height: 44px; background: #fef2f2; border: 1px solid #fecaca; color: #ef4444; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" title="Xóa dòng"><i class="fas fa-trash-alt"></i></button>
+            `;
+            container.appendChild(row);
+
+            new TomSelect(`#${rowId}_select`, { create: false, sortField: { field: "text", direction: "asc" } });
+        }
+        async function processImport() {
+            const notes = document.getElementById('imp-notes').value.trim();
+            const rows = document.querySelectorAll('#imp-items-container .batch-grid-row');
+            let importItems = [];
+            let isValid = true;
+            let batchUpdates = {}; 
+
+            rows.forEach(row => {
+                const itemId = row.querySelector('.imp-item').value;
+                const lot = row.querySelector('.imp-lot').value.trim();
+                const mfg = row.querySelector('.imp-mfg').value.trim(); // Lấy NSX
+                const exp = row.querySelector('.imp-exp').value.trim();
+                const qty = parseFloat(row.querySelector('.imp-qty').value);
+                const unit = row.querySelector('.imp-unit').value.trim();
+
+                // Đã bỏ điều kiện bắt buộc lot (!lot)
+                if(!itemId || isNaN(qty) || qty <= 0 || !unit) { isValid = false; return; }
+
+                const item = catalogData.find(i => i.id === itemId);
+                importItems.push({ itemId, itemName: item.name, lot: lot || "", mfgDate: mfg, expiry: exp, qty, unit });
+
+                if(!batchUpdates[itemId]) batchUpdates[itemId] = JSON.parse(JSON.stringify(item.batches || []));
+                
+                // Nhóm đúng lô và hạn sử dụng
+                let existingBatch = batchUpdates[itemId].find(b => b.lot === lot && b.expiry === exp);
+                if(existingBatch) { 
+                    existingBatch.qty += qty; 
+                    if(!existingBatch.mfgDate && mfg) existingBatch.mfgDate = mfg; // Bổ sung NSX nếu lô cũ chưa có
+                } 
+                else { batchUpdates[itemId].push({ lot: lot || "", mfgDate: mfg, expiry: exp, qty, unit }); }
+            });
+
+            if(!isValid) return alert("Có dòng đang để trống sản phẩm, số lượng hoặc đơn vị!");
+            if(importItems.length === 0) return alert("Chưa thêm sản phẩm!");
+
+            const txId = "NK-" + Date.now().toString().slice(-6);
+
+            try {
+                const batch = db.batch();
+                const txRef = db.collection('yt_pharmacy_transactions').doc(txId);
+                batch.set(txRef, {
+                    id: txId, type: 'import', notes, items: importItems,
+                    user: currentUser.displayName || currentUser.email,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                for (const [iId, newBatches] of Object.entries(batchUpdates)) {
+                    batch.update(db.collection('yt_pharmacy_items').doc(iId), { batches: newBatches });
+                }
+
+                await batch.commit();
+                document.getElementById('modal-import').style.display = 'none';
+                printTransaction(txId, 'import', '', '', notes, importItems, currentUser.displayName || currentUser.email, new Date());
+
+            } catch(e) { alert("Lỗi khi nhập kho: " + e.message); }
+        }
+
+        // --- 6. HIỂN THỊ LỊCH SỬ GIAO DỊCH ---
+// --- HIỂN THỊ LỊCH SỬ GIAO DỊCH (GỒM CẢ ADJUST) ---
+        let allTransactions = [];
+        
+        function loadTransactions(type) {
+            db.collection('yt_pharmacy_transactions').where('type', '==', type).orderBy('timestamp', 'desc').limit(50).onSnapshot(snap => {
+                const tbody = document.getElementById(`${type}-tbody`);
+                if (!tbody) return; // Chống lỗi nếu không tìm thấy bảng
+                
+                tbody.innerHTML = '';
+                
+                snap.docChanges().forEach(change => {
+                    const data = { id: change.doc.id, ...change.doc.data() };
+                    const index = allTransactions.findIndex(t => t.id === data.id);
+                    if (change.type === "added" || change.type === "modified") {
+                        if (index > -1) allTransactions[index] = data;
+                        else allTransactions.push(data);
+                    } else if (change.type === "removed") {
+                        if (index > -1) allTransactions.splice(index, 1);
+                    }
+                });
+
+                snap.forEach(doc => {
+                    const t = doc.data();
+                    const date = t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleString('vi-VN') : '';
+                    
+                    // Nút thao tác (In phiếu và Hủy)
+                    let actionButtons = `
+                        <td style="text-align:right;">
+                            <button onclick="reprintTx('${t.id}')" class="btn btn-sm" style="background:#f8fafc; color:#475569; border:1px solid #cbd5e1;"><i class="fas fa-print"></i> In Phiếu</button>
+                            <button onclick="deleteTransaction('${t.id}')" class="btn btn-sm" style="background:#fee2e2; color:#ef4444; border:1px solid #fecaca; margin-left:8px;"><i class="fas fa-trash-alt"></i> Hủy</button>
+                        </td>
+                    `;
+                    
+                    // Phân loại để vẽ ra HTML tương ứng với từng Tab
+                    if (type === 'export') {
+                        tbody.innerHTML += `<tr><td style="font-weight:bold; color:#ef4444">${t.id}</td><td>${date}</td><td><strong style="color:#1e293b;">${t.receiver}</strong></td><td>${t.reason}</td>${actionButtons}</tr>`;
+                    } else if (type === 'import') {
+                        tbody.innerHTML += `<tr><td style="font-weight:bold; color:#10b981">${t.id}</td><td>${date}</td><td>${t.notes}</td><td>${t.user}</td>${actionButtons}</tr>`;
+                    } else if (type === 'adjust') {
+                        // ĐÂY CHÍNH LÀ ĐOẠN ĐỂ HIỂN THỊ PHIẾU ĐIỀU CHỈNH
+                        tbody.innerHTML += `<tr><td style="font-weight:bold; color:#f59e0b">${t.id}</td><td>${date}</td><td>${t.reason}</td><td>${t.user}</td>${actionButtons}</tr>`;
+                    }
+                });
+            });
+        }
+        // --- 7. BỘ ENGINE IN ẤN PDF ---
+        function getCommonPrintHeader() {
+            return `
+                <div class="print-header-grid">
+                    <div>
+                        <p>SỞ GIÁO DỤC VÀ ĐÀO TẠO THÀNH PHỐ HỒ CHÍ MINH<p>
+                        <p class="bold-school">TRƯỜNG THPT VÕ THỊ SÁU- BRVT</p>
+                    </div>
+                </div>
+            `;
+        }
+        // --- 8. IN BÁO CÁO KHO THEO KỲ ---
+async function generateReportPDF() {
+            const monthVal = document.getElementById('rpt-month').value;
+            const yearVal = document.getElementById('rpt-year').value;
+            if(!yearVal) return alert("Vui lòng nhập năm!");
+
+            const printArea = document.getElementById('print-section');
+            const dateObj = new Date();
+            let schoolYearStr = "";
+            let numYear = parseInt(yearVal);
+            
+            if (!monthVal || monthVal === "") { schoolYearStr = `${numYear}`; } 
+            else {
+                let selectedMonth = parseInt(monthVal);
+                if (selectedMonth >= 1 && selectedMonth <= 8) schoolYearStr = `${numYear - 1}-${numYear}`;
+                else schoolYearStr = `${numYear}-${numYear + 1}`;
+            }
+
+            printArea.innerHTML = `<div style="text-align:center; padding: 50px; font-size: 1.2rem;"><i class="fas fa-spinner fa-spin"></i> Đang truy xuất dữ liệu lịch sử để tính toán...</div>`;
+            printArea.style.display = 'block';
+
+            try {
+                let startOfMonth, endOfMonth;
+                if (monthVal) {
+                    startOfMonth = new Date(yearVal, parseInt(monthVal) - 1, 1);
+                    endOfMonth = new Date(yearVal, parseInt(monthVal), 0, 23, 59, 59);
+                } else {
+                    startOfMonth = new Date(yearVal, 0, 1);
+                    endOfMonth = new Date(yearVal, 11, 31, 23, 59, 59);
+                }
+
+                const snapshot = await db.collection('yt_pharmacy_transactions').where('timestamp', '<=', endOfMonth).get();
+                let reportMap = {}; 
+
+                catalogData.forEach(item => {
+                    (item.batches || []).forEach(b => {
+                        let key = item.id + "|||" + b.lot;
+                        reportMap[key] = { name: item.name, unit: b.unit, lot: b.lot, nsx: b.mfgDate || '', hsd: b.expiry || '', tonCu: 0, nhap: 0, xuatDung: 0, xuatHong: 0, tonCuoi: 0 };
+                    });
+                });
+
+                snapshot.forEach(doc => {
+                    const tx = doc.data();
+                    const txDate = tx.timestamp.toDate();
+                    const isBefore = txDate < startOfMonth;
+
+                    tx.items.forEach(item => {
+                        let key = item.itemId + "|||" + item.lot;
+                        if (!reportMap[key]) reportMap[key] = { name: item.itemName, unit: item.unit, lot: item.lot, nsx: item.mfgDate || '', hsd: item.expiry || '', tonCu: 0, nhap: 0, xuatDung: 0, xuatHong: 0, tonCuoi: 0 };
+                        let row = reportMap[key];
+
+                        if (tx.type === 'import') {
+                            if (isBefore) row.tonCu += item.qty; else row.nhap += item.qty;
+                        } else if (tx.type === 'export') {
+                            // ĐÃ NÂNG CẤP: Dùng cờ isDamaged từ checkbox
+                            let isHong = tx.isDamaged || /hỏng|hết hạn|hủy|vứt/i.test(tx.reason || '');
+                            if (isBefore) row.tonCu -= item.qty;
+                            else {
+                                if (isHong) row.xuatHong += item.qty; else row.xuatDung += item.qty;
+                            }
+                        } else if (tx.type === 'adjust') {
+                            let isHong = tx.isDamaged || /hỏng|hết hạn|hủy|vứt/i.test(tx.reason || '');
+                            let diff = item.diff;
+                            if (isBefore) row.tonCu += diff;
+                            else {
+                                if (diff > 0) row.nhap += diff;
+                                else {
+                                    if (isHong) row.xuatHong += Math.abs(diff); else row.xuatDung += Math.abs(diff);
+                                }
+                            }
+                        }
+                    });
+                });
+
+                let tableHtml = ''; let stt = 1;
+                Object.values(reportMap).forEach(row => {
+                    row.tonCuoi = row.tonCu + row.nhap - row.xuatDung - row.xuatHong;
+                    if (row.tonCu === 0 && row.nhap === 0 && row.xuatDung === 0 && row.xuatHong === 0 && row.tonCuoi === 0) return;
+
+                    let nsxFormat = formatDisplayDate(row.nsx);
+		    let hsdFormat = formatDisplayDate(row.hsd);
+                    let dateCell = nsxFormat ? `${nsxFormat}<br>${hsdFormat}` : hsdFormat;
+                    if (!dateCell) dateCell = "-";
+
+                    tableHtml += `
+                        <tr>
+                            <td>${stt++}</td>
+                            <td style="text-align:left; font-weight:500;">${row.name}</td>
+                            <td>${row.unit}</td>
+                            <td>${row.lot}</td>
+                            <td>${dateCell}</td>
+                            <td style="font-weight:bold;">${row.tonCu}</td>
+                            <td>${row.nhap}</td>
+                            <td>${row.xuatDung}</td>
+                            <td>${row.xuatHong}</td>
+                            <td style="font-weight:bold;">${row.tonCuoi}</td>
+                            <td></td>
+                        </tr>
+                    `;
+                });
+
+                if(tableHtml === '') tableHtml = '<tr><td colspan="11" style="text-align:center; padding: 10px;">Không có dữ liệu trong kỳ.</td></tr>';
+
+                // TẠO LỆNH CSS ÉP NÉN SIÊU GỌN CHO BẢN IN NÀY (Bỏ qua CSS cũ ở thẻ style)
+                const style = document.createElement('style');
+                style.id = 'ultra-compact-print';
+                style.innerHTML = `
+                    @page { size: A4 landscape; margin: 8mm; }
+                    .report-wrapper { font-family: 'Times New Roman', Times, serif; color: black; background: white; }
+                    .report-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+                    .report-header-left { text-align: center; font-size: 11pt; line-height: 1.2; width: 400px; }
+                    .report-title-area { text-align: center; margin-bottom: 15px; }
+                    .report-title-area h1 { font-size: 14pt; margin: 0 0 5px 0; font-weight: bold; }
+                    .report-title-area p { font-size: 11pt; margin: 0; }
+                    
+                    /* Ép bảng cực nhỏ và khít */
+                    .report-table { width: 100%; border-collapse: collapse; font-size: 11pt; }
+                    .report-table th, .report-table td { border: 1px solid black; padding: 3px 2px; text-align: center; vertical-align: middle; }
+                    .report-table th { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; font-weight: bold; }
+                    
+                    .report-footer { margin-top: 15px; font-size: 11pt; }
+                    .report-signatures { display: grid; grid-template-columns: 1fr 1fr; text-align: center; margin-top: 5px; page-break-inside: avoid; }
+                    .report-bot { font-style: italic; font-size: 9pt; margin-top: 20px; }
+                `;
+                document.head.appendChild(style);
+
+                printArea.innerHTML = `
+                    <div class="report-wrapper">
+                        <div class="report-header">
+                            <div class="report-header-left">
+                                <div>SỞ GIÁO DỤC VÀ ĐÀO TẠO THÀNH PHỐ HỒ CHÍ MINH</div>
+                                <div style="font-weight:bold;">TRƯỜNG THPT VÕ THỊ SÁU- BRVT</div>
+                            </div>
+                        </div>
+
+                        <div class="report-title-area">
+                            <h1>SỔ QUẢN LÝ THUỐC VÀ VẬT TƯ Y TẾ</h1>
+                            <p>NĂM HỌC: ${schoolYearStr} (Ngày: ${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()})</p>
+                        </div>
+
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2" style="width:3%;">STT</th>
+                                    <th rowspan="2" style="width:23%;">Diễn giải</th>
+                                    <th rowspan="2" style="width:7%;">Đơn vị</th>
+                                    <th rowspan="2" style="width:10%;">Số lô</th>
+                                    <th rowspan="2" style="width:11%;">Hạn sử dụng</th>
+                                    <th rowspan="2" style="width:6%;">Tồn cũ</th>
+                                    <th rowspan="2" style="width:6%;">Nhập mới</th>
+                                    <th colspan="2">Xuất</th>
+                                    <th rowspan="2" style="width:6%;">Tồn</th>
+                                    <th rowspan="2" style="width:8%;">Ghi chú</th>
+                                </tr>
+                                <tr>
+                                    <th style="width:7%;">Sử dụng</th>
+                                    <th style="width:7%;">Hỏng/Hết hạn</th>
+                                </tr>
+                            </thead>
+                            <tbody>${tableHtml}</tbody>
+                        </table>
+
+                        <div class="report-footer">
+                            <div class="report-signatures">
+                                <div>
+                                    <p style="font-weight:bold;">HIỆU TRƯỞNG</p>
+                                </div>
+                                <div>
+                                    <p style="font-weight:bold; margin-bottom: 50px;">PHỤ TRÁCH Y TẾ</p>
+                                    <p>${currentUser ? (currentUser.displayName || currentUser.email) : ''}</p>
+                                </div>
+                            </div>
+                            <div class="report-bot">Dữ liệu xuất tự động từ hệ thống Y tế số</div>
+                        </div>
+                    </div>
+                `;
+                
+                setTimeout(() => { 
+                    window.print(); 
+                    printArea.style.display = 'none'; 
+                    document.getElementById('ultra-compact-print').remove();
+                }, 500);
+            } catch (err) { alert("Lỗi tạo báo cáo: " + err.message); printArea.style.display = 'none'; }
+        }
+        // --- 9. XUẤT EXCEL DANH MỤC ---
+        function exportCatalog() {
+            let data = [];
+            catalogData.forEach(item => {
+                if(item.batches && item.batches.length > 0) {
+                    item.batches.forEach(b => {
+                        data.push({ "Loại": item.type === 'drug' ? 'Thuốc' : 'Vật tư', "Sản phẩm": item.name, "NSX": item.manufacturer || '', "Số lô": b.lot, "Hạn sử dụng": b.expiry, "Tồn kho": b.qty, "ĐVT": b.unit });
+                    });
+                } else { data.push({ "Loại": item.type === 'drug' ? 'Thuốc' : 'Vật tư', "Sản phẩm": item.name, "Tồn kho": 0 }); }
+            });
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "TonKho");
+            XLSX.writeFile(wb, "Danh_Muc_Kho_Y_Te.xlsx");
+        }
+// --- TẢI FILE EXCEL MẪU ---
+        function downloadExcelTemplate() {
+            const data = [
+                { "Loại (drug/supply)": "drug", "Tên Sản phẩm": "Panadol Extra 500mg", "Nhà sản xuất": "GSK", "Số lô": "L0123", "Ngày sản xuất": "10/2023", "Hạn sử dụng": "12/2026", "Số lượng": 100, "ĐVT": "Viên" },
+                { "Loại (drug/supply)": "supply", "Tên Sản phẩm": "Bông gạc y tế vô trùng", "Nhà sản xuất": "Bảo Thạch", "Số lô": "", "Ngày sản xuất": "15/05/2024", "Hạn sử dụng": "", "Số lượng": 50, "ĐVT": "Gói" }
+            ];
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "FileMau_KhoYTe");
+            XLSX.writeFile(wb, "File_Mau_Nhap_Kho_Y_Te.xlsx");
+        }
+
+        // --- XỬ LÝ NHẬP EXCEL VÀO KHO ---
+        async function importCatalogExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            event.target.value = ""; // Reset input
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+                    if (json.length === 0) return alert("File Excel trống!");
+
+                    const batch = db.batch();
+                    let successCount = 0;
+
+                    for (let row of json) {
+                        // Đọc header theo file mẫu
+                        const rawType = (row['Loại (drug/supply)'] || row['Loại'] || "drug").toString().toLowerCase();
+                        const type = rawType.includes('sup') || rawType.includes('vật tư') ? 'supply' : 'drug';
+                        const name = (row['Tên Sản phẩm'] || row['Tên'] || "").toString().trim();
+                        const nsx = (row['Nhà sản xuất'] || row['NSX'] || "").toString().trim();
+                        const lot = (row['Số lô'] || row['Lô'] || "").toString().trim();
+                        const mfg = (row['Ngày sản xuất'] || row['Ngày SX'] || row['NSX'] || "").toString().trim();
+                        
+                        // Xử lý HSD rỗng
+                        let exp = (row['Hạn sử dụng (YYYY-MM-DD)'] || row['Hạn sử dụng'] || "").toString().trim();
+                        if (exp && !exp.includes('-')) exp = ""; // Fix chống lỗi định dạng
+
+                        const qty = parseFloat(row['Số lượng'] || row['Tồn kho']) || 0;
+                        const unit = (row['ĐVT'] || row['Đơn vị'] || "Hộp").toString().trim();
+
+                        if (name) {
+                            // Tìm xem SP đã có trong CSDL chưa
+                            const existingItem = catalogData.find(i => i.name.toLowerCase() === name.toLowerCase());
+                            
+                            if (existingItem) {
+                                // Nếu có rồi thì thêm lô mới vào
+                                let batches = JSON.parse(JSON.stringify(existingItem.batches || []));
+                                if (lot && qty > 0) {
+                                    let existBatch = batches.find(b => b.lot === lot && b.expiry === exp);
+                                    if (existBatch) existBatch.qty += qty;
+                                    else batches.push({ lot, expiry: exp, qty, unit });
+                                }
+                                batch.update(db.collection('yt_pharmacy_items').doc(existingItem.id), { batches: batches });
+                            } else {
+                                // Tạo SP mới
+                                const newItemRef = db.collection('yt_pharmacy_items').doc();
+                                let batches = (lot && qty > 0) ? [{ lot, expiry: exp, qty, unit }] : [];
+                                batch.set(newItemRef, { type, name, manufacturer: nsx, unit, batches, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                            }
+                            successCount++;
+                        }
+                    }
+                    await batch.commit();
+                    alert(`✅ Hoàn tất nhập Excel! Đã xử lý ${successCount} dòng.`);
+                } catch (error) {
+                    alert("Lỗi đọc Excel: " + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+// --- TÍNH NĂNG MỚI: XUẤT DANH MỤC KHO RA FILE PDF ---
+// --- XUẤT DANH MỤC KHO RA FILE PDF (A4 DỌC - CHUẨN MỚI) ---
+        function exportCatalogPDF() {
+            try {
+                const printArea = document.getElementById('print-section');
+                
+                // Xử lý Ngày in và Năm học
+                const dateObj = new Date();
+                let schoolYearStr = "";
+                let numYear = dateObj.getFullYear();
+                let numMonth = dateObj.getMonth() + 1;
+                
+                if (numMonth >= 9) { schoolYearStr = `${numYear}-${numYear + 1}`; } 
+                else { schoolYearStr = `${numYear - 1}-${numYear}`; }
+
+                let tableHtml = '';
+                let stt = 1;
+                let currentType = null;
+
+                if (!catalogData || catalogData.length === 0) {
+                    tableHtml = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Không có dữ liệu để hiển thị.</td></tr>';
+                } else {
+                    catalogData.forEach(item => {
+                        
+                        if (item.batches && item.batches.length > 0) {
+                            item.batches.forEach(b => {
+                                let nsxFormat = formatDisplayDate(b.mfgDate);
+				let hsdFormat = formatDisplayDate(b.expiry);
+
+                                tableHtml += `
+                                    <tr>
+                                        <td style="text-align: center; border: 1px solid black; padding: 6px;">${stt++}</td>
+                                        <td style="text-align: left; border: 1px solid black; padding: 6px;">${item.name || ''}</td>
+                                        <td style="text-align: center; border: 1px solid black; padding: 6px;">${b.lot || ''}</td>
+                                        <td style="text-align: center; border: 1px solid black; padding: 6px;">${nsxFormat}</td>
+                                        <td style="text-align: center; border: 1px solid black; padding: 6px;">${hsdFormat}</td>
+                                        <td style="text-align: center; border: 1px solid black; padding: 6px;"></td>
+                                    </tr>
+                                `;
+                            });
+                        } else {
+                            tableHtml += `
+                                <tr>
+                                    <td style="text-align: center; border: 1px solid black; padding: 6px;">${stt++}</td>
+                                    <td style="text-align: left; border: 1px solid black; padding: 6px;">${item.name || ''}</td>
+                                    <td style="text-align: center; border: 1px solid black; padding: 6px;">-</td>
+                                    <td style="text-align: center; border: 1px solid black; padding: 6px;">-</td>
+                                    <td style="text-align: center; border: 1px solid black; padding: 6px;">-</td>
+                                    <td style="text-align: center; border: 1px solid black; padding: 6px;">Hết hàng</td>
+                                </tr>
+                            `;
+                        }
+                    });
+                }
+
+                const user = currentUser ? (currentUser.displayName || currentUser.email) : 'Admin';
+
+                printArea.innerHTML = `
+                    <div style="font-family: 'Times New Roman', Times, serif; color: black; background: white;">
+                        <div style="width: 350px; text-align: center; margin-bottom: 20px; float: left; font-size: 10pt;">
+                            <p style="margin: 0; line-height: 1.3;">SỞ GIÁO DỤC VÀ ĐÀO TẠO THÀNH PHỐ HỒ CHÍ MINH</p>
+                            <p style="margin: 0; line-height: 1.3; font-weight: bold;">TRƯỜNG THPT VÕ THỊ SÁU- BRVT</p>
+                        </div>
+                        <div style="clear: both;"></div>
+                        <div style="text-align: center; margin-top: 10px; margin-bottom: 20px;">
+                            <h1 style="font-size: 13pt; margin: 0; font-weight: bold;">DANH MỤC THEO DÕI HẠN SỬ DỤNG THUỐC PHÒNG Y TẾ</h1>
+                            <p style="font-size: 13pt; margin: 5px 0 0 0; font-weight: bold;">NĂM HỌC: ${schoolYearStr}</p>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12.5pt;">
+                            <thead>
+                                <tr>
+                                    <th style="border: 1px solid black; padding: 8px 4px; width:5%; background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact;">STT</th>
+                                    <th style="border: 1px solid black; padding: 8px 4px; width:30%; background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact;">TÊN THUỐC</th>
+                                    <th style="border: 1px solid black; padding: 8px 4px; width:15%; background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact;">SỐ LÔ</th>
+                                    <th style="border: 1px solid black; padding: 8px 4px; width:15%; background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact;">NGÀY SẢN XUẤT</th>
+                                    <th style="border: 1px solid black; padding: 8px 4px; width:15%; background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact;">HẠN SỬ DỤNG</th>
+                                    <th style="border: 1px solid black; padding: 8px 4px; width:20%; background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact;">GHI CHÚ</th>
+                                </tr>
+                            </thead>
+                            <tbody>${tableHtml}</tbody>
+                        </table>
+                        <div style="text-align: right; font-style: italic; font-size: 12.5pt; margin-top: 20px;">Ngày ${dateObj.getDate()} tháng ${dateObj.getMonth()+1} năm ${dateObj.getFullYear()}</div>
+                      </div>
+                        <div style="text-align: left; font-style: italic; font-size: 9pt; margin-top: 30px; padding-top: 10px;">Dữ liệu xuất tự động từ Hệ thống Y tế số | THPT Võ Thị Sáu- BRVT</div>
+                    </div>
+                `;
+
+                // ÉP KHỔ A4 DỌC
+                const style = document.createElement('style');
+                style.id = 'print-portrait-style';
+                style.innerHTML = `@page { size: A4 portrait; margin: 10mm; }`;
+                document.head.appendChild(style);
+
+                printArea.style.display = 'block';
+                setTimeout(() => {
+                    window.print();
+                    printArea.style.display = 'none';
+                    document.getElementById('print-portrait-style').remove(); 
+                }, 500);
+
+            } catch (error) {
+                alert("Đã xảy ra lỗi khi tạo bản in: " + error.message);
+                console.error(error);
+            }
+        }
+// --- TÍNH NĂNG MỚI: HỦY PHIẾU VÀ TỰ ĐỘNG CẬP NHẬT LẠI KHO ---
+async function deleteTransaction(transactionId) {
+            const tx = allTransactions.find(t => t.id === transactionId);
+            if (!tx) return alert("Lỗi: Không tìm thấy thông tin phiếu!");
+
+            const action = tx.type === 'export' ? 'HOÀN TRẢ' : 'TRỪ LẠI';
+            if (!confirm(`⚠️ CẢNH BÁO AN TOÀN DỮ LIỆU:\n\nBạn có chắc chắn muốn HỦY phiếu [${tx.id}] không?\nHành động này sẽ tự động ${action} số lượng sản phẩm tương ứng vào kho.\n\nHành động này KHÔNG THỂ hoàn tác!`)) {
+                return;
+            }
+
+            try {
+                // SỬA LỖI: Cấu trúc lại giao dịch theo đúng quy tắc ĐỌC trước, GHI sau.
+                await db.runTransaction(async (transaction) => {
+                    
+                    // GIAI ĐOẠN 1: ĐỌC TẤT CẢ DỮ LIỆU CẦN THIẾT TRƯỚC
+                    const productRefs = tx.items.map(item => db.collection('yt_pharmacy_items').doc(item.itemId));
+                    const productDocs = await Promise.all(productRefs.map(ref => transaction.get(ref)));
+
+                    // GIAI ĐOẠN 2: XỬ LÝ DỮ LIỆU VÀ GHI VÀO DATABASE
+                    for (let i = 0; i < tx.items.length; i++) {
+                        const itemToReverse = tx.items[i];
+                        const productRef = productRefs[i];
+                        const productDoc = productDocs[i];
+
+                        if (!productDoc.exists) {
+                            throw new Error(`Sản phẩm "${itemToReverse.itemName}" không còn tồn tại trong danh mục.`);
+                        }
+
+                        let productData = productDoc.data();
+                        let newBatches = JSON.parse(JSON.stringify(productData.batches || []));
+
+                        // Tìm lô hàng tương ứng để cập nhật
+                        // Tìm lô hàng tương ứng để cập nhật (CHỈ SO SÁNH ĐÚNG SỐ LÔ)
+                        let batchIndex = newBatches.findIndex(b => 
+                            (b.lot || "").toString().trim() === (itemToReverse.lot || "").toString().trim()
+                        );
+
+                        if (tx.type === 'export' || tx.type === 'adjust') { // HỦY PHIẾU XUẤT/ĐIỀU CHỈNH => HOÀN TRẢ LẠI KHO
+                            if(tx.type === 'export') { // Phiếu xuất thì cộng trả
+                                if (batchIndex > -1) {
+                                    newBatches[batchIndex].qty += itemToReverse.qty;
+                                } else {
+                                    newBatches.push({ 
+                                        lot: itemToReverse.lot, 
+                                        mfgDate: itemToReverse.mfgDate || "",
+                                        expiry: itemToReverse.expiry || "", 
+                                        qty: itemToReverse.qty, 
+                                        unit: itemToReverse.unit 
+                                    });
+                                }
+                            } else { // Phiếu điều chỉnh thì trả về số lượng cũ
+                                if(batchIndex > -1) {
+                                    newBatches[batchIndex].qty = itemToReverse.oldQty;
+                                } else {
+                                     throw new Error(`Không tìm thấy lô "${itemToReverse.lot}" để hoàn tác điều chỉnh.`);
+                                }
+                            }
+
+                        } else { // HỦY PHIẾU NHẬP => TRỪ ĐI LƯỢNG ĐÃ NHẬP
+                            if (batchIndex === -1) {
+                                throw new Error(`Không tìm thấy lô "${itemToReverse.lot}" của sản phẩm "${itemToReverse.itemName}" để hủy.`);
+                            }
+                            if (newBatches[batchIndex].qty < itemToReverse.qty) {
+                                throw new Error(`Không thể hủy phiếu nhập! Số lượng tồn kho của lô "${itemToReverse.lot}" (${newBatches[batchIndex].qty}) không đủ để trừ đi lượng đã nhập (${itemToReverse.qty}). Có thể nó đã được xuất đi.`);
+                            }
+                            newBatches[batchIndex].qty -= itemToReverse.qty;
+                            
+                            // Nếu trừ đi mà lô hết hàng thì xóa luôn lô đó
+                            if (newBatches[batchIndex].qty <= 0) {
+                                newBatches.splice(batchIndex, 1);
+                            }
+                        }
+                        
+                        // Lệnh GHI: Cập nhật lại danh sách lô hàng cho sản phẩm
+                        transaction.update(productRef, { batches: newBatches });
+                    }
+                    
+                    // Lệnh GHI cuối cùng: Xóa phiếu giao dịch
+                    const txRef = db.collection('yt_pharmacy_transactions').doc(transactionId);
+                    transaction.delete(txRef);
+                });
+
+                alert(`✅ Đã hủy phiếu [${tx.id}] và cập nhật lại kho thành công!`);
+                // Giao diện sẽ tự động cập nhật nhờ onSnapshot
+            } catch (error) {
+                console.error("Lỗi hủy phiếu:", error);
+                alert("❌ Đã xảy ra lỗi:\n" + error.message);
+            }
+        }
+// --- TẠO PHIẾU ĐIỀU CHỈNH KHO (KIỂM KHO) ---
+        function openAdjustModal() {
+            document.getElementById('adj-reason').value = '';
+            document.getElementById('adj-items-container').innerHTML = '';
+            addAdjustRow();
+            document.getElementById('modal-adjust').style.display = 'flex';
+        }
+
+function addAdjustRow() {
+            const container = document.getElementById('adj-items-container');
+            const rowId = 'adj_row_' + Date.now();
+            let itemOptions = '<option value="">-- Tìm / Chọn sản phẩm --</option>';
+            catalogData.forEach(i => { if(i.batches && i.batches.length > 0) itemOptions += `<option value="${i.id}">${i.name}</option>`; });
+
+            const row = document.createElement('div');
+            row.className = 'batch-grid-row adjust-row';
+            row.id = rowId;
+            row.innerHTML = `
+                <div><label class="pharma-label">SP cần điều chỉnh</label><select id="${rowId}_select" class="pharma-input adj-item" onchange="updateAdjustBatchOptions('${rowId}')">${itemOptions}</select></div>
+                <div><label class="pharma-label">Chọn Lô</label><select class="pharma-input adj-batch nav-grid nav-col-2" onchange="showCurrentQty('${rowId}')"><option value="">-- Chọn lô --</option></select></div>
+                <div><label class="pharma-label">Tồn hệ thống</label><input type="text" class="pharma-input adj-old-qty" disabled value="0"></div>
+                <div><label class="pharma-label">Tồn thực tế</label><input type="number" class="pharma-input adj-new-qty nav-grid nav-col-3 nav-last" min="0" placeholder="Nhập số đúng..."></div>
+                <button type="button" onclick="this.parentElement.remove()" style="height: 44px; background: #fef2f2; border: 1px solid #fecaca; color: #ef4444; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" title="Xóa dòng"><i class="fas fa-trash-alt"></i></button>
+            `;
+            container.appendChild(row);
+
+            // Khởi tạo công cụ Gõ để tìm kiếm
+            new TomSelect(`#${rowId}_select`, { create: false, sortField: { field: "text", direction: "asc" } });
+        }
+        function updateAdjustBatchOptions(rowId) {
+            const row = document.getElementById(rowId);
+            const itemId = row.querySelector('.adj-item').value;
+            const batchSelect = row.querySelector('.adj-batch');
+            batchSelect.innerHTML = '<option value="">-- Chọn lô --</option>';
+            row.querySelector('.adj-old-qty').value = "0";
+            if(itemId) {
+                const item = catalogData.find(i => i.id === itemId);
+                item.batches.forEach((b, index) => {
+                    let lotDisplay = b.lot ? `Lô ${b.lot}` : "Không có Lô";
+                    batchSelect.innerHTML += `<option value="${index}">${lotDisplay} - HSD: ${formatDisplayDate(b.expiry)||'Không'}</option>`;
+                });
+            }
+        }
+
+        function showCurrentQty(rowId) {
+            const row = document.getElementById(rowId);
+            const itemId = row.querySelector('.adj-item').value;
+            const batchIndex = row.querySelector('.adj-batch').value;
+            if(itemId && batchIndex !== "") {
+                const item = catalogData.find(i => i.id === itemId);
+                row.querySelector('.adj-old-qty').value = item.batches[batchIndex].qty;
+            }
+        }
+
+        async function processAdjust() {
+            const reason = document.getElementById('adj-reason').value.trim();
+	    const isDamaged = document.getElementById('adj-is-damaged').checked;
+            if(!reason) return alert("Vui lòng nhập lý do điều chỉnh kho!");
+            const rows = document.querySelectorAll('#adj-items-container .batch-grid-row');
+            let adjustItems = []; let isValid = true; let batchUpdates = {}; 
+
+            rows.forEach(row => {
+                const itemId = row.querySelector('.adj-item').value;
+                const batchIndex = row.querySelector('.adj-batch').value;
+                const newQty = parseFloat(row.querySelector('.adj-new-qty').value);
+                if(!itemId || batchIndex === "" || isNaN(newQty) || newQty < 0) { isValid = false; return; }
+
+                const item = catalogData.find(i => i.id === itemId);
+                const batch = item.batches[batchIndex];
+                const oldQty = parseFloat(batch.qty);
+                if (oldQty === newQty) return; // Bỏ qua nếu ko đổi
+
+                adjustItems.push({ 
+                    itemId: itemId, 
+                    itemName: item.name, 
+                    lot: batch.lot || "", 
+                    mfgDate: batch.mfgDate || "", 
+                    expiry: batch.expiry || "", 
+                    unit: batch.unit || "", 
+                    oldQty: oldQty, 
+                    newQty: newQty, 
+                    diff: newQty - oldQty 
+                });
+                if(!batchUpdates[itemId]) batchUpdates[itemId] = JSON.parse(JSON.stringify(item.batches));
+                batchUpdates[itemId][batchIndex].qty = newQty;
+            });
+
+            if(!isValid) return alert("Vui lòng kiểm tra lại dữ liệu nhập!");
+            if(adjustItems.length === 0) return alert("Không có thay đổi nào!");
+
+            const txId = "DC-" + Date.now().toString().slice(-6);
+            try {
+                const batch = db.batch();
+                batch.set(db.collection('yt_pharmacy_transactions').doc(txId), {
+                    id: txId, type: 'adjust', reason, isDamaged, items: adjustItems,
+                    user: currentUser.displayName || currentUser.email,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                for (const [iId, newBatches] of Object.entries(batchUpdates)) {
+                    batch.update(db.collection('yt_pharmacy_items').doc(iId), { batches: newBatches });
+                }
+                await batch.commit();
+                document.getElementById('modal-adjust').style.display = 'none';
+                alert("Đã ghi nhận Điều chỉnh kho thành công!");
+            } catch(e) { alert("Lỗi hệ thống: " + e.message); }
+        }
+// --- HÀM IN LẠI PHIẾU ĐÃ TẠO ---
+// --- HÀM IN LẠI PHIẾU ĐÃ TẠO ---
+        function reprintTx(txId) {
+            const tx = allTransactions.find(t => t.id === txId);
+            if (!tx) return alert("Lỗi: Không tìm thấy dữ liệu phiếu này!");
+
+            const dateObj = tx.timestamp ? tx.timestamp.toDate() : new Date();
+            
+            // Gọi hàm in ấn và truyền dữ liệu vào
+            printTransaction(tx.id, tx.type, tx.receiver || '', tx.reason || '', tx.notes || '', tx.items, tx.user || 'Admin', dateObj);
+        }
+
+        // --- BỘ ENGINE IN ẤN PHIẾU GIAO DỊCH (HỖ TRỢ CẢ 3 LOẠI PHIẾU) ---
+        function printTransaction(id, type, receiver, reason, notes, items, user, dateObj) {
+            const printArea = document.getElementById('print-section');
+            let title = '';
+            let infoHtml = '';
+            let theadHtml = '';
+            let tableHtml = '';
+
+            // 1. DÀN TRANG PHIẾU XUẤT
+            if (type === 'export') {
+                title = 'PHIẾU XUẤT KHO';
+                infoHtml = `<div class="print-info"><p><strong>Người nhận:</strong> ${receiver}</p><p><strong>Lý do xuất:</strong> ${reason}</p>${notes ? `<p><strong>Ghi chú:</strong> ${notes}</p>` : ''}</div>`;
+                theadHtml = `<tr><th style="width:5%">STT</th><th>Sản phẩm</th><th style="width:15%">Số lô</th><th style="width:10%">Số lượng</th><th style="width:10%">ĐVT</th></tr>`;
+                items.forEach((it, i) => { tableHtml += `<tr><td style="text-align:center">${i+1}</td><td>${it.itemName}</td><td style="text-align:center">${it.lot}</td><td style="text-align:center; font-weight:bold;">${it.qty}</td><td style="text-align:center">${it.unit}</td></tr>`; });
+            } 
+            // 2. DÀN TRANG PHIẾU NHẬP
+            else if (type === 'import') {
+                title = 'PHIẾU NHẬP KHO';
+                infoHtml = `<div class="print-info"><p><strong>Ngày nhập:</strong> ${dateObj.toLocaleDateString('vi-VN')}</p>${notes ? `<p><strong>Nguồn / Ghi chú:</strong> ${notes}</p>` : ''}</div>`;
+                theadHtml = `<tr><th style="width:5%">STT</th><th>Sản phẩm</th><th style="width:15%">Số lô</th><th style="width:10%">Số lượng</th><th style="width:10%">ĐVT</th></tr>`;
+                items.forEach((it, i) => { tableHtml += `<tr><td style="text-align:center">${i+1}</td><td>${it.itemName}</td><td style="text-align:center">${it.lot}</td><td style="text-align:center; font-weight:bold;">${it.qty}</td><td style="text-align:center">${it.unit}</td></tr>`; });
+            } 
+            // 3. DÀN TRANG PHIẾU ĐIỀU CHỈNH KHO (MỚI)
+            else if (type === 'adjust') {
+                title = 'PHIẾU KIỂM & ĐIỀU CHỈNH KHO';
+                infoHtml = `<div class="print-info"><p><strong>Lý do điều chỉnh:</strong> ${reason}</p></div>`;
+                theadHtml = `<tr><th style="width:5%">STT</th><th>Sản phẩm</th><th style="width:15%">Số lô</th><th style="width:15%">Tồn hệ thống</th><th style="width:15%">Tồn thực tế</th><th style="width:15%">Chênh lệch</th><th style="width:10%">ĐVT</th></tr>`;
+                items.forEach((it, i) => { 
+                    let diffDisplay = it.diff > 0 ? `+${it.diff}` : it.diff;
+                    tableHtml += `<tr><td style="text-align:center">${i+1}</td><td>${it.itemName}</td><td style="text-align:center">${it.lot}</td><td style="text-align:center;">${it.oldQty}</td><td style="text-align:center; font-weight:bold;">${it.newQty}</td><td style="text-align:center; font-weight:bold;">${diffDisplay}</td><td style="text-align:center">${it.unit}</td></tr>`; 
+                });
+            }
+
+            // Đổ HTML vào khu vực in
+            printArea.innerHTML = `
+                ${getCommonPrintHeader()}
+                <div class="print-title">${title}</div><div class="print-subtitle">Mã phiếu: ${id}</div>
+                ${infoHtml}
+                <table class="print-table">
+                    <thead>${theadHtml}</thead>
+                    <tbody>${tableHtml}</tbody>
+                </table>
+                <div style="text-align: right; font-style: italic; font-size: 13pt; margin-top: 20px;">Ngày ${dateObj.getDate()} tháng ${dateObj.getMonth()+1} năm ${dateObj.getFullYear()}</div>
+                <div class="print-signatures">
+                    <div><p><strong>Đại diện Ban Giám Hiệu</strong></p><p style="font-style:italic">(Ký, ghi rõ họ tên)</p></div>
+                    <div><p><strong>Người lập phiếu</strong></p><p style="font-style:italic">(Ký, ghi rõ họ tên)</p><br><br><br><p>${user}</p></div>
+                </div>
+                <div class="print-footer" style="margin-top: 50px;">Xuất tự động từ Hệ thống Y tế số | THPT Võ Thị Sáu- BRVT</div>
+            `;
+            
+            // Ép khổ giấy A4 DỌC cho các loại phiếu này (Khác với Báo cáo nằm ngang)
+            const style = document.createElement('style');
+            style.id = 'temp-print-style';
+            style.innerHTML = `@page { size: A4 portrait; margin: 15mm; }`;
+            document.head.appendChild(style);
+
+            printArea.style.display = 'block';
+            setTimeout(() => { 
+                window.print(); 
+                printArea.style.display = 'none'; 
+                document.getElementById('temp-print-style').remove();
+            }, 500);
+        }
+// ==========================================
+        // NHẬP KHO TỪ FILE EXCEL (TẠO PHIẾU HÀNG LOẠT)
+        // ==========================================
+
+        // 1. Tải file mẫu chuyên dụng cho Nhập Kho
+        function downloadImportTemplate() {
+            const data = [
+                { "Tên Sản phẩm": "Panadol Extra 500mg", "Số lô": "L123", "Ngày sản xuất": "15/10/2023", "Hạn sử dụng": "15/12/2026", "Số lượng": 50, "Đơn vị": "Viên", "Nguồn / Ghi chú": "Nhập từ Sở Y Tế tháng 1" },
+                { "Tên Sản phẩm": "Bông gạc y tế vô trùng", "Số lô": "", "Ngày sản xuất": "01/01/2024", "Hạn sử dụng": "01/01/2027", "Số lượng": 20, "Đơn vị": "Gói", "Nguồn / Ghi chú": "" }
+            ];
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "PhieuNhapKho");
+            XLSX.writeFile(wb, "File_Mau_Tao_Phieu_Nhap_Kho.xlsx");
+        }
+        // Đã cập nhật để tự động "dịch" ngày tháng từ Excel
+	async function importTransactionExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            event.target.value = ""; 
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(worksheet, { 
+                        defval: "", raw: false, dateNF: "dd/mm/yyyy"
+                    });
+
+                    if (json.length === 0) return alert("File Excel trống!");
+                    
+                    const txId = "NK-" + Date.now().toString().slice(-6);
+                    let importItems = [];
+                    let batchUpdates = {};
+                    let itemsToCreate = [];
+                    
+                    let globalNotes = (json[0]['Nguồn / Ghi chú'] || json[0]['Ghi chú'] || "Nhập kho hàng loạt từ file Excel").toString().trim();
+                    let isValid = true;
+                    let errorMsg = "";
+
+                    for (let [index, row] of json.entries()) {
+                        const name = (row['Tên Sản phẩm'] || row['Tên'] || "").toString().trim();
+                        const lot = (row['Số lô'] || row['Lô'] || "").toString().trim();
+                        
+                        // SỬ DỤNG BỘ XỬ LÝ MỚI
+                        const mfg_raw = (row['Ngày sản xuất'] || row['Ngày sản xuất (MM/YYYY)'] || row['Ngày SX'] || "");
+                        const exp_raw = (row['Hạn sử dụng'] || row['Hạn sử dụng (MM/YYYY)'] || row['Hạn SD'] || "");
+                        const mfg = formatDateString(mfg_raw);
+                        const exp = formatDateString(exp_raw);
+
+                        const qty = parseFloat(row['Số lượng'] || row['SL']) || 0;
+                        const unit = (row['Đơn vị'] || row['ĐVT'] || "Hộp").toString().trim();
+
+                        if (!name || qty <= 0) {
+                            if(!name && qty <= 0) continue;
+                            isValid = false;
+                            errorMsg = `LỖI: Dòng số ${index + 2} bị thiếu Tên sản phẩm hoặc Số lượng không hợp lệ.`;
+                            break;
+                        }
+
+                        let item = catalogData.find(i => i.name.toLowerCase() === name.toLowerCase());
+                        let itemId = item ? item.id : `NEW_${Date.now()}_${index}`;
+
+                        if (!item) {
+                            const isSupply = /bông|gạc|băng|kim|xi lanh|cồn|oxy|nước muối|bistoury|găng tay/i.test(name);
+                            itemsToCreate.push({
+                                tempId: itemId, type: isSupply ? 'supply' : 'drug',
+                                name: name, unit: unit, manufacturer: '', batches: []
+                            });
+                        }
+
+                        importItems.push({
+                            itemId: itemId, itemName: name, lot: lot, mfgDate: mfg, expiry: exp, qty: qty, unit: unit
+                        });
+
+                        if (!batchUpdates[itemId]) {
+                            batchUpdates[itemId] = item ? JSON.parse(JSON.stringify(item.batches || [])) : [];
+                        }
+                        
+                        let existingBatch = batchUpdates[itemId].find(b => b.lot === lot && b.expiry === exp);
+                        if (existingBatch) {
+                            existingBatch.qty += qty;
+                            if (!existingBatch.mfgDate && mfg) existingBatch.mfgDate = mfg;
+                        } else {
+                            batchUpdates[itemId].push({ lot, mfgDate: mfg, expiry: exp, qty, unit });
+                        }
+                    }
+
+                    if (!isValid) return alert(errorMsg);
+                    if (importItems.length === 0) return alert("Không tìm thấy dữ liệu hợp lệ để nhập.");
+
+                    // ... (Phần code còn lại của hàm giữ nguyên)
+                    document.getElementById('auth-loading').style.display = 'flex';
+                    const batch = db.batch();
+                    let idMapping = {}; 
+                    for (let newItem of itemsToCreate) {
+                        const newRef = db.collection('yt_pharmacy_items').doc();
+                        idMapping[newItem.tempId] = newRef.id;
+                        batch.set(newRef, {
+                            type: newItem.type, name: newItem.name, unit: newItem.unit, manufacturer: '',
+                            batches: batchUpdates[newItem.tempId],
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        delete batchUpdates[newItem.tempId];
+                    }
+                    importItems.forEach(item => { if (idMapping[item.itemId]) { item.itemId = idMapping[item.itemId]; } });
+                    for (const [iId, newBatches] of Object.entries(batchUpdates)) {
+                        batch.update(db.collection('yt_pharmacy_items').doc(iId), { batches: newBatches });
+                    }
+                    const txRef = db.collection('yt_pharmacy_transactions').doc(txId);
+                    batch.set(txRef, {
+                        id: txId, type: 'import', notes: globalNotes, items: importItems,
+                        user: currentUser.displayName || currentUser.email,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    await batch.commit();
+                    document.getElementById('auth-loading').style.display = 'none';
+                    alert(`✅ HOÀN TẤT NHẬP KHO!\nĐã tạo Phiếu nhập [${txId}] chứa ${importItems.length} sản phẩm.`);
+                    if(confirm("Bạn có muốn IN PHIẾU NHẬP KHO vừa tạo này không?")) {
+                        printTransaction(txId, 'import', '', '', globalNotes, importItems, currentUser.displayName || currentUser.email, new Date());
+                    }
+                } catch (error) {
+                    document.getElementById('auth-loading').style.display = 'none';
+                    console.error("Lỗi đọc Excel:", error);
+                    alert("Lỗi xử lý file Excel: " + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }

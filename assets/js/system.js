@@ -6,19 +6,11 @@ let currentAdmin = null;
 let savedDirectoryHandle = null; // Biến lưu tạm quyền truy cập thư mục lưu trong phiên làm việc
 
 // 1. KIỂM TRA BẢO MẬT & PHÂN QUYỀN TRUY CẬP
-const ADMIN_EMAILS = [
-    "nguyentinh011009@gmail.com",
-    "tomizy09icloud@gmail.com",
-    "nguyenthixuandongvts@gmail.com",
-    "yte.thptvothisaubrvt@gmail.com",
-    "nguyentinh52009@gmail.com"
-];
-
 firebase.auth().onAuthStateChanged((user) => {
     const loadingScreen = document.getElementById('sys-auth-loading');
     const mainContainer = document.getElementById('sys-main-container');
 
-    if (user && ADMIN_EMAILS.includes(user.email)) {
+    if (user && ALLOWED_ADMIN_EMAILS.includes(user.email)) {
         currentAdmin = user;
 
         // 👉 THÊM ĐOẠN KIỂM TRA PHIÊN LÀM VIỆC NÀY:

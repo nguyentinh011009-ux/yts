@@ -1,4 +1,4 @@
-/* APP CORE LOGIC - TO 3 11A4
+/* APP CORE LOGIC - YTESO
    Xử lý: Firebase, CRUD, Slider, Auth, Search
 */
 
@@ -41,16 +41,6 @@ function removeVietnameseTones(str) {
 // ==========================================
 // PHẦN. HỆ THỐNG XÁC THỰC (FIREBASE AUTH)
 // ==========================================
-// 👉 DANH SÁCH CÁC EMAIL ĐƯỢC PHÉP VÀO ADMIN (Điền email của bạn/thầy cô vào đây)
-const ALLOWED_ADMIN_EMAILS = [
-    "nguyentinh011009@gmail.com",
-     "tomizy09icloud@gmail.com",
-     "nguyenthixuandongvts@gmail.com",
-     "yte.thptvothisaubrvt@gmail.com",
-     "nguyentinh52009@gmail.com"
-];
-
-// --- Theo dõi trạng thái đăng nhập tự động ---
 // --- Theo dõi trạng thái đăng nhập tự động (Thông minh) ---
 firebase.auth().onAuthStateChanged((user) => {
     

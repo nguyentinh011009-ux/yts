@@ -33,11 +33,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="../assets/config.js"></script>
+    <script src="../assets/auth-check.js"></script>
     <script>
-        const ALLOWED_ADMIN_EMAILS = [
-            "nguyentinh011009@gmail.com", "tomizy09icloud@gmail.com", 
-            "nguyenthixuandongvts@gmail.com", "yte.thptvothisaubrvt@gmail.com", "nguyentinh52009@gmail.com"
-        ];
         
         firebase.auth().onAuthStateChanged((user) => {
             if (user && ALLOWED_ADMIN_EMAILS.includes(user.email)) {

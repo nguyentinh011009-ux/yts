@@ -143,15 +143,11 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <!-- File config.js đã chứa sẵn lệnh khởi tạo và biến db rồi -->
     <script src="../assets/config.js"></script>
+    <script src="../assets/auth-check.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="../assets/js/crypto.js"></script>  
     <script>
         // --- 1. BẢO MẬT ADMIN ---
-        const ALLOWED_ADMIN_EMAILS = [
-            "nguyentinh011009@gmail.com", "tomizy09icloud@gmail.com", 
-            "nguyenthixuandongvts@gmail.com", "yte.thptvothisaubrvt@gmail.com", "nguyentinh52009@gmail.com"
-        ];
-        
         firebase.auth().onAuthStateChanged(async (user) => {
             if (user && ALLOWED_ADMIN_EMAILS.includes(user.email)) {
                 document.getElementById('security-loading').style.display = 'none';

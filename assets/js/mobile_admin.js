@@ -105,12 +105,8 @@ function handleGoogleAuth() {
             return firebase.auth().signInWithPopup(provider);
         })
         .then((result) => {
-            const ALLOWED_EMAILS = [
-                "nguyentinh011009@gmail.com", "tomizy09icloud@gmail.com",
-                "nguyenthixuandongvts@gmail.com", "yte.thptvothisaubrvt@gmail.com", "nguyentinh52009@gmail.com"
-            ];
             
-            if (ALLOWED_EMAILS.includes(result.user.email)) {
+            if (ALLOWED_ADMIN_EMAILS.includes(result.user.email)) {
                 currentAdminUser = result.user;
                 // Nhớ tên và avatar lên local storage
                 localStorage.setItem('vts_cached_admin_name', result.user.displayName || result.user.email.split('@')[0]);

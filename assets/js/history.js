@@ -1,13 +1,5 @@
 let currentAdmin = null;
 
-const ALLOWED_ADMIN_EMAILS = [
-    "nguyentinh011009@gmail.com",
-    "tomizy09icloud@gmail.com",
-    "nguyenthixuandongvts@gmail.com",
-    "yte.thptvothisaubrvt@gmail.com",
-    "nguyentinh52009@gmail.com"
-];
-
 // 1. KIỂM TRA QUYỀN TRUY CẬP & TẢI KHÓA GIẢI MÃ SĐT
 firebase.auth().onAuthStateChanged(async (user) => {
     const loader = document.getElementById('hist-auth-loading');

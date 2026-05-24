@@ -1,0 +1,123 @@
+        :root {
+            --st-bg: #f3f4f6;
+            --st-card: #ffffff;
+            --st-primary: #0ea5e9; /* Xanh da trời hiện đại */
+            --st-primary-dark: #0284c7;
+            --st-success: #10b981;
+            --st-warning: #f59e0b;
+            --st-danger: #ef4444;
+            --st-text: #1e293b;
+            --st-text-muted: #64748b;
+        }
+
+        body { background: var(--st-bg); color: var(--st-text); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 0; }
+        
+        /* Glassmorphism Header */
+        .st-header {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 20px 20px;
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+	.st-container { max-width: 800px; margin: 30px auto; padding: 0 20px; padding-bottom: 90px; }
+/* Glassmorphism Footer Mới */
+        .st-footer {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            position: fixed; /* Bám sát viền dưới màn hình */
+            bottom: 0; left: 0; right: 0;
+            z-index: 100;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.03); /* Bóng đổ lộn ngược lên trên */
+            display: flex;
+            flex-direction: column; /* Xếp dọc để không bị tràn chữ trên điện thoại */
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .st-footer h3 {
+            margin: 0;
+            font-size: 0.95rem;
+            color: var(--st-text);
+            font-weight: 600;
+        }
+
+        .st-footer p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: var(--st-text-muted);
+        }
+        /* Modern Card */
+        .st-card {
+            background: var(--st-card);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+            margin-bottom: 25px;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        /* App-like Tabs */
+        .st-tabs {
+            display: flex; gap: 10px; background: white; padding: 8px; border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 30px; overflow-x: auto;
+        }
+        .st-tab-btn {
+            flex: 1; min-width: 120px; padding: 12px 15px; border: none; background: transparent;
+            border-radius: 14px; font-weight: 600; color: var(--st-text-muted); cursor: pointer;
+            transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .st-tab-btn.active { background: var(--st-primary); color: white; box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3); }
+        .st-tab-pane { display: none; animation: slideUp 0.4s ease forwards; opacity: 0; transform: translateY(20px); }
+        .st-tab-pane.active { display: block; }
+
+        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+
+        /* Timeline cho Lịch sử */
+        .timeline { border-left: 3px solid #e2e8f0; margin-left: 20px; padding-left: 25px; position: relative; }
+        .timeline-item { margin-bottom: 30px; position: relative; }
+        .timeline-icon {
+            position: absolute; left: -44px; top: 0; width: 35px; height: 35px;
+            background: #eff6ff; color: var(--st-primary); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .timeline-content {
+            background: white; padding: 18px; border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #f1f5f9;
+        }
+
+        /* Visual BMI Bar */
+        .bmi-visualizer { margin-top: 20px; }
+        .bmi-track { width: 100%; height: 12px; border-radius: 10px; background: linear-gradient(to right, #38bdf8 0%, #4ade80 30%, #facc15 65%, #ef4444 100%); position: relative; margin-bottom: 10px; }
+        .bmi-marker { position: absolute; top: -8px; width: 6px; height: 28px; background: #1e293b; border-radius: 4px; transition: 1s ease-out; box-shadow: 0 0 5px rgba(0,0,0,0.3); }
+
+        /* Tickets */
+        .ticket-card { border-left: 4px solid var(--st-primary); }
+        .ticket-closed { border-left-color: var(--st-success); opacity: 0.8; }
+        .reply-box { background: #f8fafc; padding: 15px; border-radius: 12px; margin-top: 15px; position: relative; }
+        .reply-box::before { content: ''; position: absolute; top: -10px; left: 20px; border-width: 0 10px 10px 10px; border-style: solid; border-color: transparent transparent #f8fafc transparent; }
+
+        .btn-modern {
+            padding: 14px 24px; border: none; border-radius: 14px; font-weight: 600; font-size: 1rem;
+            cursor: pointer; transition: 0.3s; display: inline-flex; align-items: center; gap: 8px; justify-content: center;
+        }
+
+        #auth-section, #link-section, #dashboard-section { display: none; }
+/* ===== CSS NÂNG CẤP GIAO DIỆN BẢNG TIN (THÊM VÀO ĐÂY) ===== */
+        .health-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Mặc định 2 cột trên màn hình lớn */
+            gap: 20px;
+        }
+
+        /* Khi màn hình nhỏ hơn 640px (điện thoại, tablet nhỏ) */
+        @media (max-width: 640px) {
+            .health-stats-grid {
+                grid-template-columns: 1fr; /* Chuyển thành 1 cột duy nhất, tự động xếp dọc */
+            }
+        }

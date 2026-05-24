@@ -410,3 +410,23 @@ async function processUniversalRestore() {
 
     reader.readAsText(file);
 }
+// --- BỘ ĐIỀU KHIỂN KHÓA GIẢI MÃ KHẨN CẤP (EMERGENCY BYPASS) ---
+
+function applyManualCryptoKey() {
+    const inputVal = document.getElementById('manual-key-input').value.trim();
+    if (!inputVal) {
+        return alert("Vui lòng nhập chuỗi khóa bí mật khẩn cấp!");
+    }
+
+    // Ghi đè trực tiếp khóa thủ công của Admin nhập vào sessionStorage của trình duyệt
+    sessionStorage.setItem('vts_master_crypto_key', inputVal);
+    
+    alert("🔒 Đã kích hoạt và áp dụng khóa giải mã khẩn cấp thành công!");
+    document.getElementById('manual-key-input').value = ""; // Xóa rỗng ô nhập liệu
+    
+    // Tự động làm mới bảng nhật ký để kiểm chứng kết quả giải mã tức thì
+    loadAuditLogs();
+    
+    // Ghi nhận nhật ký bảo mật hành động nhập khóa khẩn cấp
+    writeAuditLog("BYPASS_KEY", "yt_database", "manual_override", "Quản trị viên sử dụng khóa dự phòng mở khóa khẩn cấp dữ liệu.");
+}

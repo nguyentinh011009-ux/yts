@@ -558,7 +558,7 @@ async function loadSchoolHealthStats() {
             rankMsg.innerHTML = '<span style="color:#10b981;">🎉 Tháng này bạn chưa phải xuống phòng Y tế lần nào!</span>';
         } else {
             rankText.innerText = "TOP " + myRank;
-            if (myRank = 1) {
+            if (myRank === 1) {
                 rankMsg.innerHTML = '<span style="color:#dc2626;"><i class="fas fa-exclamation-triangle"></i> Bạn bị bệnh nhiều nhất tháng. Hãy chú ý sức khỏe nhé!</span>';
             } else if (myRank <= 2) {
                 rankMsg.innerHTML = '<span style="color:#ea580c;">Bạn lọt top 2 học sinh đến phòng y tế nhiều nhất tháng. Hãy chú ý sức khỏe, đừng để leo lên top 1 bạn nhé</span>';

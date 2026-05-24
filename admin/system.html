@@ -82,6 +82,10 @@
                 </div>
 
                 <button onclick="executeManualBackup()" id="btn-manual-backup" class="btn btn-success" style="width: 100%; justify-content: center; height: 50px; font-size: 1.05rem;"><i class="fas fa-download"></i> THỰC HIỆN SAO LƯU NGAY (THỦ CÔNG)</button>
+		<div style="margin-top: 18px; font-size: 0.9rem; color: var(--text-gray); display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #cbd5e1; padding-top: 12px;">
+                    <span>Thời gian sao lưu gần nhất trên hệ thống:</span>
+                    <strong id="lbl-last-backup-time" style="color: #10b981;">Đang đối chiếu...</strong>
+                </div>
             </div>
 
 <!-- KHUNG KHÔI PHỤC TOÀN DIỆN MỚI -->
@@ -93,8 +97,7 @@
         <input type="file" id="file-restore-universal" accept=".json" style="width: 100%; margin-bottom: 15px;">
         <button onclick="processUniversalRestore()" id="btn-universal-restore" class="btn btn-danger" style="width:100%; justify-content:center; height: 45px;"><i class="fas fa-trash-restore"></i> Tiến hành Khôi phục thông minh</button>
     </div>
-</div>
-            </div>
+ </div>
             <div class="form-card" style="border-left: 5px solid #f59e0b; margin-top: 30px;">
                 <h3 style="color: #f59e0b; margin-bottom: 10px;"><i class="fas fa-key"></i> Khóa giải mã dự phòng sự cố (Emergency Bypass)</h3>
                 <p style="color: var(--text-gray); font-size: 0.9rem; margin-bottom: 20px;">Trường hợp xảy ra sự cố kết nối máy chủ Cloudflare hoặc thay đổi chìa khóa gốc ngoài ý muốn, bạn có thể nhập trực tiếp chìa khóa giải mã vào đây để mở khóa khẩn cấp dữ liệu.</p>
@@ -105,6 +108,7 @@
                 </div>
             </div>
         </div>
+</div>
 
         <!-- TAB 2: NHẬT KÝ HOẠT ĐỘNG (AUDIT LOGS) -->
         <div id="pane-logs" class="sys-pane">
@@ -130,7 +134,6 @@
         </div>
     </div>
 
-    <!-- KHỞI CHẠY SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -138,5 +141,38 @@
     <script src="../assets/config.js"></script>
     <script src="../assets/auth-check.js"></script>
     <script src="../assets/js/system.js"></script>
+<!-- POPUP: CHI TIẾT NHẬT KÝ BẢO MẬT (MỚI NÂNG CẤP) -->
+<div id="audit-detail-modal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.8); z-index:11000; align-items:center; justify-content:center; padding:20px;">
+    <div class="form-card fade-in" style="width:100%; max-width:600px; position:relative; padding:30px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border-top: 6px solid #1e293b; border-radius: 16px;">
+        <!-- Nút đóng -->
+        <button onclick="document.getElementById('audit-detail-modal').style.display='none'" style="position:absolute; top:20px; right:20px; border:none; background:#f1f5f9; width:35px; height:35px; border-radius:50%; font-size:1.5rem; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;">&times;</button>
+        
+        <h3 style="color:#1e293b; margin-top:0; margin-bottom:20px; font-size:1.25rem;"><i class="fas fa-shield-alt"></i> Chi Tiết Nhật Ký Hoạt Động</h3>
+        
+        <!-- Widget thời gian & Tác vụ -->
+        <div style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.9rem;">
+                <div>⚡ Tác vụ: <span id="log-det-action" class="badge badge-active" style="padding: 4px 10px;">--</span></div>
+                <div>📅 Thời gian: <strong id="log-det-time" style="color:#475569;">--</strong></div>
+            </div>
+        </div>
+
+        <!-- Chi tiết các trường dữ liệu theo ảnh chụp Firestore -->
+        <div style="font-size:0.95rem; line-height:1.7; display:flex; flex-direction:column; gap:12px; text-align: left;">
+            <div>👤 <strong>Tài khoản thực hiện:</strong> <span id="log-det-user">--</span></div>
+            <div>🎯 <strong>Bảng tác động (Target):</strong> <code id="log-det-target" style="background:#e0e7ff; color:#2563eb; padding:2px 8px; border-radius:4px; font-weight:bold;">--</code></div>
+            <div>🔑 <strong>Mã đối tượng (Target ID):</strong> <code id="log-det-target-id" style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:monospace; font-weight:bold;">--</code></div>
+            <div>📝 <strong>Mô tả chi tiết:</strong> <p id="log-det-desc" style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #cbd5e1; margin-top:5px; font-weight:500; color:#1e293b;"></p></div>
+            
+            <!-- Thông tin thiết bị (clientInfo) -->
+            <h4 style="border-bottom:1px dashed #cbd5e1; padding-bottom:5px; margin-top:10px; color:#475569; font-size:0.9rem;"><i class="fas fa-desktop"></i> Thông tin thiết bị (Client Info)</h4>
+            <div style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0; font-size:0.85rem; color:#475569; display:flex; flex-direction:column; gap:6px;">
+		<div>📱 Tên thiết bị truy cập: <strong id="log-det-device" style="color: #2563eb; font-size: 0.9rem;">--</strong></div>
+                <div>💻 Hệ điều hành (Platform): <strong id="log-det-platform" style="color:#0f172a;">--</strong></div>
+                <div style="word-break: break-all;">🌐 Trình duyệt (User Agent): <span id="log-det-ua" style="font-family:monospace; font-size:0.75rem; color:#64748b;">--</span></div>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

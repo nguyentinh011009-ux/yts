@@ -4,7 +4,7 @@
 
 let currentAdmin = null;
 let savedDirectoryHandle = null; // Biến lưu tạm quyền truy cập thư mục lưu trong phiên làm việc
-
+let cachedAuditLogs = [];
 // 1. KIỂM TRA BẢO MẬT & PHÂN QUYỀN TRUY CẬP
 firebase.auth().onAuthStateChanged((user) => {
     const loadingScreen = document.getElementById('sys-auth-loading');
@@ -12,7 +12,7 @@ firebase.auth().onAuthStateChanged((user) => {
 
     if (user && ALLOWED_ADMIN_EMAILS.includes(user.email)) {
         currentAdmin = user;
-
+	loadLastBackupTime();
         // 👉 THÊM ĐOẠN KIỂM TRA PHIÊN LÀM VIỆC NÀY:
         // sessionStorage sẽ tự động xóa sạch khi bạn tắt tab trình duyệt
         const hasLoggedSession = sessionStorage.getItem('vts_session_logged');
@@ -129,7 +129,17 @@ async function executeManualBackup() {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang ghi tệp tin sao lưu...';
         await saveUnifiedBackupFile(fullBackupObject);
 
-        alert("✅ Hoàn tất sao lưu toàn bộ cơ sở dữ liệu hệ thống!");
+         alert("✅ Hoàn tất quá trình sao lưu dữ liệu toàn hệ thống!");
+        
+        // 👉 Ghi nhận mốc thời gian sao lưu mới nhất lên tài liệu chung settings/general
+        await db.collection('settings').doc('general').set({
+            last_backup_time: firebase.firestore.FieldValue.serverTimestamp(),
+            last_backup_by: currentAdmin.email
+        }, { merge: true });
+
+        // Làm mới lại nhãn hiển thị trên màn hình
+        loadLastBackupTime();
+
         writeAuditLog("BACKUP", "yt_database", "full_backup", "Thực hiện sao lưu toàn bộ cơ sở dữ liệu thành một tệp tin duy nhất.");
     } catch (err) {
         alert("❌ Lỗi sao lưu hệ thống: " + err.message);
@@ -168,31 +178,65 @@ async function checkAndExecuteAutoBackup() {
     const autoBackupOn = localStorage.getItem('vts_auto_backup_enabled') === 'true';
     if (!autoBackupOn) return;
 
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const lastBackupDate = localStorage.getItem('vts_last_auto_backup_date');
+    const todayStr = new Date().toISOString().slice(0, 10); // Định dạng: YYYY-MM-DD
+    
+    // 1. KIỂM TRA LỚP 1 (Bộ nhớ máy): Nếu hôm nay máy này đã tự động chạy rồi thì thoát luôn
+    const lastLocalBackupDate = localStorage.getItem('vts_last_auto_backup_date');
+    if (todayStr === lastLocalBackupDate) {
+        console.log("Hệ thống đã tự động sao lưu trên thiết bị này hôm nay. Bỏ qua.");
+        return;
+    }
 
-    // Nếu hôm nay là một ngày mới và chưa thực hiện sao lưu tự động lần nào trong ngày
-    if (todayStr !== lastBackupDate) {
-        console.log("Phát hiện ngày mới! Hệ thống tự động kích hoạt tiến trình sao lưu âm thầm...");
-        
-        try {
-            const collections = ['yt_students', 'yt_visits', 'yt_pharmacy_items', 'yt_attendance', 'yt_tickets'];
-            for (let colName of collections) {
-                const snap = await db.collection(colName).get();
-                let records = [];
-                snap.forEach(doc => records.push({ id: doc.id, ...doc.data() }));
-                await saveBackupFile(colName, records);
-            }
-            
-            // Lưu lại vết ngày sao lưu thành công
+    try {
+        // 2. KIỂM TRA LỚP 2 (Đám mây Cloud): Đề phòng trường hợp Admin đổi thiết bị khác sang làm việc
+        const doc = await db.collection('settings').doc('general').get();
+        if (doc.exists && doc.data().last_auto_backup_date === todayStr) {
+            // Đồng bộ bộ nhớ máy và thoát để tránh ghi lặp tệp
             localStorage.setItem('vts_last_auto_backup_date', todayStr);
-            writeAuditLog("AUTO_BACKUP", "yt_database", "all_collections", "Hệ thống tự động thực hiện sao lưu thành công ngày mới.");
-        } catch (e) {
-            console.error("Lỗi tự động sao lưu ngày mới: ", e);
+            console.log("Firestore xác nhận hệ thống đã được sao lưu ngày hôm nay. Bỏ qua.");
+            return;
         }
+
+        console.log("Kích hoạt tiến trình tự động sao lưu ngày mới...");
+        
+        // Tiến hành đóng gói toàn bộ 13 Collection hệ thống của bạn
+        let fullBackupObject = {
+            backup_time: new Date().toISOString(),
+            created_by: "SYSTEM_AUTO_BACKUP",
+            collections: {}
+        };
+
+        for (let colName of ALL_SYSTEM_COLLECTIONS) {
+            const snap = await db.collection(colName).get();
+            let records = [];
+            snap.forEach(doc => {
+                records.push({ id: doc.id, ...doc.data() });
+            });
+            fullBackupObject.collections[colName] = records;
+        }
+
+        // Lưu file backup ra máy tính
+        await saveUnifiedBackupFile(fullBackupObject);
+
+        // 👉 CẬP NHẬT TRẠNG THÁI: Ghi nhận ngày tự động sao lưu thành công lên mây và máy khách
+        await db.collection('settings').doc('general').set({
+            last_backup_time: firebase.firestore.FieldValue.serverTimestamp(),
+            last_backup_by: "SYSTEM_AUTO_BACKUP",
+            last_auto_backup_date: todayStr
+        }, { merge: true });
+
+        localStorage.setItem('vts_last_auto_backup_date', todayStr);
+        
+        // Ghi nhận nhật ký bảo mật
+        writeAuditLog("AUTO_BACKUP", "yt_database", "full_backup", `Hệ thống thực hiện thành công tiến trình tự động sao lưu dữ liệu ngày mới (${todayStr}).`);
+        
+        // Cập nhật lại nhãn hiển thị
+        loadLastBackupTime();
+
+    } catch (e) {
+        console.error("Lỗi tự động sao lưu ngày mới: ", e);
     }
 }
-
 // 6. LUỒNG KHÔI PHỤC DỮ LIỆU CHUYÊN SÂU (RESTORE ENGINE - WRITE BATCH)
 function processRestore(collectionName) {
     let fileInputId = collectionName === 'yt_students' ? 'file-restore-students' : 'file-restore-visits';
@@ -265,33 +309,38 @@ function loadAuditLogs() {
 
     db.collection('yt_audit_logs').orderBy('timestamp', 'desc').limit(100).onSnapshot(snap => {
         tbody.innerHTML = '';
+        cachedAuditLogs = []; // Reset mảng đệm mỗi khi có thay đổi
+
         if (snap.empty) {
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-gray);">Hệ thống chưa ghi nhận hoạt động nào.</td></tr>';
             return;
         }
 
+        let index = 0;
         snap.forEach(doc => {
             const d = doc.data();
-            const time = d.timestamp ? new Date(d.timestamp.seconds * 1000).toLocaleString('vi-VN') : 'Vừa xong';
+            cachedAuditLogs.push({ id: doc.id, ...d }); // Lưu dữ liệu vào RAM
+
+            const time = d.timestamp ? new Date(d.timestamp.seconds * 1000).toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'}) : 'Vừa xong';
             
-            // Format tag tác vụ
-            let actionBadgeClass = "badge-active"; // Mặc định xanh lục
-            if (d.action === 'DELETE' || d.action === 'RESTORE') actionBadgeClass = "badge-inactive";
+            let actionBadgeClass = "badge-active";
+            if (d.action === 'DELETE' || d.action === 'RESTORE' || d.action === 'BYPASS_KEY') actionBadgeClass = "badge-inactive";
             
+            // 👉 THÊM onclick="openAuditLogDetail(${index})" và cursor:pointer cho dòng bảng
             tbody.innerHTML += `
-                <tr style="transition:0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+                <tr onclick="openAuditLogDetail(${index})" style="cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'" title="Nhấn để xem chi tiết thiết bị">
                     <td style="font-weight:bold; color:var(--text-gray); font-size:0.85rem;">${time}</td>
                     <td><strong>${d.userName}</strong><br><small style="color:var(--text-gray);">${d.userId}</small></td>
                     <td><span class="badge ${actionBadgeClass}" style="font-size:0.75rem;">${d.action}</span></td>
                     <td style="font-size: 0.9rem; font-weight: 500; color: #334155;">${d.description}</td>
                 </tr>
             `;
+            index++;
         });
     }, error => {
         tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: red;">Lỗi tải dữ liệu nhật ký: ${error.message}</td></tr>`;
     });
 }
-
 // 8. HÀM GHI NHẬT KÝ SỬ DỤNG CHUNG (HELPER)
 async function writeAuditLog(action, targetCollection, targetId, description) {
     if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
@@ -317,7 +366,8 @@ async function writeAuditLog(action, targetCollection, targetId, description) {
             description: description,
             clientInfo: {
                 userAgent: navigator.userAgent,
-                platform: navigator.platform
+                platform: navigator.platform,
+                deviceName: getDeviceDisplayName()
             }
         });
     } catch (e) {
@@ -429,4 +479,78 @@ function applyManualCryptoKey() {
     
     // Ghi nhận nhật ký bảo mật hành động nhập khóa khẩn cấp
     writeAuditLog("BYPASS_KEY", "yt_database", "manual_override", "Quản trị viên sử dụng khóa dự phòng mở khóa khẩn cấp dữ liệu.");
+}
+// --- BỘ ĐIỀU KHIỂN XEM CHI TIẾT NHẬT KÝ BẢO MẬT ---
+
+function openAuditLogDetail(index) {
+    const log = cachedAuditLogs[index];
+    if (!log) return;
+
+    const time = log.timestamp ? log.timestamp.toDate().toLocaleString('vi-VN') : 'N/A';
+    
+    // Gán dữ liệu cơ bản lên Popup
+    document.getElementById('log-det-action').innerText = log.action;
+    document.getElementById('log-det-time').innerText = time;
+    document.getElementById('log-det-user').innerHTML = `<strong>${log.userName}</strong> <br>Email: ${log.userId}`;
+    document.getElementById('log-det-target').innerText = log.target;
+    document.getElementById('log-det-target-id').innerText = log.targetId || '--';
+    document.getElementById('log-det-desc').innerText = log.description;
+    
+    // Đọc trường lồng clientInfo bảo vệ chống lỗi nếu bản ghi cũ thiếu dữ liệu
+    const client = log.clientInfo || {};
+    document.getElementById('log-det-device').innerText = client.deviceName || "Không rõ";
+    document.getElementById('log-det-platform').innerText = client.platform || '--';
+    document.getElementById('log-det-ua').innerText = client.userAgent || '--';
+
+    // Đổi cấu hình hiển thị của badge tác vụ tương ứng
+    const badge = document.getElementById('log-det-action');
+    if (log.action === 'DELETE' || log.action === 'RESTORE' || log.action === 'BYPASS_KEY') {
+        badge.className = "badge badge-inactive";
+    } else {
+        badge.className = "badge badge-active";
+    }
+
+    // Mở hiển thị Popup
+    document.getElementById('audit-detail-modal').style.display = 'flex';
+}
+// Hàm tải mốc thời gian sao lưu gần nhất từ Cloud Firestore hiển thị lên màn hình
+async function loadLastBackupTime() {
+    try {
+        const doc = await db.collection('settings').doc('general').get();
+        const lbl = document.getElementById('lbl-last-backup-time');
+        if (!lbl) return;
+
+        if (doc.exists && doc.data().last_backup_time) {
+            const time = doc.data().last_backup_time.toDate();
+            lbl.innerText = time.toLocaleString('vi-VN');
+        } else {
+            lbl.innerText = "Chưa có bản sao lưu nào";
+        }
+    } catch (e) {
+        console.error("Lỗi lấy thời gian sao lưu gần nhất:", e);
+    }
+}
+// --- BỘ GIẢI MÃ TÊN THIẾT BỊ TỰ ĐỘNG (USER-AGENT PARSER) ---
+function getDeviceDisplayName() {
+    const ua = navigator.userAgent;
+    let os = "Hệ điều hành không rõ";
+    let browser = "Trình duyệt không rõ";
+
+    // 1. Nhận diện hệ điều hành (OS)
+    if (/Windows/i.test(ua)) os = "Máy tính Windows";
+    else if (/Macintosh|Mac OS X/i.test(ua)) os = "Máy tính Macbook/Mac";
+    else if (/iPhone/i.test(ua)) os = "Điện thoại iPhone";
+    else if (/iPad/i.test(ua)) os = "Máy tính bảng iPad";
+    else if (/Android/i.test(ua)) os = "Điện thoại Android";
+    else if (/Linux/i.test(ua)) os = "Hệ điều hành Linux";
+
+    // 2. Nhận diện trình duyệt (Browser)
+    if (/Chrome/i.test(ua) && !/Edg/i.test(ua)) browser = "Chrome";
+    else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) browser = "Safari";
+    else if (/Edg/i.test(ua)) browser = "Microsoft Edge";
+    else if (/Firefox/i.test(ua)) browser = "Firefox";
+    else if (/Zalo/i.test(ua)) browser = "Zalo WebView";
+    else if (/FBAN|FBAV/i.test(ua)) browser = "Facebook App";
+
+    return `${os} (${browser})`;
 }

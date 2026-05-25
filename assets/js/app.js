@@ -74,7 +74,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
                     loadPharmacyForReception();
                     loadAdminAnnouncements();
                     loadFusoftxNotis();
-		            runDailyStatisticAggregation();
+		    runDailyStatisticAggregation();
 
                     const nameDisplay = document.getElementById('display-admin-name');
                     const emailDisplay = document.getElementById('display-admin-email');

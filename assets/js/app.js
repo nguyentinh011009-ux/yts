@@ -3,9 +3,11 @@
 */
 
 // --- 1. KHỞI TẠO BIẾN TOÀN CỤC ---
-let sliderInterval = null; // THÊM DÒNG NÀY VÀO
+let sliderInterval = null;
 let allPosts = [];
-
+let currentNotiFilter = 'all';
+let cachedNotifications = [];
+let notiFirebaseListener = null;
 // --- 2. HỆ THỐNG ĐĂNG NHẬP & BẢO MẬT ---
 // Hàm bóc tách nội dung thô (xóa sạch code CSS/HTML của AI)
 function getCleanSnippet(htmlContent) {
@@ -998,7 +1000,10 @@ async function deleteStudentCompletely(sid) {
     // --- BƯỚC 3: TÌM VÀ XÓA YÊU CẦU HỖ TRỢ (TICKETS/HÒM THƯ) ---
     const ticketsSnap = await db.collection('yt_tickets').where('studentId', '==', sid).get();
     ticketsSnap.forEach(doc => batch.delete(doc.ref));
-
+    // --- BƯỚC THÊM MỚI: TÌM VÀ XÓA HỒ SƠ KHÁM SỨC KHỎE ĐỊNH KỲ ---
+    // (Nếu hệ thống của bạn sử dụng tên collection khác như 'yt_exam_results', vui lòng đổi tên cho khớp)
+    const physicalExamsSnap = await db.collection('yt_physical_exams').where('studentId', '==', sid).get();
+    physicalExamsSnap.forEach(doc => batch.delete(doc.ref));
     // --- BƯỚC 4: TÌM VÀ XÓA THÔNG BÁO ĐƯỢC GỬI CHO HỌC SINH NÀY ---
     // 4.1 - Xóa thông báo gửi RIÊNG cho 1 mình học sinh này
     const notiSingleSnap = await db.collection('yt_notifications').where('targetValue', '==', sid).get();
@@ -2952,84 +2957,163 @@ async function sendStudentNotification() {
     }
 
     try {
-        const btn = document.querySelector('button[onclick="sendStudentNotification()"]');
-        const ogText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
-        btn.disabled = true;
+    const btn = document.querySelector('button[onclick="sendStudentNotification()"]');
+    const ogText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
+    btn.disabled = true;
 
-        await db.collection('yt_notifications').add({
-            title: title,
-            content: content,
-            targetType: targetType,
-            targetValue: finalTargetValue,
-            sender: "Phòng Y Tế",
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
+    await db.collection('yt_notifications').add({
+        title: title,
+        content: content,
+        targetType: targetType,
+        targetValue: finalTargetValue,
+        sender: "Phòng Y Tế",
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
 
-        alert("✅ Đã gửi thông báo thành công!");
-        
-        // --- RESET VÀ ẨN FORM ĐI ---
-        document.getElementById('noti-title').value = '';
-        document.getElementById('noti-content').value = '';
-        selectedStudentsForNoti = [];
-        renderSelectedStudentsNoti();
-        document.getElementById('noti-search-student-input').value = '';
-        document.getElementById('noti-search-results').style.display = 'none';
-        
-        // ẨN KHUNG SAU KHI GỬI THÀNH CÔNG
-        document.getElementById('box-new-noti').style.display = 'none';
-        
-        btn.innerHTML = ogText;
-        btn.disabled = false;
-    } catch (e) {
-        alert("Lỗi gửi thông báo: " + e.message);
-    }
+    alert("✅ Đã gửi thông báo thành công!");
+    
+    // Thay thế đoạn ẩn box cũ bằng hàm đóng Modal mới
+    closeNewNotiModal();
+    
+    btn.innerHTML = ogText;
+    btn.disabled = false;
+} catch (e) {
+    alert("Lỗi gửi thông báo: " + e.message);
+}
 }
 // 6. Tải danh sách đã gửi
-// 6. Tải danh sách đã gửi (Dạng Bảng Gọn Gàng)
+// 1. Thay đổi bộ lọc hiện tại khi người dùng click
+function changeNotiFilter(filterType) {
+    currentNotiFilter = filterType;
+    
+    // Cập nhật trạng thái hiển thị các nút bộ lọc
+    const filters = ['all', 'all_school', 'grade', 'class', 'student'];
+    filters.forEach(f => {
+        const btn = document.getElementById(`btn-noti-flt-${f}`);
+        if(btn) {
+            if(f === filterType) {
+                btn.style.background = '#0062ff'; 
+                btn.style.color = 'white'; 
+                btn.style.borderColor = '#0062ff';
+            } else {
+                btn.style.background = 'white'; 
+                btn.style.color = '#64748b'; 
+                btn.style.borderColor = '#cbd5e1';
+            }
+        }
+    });
+
+    // Vẽ lại bảng với dữ liệu đã lọc
+    renderAdminNotificationsTable();
+}
+
+// 2. Lắng nghe và đồng bộ dữ liệu thông báo thời gian thực
 function loadAdminNotifications() {
     const tbody = document.getElementById('admin-noti-list-table');
     if (!tbody) return;
+    
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px;"><i class="fas fa-spinner fa-spin"></i> Đang tải lịch sử thông báo...</td></tr>';
 
-    db.collection('yt_notifications').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
-        tbody.innerHTML = '';
-        if (snap.empty) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#64748b;">Chưa gửi thông báo nào.</td></tr>';
-            return;
-        }
+    if (notiFirebaseListener) notiFirebaseListener();
 
-        snap.forEach(doc => {
-            const d = doc.data();
-            const time = d.timestamp ? new Date(d.timestamp.seconds * 1000).toLocaleString('vi-VN') : 'Vừa xong';
+    notiFirebaseListener = db.collection('yt_notifications')
+        .onSnapshot(snap => {
+            cachedNotifications = [];
             
-            // Xử lý phân loại cho đẹp
-            let targetTag = "";
-            if (d.targetType === 'all') targetTag = '<span style="color:#10b981; background:#f0fdf4; padding:3px 8px; border-radius:5px;"><i class="fas fa-globe"></i> Toàn trường</span>';
-            else if (d.targetType === 'grade') targetTag = `<span style="color:#f59e0b; background:#fffbeb; padding:3px 8px; border-radius:5px;"><i class="fas fa-layer-group"></i> Khối ${d.targetValue}</span>`;
-            else if (d.targetType === 'class') targetTag = `<span style="color:#3b82f6; background:#eff6ff; padding:3px 8px; border-radius:5px;"><i class="fas fa-users"></i> Lớp ${d.targetValue}</span>`;
-            else if (d.targetType === 'student') {
-                let count = Array.isArray(d.targetValue) ? d.targetValue.length : 1;
-                targetTag = `<span style="color:#8b5cf6; background:#f5f3ff; padding:3px 8px; border-radius:5px;"><i class="fas fa-user"></i> ${count} Học sinh</span>`;
-            } else {
-                targetTag = `<span style="color:#64748b; background:#f8fafc; padding:3px 8px; border-radius:5px;">${d.targetType}</span>`;
-            }
+            // Biến đếm số lượng cho từng bộ lọc phân loại
+            let counts = { all: 0, all_school: 0, grade: 0, class: 0, student: 0 };
 
-            tbody.innerHTML += `
-                <tr style="transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
-                    <td style="font-weight:bold; color:#0f172a;">${d.title}</td>
-                    <td>${targetTag}</td>
-                    <td style="font-size:0.85rem; color:#64748b;">${time}</td>
-                    <td>
-                        <!-- ĐƯỜNG LINK DẪN TRỰC TIẾP TỚI TRANG ĐỌC THÔNG BÁO -->
-                        <a href="../view_noti.html?id=${doc.id}" target="_blank" class="btn" style="padding:6px 12px; font-size:0.85rem; background:#e0e7ff; color:#3b82f6; text-decoration:none;"><i class="fas fa-link"></i> Link</a>
-                        <button onclick="deleteNotification('${doc.id}')" class="btn" style="padding:6px 12px; font-size:0.85rem; background:#fee2e2; color:#ef4444; margin-left:5px;"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            `;
+            snap.forEach(doc => {
+                const d = { id: doc.id, ...doc.data() };
+                cachedNotifications.push(d);
+                
+                // Tăng bộ đếm dựa trên phân loại đối tượng nhận
+                counts.all++;
+                if (d.targetType === 'all') counts.all_school++;
+                if (d.targetType === 'grade') counts.grade++;
+                if (d.targetType === 'class') counts.class++;
+                if (d.targetType === 'student') counts.student++;
+            });
+
+            // Sắp xếp thông báo mới nhất lên đầu
+            cachedNotifications.sort((a, b) => {
+                const timeA = a.timestamp ? a.timestamp.seconds : 0;
+                const timeB = b.timestamp ? b.timestamp.seconds : 0;
+                return timeB - timeA;
+            });
+
+            // Cập nhật số lượng hiển thị trên các Badge của tab bộ lọc
+            document.getElementById('badge-noti-all').innerText = counts.all;
+            document.getElementById('badge-noti-all_school').innerText = counts.all_school;
+            document.getElementById('badge-noti-grade').innerText = counts.grade;
+            document.getElementById('badge-noti-class').innerText = counts.class;
+            document.getElementById('badge-noti-student').innerText = counts.student;
+
+            // Tiến hành dựng cấu trúc bảng
+            renderAdminNotificationsTable();
+        }, error => {
+            console.error("Lỗi đồng bộ thông báo:", error);
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red; padding:30px;">Lỗi tải dữ liệu: ${error.message}</td></tr>`;
         });
-    });
 }
 
+// 3. Hàm xuất nội dung bảng dựa trên bộ nhớ đệm
+function renderAdminNotificationsTable() {
+    const tbody = document.getElementById('admin-noti-list-table');
+    if (!tbody) return;
+
+    // Lọc mảng dữ liệu dựa trên tab đang kích hoạt
+    let filteredData = cachedNotifications;
+    if (currentNotiFilter !== 'all') {
+        const filterTargetMap = {
+            'all_school': 'all',
+            'grade': 'grade',
+            'class': 'class',
+            'student': 'student'
+        };
+        filteredData = cachedNotifications.filter(d => d.targetType === filterTargetMap[currentNotiFilter]);
+    }
+
+    if (filteredData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b; padding:30px;"><i class="fas fa-envelope-open fa-2x" style="opacity:0.3; margin-bottom:10px;"></i><br>Không có thông báo nào trong mục này.</td></tr>`;
+        return;
+    }
+
+    let htmlString = '';
+    filteredData.forEach(d => {
+        const time = d.timestamp ? new Date(d.timestamp.seconds * 1000).toLocaleString('vi-VN') : 'Vừa xong';
+        
+        // Thiết kế nhãn đối tượng nhận tương thích
+        let targetTag = "";
+        if (d.targetType === 'all') {
+            targetTag = '<span style="color:#10b981; background:#f0fdf4; padding:3px 8px; border-radius:5px;"><i class="fas fa-globe"></i> Toàn trường</span>';
+        } else if (d.targetType === 'grade') {
+            targetTag = `<span style="color:#f59e0b; background:#fffbeb; padding:3px 8px; border-radius:5px;"><i class="fas fa-layer-group"></i> Khối ${d.targetValue}</span>`;
+        } else if (d.targetType === 'class') {
+            targetTag = `<span style="color:#3b82f6; background:#eff6ff; padding:3px 8px; border-radius:5px;"><i class="fas fa-users"></i> Lớp ${d.targetValue}</span>`;
+        } else if (d.targetType === 'student') {
+            let count = Array.isArray(d.targetValue) ? d.targetValue.length : 1;
+            targetTag = `<span style="color:#8b5cf6; background:#f5f3ff; padding:3px 8px; border-radius:5px;"><i class="fas fa-user"></i> ${count} Học sinh</span>`;
+        } else {
+            targetTag = `<span style="color:#64748b; background:#f8fafc; padding:3px 8px; border-radius:5px;">${d.targetType}</span>`;
+        }
+
+        htmlString += `
+            <tr style="transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+                <td style="font-weight:bold; color:#0f172a;">${d.title}</td>
+                <td>${targetTag}</td>
+                <td style="font-size:0.85rem; color:#64748b;">${time}</td>
+                <td>
+                    <a href="../view_noti.html?id=${d.id}" target="_blank" class="btn" style="padding:6px 12px; font-size:0.85rem; background:#e0e7ff; color:#3b82f6; text-decoration:none;"><i class="fas fa-link"></i> Link</a>
+                    <button onclick="deleteNotification('${d.id}')" class="btn" style="padding:6px 12px; font-size:0.85rem; background:#fee2e2; color:#ef4444; margin-left:5px;"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = htmlString;
+}
 // Thêm hàm xóa thông báo
 async function deleteNotification(docId) {
     if(confirm("Bạn có chắc chắn muốn thu hồi (xóa) thông báo này?")) {
@@ -3440,3 +3524,19 @@ document.addEventListener('click', function(e) {
     const box = document.getElementById('med-suggest-box');
     if (box && e.target.id !== 'med-search-input') box.style.display = 'none';
 });
+function openNewNotiModal() {
+    document.getElementById('new-noti-modal').style.display = 'flex';
+}
+
+function closeNewNotiModal() {
+    document.getElementById('new-noti-modal').style.display = 'none';
+    
+    // Reset form cơ bản sau khi đóng
+    document.getElementById('noti-title').value = '';
+    document.getElementById('noti-content').value = '';
+    document.getElementById('noti-target-value').value = '';
+    document.getElementById('noti-target-type').value = 'all';
+    toggleNotiTargetInput();
+    selectedStudentsForNoti = [];
+    renderSelectedStudentsNoti();
+}

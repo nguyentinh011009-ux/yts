@@ -503,49 +503,115 @@
 </section>
 <!-- TAB: QUẢN LÝ KHÁM SỨC KHỎE ĐỊNH KỲ (MỚI NÂNG CẤP) -->
 <section id="tab-physical-exam" class="tab-pane" style="display:none;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-        <h2>Khám Sức Khỏe Định Kỳ Học Sinh</h2>
-        <div style="display:flex; gap:10px;">
-            <button onclick="downloadExcelTemplateExam()" class="btn btn-secondary" style="background:#e2e8f0;"><i class="fas fa-download"></i> Tải file Excel mẫu</button>
+    
+    <!-- THANH CÔNG CỤ ĐẦU TRANG -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #cbd5e1; padding-bottom: 15px;">
+        <h2 style="margin: 0; color: #1e293b;"><i class="fas fa-file-medical"></i> Khám Sức Khỏe Định Kỳ</h2>
+        <div style="display: flex; gap: 12px;">
+            <button onclick="downloadExcelTemplateExam()" class="btn btn-secondary" style="background:#e2e8f0; font-weight: bold;"><i class="fas fa-download"></i> Tải file Excel mẫu</button>
+            <button onclick="openCreateCampaignModal()" class="btn btn-primary" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); font-weight: bold;"><i class="fas fa-plus-circle"></i> Bắt đầu đợt khám mới</button>
         </div>
     </div>
 
-<!-- BƯỚC 1: KHỞI TẠO / CHỌN ĐỢT KHÁM SỨC KHỎE (MẪU MỚI SIÊU GỌN) -->
-    <div class="form-card" style="border-left: 5px solid #3b82f6; padding: 25px 30px;">
-        <h3 style="color:#3b82f6; margin-bottom: 20px;"><i class="fas fa-calendar-check"></i> Bước 1: Khởi động hoặc Chọn đợt khám bệnh</h3>
-        
-        <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-            <!-- Nút gọi Popup tạo mới -->
-            <button onclick="openCreateCampaignModal()" class="btn btn-primary" style="height: 48px; padding: 0 25px; font-weight: bold; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);"><i class="fas fa-plus-circle"></i> BẮT ĐẦU ĐỢT KHÁM MỚI</button>
-            
-            <div style="width: 2px; height: 35px; background: #cbd5e1;"></div>
-            
-            <!-- Ô chọn nhanh đợt khám cũ -->
-            <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 280px;">
-                <span style="font-weight: bold; color: #475569; white-space: nowrap;">Hoặc tiếp tục đợt khám:</span>
-                <select id="exam-campaign-select" class="pharma-input" onchange="selectExamCampaign(this.value)" style="margin: 0; height: 48px;">
-                    <option value="">-- Chọn đợt khám cũ để tiếp tục nhập liệu --</option>
+    <!-- DANH SÁCH CÁC ĐỢT KHÁM ĐANG CÓ (DẠNG HÀNG TRỰC QUAN) -->
+    <h3 style="margin-bottom: 20px; color: #475569;"><i class="fas fa-folder-open"></i> Danh sách đợt khám sức khỏe</h3>
+    <div id="campaigns-list-container" style="display: flex; flex-direction: column; gap: 15px;">
+        <div style="text-align: center; padding: 40px; color: #94a3b8;"><i class="fas fa-spinner fa-spin fa-2x"></i><br>Đang tải danh sách đợt khám...</div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- [POPUP 1]: KHỞI TẠO ĐỢT KHÁM SỨC KHỎE MỚI -->
+    <!-- ===================================================================== -->
+    <div id="create-campaign-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 10005; align-items: center; justify-content: center; padding: 20px;">
+        <div class="form-card fade-in" style="width: 100%; max-width: 500px; position: relative; padding: 30px; border-top: 6px solid #2563eb; border-radius: 16px;">
+            <button onclick="closeCreateCampaignModal()" style="position:absolute; top:20px; right:20px; border:none; background:#f1f5f9; width:35px; height:35px; border-radius:50%; font-size:1.5rem; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;">&times;</button>
+            <h3 style="margin: 0 0 20px 0; color: #2563eb; font-size: 1.3rem; font-weight: 700;"><i class="fas fa-calendar-plus"></i> Khởi tạo đợt khám mới</h3>
+            <div class="input-group" style="margin-bottom: 18px;">
+                <label>Tên đợt khám sức khỏe</label>
+                <input type="text" id="exam-new-name" placeholder="VD: Khám sức khỏe học sinh đầu năm 2025-2026">
+            </div>
+            <div class="input-group" style="margin-bottom: 18px;">
+                <label>Mã đợt khám (Bỏ trống nếu muốn hệ thống tự tạo)</label>
+                <input type="text" id="exam-new-id" placeholder="VD: DOTKHAM_K10_2025" oninput="this.value = this.value.toUpperCase().replace(/\s/g, '_')">
+            </div>
+            <div class="input-group" style="margin-bottom: 25px;">
+                <label>Chọn phương thức nhập liệu ban đầu</label>
+                <select id="exam-new-method" class="pharma-input" style="width:100%; padding:12px;">
+                    <option value="manual">⌨ Nhập thủ công từng học sinh</option>
+                    <option value="excel">📊 Nhập hàng loạt từ file Excel của Bộ/Sở</option>
                 </select>
             </div>
-        </div>
-
-        <div id="selected-campaign-status" style="display:none; padding:15px; border-radius:10px; background:#eff6ff; color:#1e40af; font-weight:bold; margin-top: 20px; border: 1px solid #bfdbfe;">
-            <i class="fas fa-info-circle"></i> Hệ thống đang mở đợt khám hoạt động: <span id="active-campaign-name" style="color:#2563eb;">--</span>
+            <button onclick="createNewExamCampaign()" class="btn btn-primary" style="width: 100%; justify-content: center; height: 50px; font-weight: bold; font-size: 1.05rem;"><i class="fas fa-check-circle"></i> Xác nhận & Bắt đầu</button>
         </div>
     </div>
-    <!-- BƯỚC 2: NHẬP LIỆU HỒ SƠ SỨC KHỎE (Chỉ hiện khi đã chọn đợt khám ở Bước 1) -->
-    <div id="step-exam-entry" style="display:none;">
-        <div class="top-tabs" style="display:flex; gap:10px; margin-bottom:20px;">
-            <button class="top-tab-btn active" id="btn-exam-manual" onclick="switchExamInputMethod('manual')"><i class="fas fa-keyboard"></i> Nhập thủ công</button>
-            <button class="top-tab-btn" id="btn-exam-excel" onclick="switchExamInputMethod('excel')"><i class="fas fa-file-excel"></i> Nhập bằng file Excel</button>
-        </div>
 
-        <!-- PHƯƠNG PHÁP 1: NHẬP THỦ CÔNG -->
-        <div id="exam-input-manual" class="form-card" style="border-left:5px solid #10b981;">
-            <h3 style="color:#10b981; margin-bottom:20px;"><i class="fas fa-keyboard"></i> Nhập thông tin khám thủ công</h3>
+    <!-- ===================================================================== -->
+    <!-- [POPUP 2]: THỐNG KÊ CHI TIẾT ĐỢT KHÁM SỨC KHỎE (TỰ ĐỘNG TÍNH BMI & PHÂN KHOA) -->
+    <!-- ===================================================================== -->
+    <div id="exam-stats-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 10006; align-items: center; justify-content: center; padding: 20px;">
+        <div class="form-card fade-in" style="width: 100%; max-width: 1150px; position: relative; padding: 30px; border-radius: 16px; border-top: 6px solid #8b5cf6; max-height: 90vh; overflow-y: auto;">
+            <button onclick="document.getElementById('exam-stats-modal').style.display='none'" style="position:absolute; top:20px; right:20px; border:none; background:#f1f5f9; width:35px; height:35px; border-radius:50%; font-size:1.5rem; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;">&times;</button>
+            <h3 id="stats-campaign-title" style="color: #8b5cf6; margin-top: 0; margin-bottom: 20px; font-size: 1.4rem;">Thống kê đợt khám</h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" id="stats-render-grid">
+                <!-- JS tự động đổ biểu đồ thống kê -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- [POPUP 3]: CHI TIẾT ĐỢT KHÁM & DANH SÁCH HỌC SINH ĐÃ KHÁM (BẢNG ĐIỀU KHIỂN TRUNG TÂM) -->
+    <!-- ===================================================================== -->
+    <div id="campaign-detail-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 10007; align-items: center; justify-content: center; padding: 20px;">
+        <div class="form-card fade-in" style="width: 100%; max-width: 1100px; height: 90vh; position: relative; padding: 30px; border-radius: 16px; display: flex; flex-direction: column;">
+            <button onclick="document.getElementById('campaign-detail-modal').style.display='none'" style="position:absolute; top:20px; right:20px; border:none; background:#f1f5f9; width:35px; height:35px; border-radius:50%; font-size:1.5rem; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;">&times;</button>
+            <h2 id="detail-campaign-title" style="color: #2563eb; margin-top: 0; margin-bottom: 20px; font-size: 1.5rem;">Chi tiết đợt khám</h2>
+
+            <!-- THANH TÁC VỤ NHẬP LIỆU NHANH TRÊN ĐẦU -->
+            <div style="display: flex; gap: 15px; background: #f8fafc; padding: 15px 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 25px; align-items: center; flex-wrap: wrap;">
+                <!-- Nhóm 1: Tìm kiếm -->
+                <div style="display: flex; gap: 8px; flex: 1; min-width: 250px;">
+                    <input type="text" id="exam-search-input" placeholder="Tìm tên hoặc lớp học sinh đã khám..." style="padding: 10px 15px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; flex: 1;">
+                    <button onclick="searchExamResults()" class="btn btn-primary" style="padding: 10px 20px; background: #2563eb;"><i class="fas fa-search"></i> Tìm</button>
+                </div>
+                <!-- Nhóm 2: Hai nút thêm -->
+<div style="display: flex; gap: 10px; flex-shrink: 0;">
+    <button id="btn-excel-upload-trigger" onclick="triggerExcelExamUpload()" class="btn btn-secondary" style="background:#8b5cf6; color:white;"><i class="fas fa-file-excel"></i> Nhập từ Excel</button>
+    <input type="file" id="excel-exam-upload-direct" accept=".xlsx, .xls" style="display:none;" onchange="handleExcelExamUpload(event)">
+    <button onclick="openManualEntryModal()" class="btn btn-success" style="background:#10b981; color:white;"><i class="fas fa-plus"></i> Nhập thủ công</button>
+</div>
+            </div>
+
+            <!-- DANH SÁCH HỌC SÌNH ĐÃ KHÁM -->
+            <div style="flex: 1; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Mã YT</th>
+                            <th style="width: 30%;">Họ và tên</th>
+                            <th style="width: 15%;">Lớp</th>
+                            <th style="width: 15%;">Ngày khám</th>
+                            <th style="text-align: right; width: 25%;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="campaign-students-tbody">
+                        <tr><td colspan="5" style="text-align: center;">Đang tải danh sách học sinh...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- [POPUP 4]: KHUNG NHẬP/CHỈNH SỬA PHIẾU KHÁM THỦ CÔNG (MODAL) -->
+    <!-- ===================================================================== -->
+    <div id="manual-entry-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 10008; align-items: center; justify-content: center; padding: 20px;">
+        <div class="form-card fade-in" style="width: 100%; max-width: 900px; max-height: 90vh; overflow-y: auto; position: relative; padding: 30px; border-top: 6px solid #10b981; border-radius: 16px;">
+            <button onclick="closeManualEntryModal()" style="position:absolute; top:20px; right:20px; border:none; background:#f1f5f9; width:35px; height:35px; border-radius:50%; font-size:1.5rem; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;">&times;</button>
+            <h3 id="manual-entry-title" style="color: #10b981; margin-top: 0; margin-bottom: 25px;"><i class="fas fa-keyboard"></i> Nhập phiếu khám sức khỏe</h3>
             
             <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; margin-bottom:20px; position:relative;">
-                <div class="input-group" style="position:relative;">
+                <div class="input-group">
                     <label>Tìm chọn học sinh</label>
                     <input type="text" id="exam-student-search" placeholder="Gõ tên hoặc lớp để chọn..." oninput="searchStudentForExam(this.value)" autocomplete="off">
                     <input type="hidden" id="exam-selected-sid">
@@ -633,7 +699,6 @@
                 </div>
             </div>
 
-            <!-- Tổng kết nhập tay -->
             <div style="background:#f8fafc; padding:20px; border-radius:12px; margin-bottom:25px; border:1px solid #cbd5e1;">
                 <h4 style="color:#475569; margin-bottom:15px;"><i class="fas fa-list-alt"></i> Tổng kết lâm sàng</h4>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
@@ -647,16 +712,18 @@
 
             <button onclick="saveManualPhysicalExam()" class="btn btn-success" style="width:100%; justify-content:center; height:50px; font-size:1.1rem;"><i class="fas fa-save"></i> LƯU PHIẾU KHÁM HỌC SINH</button>
         </div>
+    </div>
 
-        <!-- PHƯƠNG PHÁP 2: NHẬP BẰNG FILE EXCEL -->
-        <div id="exam-input-excel" class="form-card" style="display:none; border-left:5px solid #8b5cf6;">
-            <h3 style="color:#8b5cf6; margin-bottom:15px;"><i class="fas fa-file-excel"></i> Nhập dữ liệu khám hàng loạt từ file Excel</h3>
-            <p style="color:var(--text-gray); font-size:0.9rem; margin-bottom:20px;">Tải lên tệp tin Excel chứa danh sách kết quả khám sức khỏe học sinh đúng theo chuẩn 45 cột của Sở GD&ĐT.</p>
+    <!-- ===================================================================== -->
+    <!-- [POPUP 5]: XEM CHI TIẾT PHIẾU KHÁM SỨC KHỎE ĐỊNH KỲ (READ-ONLY CARD) -->
+    <!-- ===================================================================== -->
+    <div id="view-exam-detail-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 10009; align-items: center; justify-content: center; padding: 20px;">
+        <div class="form-card fade-in" style="width: 100%; max-width: 1050px; max-height: 90vh; overflow-y: auto; position: relative; padding: 30px; border-radius: 16px; border-top: 6px solid #0062ff;">
+            <button onclick="document.getElementById('view-exam-detail-modal').style.display='none'" style="position:absolute; top:20px; right:20px; border:none; background:#f1f5f9; width:35px; height:35px; border-radius:50%; font-size:1.5rem; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;">&times;</button>
+            <h3 style="color:#0062ff; margin-top: 0; margin-bottom: 25px;"><i class="fas fa-file-medical"></i> Phiếu Khám Sức Khỏe Chi Tiết</h3>
             
-            <div style="display: flex; gap: 15px; align-items: center; background: #f5f3ff; padding: 20px; border-radius: 12px; border: 1px dashed #c084fc;">
-                <button class="btn btn-primary" style="background:#8b5cf6;" onclick="document.getElementById('excel-exam-upload').click()"><i class="fas fa-cloud-upload-alt"></i> Chọn file Excel tải lên</button>
-                <input type="file" id="excel-exam-upload" accept=".xlsx, .xls" style="display:none;" onchange="handleExcelExamUpload(event)">
-                <div style="font-size:0.85rem; color:#6b21a8;">* Định dạng tệp tin được hỗ trợ: .xlsx, .xls</div>
+            <div id="view-exam-content" style="display: flex; flex-direction: column; gap: 15px;">
+                <!-- JS sẽ tự động đổ thiết kế thẻ khám sức khỏe chi tiết -->
             </div>
         </div>
     </div>
@@ -760,18 +827,57 @@
     </div>
 </section>
 <!-- TAB QUẢN LÝ THÔNG BÁO -->
+<!-- TAB QUẢN LÝ THÔNG BÁO -->
 <section id="tab-send-noti" class="tab-pane" style="display:none;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>Quản lý Thông báo Y tế</h2>
-        <!-- NÚT GỌI FORM TẠO THÔNG BÁO -->
-        <button onclick="document.getElementById('box-new-noti').style.display='block'" class="btn btn-primary" style="background:#10b981; border:none;">
+        <!-- Thay thế nút gọi form trực tiếp thành nút mở Pop-up -->
+        <button onclick="openNewNotiModal()" class="btn btn-primary" style="background:#10b981; border:none;">
             <i class="fas fa-plus"></i> Soạn thông báo mới
         </button>
     </div>
 
-    <!-- KHUNG TẠO THÔNG BÁO (Mặc định ẩn) -->
-    <div id="box-new-noti" class="form-card fade-in" style="display:none; background: #f0fdf4; border: 1px solid #10b981; border-left: 5px solid #10b981; margin-bottom: 30px;">
-        <h3 style="color: #059669; margin-top:0; margin-bottom: 15px;"><i class="fas fa-paper-plane"></i> Soạn thông báo mới</h3>
+    <!-- BỘ LỌC THỜI GIAN THỰC CHO LỊCH SỬ THÔNG BÁO -->
+    <div style="display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px;">
+        <button id="btn-noti-flt-all" onclick="changeNotiFilter('all')" class="btn" style="background:#0062ff; color:white; border-radius:20px; padding:8px 20px;">
+            Tất cả <span id="badge-noti-all" style="background:white; color:#0062ff; padding:2px 8px; border-radius:10px; font-size:0.75rem; margin-left:5px; font-weight:bold;">0</span>
+        </button>
+        <button id="btn-noti-flt-all_school" onclick="changeNotiFilter('all_school')" class="btn" style="background:white; color:#64748b; border:1px solid #cbd5e1; border-radius:20px; padding:8px 20px;">
+            Toàn trường <span id="badge-noti-all_school" style="background:#e2e8f0; color:#475569; padding:2px 8px; border-radius:10px; font-size:0.75rem; margin-left:5px; font-weight:bold;">0</span>
+        </button>
+        <button id="btn-noti-flt-grade" onclick="changeNotiFilter('grade')" class="btn" style="background:white; color:#64748b; border:1px solid #cbd5e1; border-radius:20px; padding:8px 20px;">
+            Khối <span id="badge-noti-grade" style="background:#e2e8f0; color:#475569; padding:2px 8px; border-radius:10px; font-size:0.75rem; margin-left:5px; font-weight:bold;">0</span>
+        </button>
+        <button id="btn-noti-flt-class" onclick="changeNotiFilter('class')" class="btn" style="background:white; color:#64748b; border:1px solid #cbd5e1; border-radius:20px; padding:8px 20px;">
+            Lớp <span id="badge-noti-class" style="background:#e2e8f0; color:#475569; padding:2px 8px; border-radius:10px; font-size:0.75rem; margin-left:5px; font-weight:bold;">0</span>
+        </button>
+        <button id="btn-noti-flt-student" onclick="changeNotiFilter('student')" class="btn" style="background:white; color:#64748b; border:1px solid #cbd5e1; border-radius:20px; padding:8px 20px;">
+            Cá nhân <span id="badge-noti-student" style="background:#e2e8f0; color:#475569; padding:2px 8px; border-radius:10px; font-size:0.75rem; margin-left:5px; font-weight:bold;">0</span>
+        </button>
+    </div>
+
+    <!-- DANH SÁCH THÔNG BÁO ĐÃ GỬI -->
+    <div class="form-card" style="padding: 0;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th style="width: 40%;">Tiêu đề thông báo</th>
+                    <th>Đối tượng nhận</th>
+                    <th>Thời gian gửi</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="admin-noti-list-table"></tbody>
+        </table>
+    </div>
+</section>
+
+<!-- POP-UP MODAL SOẠN THÔNG BÁO MỚI -->
+<div id="new-noti-modal" class="modal" style="display:none; z-index: 10000; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); align-items: center; justify-content: center;">
+    <div class="form-card fade-in" style="width: 100%; max-width: 650px; margin: 20px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto;">
+        <button onclick="closeNewNotiModal()" style="position:absolute; top:20px; right:20px; border:none; background:none; font-size:1.5rem; cursor:pointer; color:var(--text-gray);">&times;</button>
+        
+        <h3 style="color: #059669; margin-top:0; margin-bottom: 20px;"><i class="fas fa-paper-plane"></i> Soạn thông báo mới</h3>
         
         <div class="input-group">
             <label>Tiêu đề thông báo</label>
@@ -780,7 +886,7 @@
         
         <div class="input-group">
             <label>Nội dung chi tiết</label>
-            <textarea id="noti-content" rows="3" placeholder="Nhập nội dung chi tiết..."></textarea>
+            <textarea id="noti-content" rows="4" placeholder="Nhập nội dung chi tiết..."></textarea>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -815,29 +921,12 @@
             </div>
         </div>
         
-        <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <div style="display: flex; gap: 10px; margin-top: 25px;">
             <button onclick="sendStudentNotification()" class="btn btn-primary" style="background: #10b981; flex: 1; justify-content: center;"><i class="fas fa-paper-plane"></i> Gửi Thông Báo</button>
-            <button onclick="document.getElementById('box-new-noti').style.display='none'" class="btn" style="background: #e2e8f0; color: #475569;">Hủy</button>
+            <button onclick="closeNewNotiModal()" class="btn" style="background: #e2e8f0; color: #475569; flex-shrink: 0;">Hủy</button>
         </div>
     </div>
-
-    <!-- DANH SÁCH THÔNG BÁO ĐÃ GỬI -->
-    <h3>Lịch sử đã gửi</h3>
-    <div class="form-card" style="padding: 0;">
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th style="width: 40%;">Tiêu đề thông báo</th>
-                    <th>Đối tượng nhận</th>
-                    <th>Thời gian gửi</th>
-                    <th>Thao tác</th>
-                </tr>
-            </thead>
-            <!-- CHÚ Ý ID Ở ĐÂY, ĐÂY LÀ NƠI JS ĐỔ DỮ LIỆU VÀO -->
-            <tbody id="admin-noti-list-table"></tbody>
-        </table>
-    </div>
-</section>
+</div>
 <div id="print-section" style="display:none;"></div>
 <!-- === POPUP: CHỈNH SỬA HỒ SƠ HỌC SINH (Dùng chung cho Quản lý và Tiếp nhận) === -->
 <div id="edit-student-modal" class="modal" style="display:none; z-index: 10000; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); align-items: center; justify-content: center;">

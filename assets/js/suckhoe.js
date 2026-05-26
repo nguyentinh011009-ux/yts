@@ -4,7 +4,9 @@
 let examCampaignsCache = [];
 let activeCampaignId = null;
 let examStudentCache = null;
-let activeCampaignResults = []; 
+let activeCampaignResults = [];
+let currentStatsResultsCache = [];
+let examResultsListener = null;
 
 // Khởi tạo và lắng nghe các đợt khám khi tab hoạt động
 window.addEventListener('DOMContentLoaded', () => {
@@ -58,18 +60,26 @@ function loadExamCampaigns() {
 }
 
 // 2. TÌM KIẾM HỌC SINH NHẬP THỦ CÔNG
+// 2. TỐI ƯU HÓA TÌM KIẾM HỌC SINH NHẬP THỦ CÔNG
 async function searchStudentForExam(val) {
     const box = document.getElementById('exam-student-suggest');
     if (val.trim().length < 2) { box.style.display = 'none'; return; }
 
-    if (!examStudentCache) {
-        const snap = await db.collection('yt_students').get();
-        examStudentCache = [];
-        snap.forEach(doc => examStudentCache.push({ id: doc.id, ...doc.data() }));
+    // Tận dụng mảng RAM tập trung toàn trang để tránh lãng phí lượt đọc cơ sở dữ liệu
+    let students = [];
+    if (window.allStudents && window.allStudents.length > 0) {
+        students = window.allStudents;
+    } else {
+        if (!examStudentCache) {
+            const snap = await db.collection('yt_students').get();
+            examStudentCache = [];
+            snap.forEach(doc => examStudentCache.push({ id: doc.id, ...doc.data() }));
+        }
+        students = examStudentCache;
     }
 
     const keyword = removeVietnameseTones(val.trim());
-    const matched = examStudentCache.filter(st => {
+    const matched = students.filter(st => {
         const str = `${st.name_search} ${st.class.toLowerCase()} ${st.id.toLowerCase()}`;
         return str.includes(keyword);
     }).slice(0, 10);
@@ -78,7 +88,9 @@ async function searchStudentForExam(val) {
     if (matched.length === 0) {
         box.innerHTML = '<div style="padding:10px; color:red;">Không tìm thấy học sinh!</div>';
     } else {
+        let htmlBuffer = '';
         matched.forEach(st => {
+            // Sử dụng cơ chế tạo Element tạm hoặc gán nhanh
             const item = document.createElement('div');
             item.className = 'suggest-item';
             item.style.padding = '10px';
@@ -97,7 +109,6 @@ async function searchStudentForExam(val) {
     }
     box.style.display = 'block';
 }
-
 // 3. LƯU PHIẾU KHÁM THỦ CÔNG
 async function saveManualPhysicalExam() {
     const sid = document.getElementById('exam-selected-sid').value;
@@ -402,22 +413,20 @@ async function handleExcelExamUpload(event) {
             const map = buildColumnMapping(rawJson);
 
             if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Khớp danh mục học sinh...';
-            const studentsSnap = await db.collection('yt_students').get();
+            const studentsList = await getStudentsList(); 
             let dbStudentsMap = new Map();
-            
-            studentsSnap.forEach(doc => {
-                const s = doc.data();
-                if (s.name && s.class) {
-                    const cleanName = s.name.trim().toLowerCase();
-                    const cleanClass = s.class.trim().toLowerCase();
-                    const dobFormat = s.dob ? s.dob.trim() : '';
+	    studentsList.forEach(s => {
+    		if (s.name && s.class) {
+           	const cleanName = s.name.trim().toLowerCase();
+        	const cleanClass = s.class.trim().toLowerCase();
+        	const dobFormat = s.dob ? s.dob.trim() : '';
 
-                    if (dobFormat) {
-                        dbStudentsMap.set(`${cleanName}_${cleanClass}_${dobFormat}`, { id: doc.id, ...s });
-                    }
-                    dbStudentsMap.set(`${cleanName}_${cleanClass}_`, { id: doc.id, ...s });
-                }
-            });
+        		if (dobFormat) {
+            			dbStudentsMap.set(`${cleanName}_${cleanClass}_${dobFormat}`, { id: s.id, ...s });
+        		}
+        		dbStudentsMap.set(`${cleanName}_${cleanClass}_`, { id: s.id, ...s });
+    		}
+	});
 
             let batches = [];
             let currentBatch = db.batch();
@@ -643,37 +652,50 @@ function loadExamResultsForCampaign(cid, searchQuery = "") {
 
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Đang tải danh sách học sinh...</td></tr>';
 
-    db.collection('yt_exam_results').where('campaignId', '==', cid).onSnapshot(snap => {
-        activeCampaignResults = [];
-        snap.forEach(doc => { activeCampaignResults.push({ id: doc.id, ...doc.data() }); });
-        renderCampaignStudentsTable(searchQuery);
-    });
+    // HUỶ luồng lắng nghe cũ (nếu có) trước khi mở đợt khám mới
+    if (examResultsListener) examResultsListener();
+
+    examResultsListener = db.collection('yt_exam_results')
+        .where('campaignId', '==', cid)
+        .onSnapshot(snap => {
+            activeCampaignResults = [];
+            snap.forEach(doc => { activeCampaignResults.push({ id: doc.id, ...doc.data() }); });
+            renderCampaignStudentsTable(searchQuery);
+        });
 }
+
+// 3. TỐI ƯU HÓA KẾT XUẤT DANH SÁCH HỌC SINH ĐÃ KHÁM ĐỊNH KỲ
+let displayedExamCount = 50; // Giới hạn hiển thị ban đầu 50 em đã khám
+let currentFilteredExams = [];
 
 function renderCampaignStudentsTable(query = "") {
     const tbody = document.getElementById('campaign-students-tbody');
+    if (!tbody) return;
+    
     tbody.innerHTML = '';
 
     const normalizedQuery = removeVietnameseTones(query.trim()).toLowerCase();
-    const filtered = activeCampaignResults.filter(r => {
+    currentFilteredExams = activeCampaignResults.filter(r => {
         const str = removeVietnameseTones(`${r.name} ${r.class}`).toLowerCase();
         return str.includes(normalizedQuery);
     });
 
-    if (filtered.length === 0) {
+    if (currentFilteredExams.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color:#64748b;">Chưa có học sinh hoặc không tìm thấy.</td></tr>';
         return;
     }
 
-    filtered.forEach(r => {
-        tbody.innerHTML += `
+    // Phân trang lấy ra 50 bản ghi trước
+    const sliceData = currentFilteredExams.slice(0, displayedExamCount);
+    let htmlBuffer = '';
+    
+    sliceData.forEach(r => {
+        htmlBuffer += `
             <tr style="transition:0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
                 <td style="font-weight:bold; color:#2563eb; font-size: 0.9rem;">${r.studentId}</td>
                 <td style="font-weight:600; font-size: 0.9rem;">${r.name}</td>
                 <td><span class="badge" style="background:#f1f5f9; color:#475569; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: bold;">Lớp ${r.class}</span></td>
                 <td style="font-size: 0.9rem;">${r.examDate ? new Date(r.examDate).toLocaleDateString('vi-VN') : '--'}</td>
-                
-                <!-- SỬA TẠI ĐÂY: Canh chỉnh nhóm nút thẳng hàng, gọn gàng -->
                 <td style="text-align: right; white-space: nowrap; width: 1%;">
                     <div style="display: inline-flex; gap: 4px; justify-content: flex-end; align-items: center;">
                         <button onclick="viewStudentExamDetail('${r.id}')" class="btn btn-sm" style="background:#eff6ff; color:#2563eb; padding: 5px 10px; font-size: 0.8rem; font-weight:bold; border-radius: 6px; border: none; cursor: pointer; margin: 0;">Xem</button>
@@ -684,6 +706,8 @@ function renderCampaignStudentsTable(query = "") {
                 </td>
             </tr>`;
     });
+    
+    tbody.innerHTML = htmlBuffer;
 }
 function searchExamResults() {
     const q = document.getElementById('exam-search-input').value;
@@ -964,8 +988,10 @@ async function viewCampaignStats(cid, event) {
         let bmiStats = { underweight: 0, normal: 0, overweight: 0, obese: 0 };
         let diseaseStats = { eyes: 0, dental: 0, mental: 0, ent: 0, surgery: 0, internal: 0 };
 
-        snap.forEach(doc => {
-            const v = doc.data();
+        currentStatsResultsCache = [];
+		snap.forEach(doc => {
+    	const v = doc.data();
+    		currentStatsResultsCache.push({ id: doc.id, ...v });
             if (v.height && v.weight) {
                 const h = parseFloat(v.height) / 100;
                 const w = parseFloat(v.weight);
@@ -1000,12 +1026,12 @@ async function viewCampaignStats(cid, event) {
         const pctSurgery = getPercent(diseaseStats.surgery);
 
         grid.innerHTML = `
-            <!-- Cột 1: Phân tích Phân phối Thể trạng BMI -->
+            <!-- CỘT 1: PHÂN TÍCH PHÂN PHỐI THỂ TRẠNG BMI (CỘT TRÁI) -->
             <div style="background: white; border: 1px solid #e2e8f0; padding: 26px; border-radius: 12px;">
                 <h4 style="color: #0f172a; margin-top: 0; margin-bottom: 6px; font-size: 1.1rem; font-weight: 700;">Chỉ số thể trạng BMI</h4>
                 <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 20px 0;">Tổng số học sinh được đo: ${total} học sinh</p>
                 
-                <!-- Biểu đồ thanh ngang phân bổ liên tục (Stacked Progress Chart) -->
+                <!-- Thanh tiến trình gộp phân bổ liên tục -->
                 <div style="display: flex; height: 16px; border-radius: 8px; overflow: hidden; background: #f1f5f9; margin-bottom: 24px;">
                     <div style="width: ${pctNormal}%; background: #10b981; transition: width 0.5s;" title="Bình thường: ${pctNormal}%"></div>
                     <div style="width: ${pctUnder}%; background: #3b82f6; transition: width 0.5s;" title="Thiếu cân: ${pctUnder}%"></div>
@@ -1013,9 +1039,9 @@ async function viewCampaignStats(cid, event) {
                     <div style="width: ${pctObese}%; background: #ef4444; transition: width 0.5s;" title="Béo phì: ${pctObese}%"></div>
                 </div>
 
-                <!-- Bảng số liệu chi tiết tự tạo đồ họa -->
+                <!-- Danh sách chi tiết thể trạng có thể tương tác -->
                 <div style="display: flex; flex-direction: column; gap: 14px;">
-                    <div>
+                    <div onclick="showDrilldownStudents('bmi_normal', 'Danh sách Học sinh có Thể trạng Bình thường')" style="cursor: pointer; padding: 6px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
                         <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px;">
                             <span style="font-weight: 600; color: #1e293b;">Bình thường</span>
                             <span style="color: #475569;">${bmiStats.normal} học sinh (${pctNormal}%)</span>
@@ -1023,7 +1049,7 @@ async function viewCampaignStats(cid, event) {
                         <div style="height: 6px; background: #f1f5f9; border-radius: 3px;"><div style="width: ${pctNormal}%; height: 100%; background: #10b981; border-radius: 3px;"></div></div>
                     </div>
                     
-                    <div>
+                    <div onclick="showDrilldownStudents('bmi_underweight', 'Danh sách Học sinh Thiếu cân')" style="cursor: pointer; padding: 6px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
                         <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px;">
                             <span style="font-weight: 600; color: #1e293b;">Thiếu cân</span>
                             <span style="color: #475569;">${bmiStats.underweight} học sinh (${pctUnder}%)</span>
@@ -1031,7 +1057,7 @@ async function viewCampaignStats(cid, event) {
                         <div style="height: 6px; background: #f1f5f9; border-radius: 3px;"><div style="width: ${pctUnder}%; height: 100%; background: #3b82f6; border-radius: 3px;"></div></div>
                     </div>
 
-                    <div>
+                    <div onclick="showDrilldownStudents('bmi_overweight', 'Danh sách Học sinh Thừa cân')" style="cursor: pointer; padding: 6px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
                         <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px;">
                             <span style="font-weight: 600; color: #1e293b;">Thừa cân</span>
                             <span style="color: #475569;">${bmiStats.overweight} học sinh (${pctOver}%)</span>
@@ -1039,7 +1065,7 @@ async function viewCampaignStats(cid, event) {
                         <div style="height: 6px; background: #f1f5f9; border-radius: 3px;"><div style="width: ${pctOver}%; height: 100%; background: #f59e0b; border-radius: 3px;"></div></div>
                     </div>
 
-                    <div>
+                    <div onclick="showDrilldownStudents('bmi_obese', 'Danh sách Học sinh Béo phì')" style="cursor: pointer; padding: 6px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
                         <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px;">
                             <span style="font-weight: 600; color: #1e293b;">Béo phì</span>
                             <span style="color: #475569;">${bmiStats.obese} học sinh (${pctObese}%)</span>
@@ -1049,14 +1075,13 @@ async function viewCampaignStats(cid, event) {
                 </div>
             </div>
 
-            <!-- Cột 2: Biểu Đồ So Sánh Các Bệnh Lý Phát Hiện -->
+            <!-- CÔT 2: BIỂU ĐỒ BỆNH LÝ PHÁT HIỆN (CỘT PHẢI) -->
             <div style="background: white; border: 1px solid #e2e8f0; padding: 26px; border-radius: 12px;">
                 <h4 style="color: #0f172a; margin-top: 0; margin-bottom: 6px; font-size: 1.1rem; font-weight: 700;">Biểu đồ bệnh lý phát hiện</h4>
                 <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 20px 0;">Tỷ lệ xuất hiện bất thường lâm sàng tại các chuyên khoa</p>
 
                 <div style="display: flex; flex-direction: column; gap: 15px;">
-                    <!-- Biểu đồ cột ngang cho khoa Mắt -->
-                    <div>
+                    <div onclick="showDrilldownStudents('eyes', 'Danh sách bệnh lý về Mắt / Tật khúc xạ')" style="cursor: pointer; padding: 8px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
                         <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
                             <span style="font-weight: 600; color: #1e293b;">Bệnh về Mắt / Tật khúc xạ</span>
                             <span style="font-weight: bold; color: #0062ff;">${diseaseStats.eyes} ca (${pctEyes}%)</span>
@@ -1066,8 +1091,7 @@ async function viewCampaignStats(cid, event) {
                         </div>
                     </div>
 
-                    <!-- Khoa Răng Hàm Mặt -->
-                    <div>
+                    <div onclick="showDrilldownStudents('dental', 'Danh sách bệnh lý Răng Hàm Mặt')" style="cursor: pointer; padding: 8px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
                         <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
                             <span style="font-weight: 600; color: #1e293b;">Bệnh Răng Hàm Mặt</span>
                             <span style="font-weight: bold; color: #0062ff;">${diseaseStats.dental} ca (${pctDental}%)</span>
@@ -1077,8 +1101,7 @@ async function viewCampaignStats(cid, event) {
                         </div>
                     </div>
 
-                    <!-- Cột sống / Ngoại khoa -->
-                    <div>
+                    <div onclick="showDrilldownStudents('surgery', 'Danh sách bất thường Cột sống / Ngoại khoa')" style="cursor: pointer; padding: 8px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
                         <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
                             <span style="font-weight: 600; color: #1e293b;">Cột sống (Còng, vẹo) / Ngoại khớp</span>
                             <span style="font-weight: bold; color: #0062ff;">${diseaseStats.surgery} ca (${pctSurgery}%)</span>
@@ -1088,8 +1111,7 @@ async function viewCampaignStats(cid, event) {
                         </div>
                     </div>
 
-                    <!-- Tai Mũi Họng -->
-                    <div>
+                    <div onclick="showDrilldownStudents('ent', 'Danh sách bất thường Tai Mũi Họng')" style="cursor: pointer; padding: 8px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
                         <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
                             <span style="font-weight: 600; color: #1e293b;">Bất thường Tai Mũi Họng</span>
                             <span style="font-weight: bold; color: #0062ff;">${diseaseStats.ent} ca (${pctEnt}%)</span>
@@ -1099,8 +1121,7 @@ async function viewCampaignStats(cid, event) {
                         </div>
                     </div>
 
-                    <!-- Sức khỏe tâm thần -->
-                    <div>
+                    <div onclick="showDrilldownStudents('mental', 'Danh sách nghi ngờ tâm lý / tâm thần')" style="cursor: pointer; padding: 8px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
                         <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
                             <span style="font-weight: 600; color: #1e293b;">Nghi ngờ tâm lý / tâm thần</span>
                             <span style="font-weight: bold; color: #0062ff;">${diseaseStats.mental} ca (${pctMental}%)</span>
@@ -1380,4 +1401,76 @@ async function printStudentExamResult(recordId) {
         iframe.contentWindow.focus();
         iframe.contentWindow.print();
     }, 1500);
+}
+// HÀM DRILL-DOWN: HIỂN THỊ DANH SÁCH CHI TIẾT THEO TỪNG DANH MỤC THỐNG KÊ
+function showDrilldownStudents(type, categoryName) {
+    const titleElem = document.getElementById('drilldown-modal-title');
+    const tbodyElem = document.getElementById('drilldown-students-tbody');
+    if (!titleElem || !tbodyElem) return;
+
+    titleElem.innerText = categoryName;
+    tbodyElem.innerHTML = '';
+
+    // Tiến hành lọc dữ liệu từ cache theo tham số truyền vào
+    const filtered = currentStatsResultsCache.filter(item => {
+        let heightVal = parseFloat(item.height) / 100;
+        let weightVal = parseFloat(item.weight);
+        let bmi = (heightVal > 0 && weightVal > 0) ? (weightVal / (heightVal * heightVal)) : null;
+
+        switch (type) {
+            case 'bmi_underweight':
+                return bmi !== null && bmi < 18.5;
+            case 'bmi_normal':
+                return bmi !== null && bmi >= 18.5 && bmi < 25.0;
+            case 'bmi_overweight':
+                return bmi !== null && bmi >= 25.0 && bmi < 30.0;
+            case 'bmi_obese':
+                return bmi !== null && bmi >= 30.0;
+            case 'eyes':
+                return item.eyes && item.eyes !== 'Bình thường';
+            case 'dental':
+                return item.dental && item.dental !== 'Bình thường';
+            case 'ent':
+                return item.ent && item.ent !== 'Bình thường';
+            case 'surgery':
+                return item.surgery && item.surgery !== 'Bình thường';
+            case 'mental':
+                return item.mentalHealth && item.mentalHealth !== 'Bình thường';
+            default:
+                return false;
+        }
+    });
+
+    if (filtered.length === 0) {
+        tbodyElem.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #64748b; padding: 20px;">Không có học sinh nào thuộc nhóm này.</td></tr>';
+    } else {
+        filtered.forEach(item => {
+            let detail = '--';
+            if (type.startsWith('bmi')) {
+                let h = parseFloat(item.height) / 100;
+                let w = parseFloat(item.weight);
+                let bmi = w / (h * h);
+                detail = `Nặng: ${item.weight}kg, Cao: ${item.height}cm (BMI: ${bmi.toFixed(1)})`;
+            } else if (type === 'eyes') {
+                detail = item.eyes;
+            } else if (type === 'dental') {
+                detail = item.dental;
+            } else if (type === 'ent') {
+                detail = item.ent;
+            } else if (type === 'surgery') {
+                detail = item.surgery;
+            } else if (type === 'mental') {
+                detail = item.mentalHealth;
+            }
+
+            tbodyElem.innerHTML += `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px; font-weight: 600; color: #1e293b;">${item.name}</td>
+                    <td style="padding: 12px;"><span class="badge" style="background:#eff6ff; color:#2563eb; padding: 4px 8px; border-radius: 6px; font-weight:bold; font-size:0.8rem;">${item.class}</span></td>
+                    <td style="padding: 12px; color: #b91c1c; font-size: 0.9rem; font-weight: 500;">${detail}</td>
+                </tr>`;
+        });
+    }
+
+    document.getElementById('exam-stats-drilldown-modal').style.display = 'flex';
 }

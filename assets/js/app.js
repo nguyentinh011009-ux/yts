@@ -434,6 +434,7 @@ const html = `
     }
 }
 
+// CẬP NHẬT HÀM CHUYỂN TAB TRONG APP.JS
 function switchTab(tabId, btn) {
     // Ẩn tất cả các tab
     document.querySelectorAll('.tab-pane').forEach(tab => tab.style.display = 'none');
@@ -447,17 +448,38 @@ function switchTab(tabId, btn) {
         if (btn) btn.classList.add('active');
     }
 
+    // ====================================================================
+    // 👉 THÊM KHỐI LỆNH NÀY: TỰ ĐỘNG CUỘN VỀ ĐỈNH ĐỂ HIỆN TIÊU ĐỀ & NÚT
+    // ====================================================================
+    window.scrollTo({ top: 0 }); // Cuộn toàn trang web về đầu
+    const mainContent = document.querySelector('.admin-main');
+    if (mainContent) {
+        mainContent.scrollTop = 0; // Cuộn khung nội dung chính về đầu
+    }
+    // ====================================================================
+
+    // --- TỰ ĐỘNG DỌN DẸP BỘ NHỚ TRA CỨU ĐỂ TRÁNH ĐƠ TRANG ---
+    if (tabId === 'tab-yte-tracuu-admin') {
+        adminLookupCache = null; 
+        const lookupInput = document.getElementById('admin-lookup-input');
+        if (lookupInput) lookupInput.value = '';
+        const lookupResult = document.getElementById('admin-lookup-result');
+        if (lookupResult) lookupResult.style.display = 'none';
+    }
+
     // Tự động load dữ liệu khi vào tab tương ứng
     if (tabId === 'tab-posts') loadAdminPosts();
     if (tabId === 'tab-announce') loadAdminAnnouncements();
     if (tabId === 'tab-yte-giuong') loadBeds();
-    if (tabId === 'tab-yte-dulieu') loadStudentData(); // Hàm mới bên dưới
+    if (tabId === 'tab-yte-dulieu') loadStudentData(); 
     if (tabId === 'tab-yte-yeucau') loadStudentTickets();
     if (tabId === 'tab-fusoftx') loadFusoftxTickets();
     if (tabId === 'tab-send-noti') loadAdminNotifications();
 }
 // --- KHỞI CHẠY ---
-renderHome();
+if (document.getElementById('pinned-grid') || document.getElementById('main-slider')) {
+    renderHome();
+}
 // Thống kê truy cập: Tự động tăng và hiển thị số lượt
 const statsRef = db.collection("settings").doc("stats");
 
@@ -469,7 +491,10 @@ statsRef.set({
 // 2. Lắng nghe và hiển thị số lượt truy cập thời gian thực
 statsRef.onSnapshot((doc) => {
     if (doc.exists && doc.data().visitCount) {
-        document.getElementById('visit-count').innerText = doc.data().visitCount.toLocaleString();
+        const visitCountEl = document.getElementById('visit-count');
+        if (visitCountEl) {
+            visitCountEl.innerText = doc.data().visitCount.toLocaleString();
+        }
     }
 });
 // --- 6. XỬ LÝ TRANG CHI TIẾT BÀI VIẾT LẺ ---
@@ -537,32 +562,19 @@ async function searchStudentSuggest(val) {
         return; 
     }
 
-    // 1. Tải danh sách học sinh vào RAM (Chỉ tải 1 lần duy nhất)
-    if (!ytStudentsCache) {
-        try {
-            const snap = await db.collection('yt_students').get();
-            ytStudentsCache = [];
-            snap.forEach(doc => ytStudentsCache.push({ id: doc.id, ...doc.data() }));
-        } catch (e) {
-            console.error("Lỗi tải cache tìm kiếm:", e);
-            return;
-        }
-    }
+    // Tận dụng trực tiếp bộ nhớ đệm dùng chung của trang
+    const students = await getStudentsList();
 
-    // 2. Thuật toán tìm kiếm thông minh (Bỏ dấu + Tách từ + Tìm lộn xộn)
-    // Ví dụ gõ: "A nguyễn 11" vẫn sẽ tìm ra "Nguyễn Văn A - Lớp 11A4"
     const queryRaw = removeVietnameseTones(val.trim());
-    const searchTerms = queryRaw.split(/\s+/); // Tách từng chữ gõ vào thành mảng
+    const searchTerms = queryRaw.split(/\s+/);
 
-    const matched = ytStudentsCache.filter(st => {
-        // Gom tên, lớp, mã ID lại thành 1 chuỗi không dấu để tìm
+    const matched = students.filter(st => {
         const dataString = `${st.name_search} ${st.class.toLowerCase()} ${st.id.toLowerCase()}`;
-        // Yêu cầu chuỗi dataString phải chứa TẤT CẢ các từ mà người dùng gõ vào
         return searchTerms.every(term => dataString.includes(term));
     });
 
     box.innerHTML = '';
-    currentSuggestIndex = -1; // Reset vị trí phím mũi tên
+    currentSuggestIndex = -1;
 
     if (matched.length === 0) { 
         box.innerHTML = '<div style="padding:10px; color:#ef4444; font-size:0.85rem;">Không tìm thấy!</div>';
@@ -570,33 +582,21 @@ async function searchStudentSuggest(val) {
         return; 
     }
 
-    // Lấy tối đa 10 kết quả hiển thị
     const results = matched.slice(0, 10);
-
     results.forEach((d, index) => {
         const item = document.createElement('div');
         item.className = 'suggest-item';
         item.style.padding = '10px 15px';
         item.style.borderBottom = '1px solid #f1f5f9';
         item.style.cursor = 'pointer';
-        
         item.innerHTML = `<strong>${d.name}</strong> - Lớp: <span style="color:#0062ff; font-weight:bold;">${d.class}</span>`;
 
-        // Sự kiện khi rà chuột vào
-        item.onmouseover = () => {
-            currentSuggestIndex = index;
-            updateSuggestHighlight();
-        };
-
-        // Sự kiện khi click chuột
+        item.onmouseover = () => { currentSuggestIndex = index; updateSuggestHighlight(); };
         item.onclick = () => { selectSuggestedStudent(d); };
-        
         box.appendChild(item);
     });
-    
     box.style.display = 'block';
 }
-
 // 3. Hàm xử lý Sự kiện Bàn phím (Lên, Xuống, Enter)
 function handleNameInputKeydown(event) {
     const box = document.getElementById('yt-suggest-box');
@@ -934,33 +934,64 @@ async function exportMedicalData() {
         alert("Lỗi truy xuất dữ liệu in: " + e.message);
     }
 }
-// Tải danh sách hồ sơ học sinh
-async function loadStudentData() {
-    const list = document.getElementById('student-data-list');
-    if (!list) return;
-    list.innerHTML = '<tr><td colspan="5">Đang tải...</td></tr>';
+// 1. Định nghĩa bộ nhớ đệm tập trung và biến phân trang trên RAM
+window.allStudents = []; 
+let displayedStudentCount = 50; // Số lượng hiển thị mặc định ban đầu
+let currentFilteredStudents = [];
+let isBulkMode = false;
+//2. HÀM TẢI DỮ LIỆU TẬP TRUNG TÍCH HỢP BỘ NHỚ ĐỆM SIÊU TỐC (0MS)
+async function getStudentsList() {
+    // 1. Nếu đã có sẵn trong bộ nhớ RAM, trả về ngay lập tức
+    if (window.allStudents && window.allStudents.length > 0) {
+        return window.allStudents;
+    }
+    
+    // 2. Thử đọc từ Bộ nhớ đệm của Trình duyệt (Session Storage)
+    const cachedData = sessionStorage.getItem('vts_students_cache');
+    if (cachedData) {
+        window.allStudents = JSON.parse(cachedData);
+        return window.allStudents;
+    }
 
+    // 3. Nếu chưa có đệm, tiến hành truy xuất từ Firestore (Chỉ chạy 1 lần đầu)
     const snapshot = await db.collection('yt_students').get();
-    window.allStudents = []; // Lưu biến toàn cục để search không cần gọi lại DB
-
+    window.allStudents = [];
     snapshot.forEach(doc => {
         window.allStudents.push({ id: doc.id, ...doc.data() });
     });
-    renderStudentTable(window.allStudents);
+
+    // 4. Lưu dữ liệu vào Bộ nhớ đệm để các lần truy cập tiếp theo tải tức thì (0ms)
+    sessionStorage.setItem('vts_students_cache', JSON.stringify(window.allStudents));
+    return window.allStudents;
+}
+// 3. Hàm tải danh sách học sinh (Nạp mượt mà)
+async function loadStudentData() {
+    const list = document.getElementById('student-data-list');
+    if (!list) return;
+    list.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Đang kết nối cơ sở dữ liệu y tế...</td></tr>';
+
+    try {
+        // Nạp từ cache dùng chung
+        currentFilteredStudents = await getStudentsList(); 
+        displayedStudentCount = 50; // Reset số lượng hiển thị về mặc định
+        renderStudentTablePage();
+    } catch (err) {
+        list.innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Lỗi tải dữ liệu: ${err.message}</td></tr>`;
+    }
 }
 
-// Biến trạng thái chế độ thao tác nhiều
-let isBulkMode = false;
-
-function renderStudentTable(data) {
+// 4. Hàm kết xuất dữ liệu theo trang sử dụng chuỗi đệm (HTML Buffer)
+function renderStudentTablePage() {
     const list = document.getElementById('student-data-list');
-    list.innerHTML = '';
-    data.forEach(hs => {
-        // Nếu có mã HS thì in ra, không có thì in chữ "Chưa có" màu mờ
-        const maHocSinh = hs.studentCode ? hs.studentCode : '<span style="color:#cbd5e1; font-size:0.85rem;">Chưa có</span>';
+    if (!list) return;
 
-        list.innerHTML += `
-            <tr>
+    const sliceData = currentFilteredStudents.slice(0, displayedStudentCount);
+    let htmlBuffer = ''; // Dùng chuỗi tạm để ghi nhận HTML trong bộ nhớ
+
+    sliceData.forEach(hs => {
+        const maHocSinh = hs.studentCode ? hs.studentCode : '<span style="color:#cbd5e1; font-size:0.85rem;">Chưa có</span>';
+        htmlBuffer += `
+            <tr style="transition:0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
                 <td class="col-checkbox" style="display: ${isBulkMode ? 'table-cell' : 'none'};">
                     <input type="checkbox" class="student-checkbox" value="${hs.id}" data-class="${hs.class}" style="width: 18px; height: 18px; cursor: pointer;">
                 </td>
@@ -979,6 +1010,68 @@ function renderStudentTable(data) {
                 </td>
             </tr>`;
     });
+
+    // Chỉ gán vào DOM một lần duy nhất sau khi chạy xong vòng lặp
+    list.innerHTML = htmlBuffer;
+
+    // Xử lý hiển thị nút "Xem thêm"
+    const loadMoreBox = document.getElementById('student-load-more-box');
+    if (loadMoreBox) {
+        if (displayedStudentCount < currentFilteredStudents.length) {
+            loadMoreBox.style.display = 'block';
+        } else {
+            loadMoreBox.style.display = 'none';
+        }
+    }
+}
+
+// 5. Hàm xử lý khi người dùng nhấn "Xem thêm"
+function loadMoreStudents() {
+    displayedStudentCount += 50; 
+    renderStudentTablePage();
+}
+
+// 6. Cập nhật lại bộ lọc tìm kiếm tương thích với cấu trúc phân trang mới
+// 1. HÀM TƯƠNG THÍCH NGƯỢC (BACKWARD COMPATIBILITY WRAPPER)
+// Giải quyết triệt để lỗi sập trang khi các tính năng khác gọi hàm hiển thị cũ
+function renderStudentTable(data) {
+    currentFilteredStudents = data || [];
+    displayedStudentCount = 50; // Reset số lượng phân trang về 50
+    renderStudentTablePage();
+}
+
+// 2. HÀM LỌC TÌM KIẾM HỌC SINH TÍCH HỢP HIỆU ỨNG XOAY TRÒN (LOADING SPINNER)
+function filterStudentTable() {
+    const btn = document.getElementById('btn-search-student');
+    let originalHTML = '';
+
+    // Tạo hiệu ứng xoay tròn trên nút bấm
+    if (btn) {
+        originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tìm...';
+        btn.disabled = true;
+    }
+
+    // Trì hoãn nhẹ 250ms để tạo phản hồi thị giác tốt nhất và tránh treo trình duyệt
+    setTimeout(() => {
+        const keyword = removeVietnameseTones(document.getElementById('search-student-input').value);
+        
+        currentFilteredStudents = window.allStudents.filter(hs => 
+            hs.name_search.includes(keyword) || 
+            hs.class.toLowerCase().includes(keyword) || 
+            hs.id.toLowerCase().includes(keyword) ||
+            (hs.studentCode || '').toLowerCase().includes(keyword)
+        );
+        
+        displayedStudentCount = 50; // Reset về trang đầu tiên
+        renderStudentTablePage(); // Xuất kết quả ra bảng
+
+        // Trả lại trạng thái ban đầu của nút bấm sau khi tìm xong
+        if (btn) {
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        }
+    }, 250);
 }
 // ==========================================
 // HỆ THỐNG XÓA HỒ SƠ (XÓA LẺ & XÓA TẬN GỐC)
@@ -1038,6 +1131,8 @@ async function deleteStudentCompletely(sid) {
 
     // THỰC THI TOÀN BỘ CÁC LỆNH TRÊN TRONG 1 TÍCH TẮC
     await batch.commit();
+    sessionStorage.removeItem('vts_students_cache');
+    window.allStudents = [];
 }
 // 2. Hàm kích hoạt khi bấm nút THÙNG RÁC MÀU ĐỎ (Xóa 1 người)
 async function deleteStudent(sid, name) {
@@ -1180,13 +1275,12 @@ async function executeBulkUpgrade() {
         }
     }
 }
-// Hàm lọc dữ liệu khi gõ vào ô tìm kiếm
-function filterStudentTable() {
-    const keyword = removeVietnameseTones(document.getElementById('search-student-input').value);
-    const filtered = window.allStudents.filter(hs => 
-        hs.name_search.includes(keyword) || hs.class.toLowerCase().includes(keyword) || hs.id.toLowerCase().includes(keyword)
-    );
-    renderStudentTable(filtered);
+// Hàm bắt sự kiện nhấn Enter trên ô tìm kiếm học sinh
+function handleStudentSearchEnter(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        filterStudentTable();
+    }
 }
 function generateStudentId() {
     // Tạo 5 số ngẫu nhiên từ 10000 đến 99999
@@ -1361,6 +1455,9 @@ const dataToSave = {
 
     try {
         await db.collection('yt_students').doc(sid).update(dataToSave);
+	sessionStorage.removeItem('vts_students_cache');
+        window.allStudents = []; 
+        ytStudentsCache = null;
         alert("✅ Cập nhật thông tin thành công!");
         closeEditModal();
         
@@ -2124,7 +2221,8 @@ async function handleExcelUpload(event) {
             for (let batch of batches) {
                 await batch.commit();
             }
-
+	    sessionStorage.removeItem('vts_students_cache');
+            window.allStudents = [];
             btn.innerHTML = originalText; btn.disabled = false;
             
             alert(`✅ Hoàn tất nhập Excel!\n- Tạo mới thành công: ${successCount} hồ sơ.\n- Cập nhật thêm thông tin cho: ${updatedCount} hồ sơ cũ.\n- Bỏ qua (Đã đủ thông tin): ${skippedCount} dòng.`);
@@ -2155,7 +2253,11 @@ async function executeExportStudents() {
     const showWeight = document.getElementById('col-weight').checked;
     const showNote = document.getElementById('col-note').checked;
     const showStCode = document.getElementById('col-stcode').checked;
-    
+    const decryptedPhone = hs.phone ? decryptField(hs.phone) : '';
+    const decryptedParentPhone = hs.parentPhone ? decryptField(hs.parentPhone) : '';
+    const decryptedStreet = hs.street ? decryptField(hs.street) : '';
+
+    const fullAddress = decryptedStreet ? `${decryptedStreet}${hs.ward ? ', ' + hs.ward : ''}` : '';
     // CÁC CỘT MỚI
     const showDob = document.getElementById('col-dob').checked;
     const showGender = document.getElementById('col-gender').checked;
@@ -2240,10 +2342,10 @@ async function executeExportStudents() {
                 ${showHeight ? '<th>Cao</th>' : ''}
                 ${showWeight ? '<th>Nặng</th>' : ''}
                 ${showBmi ? '<th>BMI</th>' : ''}
-                ${showPhone ? '<th>SĐT HS</th>' : ''}
-                ${showParentPhone ? '<th>SĐT PH</th>' : ''}
+                ${showPhone ? `<td style="text-align:center;">${decryptedPhone}</td>` : ''}
+ 		${showParentPhone ? `<td style="text-align:center;">${decryptedParentPhone}</td>` : ''}
                 ${showEmail ? '<th>Email Liên kết</th>' : ''}
-                ${showAddress ? '<th style="width: 15%;">Địa chỉ</th>' : ''}
+		${showAddress ? `<td style="text-align:left; font-size:0.75em;">${fullAddress}</td>` : ''}
                 ${showNote ? '<th style="width: 15%;">Ghi chú LS</th>' : ''}
             </tr>`;
 
@@ -2345,47 +2447,23 @@ async function searchAdminLookupSuggest(val) {
         return; 
     }
 
-    // Nếu chưa có dữ liệu trong bộ nhớ tạm, tiến hành tải 1 lần duy nhất
-    if (!adminLookupCache) {
-        box.innerHTML = '<div style="padding:10px; color:#64748b; text-align:center;"><i class="fas fa-spinner fa-spin"></i> Đang nạp danh sách...</div>';
-        box.style.display = 'block';
-        
-        try {
-            const snap = await db.collection('yt_students').get();
-            adminLookupCache = [];
-            snap.forEach(doc => {
-                adminLookupCache.push({ id: doc.id, ...doc.data() });
-            });
-        } catch (e) {
-            console.error("Lỗi nạp danh sách:", e);
-            return;
-        }
-    }
-
-    // Chuẩn hóa từ khóa người dùng gõ: Xóa dấu tiếng Việt, đưa về chữ thường
+    // Tận dụng bộ nhớ đệm dùng chung
+    const students = await getStudentsList();
     const keyword = removeVietnameseTones(val.trim());
 
-    // THUẬT TOÁN TÌM KIẾM MỞ RỘNG (Fuzzy Search)
-    const filtered = adminLookupCache.filter(st => {
-        // Gom Tên, Mã YT và Lớp lại thành 1 chuỗi dài không dấu để tìm kiếm
+    const filtered = students.filter(st => {
         const searchString = `${st.name_search} ${st.id.toLowerCase()} ${st.class.toLowerCase()}`;
-        
-        // Chỉ cần chuỗi dài này CHỨA từ khóa người dùng gõ là hợp lệ
         return searchString.includes(keyword);
     });
 
     box.innerHTML = '';
-    
     if (filtered.length === 0) { 
-        box.innerHTML = '<div style="padding:10px; color:#ef4444; text-align:center;">Không tìm thấy học sinh nào!</div>';
+        box.innerHTML = '<div style="padding:10px; color:#ef4444; text-align:center;">Không tìm thấy học sinh!</div>';
         box.style.display = 'block';
         return; 
     }
 
-    // Chỉ lấy 10 kết quả tốt nhất để hiển thị cho gọn
-    const results = filtered.slice(0, 10);
-
-    results.forEach(d => {
+    filtered.slice(0, 10).forEach(d => {
         const item = document.createElement('div');
         item.className = 'suggest-item';
         item.innerHTML = `<div style="display:flex; justify-content:space-between;">
@@ -2395,26 +2473,13 @@ async function searchAdminLookupSuggest(val) {
                           <div style="font-size:0.75rem; color:#64748b;">Mã: ${d.id}</div>`;
         item.onclick = () => {
             document.getElementById('admin-lookup-input').value = `${d.name} (${d.class})`;
-            hiddenId.value = d.id; // Lưu ngầm ID vào thẻ ẩn
+            hiddenId.value = d.id;
             box.style.display = 'none';
         };
         box.appendChild(item);
     });
-    
     box.style.display = 'block';
 }
-
-// Hàm dọn dẹp bộ nhớ tạm khi chuyển tab (Đảm bảo dữ liệu luôn mới nhất nếu Admin vừa thêm học sinh)
-const originalSwitchTab = switchTab;
-switchTab = function(tabId, btn) {
-    originalSwitchTab(tabId, btn);
-    if (tabId === 'tab-yte-tracuu-admin') {
-        adminLookupCache = null; // Làm mới lại danh sách tìm kiếm mỗi khi bấm vào tab Tra cứu
-        document.getElementById('admin-lookup-input').value = '';
-        document.getElementById('admin-lookup-result').style.display = 'none';
-    }
-};
-
 // 2. Hàm Thực thi Tra cứu và Đổ giao diện
 async function performAdminFullLookup() {
     const studentId = document.getElementById('admin-lookup-id').value;
@@ -2432,7 +2497,10 @@ async function performAdminFullLookup() {
         const doc = await db.collection('yt_students').doc(studentId).get();
         if (!doc.exists) throw new Error("Hồ sơ không tồn tại!");
         const st = doc.data();
-
+        const decPhone = st.phone ? decryptField(st.phone) : '--';
+        const decParentPhone = st.parentPhone ? decryptField(st.parentPhone) : '--';
+        const decStreet = st.street ? decryptField(st.street) : '';
+        const fullDecAddress = decStreet ? `${decStreet}${st.ward ? ', ' + st.ward : ''}${st.city ? ', ' + st.city : ''}` : '--';
         // B. Lấy Lịch sử Khám bệnh
         const visitsSnap = await db.collection('yt_visits').where('studentId', '==', studentId).get();
         let visits = []; visitsSnap.forEach(v => visits.push(v.data()));
@@ -2476,9 +2544,9 @@ async function performAdminFullLookup() {
                     <table style="width: 100%; font-size: 0.95rem; line-height: 2;">
                         <tr><td style="color:#64748b; width: 40%;">Ngày sinh:</td><td style="font-weight:500;">${st.dob ? new Date(st.dob).toLocaleDateString('vi-VN') : '--'}</td></tr>
                         <tr><td style="color:#64748b;">Giới tính:</td><td style="font-weight:500;">${st.gender || '--'}</td></tr>
-                        <tr><td style="color:#64748b;">SĐT Học sinh:</td><td style="font-weight:500;">${st.phone || '--'}</td></tr>
-                        <tr><td style="color:#64748b;">SĐT Phụ huynh:</td><td style="font-weight:500;">${st.parentPhone || '--'}</td></tr>
-                        <tr><td style="color:#64748b; vertical-align: top;">Địa chỉ:</td><td style="font-weight:500;">${st.street ? `${st.street}, ${st.ward}, ${st.city}` : '--'}</td></tr>
+                        <tr><td style="color:#64748b;">SĐT Học sinh:</td><td style="font-weight:500;">${decPhone}</td></tr>
+            		<tr><td style="color:#64748b;">SĐT Phụ huynh:</td><td style="font-weight:500;">${decParentPhone}</td></tr>
+            		<tr><td style="color:#64748b; vertical-align: top;">Địa chỉ:</td><td style="font-weight:500;">${fullDecAddress}</td>
                         <tr><td style="color:#64748b;">Email liên kết:</td><td style="font-weight:500; color:#0ea5e9;">${st.linkedEmail || 'Chưa liên kết app'}</td></tr>
                     </table>
                 </div>
@@ -2842,17 +2910,8 @@ async function toggleNotiTargetInput() {
         boxStandard.style.display = 'none';
         boxStudents.style.display = 'block';
         
-        // Load ngầm danh sách học sinh 1 lần để tìm kiếm cho mượt
-        if (allStudentsForNotiCache.length === 0) {
-            document.getElementById('noti-search-results').innerHTML = '<div style="padding:10px; text-align:center;"><i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...</div>';
-            document.getElementById('noti-search-results').style.display = 'block';
-            
-            const snap = await db.collection('yt_students').get();
-            allStudentsForNotiCache = [];
-            snap.forEach(doc => allStudentsForNotiCache.push({id: doc.id, ...doc.data()}));
-            
-            document.getElementById('noti-search-results').style.display = 'none';
-        }
+        // Tận dụng trực tiếp bộ nhớ đệm dùng chung của trang
+        allStudentsForNotiCache = await getStudentsList();
     } else {
         boxStandard.style.display = 'block';
         boxStudents.style.display = 'none';
@@ -2860,7 +2919,6 @@ async function toggleNotiTargetInput() {
         if (type === 'class') { lbl.innerText = "Nhập tên Lớp"; input.placeholder = "VD: 11A4"; }
     }
 }
-
 // 2. Thuật toán tìm kiếm hiển thị
 function handleSearchStudentForNoti(query) {
     const resDiv = document.getElementById('noti-search-results');

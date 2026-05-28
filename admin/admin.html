@@ -1266,5 +1266,73 @@
         </div>
     </div>
 </div>
+<!-- ===================================================================== -->
+<!-- [POPUP TỐI ƯU]: CHỌN HỌC SINH IN PHIẾU HÀNG LOẠT -->
+<!-- ===================================================================== -->
+<div id="bulk-print-select-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 10011; align-items: center; justify-content: center; padding: 20px;">
+    <div class="form-card fade-in" style="width: 100%; max-width: 850px; height: 85vh; position: relative; padding: 25px; border-radius: 16px; border-top: 6px solid #10b981; display: flex; flex-direction: column;">
+        <button onclick="document.getElementById('bulk-print-select-modal').style.display='none'" style="position:absolute; top:20px; right:20px; border:none; background:#f1f5f9; width:35px; height:35px; border-radius:50%; font-size:1.5rem; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;">&times;</button>
+        <h3 style="color: #10b981; margin-top: 0; margin-bottom: 20px; font-size: 1.3rem;"><i class="fas fa-print"></i> Chọn Học Sinh In Phiếu Hàng Loạt</h3>
+        
+        <!-- Ô tìm kiếm tối ưu hóa nút bấm -->
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <input type="text" id="bulk-print-search" placeholder="Nhập tên học sinh hoặc lớp học, sau đó nhấn nút Tìm kiếm..." onkeypress="handleBulkPrintSearchKeyPress(event)" style="padding: 10px 15px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; flex: 1; font-size: 0.95rem;">
+            <button onclick="filterBulkPrintStudents()" class="btn btn-primary" style="background: #2563eb; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; white-space: nowrap;"><i class="fas fa-search"></i> Tìm kiếm</button>
+        </div>
+
+        <!-- Bảng hiển thị danh sách -->
+        <div style="flex: 1; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 10px;">
+            <table class="admin-table" style="margin-bottom: 0;">
+                <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 1; box-shadow: 0 1px 0 #cbd5e1;">
+                    <tr>
+                        <th style="width: 50px; text-align: center;">
+                            <input type="checkbox" id="bulk-print-select-all" onchange="toggleBulkPrintSelectAll(this)" style="width: 18px; height: 18px; cursor: pointer;">
+                        </th>
+                        <th>Mã YT</th>
+                        <th>Họ và tên</th>
+                        <th>Lớp</th>
+                        <th>Ngày khám</th>
+                    </tr>
+                </thead>
+                <tbody id="bulk-print-students-tbody">
+                    <!-- Nạp từ JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Khung phân bổ Xem thêm nhằm tiết kiệm RAM của trình duyệt -->
+        <div id="bulk-print-load-more-container" style="text-align: center; padding: 5px 0 15px 0; display: none;">
+            <button onclick="loadMoreBulkPrintStudents()" class="btn" style="background: #e2e8f0; color: #475569; font-weight: bold; padding: 8px 18px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem;">
+                <i class="fas fa-chevron-down"></i> Xem thêm học sinh
+            </button>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+            <span style="font-weight: 600; color: #475569;">Đã lựa chọn: <span id="bulk-print-selected-count" style="color: #10b981; font-size: 1.1rem; font-weight: bold;">0</span> học sinh</span>
+            <button onclick="confirmBulkPrintSelection()" class="btn btn-success" style="background: #10b981; color: white; padding: 10px 25px; border-radius: 8px; font-weight: bold;"><i class="fas fa-arrow-right"></i> Xác nhận danh sách</button>
+        </div>
+    </div>
+</div>
+<!-- ===================================================================== -->
+<!-- [POPUP MỚI]: XÁC NHẬN DANH SÁCH IN HÀNG LOẠT (FINAL CONFIRMATION) -->
+<!-- ===================================================================== -->
+<div id="bulk-print-confirm-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 10012; align-items: center; justify-content: center; padding: 20px;">
+    <div class="form-card fade-in" style="width: 100%; max-width: 600px; max-height: 80vh; position: relative; padding: 25px; border-radius: 16px; border-top: 6px solid #2563eb; display: flex; flex-direction: column;">
+        <button onclick="document.getElementById('bulk-print-confirm-modal').style.display='none'" style="position:absolute; top:20px; right:20px; border:none; background:#f1f5f9; width:35px; height:35px; border-radius:50%; font-size:1.5rem; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;">&times;</button>
+        <h3 style="color: #2563eb; margin-top: 0; margin-bottom: 15px; font-size: 1.3rem;"><i class="fas fa-check-double"></i> Kiểm tra lại danh sách in</h3>
+        <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 15px;">Hệ thống sẽ tự động ghép 2 phiếu kết quả của 2 học sinh xếp chồng lên nhau trên 1 trang giấy A4 đứng để thuận tiện cắt rời.</p>
+
+        <div style="flex: 1; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #f8fafc; margin-bottom: 20px;">
+            <div id="bulk-print-confirm-list" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Chi tiết tóm tắt danh sách sẽ nạp từ JS -->
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button onclick="document.getElementById('bulk-print-confirm-modal').style.display='none'" class="btn" style="background: #e2e8f0; color: #475569; font-weight: bold; padding: 10px 20px; border-radius: 8px;">Quay lại sửa</button>
+            <button onclick="executeBulkPrintSubmit()" class="btn btn-primary" style="background: #2563eb; display: flex; align-items: center; gap: 8px; font-weight: bold; padding: 10px 25px; border-radius: 8px;"><i class="fas fa-print"></i> Tiến hành in hàng loạt</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>

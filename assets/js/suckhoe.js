@@ -51,6 +51,7 @@ function loadExamCampaigns() {
                         <span style="font-size: 0.8rem; color: #64748b; font-weight: bold;">MÃ ĐỢT KHÁM: ${doc.id}</span>
                     </div>
                     <div style="display: flex; gap: 10px;">
+                        <button onclick="openBulkPrintModal('${doc.id}', event)" class="btn" style="background: #ecfdf5; color: #10b981; border: 1px solid #a7f3d0; font-weight: bold;"><i class="fas fa-print"></i> In Phiếu</button>
                         <button onclick="viewCampaignStats('${doc.id}', event)" class="btn" style="background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; font-weight: bold;"><i class="fas fa-chart-pie"></i> Thống Kê</button>
                         <button onclick="deleteExamCampaign('${doc.id}', event)" class="btn" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; font-weight: bold;"><i class="fas fa-trash-alt"></i> Xóa Đợt Khám</button>
                     </div>
@@ -1473,4 +1474,633 @@ function showDrilldownStudents(type, categoryName) {
     }
 
     document.getElementById('exam-stats-drilldown-modal').style.display = 'flex';
+}
+// =====================================================================
+// KHU VỰC QUẢN LÝ VÀ PHÂN TÍCH LOGIC IN HÀNG LOẠT (2 PHIẾU A5 DỌC TRÊN 1 TỜ A4 NGANG)
+// =====================================================================
+let bulkPrintCampaignId = null;
+let bulkPrintSelectedIds = new Set();
+let bulkPrintLimit = 50; // Giới hạn số lượng hiển thị ban đầu để tránh quá tải DOM
+let bulkPrintCurrentFiltered = []; // Bộ lọc kết quả tạm thời trong bộ nhớ RAM
+
+// 1. Mở cửa sổ chọn học sinh (Tối ưu hóa tránh đọc lại database nếu trùng đợt khám)
+async function openBulkPrintModal(cid, event) {
+    if (event) event.stopPropagation();
+    bulkPrintCampaignId = cid;
+    bulkPrintSelectedIds.clear();
+    bulkPrintLimit = 50; // Reset phân trang
+
+    const selectAllCheck = document.getElementById('bulk-print-select-all');
+    if (selectAllCheck) selectAllCheck.checked = false;
+
+    const countLabel = document.getElementById('bulk-print-selected-count');
+    if (countLabel) countLabel.innerText = '0';
+
+    const searchField = document.getElementById('bulk-print-search');
+    if (searchField) searchField.value = '';
+
+    const modal = document.getElementById('bulk-print-select-modal');
+    if (modal) modal.style.display = 'flex';
+
+    const tbody = document.getElementById('bulk-print-students-tbody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Đang tải danh sách học sinh...</td></tr>';
+
+    // KIỂM TRA BỘ ĐỆM: Nếu trùng khớp campaign đang hoạt động và đã có kết quả trong cache
+    if (activeCampaignId === cid && activeCampaignResults && activeCampaignResults.length > 0) {
+        renderBulkPrintStudentsTable();
+    } else {
+        try {
+            const snap = await db.collection('yt_exam_results')
+                .where('campaignId', '==', cid)
+                .get();
+
+            activeCampaignResults = [];
+            snap.forEach(doc => {
+                activeCampaignResults.push({ id: doc.id, ...doc.data() });
+            });
+            activeCampaignId = cid; // Đồng bộ ID đợt khám hoạt động hiện tại
+
+            renderBulkPrintStudentsTable();
+        } catch (err) {
+            alert("Lỗi khi kết nối cơ sở dữ liệu: " + err.message);
+        }
+    }
+}
+
+// 2. Kết xuất danh sách học sinh sử dụng cơ chế Lazy Loading phân khúc DOM
+function renderBulkPrintStudentsTable() {
+    const query = document.getElementById('bulk-print-search').value;
+    const tbody = document.getElementById('bulk-print-students-tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    const normalizedQuery = removeVietnameseTones(query.trim()).toLowerCase();
+
+    // Lọc dữ liệu trực tiếp trên mảng bộ nhớ RAM, không phát sinh lượt đọc database
+    bulkPrintCurrentFiltered = activeCampaignResults.filter(r => {
+        const str = removeVietnameseTones(`${r.name} ${r.class} ${r.studentId}`).toLowerCase();
+        return str.includes(normalizedQuery);
+    });
+
+    if (bulkPrintCurrentFiltered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color:#64748b;">Không tìm thấy kết quả phù hợp.</td></tr>';
+        document.getElementById('bulk-print-load-more-container').style.display = 'none';
+        return;
+    }
+
+    // Chỉ kết xuất số lượng bản ghi tương ứng với bulkPrintLimit hiện tại
+    const visibleData = bulkPrintCurrentFiltered.slice(0, bulkPrintLimit);
+
+    let htmlBuffer = '';
+    visibleData.forEach(r => {
+        const isChecked = bulkPrintSelectedIds.has(r.id);
+        htmlBuffer += `
+            <tr style="transition:0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+                <td style="text-align: center;">
+                    <input type="checkbox" class="bulk-print-item-checkbox" data-id="${r.id}" ${isChecked ? 'checked' : ''} onchange="handleBulkPrintItemSelect(this, '${r.id}')" style="width: 18px; height: 18px; cursor: pointer;">
+                </td>
+                <td style="font-weight:bold; color:#2563eb; font-size: 0.9rem;">${r.studentId}</td>
+                <td style="font-weight:600; font-size: 0.9rem;">${r.name}</td>
+                <td><span class="badge" style="background:#f1f5f9; color:#475569; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: bold;">Lớp ${r.class}</span></td>
+                <td style="font-size: 0.9rem;">${r.examDate ? new Date(r.examDate).toLocaleDateString('vi-VN') : '--'}</td>
+            </tr>`;
+    });
+    tbody.innerHTML = htmlBuffer;
+
+    // Kiểm soát hiển thị nút "Xem thêm" dựa trên dữ liệu lọc thực tế
+    const loadMoreContainer = document.getElementById('bulk-print-load-more-container');
+    if (loadMoreContainer) {
+        if (bulkPrintCurrentFiltered.length > bulkPrintLimit) {
+            loadMoreContainer.style.display = 'block';
+        } else {
+            loadMoreContainer.style.display = 'none';
+        }
+    }
+
+    // Cập nhật trạng thái ô checkbox "Chọn tất cả" của phần tử hiển thị
+    const selectAllCheck = document.getElementById('bulk-print-select-all');
+    if (selectAllCheck) {
+        selectAllCheck.checked = visibleData.length > 0 && visibleData.every(r => bulkPrintSelectedIds.has(r.id));
+    }
+}
+
+// 3. Tải thêm dữ liệu hiển thị (Lazy Loading)
+function loadMoreBulkPrintStudents() {
+    bulkPrintLimit += 50;
+    renderBulkPrintStudentsTable();
+}
+
+// 4. Kích hoạt bộ lọc tìm kiếm thủ công (Tránh lag khi nhập ký tự)
+function filterBulkPrintStudents() {
+    bulkPrintLimit = 50; // Reset phân trang khi tìm kiếm từ khóa mới
+    renderBulkPrintStudentsTable();
+}
+
+// 5. Lắng nghe phím Enter trên ô nhập liệu tìm kiếm
+function handleBulkPrintSearchKeyPress(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        filterBulkPrintStudents();
+    }
+}
+
+// 6. Xử lý chọn từng hàng đơn lẻ
+function handleBulkPrintItemSelect(cb, recordId) {
+    if (cb.checked) {
+        bulkPrintSelectedIds.add(recordId);
+    } else {
+        bulkPrintSelectedIds.delete(recordId);
+    }
+    updateBulkPrintSelectedCount();
+}
+
+// 7. Chọn hoặc bỏ chọn tất cả các học sinh đang hiển thị trong bộ lọc
+function toggleBulkPrintSelectAll(cb) {
+    if (cb.checked) {
+        bulkPrintCurrentFiltered.forEach(r => {
+            bulkPrintSelectedIds.add(r.id);
+        });
+    } else {
+        bulkPrintCurrentFiltered.forEach(r => {
+            bulkPrintSelectedIds.delete(r.id);
+        });
+    }
+
+    // Cập nhật trạng thái hiển thị của các checkbox đang hiển thị trên giao diện
+    const checkboxes = document.querySelectorAll('.bulk-print-item-checkbox');
+    checkboxes.forEach(item => {
+        const id = item.getAttribute('data-id');
+        item.checked = bulkPrintSelectedIds.has(id);
+    });
+
+    updateBulkPrintSelectedCount();
+}
+
+// Cập nhật hiển thị số lượng học sinh đã chọn
+function updateBulkPrintSelectedCount() {
+    const countElem = document.getElementById('bulk-print-selected-count');
+    if (countElem) {
+        countElem.innerText = bulkPrintSelectedIds.size;
+    }
+}
+
+// 8. Hiển thị Popup xác nhận và tóm tắt danh sách in
+// 8. Hiển thị Popup xác nhận và tóm tắt danh sách in (Đã tối ưu hóa và sắp xếp theo Lớp/Tên)
+function confirmBulkPrintSelection() {
+    if (bulkPrintSelectedIds.size === 0) {
+        return alert("Vui lòng chọn ít nhất một học sinh để thực hiện in phiếu!");
+    }
+
+    const confirmList = document.getElementById('bulk-print-confirm-list');
+    if (!confirmList) return;
+
+    let htmlBuffer = '';
+    let count = 1;
+    const maxPreview = 48; // Giới hạn số lượng hiển thị xem trước để bảo toàn hiệu năng DOM
+    let renderedCount = 0;
+
+    // Lọc danh sách học sinh đã chọn
+    let selectedRecords = activeCampaignResults.filter(r => bulkPrintSelectedIds.has(r.id));
+    
+    // Tiến hành sắp xếp theo Lớp và Tên trước khi render
+    sortStudentsByClassAndName(selectedRecords);
+    
+    const totalSelected = selectedRecords.length;
+
+    for (let r of selectedRecords) {
+        if (renderedCount < maxPreview) {
+            htmlBuffer += `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.85rem;">
+                    <div><strong>${count++}. ${r.name}</strong> - Lớp ${r.class}</div>
+                    <div style="color: #64748b; font-family: monospace;">Mã YT: ${r.studentId}</div>
+                </div>`;
+            renderedCount++;
+        } else {
+            break;
+        }
+    }
+
+    if (totalSelected > maxPreview) {
+        const remainingCount = totalSelected - maxPreview;
+        htmlBuffer += `
+            <div style="text-align: center; padding: 12px; background: #e0f2fe; color: #0369a1; border-radius: 8px; font-weight: bold; font-size: 0.9rem; border: 1px dashed #7dd3fc; margin-top: 5px;">
+                <i class="fas fa-ellipsis-h"></i> và ${remainingCount} học sinh khác trong danh sách lựa chọn...
+            </div>`;
+    }
+
+    confirmList.innerHTML = htmlBuffer;
+
+    document.getElementById('bulk-print-confirm-modal').style.display = 'flex';
+}
+async function getStudentsListCached() {
+    if (window.allStudents && window.allStudents.length > 0) {
+        return window.allStudents;
+    }
+    if (examStudentCache && examStudentCache.length > 0) {
+        return examStudentCache;
+    }
+    if (typeof getStudentsList === 'function') {
+        const list = await getStudentsList();
+        examStudentCache = list;
+        return list;
+    }
+    // Backup dự phòng nếu các biến trên chưa được khởi tạo
+    const snap = await db.collection('yt_students').get();
+    examStudentCache = [];
+    snap.forEach(doc => examStudentCache.push({ id: doc.id, ...doc.data() }));
+    return examStudentCache;
+}
+// 9. Thực hiện in hàng loạt: Ghép song song 2 bản ghi A5 dọc vào 1 trang A4 ngang
+// 9. Thực hiện in hàng loạt: Ghép song song 2 bản ghi A5 dọc vào 1 trang A4 ngang (Đã tối ưu hóa sắp xếp và bộ đệm)
+async function executeBulkPrintSubmit() {
+    let selectedRecords = activeCampaignResults.filter(r => bulkPrintSelectedIds.has(r.id));
+    if (selectedRecords.length === 0) return;
+
+    // Thay đổi trạng thái nút bấm trong quá trình xử lý biên dịch
+    const btnSubmit = document.querySelector("#bulk-print-confirm-modal .btn-primary");
+    const originalText = btnSubmit ? btnSubmit.innerHTML : '';
+    if (btnSubmit) {
+        btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang nạp và sắp xếp dữ liệu...';
+        btnSubmit.disabled = true;
+    }
+
+    // Thực hiện sắp xếp danh sách in theo Lớp và Tên chính tiếng Việt
+    sortStudentsByClassAndName(selectedRecords);
+
+    // Tải danh sách học sinh gốc từ bộ đệm RAM để đồng bộ dữ liệu
+    let studentsMap = new Map();
+    try {
+        const list = await getStudentsListCached();
+        list.forEach(s => {
+            studentsMap.set(s.id, s);
+        });
+    } catch (e) {
+        console.warn("Lỗi đồng bộ thông tin học sinh gốc:", e);
+    }
+
+    const campaign = examCampaignsCache.find(c => c.id === bulkPrintCampaignId);
+    let pagesHtml = '';
+
+    // Xử lý ghép cặp song song hai học sinh đã sắp xếp lên cùng một tờ giấy
+    for (let i = 0; i < selectedRecords.length; i += 2) {
+        const record1 = selectedRecords[i];
+        const record2 = selectedRecords[i + 1] || null;
+
+        pagesHtml += `
+            <div class="print-page">
+                <div class="print-card">
+                    ${generateSingleExamResultHtml(record1, campaign, studentsMap.get(record1.studentId))}
+                </div>
+                <div class="print-divider"></div>
+                <div class="print-card">
+                    ${record2 ? 
+                        generateSingleExamResultHtml(record2, campaign, studentsMap.get(record2.studentId)) : `
+                        <div class="print-card-empty">
+                            - Kết thúc danh sách in -
+                        </div>
+                    `}
+                </div>
+            </div>
+        `;
+    }
+
+    if (btnSubmit) {
+        btnSubmit.innerHTML = originalText;
+        btnSubmit.disabled = false;
+    }
+
+    document.getElementById('bulk-print-confirm-modal').style.display = 'none';
+    document.getElementById('bulk-print-select-modal').style.display = 'none';
+
+    // Gọi luồng in cô lập thông qua iframe ẩn
+    const iframeId = 'bulk-print-iframe';
+    let iframe = document.getElementById(iframeId);
+    if (iframe) {
+        document.body.removeChild(iframe);
+    }
+
+    iframe = document.createElement('iframe');
+    iframe.id = iframeId;
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>In Phiếu Sức Khỏe Hàng Loạt - THPT Võ Thị Sáu</title>
+            <style>
+                @page {
+                    size: A4 landscape;
+                    margin: 5mm 10mm 7mm 10mm;
+                }
+                html, body {
+                    margin: 0;
+                    padding: 0;
+                    width: 297mm;
+                    height: 210mm;
+                    background: white;
+                    color: #1e293b;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                }
+                .print-page {
+                    width: 297mm;
+                    height: 210mm;
+                    box-sizing: border-box;
+                    padding: 10mm 12mm; /* Thiết lập lề vật lý cho trang giấy A4 (Top-Bottom: 10mm, Left-Right: 12mm) */
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: space-between;
+                    align-items: flex-start; /* Căn lề trên cùng, triệt tiêu hiện tượng kéo giãn dọc gây khoảng trắng */
+                    page-break-after: always;
+                    overflow: hidden;
+                    background: white;
+                }
+                .print-card {
+                    width: 133mm; /* Chiều rộng tối ưu cho 1 phiếu A5 dọc trên tờ A4 nằm ngang */
+                    height: auto; /* Chiều cao tự nhiên theo luồng nội dung như bản in đơn */
+                    box-sizing: border-box;
+                    display: flex;
+                    flex-direction: column;
+                    overflow: hidden;
+                }
+                .print-divider {
+                    border-left: 1px dashed #cbd5e1;
+                    height: 185mm; /* Chiều cao cố định của vạch cắt, không kéo giãn nội dung xung quanh */
+                    width: 1px;
+                    margin: 0;
+                }
+                .print-card-empty {
+                    width: 133mm;
+                    height: 185mm;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border: 1.5px dashed #e2e8f0;
+                    border-radius: 8px;
+                    color: #94a3b8;
+                    font-style: italic;
+                    font-size: 9pt;
+                    text-align: center;
+                    box-sizing: border-box;
+                }
+            </style>
+        </head>
+        <body>
+            ${pagesHtml}
+        </body>
+        </html>
+    `);
+    doc.close();
+
+    setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+    }, 1500);
+}
+// 10. Hàm cấu trúc dữ liệu hiển thị phiếu A5 dọc (Đảm bảo chính xác 100% so với bản đơn)
+// 10. Hàm cấu trúc dữ liệu hiển thị phiếu A5 dọc (Đồng bộ cấu trúc in đơn lẻ)
+function generateSingleExamResultHtml(r, campaign, stData) {
+    let gender = "Chưa xác định";
+    let studentCode = "--";
+    let age = "N/A";
+
+    if (stData) {
+        gender = stData.gender || "Chưa xác định";
+        studentCode = stData.studentCode || stData.code || "--";
+        
+        const dob = stData.dob || r.dob || "";
+        if (dob) {
+            let birthYear = NaN;
+            if (dob.includes('-')) birthYear = parseInt(dob.split('-')[0]);
+            else if (dob.includes('/')) {
+                let parts = dob.split('/');
+                if (parts[2] && parts[2].length === 4) birthYear = parseInt(parts[2]);
+                else if (parts[0] && parts[0].length === 4) birthYear = parseInt(parts[0]);
+            }
+            if (!isNaN(birthYear)) {
+                age = new Date().getFullYear() - birthYear;
+            }
+        }
+    }
+
+    let bmiVal = "--";
+    let bmiClass = "Chưa có chỉ số";
+    let bmiColor = "#10b981"; // Màu mặc định (Xanh lá)
+    if (r.height && r.weight) {
+        let h = parseFloat(r.height) / 100;
+        let w = parseFloat(r.weight);
+        if (h > 0 && w > 0) {
+            let bmi = w / (h * h);
+            bmiVal = bmi.toFixed(1);
+            if (bmi < 18.5) { bmiClass = "Thiếu cân"; bmiColor = "#3b82f6"; }
+            else if (bmi < 25.0) { bmiClass = "Bình thường"; bmiColor = "#10b981"; }
+            else if (bmi < 30.0) { bmiClass = "Thừa cân"; bmiColor = "#f59e0b"; }
+            else { bmiClass = "Béo phì"; bmiColor = "#ef4444"; }
+        }
+    }
+
+    return `
+        <div style="width: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.35; box-sizing: border-box; background: white;">
+            
+            <!-- ĐƯỜNG VIỀN ĐẦU TRANG -->
+            <div style="height: 4px; background: #2563eb; width: 100%; border-radius: 2px; margin-bottom: 12px;"></div>
+
+            <!-- TIÊU ĐỀ ĐẦU TRANG -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 6px;">
+                <div style="line-height: 1.3;">
+                    <div style="font-size: 8pt; font-weight: 800; color: #1e293b; text-transform: uppercase; margin-top: 1px;">Trường THPT Võ Thị Sáu- BRVT</div>
+                    <div style="font-size: 7pt; font-weight: 600; color: #64748b; text-transform: uppercase;">Phòng Y Tế</div>
+                </div>
+                <div style="text-align: right; line-height: 1.3;">
+                    <div style="font-size: 8pt; font-weight: bold; color: #2563eb; font-family: monospace;">MÃ PHIẾU: ${r.id}</div>
+                    <img src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${r.id}&scale=2&height=6&includetext=false" alt="Barcode" style="height: 18px; max-width: 150px; opacity: 0.85;">
+                </div>
+            </div>
+
+            <!-- TIÊU ĐỀ LỚN CHÍNH -->
+            <div style="text-align: center; margin-bottom: 15px; margin-top: 5px;">
+                <h1 style="margin: 0 0 3px 0; font-size: 13pt; font-weight: 800; color: #1e3a8a; letter-spacing: 0.5px;">PHIẾU KẾT QUẢ KHÁM SỨC KHỎE</h1>
+            </div>
+
+            <!-- MỤC 1: THÔNG TIN ĐỢT KHÁM -->
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.3px;">1. Thông tin đợt khám</div>
+                <table style="width: 100%; font-size: 8pt; border-collapse: collapse;">
+                    <tr>
+                        <td style="width: 18%; color: #64748b; padding: 2.5px 0;">Đợt khám:</td>
+                        <td style="width: 47%; font-weight: 600; color: #0f172a; padding: 2.5px 0;">${campaign ? campaign.name : 'Khám định kỳ học sinh'}</td>
+                        <td style="width: 15%; color: #64748b; padding: 2.5px 0;">Ngày khám:</td>
+                        <td style="width: 20%; font-weight: 600; color: #0f172a; padding: 2.5px 0;">${r.examDate ? new Date(r.examDate).toLocaleDateString('vi-VN') : '--'}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #64748b; padding: 2.5px 0;">Cơ sở y tế:</td>
+                        <td style="font-weight: 600; color: #0f172a; padding: 2.5px 0;">${r.facility || '--'}</td>
+                        <td style="color: #64748b; padding: 2.5px 0;">Ngày lập:</td>
+                        <td style="font-weight: 600; color: #0f172a; padding: 2.5px 0;">${r.reportDate ? new Date(r.reportDate).toLocaleDateString('vi-VN') : '--'}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- MỤC 2: THÔNG TIN HỌC SINH -->
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.3px;">2. Thông tin học sinh</div>
+                <table style="width: 100%; font-size: 8pt; border-collapse: collapse; margin-bottom: 4px;">
+                    <tr>
+                        <td style="width: 18%; color: #64748b; padding: 2.5px 0;">Họ và tên:</td>
+                        <td style="width: 47%; font-weight: 700; font-size: 9.5pt; color: #1e3a8a; padding: 2.5px 0;">${r.name}</td>
+                        <td style="width: 15%; color: #64748b; padding: 2.5px 0;">Lớp:</td>
+                        <td style="width: 20%; font-weight: 700; color: #2563eb; padding: 2.5px 0;">${r.class}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #64748b; padding: 2.5px 0;">Giới tính:</td>
+                        <td style="font-weight: 600; color: #0f172a; padding: 2.5px 0;">${gender}</td>
+                        <td style="color: #64748b; padding: 2.5px 0;">Tuổi:</td>
+                        <td style="font-weight: 600; color: #0f172a; padding: 2.5px 0;">${age}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #64748b; padding: 2.5px 0;">Mã Y tế:</td>
+                        <td style="font-weight: 600; color: #0f172a; padding: 2.5px 0; font-family: monospace;">${r.studentId}</td>
+                        <td style="color: #64748b; padding: 2.5px 0;">Mã HS:</td>
+                        <td style="font-weight: 600; color: #0f172a; padding: 2.5px 0;">${studentCode}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- MỤC 3: THÔNG TIN THỂ LỰC -->
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.3px;">3. Thông tin thể lực</div>
+                <table style="width: 100%; font-size: 8pt; border-collapse: collapse;">
+                    <tr>
+                        <td style="width: 18%; color: #64748b; padding: 2.5px 0;">Cân nặng:</td>
+                        <td style="width: 32%; font-weight: 600; color: #0f172a; padding: 2.5px 0;">${r.weight ? r.weight + ' kg' : '--'}</td>
+                        <td style="width: 15%; color: #64748b; padding: 2.5px 0;">Chiều cao:</td>
+                        <td style="width: 35%; font-weight: 600; color: #0f172a; padding: 2.5px 0;">${r.height ? r.height + ' cm' : '--'}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #64748b; padding: 2.5px 0;">Chỉ số BMI:</td>
+                        <td style="font-weight: 600; color: #0f172a; padding: 2.5px 0;">${bmiVal}</td>
+                        <td style="color: #64748b; padding: 2.5px 0;">Đánh giá:</td>
+                        <td style="font-weight: 700; color: ${bmiColor}; padding: 2.5px 0;">${bmiClass}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- MỤC 4: KẾT QUẢ CHUYÊN KHOA -->
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.3px;">4. Kết quả chuyên khoa</div>
+                <table style="width: 100%; font-size: 8pt; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden;">
+                    <thead>
+                        <tr style="background-color: #f1f5f9; border-bottom: 1.5px solid #cbd5e1;">
+                            <th style="width: 35%; border-right: 1px solid #e2e8f0; padding: 5px; text-align: left; font-weight: 700; color: #475569;">Chuyên khoa</th>
+                            <th style="width: 65%; padding: 5px; text-align: left; font-weight: 700; color: #475569;">Kết quả khám lâm sàng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Mắt / Thị lực</td>
+                            <td style="padding: 4px 6px; color: #0f172a;">${r.eyes || 'Bình thường'}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Răng Hàm Mặt</td>
+                            <td style="padding: 4px 6px; color: #0f172a;">${r.dental || 'Bình thường'}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Tai Mũi Họng</td>
+                            <td style="padding: 4px 6px; color: #0f172a;">${r.ent || 'Bình thường'}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Nội khoa</td>
+                            <td style="padding: 4px 6px; color: #0f172a;">${r.internalMedicine || 'Bình thường'}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Ngoại khoa / Xương khớp</td>
+                            <td style="padding: 4px 6px; color: #0f172a;">${r.surgery || 'Bình thường'}</td>
+                        </tr>
+                        <tr>
+                            <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Tâm lý / Tâm thần</td>
+                            <td style="padding: 4px 6px; color: #0f172a;">${r.mentalHealth || 'Bình thường'}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- MỤC 5: TỔNG KẾT ĐÁNH GIÁ CHUNG -->
+            <div style="margin-bottom: 15px; background: #fffbeb; padding: 10px 12px; border-radius: 8px; border: 1px solid #fef3c7;">
+                <div style="font-size: 8.5pt; font-weight: 800; color: #b45309; border-bottom: 1px solid #fde68a; padding-bottom: 3px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.3px;">5. Tổng kết đánh giá chung</div>
+                <table style="width: 100%; font-size: 8pt; border-collapse: collapse; line-height: 1.4;">
+                    <tr>
+                        <td style="width: 25%; color: #92400e; padding: 2px 0; vertical-align: top;">Phát triển thể chất:</td>
+                        <td style="width: 75%; font-weight: 600; color: #1e293b; padding: 2px 0;">${r.summary.physicalDev || 'Bình thường'}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #92400e; padding: 2px 0; vertical-align: top;">Tâm thần vận động:</td>
+                        <td style="font-weight: 600; color: #1e293b; padding: 2px 0;">${r.summary.mentalDev || 'Bình thường'}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #92400e; padding: 2px 0; vertical-align: top;">Sức khỏe chung:</td>
+                        <td style="font-weight: 600; color: #1e293b; padding: 2px 0;">${r.summary.healthStatus || 'Đủ sức khỏe học tập'}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #b91c1c; padding: 2px 0; vertical-align: top; font-weight: bold;">Bệnh lý lưu ý:</td>
+                        <td style="color: #b91c1c; padding: 2px 0; font-weight: bold;">${r.summary.notes || 'Không'}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #92400e; padding: 2px 0; vertical-align: top;">Yêu cầu theo dõi:</td>
+                        <td style="font-style: italic; color: #1e293b; padding: 2px 0;">${r.summary.advice || 'Tự theo dõi sức khỏe tại phòng y tế học đường'}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- CHÂN TRANG -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1.5px solid #cbd5e1; padding-top: 6px; margin-top: 8px;">
+                <div style="font-size: 7pt; color: #64748b; font-style: italic; line-height: 1.35; width: 72%;">
+                    Dữ liệu được trích xuất tự động từ Hệ thống Y tế số
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; width: 28%; justify-content: flex-end;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=https://yteso-thptvothisaubrvt.netlify.app/" alt="QR" style="width: 32px; height: 32px;">
+                </div>
+            </div>
+
+        </div>
+    `;
+}
+// Hàm phụ trợ tách tên tiếng Việt: Trích xuất tên chính và phần họ đệm riêng biệt
+function getVietnameseNameParts(fullName) {
+    if (!fullName) return { firstName: "", restName: "" };
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length === 1) {
+        return { firstName: parts[0], restName: "" };
+    }
+    const firstName = parts[parts.length - 1];
+    const restName = parts.slice(0, parts.length - 1).join(" ");
+    return { firstName, restName };
+}
+
+// Hàm phụ trợ sắp xếp mảng học sinh theo Lớp (tăng dần) và Tên chính tiếng Việt (alphabetical)
+function sortStudentsByClassAndName(records) {
+    return records.sort((a, b) => {
+        // 1. Sắp xếp theo Lớp (numeric: true giúp sắp xếp lớp 10A2 đứng trước 10A10 chính xác)
+        const classA = a.class || "";
+        const classB = b.class || "";
+        const classComp = classA.localeCompare(classB, 'vi', { numeric: true });
+        if (classComp !== 0) return classComp;
+
+        // 2. Sắp xếp theo Tên chính (Từ cuối cùng của chuỗi)
+        const partsA = getVietnameseNameParts(a.name);
+        const partsB = getVietnameseNameParts(b.name);
+
+        const firstNameComp = partsA.firstName.localeCompare(partsB.firstName, 'vi');
+        if (firstNameComp !== 0) return firstNameComp;
+
+        // 3. Nếu trùng Tên chính, đối chiếu tiếp đến phần Họ và Tên đệm
+        return partsA.restName.localeCompare(partsB.restName, 'vi');
+    });
 }

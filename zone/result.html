@@ -283,7 +283,7 @@
             isGenerating = true;
             try {
                 const prompt = `
-                    Bạn là một chuyên gia tâm lý và cán bộ y tế học đường.
+                    Bạn là một chuyên gia tâm lý và cán bộ y tế học đường, tên là VTS Health AI.
                     Hãy phân tích và đưa ra lời khuyên cá nhân hóa cho học sinh dựa trên kết quả bài khảo sát sau:
                     - Tên bài khảo sát: "${data.testTitle}"
                     - Tổng điểm: ${data.score}
@@ -292,10 +292,11 @@
                     ${data.answerDetails ? data.answerDetails.join('\n') : 'Không có chi tiết'}
                     
                     Yêu cầu:
-                    1. Xưng hô thân thiện (VD: "Chào em...").
+                    1. Xưng hô thân thiện (VD: "Chào bạn...").
                     2. Phân tích ngắn gọn tại sao em lại có kết quả này dựa trên các đáp án đã chọn.
                     3. Đưa ra 2-3 lời khuyên cụ thể, tích cực, dễ áp dụng.
-                    4. Viết dưới 300 từ, văn phong ấm áp, động viên.
+                    4. Viết dưới 100 từ, văn phong ấm áp, động viên.
+					5. Viết thêm dòng lưu ý: Đây là bài trắc nghiệm tầm soát, không thay thế cho chẩn đoán y khoa
                 `;
 
                 const AI_SERVER_URL = "https://vts-health-ai.yte-thptvothisaubrvt.workers.dev";

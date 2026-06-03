@@ -1,27 +1,27 @@
-/* ====== NÂNG CẤP KHUNG PHỦ NGOÀI (MODAL OVERLAY BLUR) ====== */
+/* ====== KHUNG CHE PHỦ NGOÀI (LÀM MỜ NHẸ ĐỂ GIỮ HÌNH NỀN CHO KÍNH KHÚC XẠ) ====== */
 #post-editor-modal.modal {
-    background: rgba(15, 23, 42, 0.45) !important; /* Phông tối sương mù nhẹ */
-    backdrop-filter: blur(20px) !important; /* THẦN CHÚ: Triệt tiêu độ nét của toàn bộ trang web phía sau */
-    -webkit-backdrop-filter: blur(20px) !important;
+    background: rgba(15, 23, 42, 0.35) !important; /* Phông tối nhẹ nhàng */
+    backdrop-filter: blur(5px) !important; /* Làm mờ nhẹ để thấu kính bên trong khúc xạ rõ hơn */
+    -webkit-backdrop-filter: blur(5px) !important;
     display: none;
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
 }
 
-/* ====== NÂNG CẤP THẤU KÍNH LIQUID GLASS CHỐNG XUYÊN THẤU CHI TIẾT ====== */
+/* ====== KHUNG NỀN TRONG SUỐT HOÀN TOÀN NHƯ GIỌT NƯỚC (LIQUID GLASS PLATFORM) ====== */
 .apple-liquid-glass {
     position: relative;
     z-index: 10;
     transform: translate3d(0, 0, 0);
-    border-radius: 28px !important;
+    border-radius: 32px !important; /* Bo góc cong ngậm nước lớn */
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     padding: 40px !important;
 }
 
-/* Bắt buộc nội dung nổi lên lớp trên cùng */
+/* Bắt buộc nội dung và các ô soạn thảo đục nổi lên trên kính */
 .apple-liquid-glass > * {
     position: relative;
     z-index: 12;
@@ -36,91 +36,104 @@
     height: 100%;
     width: 100%;
     top: 0; left: 0;
-    border-radius: 28px !important;
+    border-radius: 32px !important;
     transform: translate3d(0, 0, 0);
 }
 
-/* LỚP KHÚC XẠ NỀN (Z-INDEX: 9) - Tăng độ dày sương mù lên 0.75 để triệt tiêu hoàn toàn chữ nền */
+/* LỚP 1 (KHÚC XẠ NỀN - z-index: 9): Trong suốt hoàn toàn không bị đục sương mù */
 .apple-liquid-glass::before {
     z-index: 9;
-    background: rgba(248, 250, 252, 0.75) !important; /* Slate sáng đục, bảo vệ tầm nhìn */
-    backdrop-filter: blur(30px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+    background: rgba(255, 255, 255, 0.02) !important; /* Siêu trong suốt dạng nước tinh khiết */
+    backdrop-filter: blur(20px) saturate(180%) !important; /* Tạo độ cong khúc xạ tự nhiên */
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
 }
 
-/* LỚP PHẢN QUANG & SHADOW GIỌT NƯỚC (Z-INDEX: 11) */
+/* LỚP 2 (ĐỘ BÓNG & VIỀN HIGHLIGHT - z-index: 11): Tạo phản quang rìa giọt nước */
 .apple-liquid-glass::after {
     z-index: 11;
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.01);
     box-shadow: 
-        inset 1px 1px 3px 1px rgba(255, 255, 255, 0.8), /* Viền sáng thấu kính */
-        inset -1px -2px 3px 1px rgba(15, 23, 42, 0.15), /* Bóng tối rìa nước */
-        0px 20px 50px rgba(15, 23, 42, 0.18) !important; /* Đổ bóng xa dịu mắt */
+        inset 1px 1.5px 2px 0px rgba(255, 255, 255, 0.85),  /* Ánh sáng rìa trắng phía trên trái */
+        inset -1px -2px 3px 1px rgba(0, 0, 0, 0.12),        /* Bóng khúc xạ tối phía dưới phải */
+        0px 20px 50px rgba(0, 0, 0, 0.22) !important;        /* Đổ bóng tự nhiên lên trang web phía dưới */
 }
 
-/* ====== THIẾT KẾ LẠI TOÀN BỘ Ô NHẬP LIỆU CHUẨN APPLE DESIGN ====== */
-.apple-liquid-glass .input-group {
-    margin-bottom: 22px;
-}
-
+/* ====== CÁC KHUNG NHẬP LIỆU BÊN TRONG THIẾT KẾ ĐỤC (FROSTED OPAQUE) ====== */
 .apple-liquid-glass .input-group label {
     display: block;
     font-size: 0.82rem;
-    font-weight: 600;
-    color: #475569;
+    font-weight: 700;
+    color: #334155;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 8px; /* Tăng khoảng cách nhãn để tránh dính chữ */
+    margin-bottom: 8px;
 }
 
 .apple-liquid-glass .input-group input,
 .apple-liquid-glass .input-group textarea {
     width: 100%;
     padding: 14px 18px !important;
-    background: rgba(255, 255, 255, 0.85) !important; /* Tăng độ đục nền input để bảo vệ chữ soạn thảo */
-    border: 1px solid rgba(203, 213, 225, 0.7) !important;
-    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.88) !important; /* Dạng màu trắng đục chất lượng cao để hiển thị rõ chữ */
+    border: 1px solid rgba(255, 255, 255, 0.9) !important;
+    border-radius: 14px !important;
     color: #0f172a !important;
     font-family: inherit;
     font-size: 0.95rem !important;
     transition: all 0.2s ease !important;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+    box-shadow: 
+        inset 0 1px 2px rgba(0, 0, 0, 0.04), 
+        0 4px 12px rgba(0, 0, 0, 0.02) !important;
     box-sizing: border-box;
 }
 
-/* Khi đang gõ, chuyển nền sáng hoàn toàn để tương phản tối đa */
 .apple-liquid-glass .input-group input:focus,
 .apple-liquid-glass .input-group textarea:focus {
     background: #ffffff !important;
     border-color: #0062ff !important;
-    box-shadow: 0 0 0 3px rgba(0, 98, 255, 0.15) !important;
+    box-shadow: 0 0 0 3px rgba(0, 98, 255, 0.18) !important;
     outline: none;
 }
 
-/* ====== ĐỒNG BỘ LẠI PHONG CÁCH NÚT THỦY TINH ====== */
-.apple-liquid-glass .liquid-glass-btn {
-    background: rgba(255, 255, 255, 0.6) !important;
-    border: 1px solid rgba(203, 213, 225, 0.8) !important;
-    color: #1e293b !important;
-    border-radius: 12px !important;
-    font-weight: 600 !important;
-    transition: all 0.15s ease !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
-}
-
-.apple-liquid-glass .liquid-glass-btn:hover {
-    background: #ffffff !important;
-    border-color: #0062ff !important;
-    color: #0062ff !important;
-    box-shadow: 0 4px 12px rgba(0, 98, 255, 0.1) !important;
-}
-
+/* ====== CÁC NÚT BẤM BÊN TRONG KHUNG KÍNH ====== */
+/* Nút AI viên thuốc thủy tinh màu ngọc đục nhẹ */
 .apple-liquid-glass .ai-btn {
-    background: rgba(16, 185, 129, 0.1) !important;
-    border: 1px solid rgba(16, 185, 129, 0.25) !important;
-    color: #047857 !important;
+    background: rgba(16, 185, 129, 0.8) !important; /* Màu lục bảo đục quý phái */
+    color: white !important;
+    border: 1px solid rgba(16, 185, 129, 0.9) !important;
+    font-weight: 700 !important;
+    border-radius: 14px !important;
+    height: 46px;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2) !important;
 }
 .apple-liquid-glass .ai-btn:hover {
-    background: rgba(16, 185, 129, 0.2) !important;
-    border-color: #10b981 !important;
+    background: #10b981 !important;
+    transform: translateY(-1px);
+}
+
+/* Nút Lưu (Đục hoàn toàn) */
+.apple-liquid-glass .btn-save-opaque {
+    background: linear-gradient(135deg, #0062ff 0%, #0052d4 100%) !important;
+    color: white !important;
+    border-radius: 14px !important;
+    font-weight: 700 !important;
+    padding: 12px 35px !important;
+    box-shadow: 0 4px 12px rgba(0, 98, 255, 0.2) !important;
+}
+.apple-liquid-glass .btn-save-opaque:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 15px rgba(0, 98, 255, 0.3) !important;
+}
+
+/* Nút Hủy (Đục xám nhạt tinh tế) */
+.apple-liquid-glass .btn-cancel-opaque {
+    background: rgba(241, 245, 249, 0.9) !important;
+    color: #475569 !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    border-radius: 14px !important;
+    font-weight: 700 !important;
+    padding: 12px 25px !important;
+}
+.apple-liquid-glass .btn-cancel-opaque:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
 }

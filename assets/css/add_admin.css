@@ -1,57 +1,83 @@
-/* HIỆU ỨNG THỦY TINH LỎNG TRONG SUỐT (APPLE LIQUID GLASS STYLE) */
-.liquid-glass-modal {
-    /* Sử dụng tone trắng sương mù cực nhẹ để bắt sáng */
-    background: rgba(255, 255, 255, 0.55) !important;
+/* ====== APPLE LIQUID GLASS CARD (MÔ PHỎNG GIỌT NƯỚC THỰC TẾ) ====== */
+.apple-liquid-glass {
+    position: relative;
+    z-index: 10;
+    transform: translate3d(0, 0, 0);
+    border-radius: 2.5rem !important; /* Bo góc cong ngậm nước lớn giống liquidGlassLarge */
+    background: transparent !important; /* Bắt buộc trong suốt để hiển thị lớp khúc xạ nền */
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Đảm bảo toàn bộ nội dung, nút bấm nằm ở lớp cao nhất (z-index: 12) trên lớp kính */
+.apple-liquid-glass > * {
+    position: relative;
+    z-index: 12;
+}
+
+/* Khởi tạo kích thước lớp đệm nền và lớp kính bóng */
+.apple-liquid-glass::after, 
+.apple-liquid-glass::before {
+    content: "";
+    display: block;
+    pointer-events: none;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    top: 0; left: 0;
+    border-radius: 2.5rem !important;
+    transform: translate3d(0, 0, 0);
+}
+
+/* LỚP 1 (DƯỚI CÙNG - z-index: 9): Tạo mờ khúc xạ (Backdrop-filter) */
+.apple-liquid-glass::before {
+    z-index: 9;
+    background-color: rgba(255, 255, 255, 0.05); /* Lấy sáng nhẹ */
+    backdrop-filter: blur(8px); /* Độ mờ vừa phải tăng tính khúc xạ */
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* LỚP 2 (TRÊN CÙNG - z-index: 11): Tạo phản quang rìa trắng phía trên và bóng mờ phía dưới */
+.apple-liquid-glass::after {
+    z-index: 11;
+    background: rgba(255, 255, 255, 0.03);
     
-    /* Độ mờ sâu chuẩn hệ điều hành macOS */
-    backdrop-filter: blur(40px) saturate(200%) !important;
-    -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
-    
-    border-radius: 24px !important;
-    
-    /* Viền kính siêu mảnh, bắt sáng trắng phản chiếu */
-    border: 1px solid rgba(255, 255, 255, 0.5) !important;
-    
-    /* Đổ bóng môi trường (Ambient Occlusion) sâu và mềm, không bị gắt */
+    /* Áp dụng chuẩn shadow khúc xạ kép từ ví dụ liquidGlassLarge của bạn */
     box-shadow: 
-        0 4px 30px rgba(0, 0, 0, 0.03),
-        0 30px 70px rgba(0, 0, 0, 0.15),
-        inset 0 1px 1px rgba(255, 255, 255, 0.8) !important;
+        inset 1.5px 1.5px 3px 1px rgba(255, 255, 255, 0.45),   /* Viền sáng ngậm nước góc trên-trái */
+        inset -1.5px -2px 3px 1px rgba(49, 49, 49, 0.22),     /* Bóng khúc xạ tối góc dưới-phải */
+        0px 15px 45px rgba(0, 0, 0, 0.12);                    /* Đổ bóng dịu của toàn bộ khối nước */
 }
 
-/* Đồng bộ các ô nhập liệu chìm vào thấu kính (Frosted Input Fields) */
-.liquid-glass-modal .input-group input,
-.liquid-glass-modal .input-group textarea,
-.liquid-glass-modal .input-group select {
-    background: rgba(255, 255, 255, 0.35) !important;
-    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+/* ====== ĐỒNG BỘ CÁC Ô NHẬP LIỆU CHÌM MỊN VÀO KHỐI THỦY TINH ====== */
+.apple-liquid-glass .input-group input,
+.apple-liquid-glass .input-group textarea,
+.apple-liquid-glass .input-group select {
+    background: rgba(255, 255, 255, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
     border-radius: 12px !important;
-    color: #1d1d1f !important;
-    font-size: 0.95rem !important;
-    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+    color: #1e293b !important;
+    box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.03) !important;
 }
 
-/* Hiệu ứng tương tác nhạy khi focus */
-.liquid-glass-modal .input-group input:focus,
-.liquid-glass-modal .input-group textarea:focus {
-    background: rgba(255, 255, 255, 0.8) !important;
+.apple-liquid-glass .input-group input:focus,
+.apple-liquid-glass .input-group textarea:focus {
+    background: rgba(255, 255, 255, 0.75) !important;
     border-color: #0062ff !important;
     box-shadow: 0 0 0 3px rgba(0, 98, 255, 0.15) !important;
 }
 
-/* Định hình lại nút AI sang dạng viên thuốc thủy tinh màu lục bảo dịu nhẹ */
-.apple-glass-btn {
-    background: rgba(16, 185, 129, 0.12) !important;
-    color: #065f46 !important;
-    border: 1px solid rgba(16, 185, 129, 0.25) !important;
-    font-weight: 600 !important;
-    transition: all 0.2s ease !important;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+/* ====== NÚT BẤM DẠNG LIQUID BUTTON TRONG SUỐT ====== */
+.liquid-glass-btn {
+    background: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    color: #1e293b;
+    font-weight: 600;
+    transition: 150ms;
 }
-.apple-glass-btn:hover {
-    background: rgba(16, 185, 129, 0.2) !important;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+
+.liquid-glass-btn:hover {
+    background: rgba(255, 255, 255, 0.4);
 }

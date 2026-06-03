@@ -1,0 +1,28 @@
+/* HIỆU ỨNG GIỌT NƯỚC (LIQUID GLASS EFFECT) */
+.liquid-glass-modal {
+    background: rgba(255, 255, 255, 0.45) !important;
+    backdrop-filter: blur(25px) saturate(200%) !important;
+    -webkit-backdrop-filter: blur(25px) saturate(200%) !important;
+    border-radius: 32px !important;
+    
+    /* Viền mô phỏng khúc xạ ánh sáng rìa giọt nước */
+    border: 1.5px solid rgba(255, 255, 255, 0.55) !important;
+    
+    /* Đổ bóng kép: Bóng sâu mềm bên dưới và bóng sáng phản chiếu bên trong */
+    box-shadow: 
+        0 25px 50px -12px rgba(0, 0, 0, 0.15),
+        inset 0 2px 0px rgba(255, 255, 255, 0.8),
+        inset 0 -1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Tùy chỉnh thanh cuộn siêu mỏng mềm mại bên trong modal để không làm xấu form */
+#post-editor-modal .form-card::-webkit-scrollbar {
+    width: 6px;
+}
+#post-editor-modal .form-card::-webkit-scrollbar-track {
+    background: transparent;
+}
+#post-editor-modal .form-card::-webkit-scrollbar-thumb {
+    background: rgba(0, 98, 255, 0.15);
+    border-radius: 10px;
+}

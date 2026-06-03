@@ -293,7 +293,9 @@ function renderAdminPostsTable() {
     }
 
     filtered.forEach(p => {
-        const dateStr = p.createdAt ? new Date(p.createdAt.seconds * 1000).toLocaleDateString() : 'Vừa xong';
+	const dateStr = (p.createdAt && p.createdAt.seconds) 
+    ? new Date(p.createdAt.seconds * 1000).toLocaleDateString('vi-VN') 
+    : 'Vừa xong';
         body.innerHTML += `
             <tr>
                 <td>

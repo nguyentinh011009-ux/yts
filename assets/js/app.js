@@ -177,9 +177,35 @@ async function handleLogout() {
         });
     }
 }
+// Các biến bổ sung cho bộ lọc danh sách bài viết
+let cachedAdminPosts = [];
+let currentPostFilter = 'all';
+
+// Hàm thay đổi trạng thái bộ lọc (Yêu cầu 3)
+function changePostFilter(filterType) {
+    currentPostFilter = filterType;
+    
+    const filters = ['all', 'pinned', 'regular'];
+    filters.forEach(f => {
+        const btn = document.getElementById(`btn-post-flt-${f}`);
+        if (btn) {
+            if (f === filterType) {
+                btn.style.background = '#0062ff';
+                btn.style.color = 'white';
+                btn.style.borderColor = '#0062ff';
+            } else {
+                btn.style.background = 'white';
+                btn.style.color = '#64748b';
+                btn.style.borderColor = '#cbd5e1';
+            }
+        }
+    });
+    
+    renderAdminPostsTable();
+}
 // --- 3. QUẢN LÝ BÀI VIẾT (CRUD) ---
 function showPostEditor(postId = null) {
-    document.getElementById('post-editor').style.display = 'block';
+    document.getElementById('post-editor-modal').style.display = 'flex';
     if (!postId) {
         document.getElementById('editor-mode-title').innerText = "Thêm sản phẩm mới";
         document.getElementById('edit-post-id').value = "";
@@ -187,11 +213,19 @@ function showPostEditor(postId = null) {
         document.getElementById('p-cover').value = "";
         document.getElementById('p-content').value = "";
         document.getElementById('p-pin').checked = false;
+        
+        // Bài viết mới thì không cần hiển thị lựa chọn cập nhật thời gian
+        document.getElementById('p-update-time').checked = true;
+        document.getElementById('lbl-update-time').style.display = 'none';
+    } else {
+        // Chỉnh sửa bài viết cũ thì hiện nút tick tùy chọn
+        document.getElementById('p-update-time').checked = false;
+        document.getElementById('lbl-update-time').style.display = 'flex';
     }
 }
 
 function hidePostEditor() {
-    document.getElementById('post-editor').style.display = 'none';
+    document.getElementById('post-editor-modal').style.display = 'none';
 }
 
 async function savePost() {
@@ -200,48 +234,82 @@ async function savePost() {
         title: document.getElementById('p-title').value,
         cover: document.getElementById('p-cover').value,
         content: document.getElementById('p-content').value,
-        isPinned: document.getElementById('p-pin').checked,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        isPinned: document.getElementById('p-pin').checked
     };
 
     if (!data.title || !data.content) return alert("Vui lòng nhập đủ Tiêu đề và Nội dung!");
 
     try {
         if (id) {
+            // Kiểm tra nút tick tùy chọn cập nhật thời gian (Yêu cầu 2)
+            const shouldUpdateTime = document.getElementById('p-update-time').checked;
+            if (shouldUpdateTime) {
+                data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            }
             await db.collection("posts").doc(id).update(data);
             alert("✅ Đã cập nhật bài viết!");
         } else {
+            // Đăng bài mới luôn luôn gán thời gian hiện tại
+            data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
             await db.collection("posts").add(data);
             alert("✅ Đã đăng bài mới thành công!");
         }
         hidePostEditor();
-    } catch (e) { alert("Lỗi khi lưu: " + e.message); }
+    } catch (e) { 
+        alert("Lỗi khi lưu: " + e.message); 
+    }
 }
 
 function loadAdminPosts() {
+    const body = document.getElementById('admin-post-list-body');
+    if (!body) return;
+    body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;"><i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...</td></tr>';
+
     db.collection("posts").orderBy("createdAt", "desc").onSnapshot(snap => {
-        const body = document.getElementById('admin-post-list-body');
-        if(!body) return;
-        body.innerHTML = '';
+        cachedAdminPosts = [];
         snap.forEach(doc => {
-            const p = doc.data();
-            body.innerHTML += `
-                <tr>
-                    <td>
-                        <div style="display:flex; gap:10px; align-items:center;">
-                            <img src="${p.cover}" style="width:50px; height:50px; border-radius:8px; object-fit:cover;">
-                            <strong>${p.title}</strong>
-                        </div>
-                    </td>
-                    <td>${p.isPinned ? '<span style="color:#f59e0b">📌 Đã ghim</span>' : '<span style="color:#94a3b8">Thường</span>'}</td>
-                    <td>${p.createdAt ? new Date(p.createdAt.seconds*1000).toLocaleDateString() : 'Vừa xong'}</td>
-                    <td style="text-align:right;">
-                        <button onclick="editPost('${doc.id}')" class="btn" style="padding:8px; background:#f1f5f9; color:#0062ff;"><i class="fas fa-edit"></i></button>
-                        <button onclick="deletePost('${doc.id}')" class="btn" style="padding:8px; background:#fef2f2; color:#ef4444;"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            `;
+            cachedAdminPosts.push({ id: doc.id, ...doc.data() });
         });
+        renderAdminPostsTable();
+    });
+}
+
+function renderAdminPostsTable() {
+    const body = document.getElementById('admin-post-list-body');
+    if (!body) return;
+    body.innerHTML = '';
+    
+    // Lọc dữ liệu hiển thị (Yêu cầu 3)
+    let filtered = cachedAdminPosts;
+    if (currentPostFilter === 'pinned') {
+        filtered = cachedAdminPosts.filter(p => p.isPinned);
+    } else if (currentPostFilter === 'regular') {
+        filtered = cachedAdminPosts.filter(p => !p.isPinned);
+    }
+    
+    if (filtered.length === 0) {
+        body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color:#94a3b8;">Không có bài viết nào trong mục này.</td></tr>';
+        return;
+    }
+
+    filtered.forEach(p => {
+        const dateStr = p.createdAt ? new Date(p.createdAt.seconds * 1000).toLocaleDateString() : 'Vừa xong';
+        body.innerHTML += `
+            <tr>
+                <td>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <img src="${p.cover}" style="width:50px; height:50px; border-radius:8px; object-fit:cover;">
+                        <strong>${p.title}</strong>
+                    </div>
+                </td>
+                <td>${p.isPinned ? '<span style="color:#f59e0b">📌 Đã ghim</span>' : '<span style="color:#94a3b8">Thường</span>'}</td>
+                <td>${dateStr}</td>
+                <td style="text-align:right;">
+                    <button onclick="editPost('${p.id}')" class="btn" style="padding:8px; background:#f1f5f9; color:#0062ff;"><i class="fas fa-edit"></i></button>
+                    <button onclick="deletePost('${p.id}')" class="btn" style="padding:8px; background:#fef2f2; color:#ef4444;"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>
+        `;
     });
 }
 

@@ -207,7 +207,7 @@ function changePostFilter(filterType) {
 function showPostEditor(postId = null) {
     document.getElementById('post-editor-modal').style.display = 'flex';
     if (!postId) {
-        document.getElementById('editor-mode-title').innerText = "Thêm sản phẩm mới";
+        document.getElementById('editor-mode-title').innerText = "Thêm bài viết mới";
         document.getElementById('edit-post-id').value = "";
         document.getElementById('p-title').value = "";
         document.getElementById('p-cover').value = "";

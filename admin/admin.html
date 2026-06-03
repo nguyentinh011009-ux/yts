@@ -159,62 +159,75 @@
                     <button class="btn btn-primary" onclick="showPostEditor()"><i class="fas fa-plus"></i> Thêm bài mới</button>
                 </div>
 
-               <!-- POPUP MODAL SOẠN THẢO BÀI VIẾT (APPLE LIQUID GLASS STYLE) -->
+               <!-- POPUP MODAL SOẠN THẢO BÀI VIẾT (APPLE LIQUID GLASS STYLE - FIX NÚT CỐ ĐỊNH & CUỘN TRƠN) -->
 <div id="post-editor-modal" class="modal">
-    <!-- Khung kính giọt nước chính -->
-    <div class="form-card fade-in apple-liquid-glass" style="width: 95%; max-width: 1150px; max-height: 90vh; overflow-y: auto; position: relative; padding: 40px; box-sizing: border-box;">
+    <!-- Khung kính giọt nước chính, khống chế chiều cao cố định 85% màn hình -->
+    <div class="form-card fade-in apple-liquid-glass" style="width: 95%; max-width: 1150px; height: 85vh; padding: 30px 40px !important; box-sizing: border-box;">
         
-        <!-- Nút đóng giọt nước góc phải -->
-        <button onclick="hidePostEditor()" style="position:absolute; top:25px; right:25px; border:none; background: rgba(0,0,0,0.04); width:32px; height:32px; border-radius:50%; font-size:1.2rem; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.08)'; this.style.color='#1d1d1f';" onmouseout="this.style.background='rgba(0,0,0,0.04)'; this.style.color='#64748b';">&times;</button>
-        
-        <h3 id="editor-mode-title" style="margin-bottom:30px; color:#1e293b; font-size: 1.6rem; font-weight: bold; letter-spacing: -0.5px;"><i class="fas fa-pen-nib"></i> Soạn thảo bài viết</h3>
-        <input type="hidden" id="edit-post-id">
-        
-        <!-- Nút AI viên thuốc thủy tinh lục bảo đục -->
-        <button type="button" onclick="toggleAIGenerator()" class="btn ai-btn" style="width: 100%; justify-content: center; font-size: 0.95rem; margin-bottom: 25px;">
-            <i class="fas fa-magic"></i> Viết bài tự động bằng AI (Theo Form Chuẩn)
-        </button>
-
-        <div id="ai-generator-box" style="display: none; background: rgba(240, 253, 244, 0.4); padding: 20px; border-radius: 16px; border: 1px dashed rgba(16, 185, 129, 0.3); margin-bottom: 25px;">
-            <label style="font-weight: bold; color: #065f46; font-size: 0.9rem; display: block; margin-bottom: 10px;">
-                <i class="fas fa-robot"></i> Dán nội dung thô (Chữ, hình ảnh, link...):
-            </label>
-            <textarea id="ai-raw-content" rows="4" placeholder="Nhập nội dung thô tại đây..." style="width: 100%; padding: 15px; border-radius: 10px; border: 1px solid rgba(16, 185, 129, 0.15); outline: none; line-height: 1.6; background: rgba(255,255,255,0.7);"></textarea>
-            <button type="button" id="btn-generate-ai" onclick="generateHTMLwithAI()" class="btn" style="background: #10b981; color: white; margin-top: 15px; border-radius: 10px; font-weight: 600;">
-                <i class="fas fa-cogs"></i> Tạo HTML & Điền tự động
+        <!-- ========================================== -->
+        <!-- 1. HEADER (CỐ ĐỊNH PHÍA TRÊN KÍNH) -->
+        <!-- ========================================== -->
+        <div style="flex-shrink: 0; margin-bottom: 20px; position: relative; padding-right: 40px;">
+            <!-- Nút đóng tối giản -->
+            <button onclick="hidePostEditor()" style="position:absolute; top: -5px; right: -10px; border:none; background: rgba(0,0,0,0.04); width:32px; height:32px; border-radius:50%; font-size:1.2rem; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.08)'; this.style.color='#1d1d1f';" onmouseout="this.style.background='rgba(0,0,0,0.04)'; this.style.color='#64748b';">&times;</button>
+            
+            <h3 id="editor-mode-title" style="color:#1e293b; font-size: 1.5rem; font-weight: bold; margin: 0 0 15px 0; letter-spacing: -0.5px;"><i class="fas fa-pen-nib"></i> Soạn thảo bài viết</h3>
+            <input type="hidden" id="edit-post-id">
+            
+            <!-- Nút AI viên thuốc thủy tinh lục bảo đục -->
+            <button type="button" onclick="toggleAIGenerator()" class="btn ai-btn" style="width: 100%; justify-content: center; font-size: 0.92rem; height: 42px; margin: 0;">
+                <i class="fas fa-magic"></i> Viết bài tự động bằng AI (Theo Form Chuẩn)
             </button>
         </div>
 
-        <!-- Khung hai cột nhập liệu -->
-        <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 20px; margin-bottom: 5px;">
-            <div class="input-group">
-                <label>Tiêu đề bài viết</label>
-                <input type="text" id="p-title" placeholder="Nhập tiêu đề...">
-            </div>
-            <div class="input-group">
-                <label>Link ảnh bìa (Thumbnail)</label>
-                <input type="text" id="p-cover" placeholder="Dán link ảnh...">
-            </div>
-        </div>
-
-        <div class="input-group">
-            <label>Nội dung chi tiết</label>
-            <textarea id="p-content" rows="12" placeholder="Nhập nội dung mô tả hoặc dán mã nhúng tại đây..."></textarea>
-        </div>
-
-        <!-- Các tùy chọn ghim và cập nhật thời gian chìm mịn vào nền kính -->
-        <div style="display:flex; gap:30px; margin-bottom:30px; background: rgba(255, 255, 255, 0.35); padding: 15px 20px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.3);">
-            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:bold; color: #334155; font-size: 0.9rem;">
-                <input type="checkbox" id="p-pin" style="width:18px; height:18px; cursor: pointer;"> Ghim bài viết này lên đầu trang chủ
-            </label>
+        <!-- ========================================== -->
+        <!-- 2. BODY (NỘI DUNG CUỘN Ở GIỮA VỚI THANH CUỘN GIỌT NƯỚC) -->
+        <!-- ========================================== -->
+        <div class="glass-scroll-body" style="flex: 1; overflow-y: auto; padding-right: 12px; margin-bottom: 15px; box-sizing: border-box;">
             
-            <label id="lbl-update-time" style="display:none; align-items:center; gap:10px; cursor:pointer; font-weight:bold; color: #0062ff; font-size: 0.9rem;">
-                <input type="checkbox" id="p-update-time" style="width:18px; height:18px; cursor: pointer;"> Cập nhật lại thời gian đăng (Đẩy bài lên đầu feed)
-            </label>
+            <div id="ai-generator-box" style="display: none; background: rgba(240, 253, 244, 0.4); padding: 20px; border-radius: 16px; border: 1px dashed rgba(16, 185, 129, 0.3); margin-bottom: 25px;">
+                <label style="font-weight: bold; color: #065f46; font-size: 0.9rem; display: block; margin-bottom: 10px;">
+                    <i class="fas fa-robot"></i> Dán nội dung thô (Chữ, hình ảnh, link...):
+                </label>
+                <textarea id="ai-raw-content" rows="4" placeholder="Nhập nội dung thô tại đây..." style="width: 100%; padding: 15px; border-radius: 10px; border: 1px solid rgba(16, 185, 129, 0.15); outline: none; line-height: 1.6; background: rgba(255,255,255,0.7);"></textarea>
+                <button type="button" id="btn-generate-ai" onclick="generateHTMLwithAI()" class="btn" style="background: #10b981; color: white; margin-top: 15px; border-radius: 10px; font-weight: 600;">
+                    <i class="fas fa-cogs"></i> Tạo HTML & Điền tự động
+                </button>
+            </div>
+
+            <!-- Khung hai cột nhập liệu -->
+            <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 20px; margin-bottom: 5px;">
+                <div class="input-group">
+                    <label>Tiêu đề bài viết</label>
+                    <input type="text" id="p-title" placeholder="Nhập tiêu đề...">
+                </div>
+                <div class="input-group">
+                    <label>Link ảnh bìa (Thumbnail)</label>
+                    <input type="text" id="p-cover" placeholder="Dán link ảnh...">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Nội dung chi tiết</label>
+                <textarea id="p-content" rows="12" placeholder="Nhập nội dung mô tả hoặc dán mã nhúng tại đây..." style="resize: vertical;"></textarea>
+            </div>
+
+            <!-- Các tùy chọn ghim và cập nhật thời gian chìm mịn vào nền kính -->
+            <div style="display:flex; gap:30px; background: rgba(255, 255, 255, 0.25); padding: 15px 20px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.15);">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:bold; color: #334155; font-size: 0.9rem;">
+                    <input type="checkbox" id="p-pin" style="width:18px; height:18px; cursor: pointer;"> <span class="glass-label-text">Ghim bài viết này lên đầu trang chủ</span>
+                </label>
+                
+                <label id="lbl-update-time" style="display:none; align-items:center; gap:10px; cursor:pointer; font-weight:bold; color: #0062ff; font-size: 0.9rem;">
+                    <input type="checkbox" id="p-update-time" style="width:18px; height:18px; cursor: pointer;"> <span class="glass-label-text" style="color:#0062ff !important;">Cập nhật lại thời gian đăng (Đẩy bài lên đầu feed)</span>
+                </label>
+            </div>
         </div>
 
-        <!-- Các nút Hủy & Lưu nằm hoàn toàn bên trong thân kính giọt nước -->
-        <div style="display:flex; gap: 12px; justify-content: flex-end; border-top: 1px solid rgba(0,0,0,0.04); padding-top: 25px;">
+        <!-- ========================================== -->
+        <!-- 3. FOOTER (NÚT LƯU & HỦY CỐ ĐỊNH Ở ĐÁY KÍNH) -->
+        <!-- ========================================== -->
+        <div style="flex-shrink: 0; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 20px; display:flex; gap: 12px; justify-content: flex-end; box-sizing: border-box;">
             <button onclick="savePost()" class="btn btn-save-opaque"><i class="fas fa-save"></i> Lưu dữ liệu</button>
             <button onclick="hidePostEditor()" class="btn btn-cancel-opaque">Hủy bỏ</button>
         </div>

@@ -1,0 +1,516 @@
+:root {
+    --post-bg: transparent;
+    --container-width: 850px;
+    --forest-green: #2d6a4f;
+    --grass-light: #d8f3dc;
+    --sky-blue: #e0f2fe;
+}
+
+body {
+    background: linear-gradient(to bottom, #f0f9ff 0%, #e0f2fe 50%, #f0fdf4 100%);
+    color: #1e293b;
+    line-height: 1.8;
+    position: relative;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* --- ĐỊNH VỊ CỐ ĐỊNH RỪNG THÔNG HAI BÊN ĐỂ KHÔNG ĐẨY TRANG --- */
+.side-forest-left,
+.side-forest-right {
+    position: fixed;
+    top: 0;
+    height: 100vh;
+    width: 280px;
+    z-index: 1;
+    pointer-events: none;
+}
+.side-forest-left {
+    left: 0;
+}
+.side-forest-right {
+    right: 0;
+}
+
+/* --- TRIỆT TIÊU NỀN ĐỤC CỦA CÁC PHẦN TỬ CON BÊN TRONG --- */
+#post-detail-container *,
+#post-detail-container .post-article-card,
+#post-detail-container .post-content,
+#post-detail-container .post-body,
+#post-detail-container .post-header,
+#post-detail-container div,
+#post-detail-container section,
+#post-detail-container article {
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+#post-detail-container img {
+    max-width: 100% !important;
+    height: auto !important;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(45, 106, 79, 0.1) !important;
+}
+
+/* --- PHÔNG NỀN MINH HỌA THIÊN NHIÊN & HOẠT HỌA --- */
+.decorations-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+/* --- DÀN DÂY LEO VÀ GIỌT NƯỚC RŨ Ở GÓC TRÊN CÙNG --- */
+.top-vines-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 120px;
+    z-index: 2;
+    pointer-events: none;
+}
+.top-vines {
+    width: 100%;
+    height: 100%;
+}
+.water-droplets {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+.droplet {
+    position: absolute;
+    width: 2.5px;
+    height: 12px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.9), rgba(224, 242, 254, 0.1));
+    border-radius: 50%;
+    animation: dropFall linear infinite;
+}
+.drop-1 { left: 15%; animation-delay: 0.5s; animation-duration: 3.2s; }
+.drop-2 { left: 32%; animation-delay: 2.1s; animation-duration: 4s; }
+.drop-3 { left: 48%; animation-delay: 0.8s; animation-duration: 3.5s; }
+.drop-4 { left: 65%; animation-delay: 3.5s; animation-duration: 4.5s; }
+.drop-5 { left: 78%; animation-delay: 1.2s; animation-duration: 3s; }
+.drop-6 { left: 91%; animation-delay: 2.7s; animation-duration: 3.8s; }
+
+@keyframes dropFall {
+    0% { transform: translateY(0) scaleY(1); opacity: 0; }
+    10% { opacity: 0.85; }
+    90% { opacity: 0.85; }
+    100% { transform: translateY(160px) scaleY(0.6); opacity: 0; }
+}
+
+/* Đám mây hoạt họa tự động trôi */
+.cloud {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 100px;
+    box-shadow: 0 8px 24px rgba(255, 255, 255, 0.5);
+}
+.cloud::before, .cloud::after {
+    content: '';
+    position: absolute;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 50%;
+}
+.cloud-1 {
+    width: 120px; height: 40px; top: 10%; left: -150px;
+    animation: floatCloud 38s linear infinite;
+}
+.cloud-1::before { width: 50px; height: 50px; top: -20px; left: 15px; }
+.cloud-1::after { width: 70px; height: 70px; top: -35px; right: 15px; }
+
+.cloud-2 {
+    width: 180px; height: 50px; top: 25%; right: -200px;
+    animation: floatCloudReverse 48s linear infinite;
+    opacity: 0.75;
+}
+.cloud-2::before { width: 70px; height: 70px; top: -30px; left: 20px; }
+.cloud-2::after { width: 90px; height: 90px; top: -45px; right: 25px; }
+
+.cloud-3 {
+    width: 100px; height: 35px; top: 6%; right: -150px;
+    animation: floatCloudReverse 32s linear infinite;
+    opacity: 0.6;
+}
+.cloud-3::before { width: 40px; height: 40px; top: -15px; left: 10px; }
+.cloud-3::after { width: 55px; height: 55px; top: -25px; right: 10px; }
+
+.cloud-4 {
+    width: 150px; height: 45px; top: 38%; left: -180px;
+    animation: floatCloud 52s linear infinite;
+    opacity: 0.7;
+}
+.cloud-4::before { width: 60px; height: 60px; top: -25px; left: 18px; }
+.cloud-4::after { width: 80px; height: 80px; top: -40px; right: 20px; }
+
+.cloud-5 {
+    width: 90px; height: 30px; top: 18%; left: -100px;
+    animation: floatCloud 44s linear infinite;
+    opacity: 0.55;
+}
+.cloud-5::before { width: 35px; height: 35px; top: -15px; left: 10px; }
+.cloud-5::after { width: 45px; height: 45px; top: -22px; right: 10px; }
+
+@keyframes floatCloud {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(calc(100vw + 300px)); }
+}
+@keyframes floatCloudReverse {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(calc(-100vw - 350px)); }
+}
+
+/* Lá phong cách anime rơi nhẹ nhàng */
+.falling-leaf {
+    position: absolute;
+    width: 18px;
+    height: 12px;
+    background: linear-gradient(135deg, #52b788, #2d6a4f);
+    border-radius: 0 100% 0 100%;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+    animation: naturalFall 14s linear infinite;
+}
+
+.leaf-1 { left: 6%; top: -5%; animation-delay: 0s; animation-duration: 13s; }
+.leaf-2 { left: 18%; top: -5%; animation-delay: 4.5s; animation-duration: 16s; }
+.leaf-3 { left: 29%; top: -5%; animation-delay: 2s; animation-duration: 14s; }
+.leaf-4 { left: 43%; top: -5%; animation-delay: 8s; animation-duration: 17s; }
+.leaf-5 { left: 54%; top: -5%; animation-delay: 0.8s; animation-duration: 15s; }
+.leaf-6 { left: 66%; top: -5%; animation-delay: 5s; animation-duration: 12s; }
+.leaf-7 { left: 76%; top: -5%; animation-delay: 3.5s; animation-duration: 18s; }
+.leaf-8 { left: 88%; top: -5%; animation-delay: 9s; animation-duration: 14s; }
+.leaf-9 { left: 12%; top: -5%; animation-delay: 11s; animation-duration: 15s; }
+.leaf-10 { left: 35%; top: -5%; animation-delay: 6s; animation-duration: 16s; }
+.leaf-11 { left: 58%; top: -5%; animation-delay: 12s; animation-duration: 13s; }
+.leaf-12 { left: 82%; top: -5%; animation-delay: 1s; animation-duration: 17s; }
+
+@keyframes naturalFall {
+    0% { 
+        transform: translateY(-20px) translateX(0) rotate(0deg); 
+        opacity: 0; 
+    }
+    10% { 
+        opacity: 0.85; 
+    }
+    90% { 
+        opacity: 0.85; 
+    }
+    100% { 
+        transform: translateY(105vh) translateX(120px) rotate(540deg); 
+        opacity: 0; 
+    }
+}
+
+/* --- THANH ĐIỀU HƯỚNG LIQUID GLASS CHUẨN APPLE --- */
+.post-nav {
+    /* Trong suốt hoàn toàn 100% không chứa hạt màu */
+    background: rgba(255, 255, 255, 0) !important; 
+    background-color: transparent !important;
+
+    /* Tắt hoàn toàn hiệu ứng mờ để mây trôi qua sắc nét tuyệt đối */
+    backdrop-filter: none !important; 
+    -webkit-backdrop-filter: none !important;
+    
+    padding: 12px 0;
+    position: relative;
+    margin: 30px auto 0;
+    max-width: var(--container-width);
+    width: 90%;
+    border-radius: 40px;
+    z-index: 1000;
+
+    /* Giữ lại viền phản quang màu trắng sáng để nhận diện tấm kính */
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 
+        inset 0 1.5px 0 0 rgba(255, 255, 255, 0.6),
+        0 8px 25px rgba(0, 0, 0, 0.01) !important;
+}
+.nav-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 24px;
+}
+
+.back-link {
+    text-decoration: none;
+    color: #334155;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+}
+
+.back-link:hover {
+    color: var(--forest-green);
+    transform: translateX(-5px);
+}
+
+.nav-logo {
+    height: 35px;
+    border-radius: 8px;
+}
+
+/* --- KHUNG HIỂN THỊ LIQUID GLASS CHUẨN APPLE --- */
+body #post-detail-container {
+    /* Trong suốt tuyệt đối không màu */
+    background: rgba(255, 255, 255, 0) !important;
+    background-color: transparent !important;
+
+    /* Loại bỏ hoàn toàn lớp mờ để lá rơi phía sau hiển thị rõ từng chi tiết */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+
+    max-width: var(--container-width) !important;
+    width: 90% !important;
+    margin: 40px auto !important;
+    padding: 40px !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+    z-index: 5 !important;
+    border-radius: 28px !important;
+
+    /* Viền kính phản chiếu sắc sảo */
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 
+        inset 0 1.5px 0 0 rgba(255, 255, 255, 0.6),
+        inset 0 -1px 0 0 rgba(0, 0, 0, 0.01),
+        0 20px 40px rgba(0, 0, 0, 0.02) !important;
+}
+body #post-detail-container *,
+body #post-detail-container div,
+body #post-detail-container article,
+body #post-detail-container section {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+/* --- HỆ THỐNG DÂY LEO ĐÈ QUẤN VIỀN KÍNH --- */
+.glass-vine {
+    position: absolute;
+    width: 110px;
+    height: 110px;
+    pointer-events: none;
+    z-index: 6; 
+    filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.15));
+    transition: transform 0.3s ease;
+}
+.glass-vine-tr {
+    top: -12px;
+    right: -12px;
+}
+.glass-vine-bl {
+    bottom: -12px;
+    left: -12px;
+}
+
+/* --- SKELETON LOADING --- */
+.loading-state {
+    text-align: center;
+    padding: 100px 0;
+    color: #64748b;
+}
+
+.spinner {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    color: var(--forest-green);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    100% { transform: rotate(360deg); }
+}
+
+/* --- ĐẤY TRANG HÌNH ĐỒI CỎ & FOOTER ĐỒNG BỘ --- */
+.footer-grass-wrapper {
+    position: relative;
+    margin-top: 100px;
+    z-index: 10;
+}
+
+.grass-wave {
+    display: block;
+    width: 100%;
+    height: 60px;
+    margin-bottom: -5px;
+}
+
+.post-footer {
+    background: #2d6a4f;
+    color: #e8f5e9;
+    padding: 50px 20px;
+    text-align: center;
+    border-top: none;
+}
+
+.post-footer h3 {
+    letter-spacing: 2px;
+    font-weight: 800;
+    margin-bottom: 10px;
+    color: #ffffff;
+}
+
+.post-footer p {
+    opacity: 0.8;
+    font-size: 0.9rem;
+}
+
+/* --- NÚT CHIA SẺ NĂNG ĐỘNG --- */
+/* --- PHỤC HỒI NÚT CHIA SẺ (ĐÈ LÊN LUẬT TRONG SUỐT TOÀN CỤC) --- */
+body #post-detail-container .share-btn-title {
+    background: rgba(255, 255, 255, 0.8) !important; /* Khôi phục nền trắng trong suốt mặc định */
+    border: 1px solid rgba(226, 232, 240, 0.8) !important; /* Khôi phục viền mặc định */
+    color: #334155 !important;
+    font-size: 1.1rem !important;
+    cursor: pointer !important;
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    margin-left: 15px !important;
+    flex-shrink: 0 !important;
+    vertical-align: middle !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05) !important; /* Khôi phục bóng đổ khối */
+}
+
+/* HIỆU ỨNG KÍNH MÀU XANH LÁ + ICON VÀNG KHI DI CHUỘT (HOVER) */
+body #post-detail-container .share-btn-title:hover {
+    /* Khung tròn chuyển sang kính mờ màu xanh lá cây */
+    background: rgba(45, 106, 79, 0.3) !important; 
+    backdrop-filter: blur(5px) !important;
+    -webkit-backdrop-filter: blur(5px) !important;
+    
+    /* Biểu tượng mũi tên bên trong chuyển sang sắc vàng tươi */
+    color: #ffca3a !important; 
+    
+    /* Đường viền đổi thành viền kính màu xanh lá sáng bóng */
+    border: 1px solid rgba(45, 106, 79, 0.6) !important; 
+    
+    /* Chuyển động xoay nhẹ và phản chiếu ánh sáng bề mặt kính */
+    transform: scale(1.15) rotate(10deg) !important;
+    box-shadow: 
+        inset 0 1px 1px 0 rgba(255, 255, 255, 0.4),
+        0 4px 15px rgba(45, 106, 79, 0.3) !important;
+}
+/* --- ĐIỀU CHỈNH RESPONSIVE TỐI ƯU RIÊNG CHO DI ĐỘNG --- */
+@media (max-width: 768px) {
+    /* 1. Lược bỏ hoàn toàn mây, dây leo rũ, dây leo góc và rừng thông hai bên */
+    .cloud,
+    .top-vines-container,
+    .glass-vine,
+    .side-forest-left,
+    .side-forest-right {
+        display: none !important;
+    }
+
+    /* 2. ẨN SVG CŨ TRONG HTML ĐỂ TRÁNH LỆCH KHỚP NỔI */
+    .grass-wave {
+        display: none !important;
+    }
+
+    /* 3. Tối ưu hóa thanh điều hướng mỏng nhẹ */
+    .post-nav {
+        margin: 15px auto 0;
+        width: 92%;
+        border-radius: 20px;
+        padding: 8px 0;
+    }
+    .nav-content {
+        padding: 0 16px;
+    }
+    .back-link {
+        font-size: 0.85rem;
+        gap: 6px;
+    }
+    .nav-logo {
+        height: 28px;
+    }
+
+    /* 4. Tối ưu hóa khung nội dung kính pha lê cực trong */
+    body #post-detail-container {
+        width: 92% !important;
+        padding: 24px 16px !important;
+        margin: 20px auto !important;
+        border-radius: 20px !important;
+    }
+
+    #post-detail-container h1 {
+        font-size: 1.6rem !important;
+        line-height: 1.35 !important;
+        margin-top: 10px !important;
+        margin-bottom: 15px !important;
+    }
+    #post-detail-container h2 {
+        font-size: 1.3rem !important;
+    }
+
+    /* Giảm nhẹ kích thước lá rơi */
+    .falling-leaf {
+        width: 14px;
+        height: 10px;
+    }
+
+    /* 5. TẠO GRADIENT CHUYỂN TIẾP MƯỜT MÀ VỚI BODY (XÓA BỎ VẾT CẮT THÔ) */
+    .footer-grass-wrapper {
+        position: relative;
+        margin-top: 120px; /* Tạo khoảng giãn cách hợp lý */
+        z-index: 10;
+        background-color: #2d6a4f !important; /* Đồng bộ nền footer với màu cỏ gốc */
+    }
+    
+    /* Lớp phủ chuyển màu êm dịu từ nền body vào chân đồi cỏ */
+    .footer-grass-wrapper::before {
+        content: '';
+        position: absolute;
+        top: -80px;
+        left: 0;
+        width: 100%;
+        height: 80px;
+        z-index: 1;
+        pointer-events: none;
+        background: linear-gradient(
+            to bottom, 
+            rgba(240, 253, 244, 0) 0%, 
+            rgba(45, 106, 79, 0.25) 100%
+        ) !important;
+    }
+
+    /* 6. VẼ ĐỒNG NHẤT SÓNG CỎ + THẢM CỎ ĐẬU PHỘNG + HOA VÀNG RƠI KHÔNG VẾT GHÉP */
+    .footer-grass-wrapper::after {
+        content: '';
+        position: absolute;
+        top: -69px; /* Đẩy thảm hoa nằm khớp chuẩn xác tuyệt đối lên đỉnh footer */
+        left: 0;
+        width: 100%;
+        height: 70px;
+        z-index: 12;
+        pointer-events: none;
+        
+        /* Bản vẽ liên kết Sóng cỏ lượn + Thảm cỏ lạc + Hoa vàng rụng lác đác (Seamless 100%) */
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 70' width='180' height='70'%3E%3Cpath d='M0,70 L180,70 L180,36 Q135,40 90,36 Q45,32 0,36 Z' fill='%231b4332'/%3E%3Cpath d='M0,70 L180,70 L180,30 Q135,34 90,30 Q45,26 0,30 Z' fill='%232d6a4f'/%3E%3Cellipse cx='15' cy='42' rx='12' ry='7' fill='%231b4332' transform='rotate(-10 15 42)'/%3E%3Cellipse cx='32' cy='45' rx='14' ry='8' fill='%232d6a4f' transform='rotate(15 32 45)'/%3E%3Cellipse cx='50' cy='39' rx='11' ry='6' fill='%2340916c' transform='rotate(-25 50 39)'/%3E%3Cellipse cx='68' cy='43' rx='13' ry='8' fill='%231b4332' transform='rotate(10 68 43)'/%3E%3Cellipse cx='86' cy='40' rx='11' ry='6' fill='%232d6a4f' transform='rotate(-15 86 40)'/%3E%3Cellipse cx='104' cy='45' rx='14' ry='8' fill='%2340916c' transform='rotate(20 104 45)'/%3E%3Cellipse cx='122' cy='39' rx='11' ry='6' fill='%231b4332' transform='rotate(-25 122 39)'/%3E%3Cellipse cx='142' cy='43' rx='13' ry='8' fill='%232d6a4f' transform='rotate(10 142 43)'/%3E%3Cellipse cx='162' cy='41' rx='11' ry='7' fill='%2340916c' transform='rotate(-12 162 41)'/%3E%3Cellipse cx='175' cy='44' rx='12' ry='8' fill='%231b4332' transform='rotate(8 175 44)'/%3E%3Cpath d='M25,42 Q21,26 18,15 M48,39 Q46,24 44,13 M75,43 Q72,27 70,17 M102,45 Q100,29 98,18 M130,41 Q132,25 134,14 M152,43 Q154,28 155,19' stroke='%2340916c' stroke-width='1.2' fill='none'/%3E%3Cpath d='M18,15 C14,11 11,13 16,8 C18,10 18,13 18,15 Z M18,15 C22,11 25,13 20,8 C18,10 18,13 18,15 Z' fill='%23ffca3a'/%3E%3Ccircle cx='18' cy='12' r='1.8' fill='%23ff924c'/%3E%3Cpath d='M44,13 C40,9 37,11 42,6 C44,8 44,11 44,13 Z M44,13 C48,9 51,11 46,6 C44,8 44,11 44,13 Z' fill='%23ffca3a'/%3E%3Ccircle cx='44' cy='10' r='1.8' fill='%23ff924c'/%3E%3Cpath d='M70,17 C66,13 63,15 68,10 C70,12 70,15 70,17 Z M70,17 C74,13 77,15 72,10 C70,12 70,15 70,17 Z' fill='%23ffca3a'/%3E%3Ccircle cx='70' cy='14' r='1.8' fill='%23ff924c'/%3E%3Cpath d='M98,18 C94,14 91,16 96,11 C98,13 98,16 98,18 Z M98,18 C102,14 105,16 100,11 C98,13 98,16 98,18 Z' fill='%23ffca3a'/%3E%3Ccircle cx='98' cy='15' r='1.8' fill='%23ff924c'/%3E%3Cpath d='M134,14 C130,10 127,12 132,7 C134,9 134,12 134,14 Z M134,14 C138,10 141,12 136,7 C134,9 134,12 134,14 Z' fill='%23ffca3a'/%3E%3Ccircle cx='134' cy='11' r='1.8' fill='%23ff924c'/%3E%3Cpath d='M155,19 C151,15 148,17 153,12 C155,14 155,17 155,19 Z M155,19 C159,15 162,17 157,12 C155,14 155,17 155,19 Z' fill='%23ffca3a'/%3E%3Ccircle cx='155' cy='16' r='1.8' fill='%23ff924c'/%3E%3Cpath d='M30,45 C27,43 26,44 29,41 Z M30,45 C33,43 34,44 31,41 Z' fill='%23ffca3a' transform='rotate(45 30 45)'/%3E%3Cpath d='M60,43 C58,41 57,42 59,40 Z' fill='%23ffca3a' transform='rotate(-20 60 43)'/%3E%3Cpath d='M115,46 C112,44 111,45 114,42 Z M115,46 C118,44 119,45 116,42 Z' fill='%23ffca3a' transform='rotate(-60 115 46)'/%3E%3Cpath d='M140,44 C138,42 137,43 139,41 Z' fill='%23ffca3a' transform='rotate(15 140 44)'/%3E%3C/svg%3E");
+        
+        /* Lặp ngang liên tục 100% liền mạch không tì vết */
+        background-repeat: repeat-x;
+        background-size: 180px 70px; /* Tỉ lệ hiển thị chuẩn hóa thảm cỏ thực tế */
+    }
+}

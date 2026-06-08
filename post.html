@@ -6,142 +6,87 @@
     <title>Đang tải bài viết...</title>
     <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png">
     <link rel="icon" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" sizes="32x32" type="image/png">
+    <link rel="stylesheet" href="assets/css/post.css">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root {
-            --post-bg: #ffffff;
-            --container-width: 850px;
-        }
-
-        body {
-            background-color: #f8fafc; /* Màu nền xám nhạt hiện đại */
-            color: #1e293b;
-            line-height: 1.6;
-        }
-
-        /* Navbar tinh tế */
-        .post-nav {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px); /* Hiệu ứng kính mờ */
-            padding: 12px 0;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .nav-content {
-            max-width: var(--container-width);
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 20px;
-        }
-
-        .back-link {
-            text-decoration: none;
-            color: var(--text-gray);
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            font-size: 0.95rem;
-        }
-
-        .back-link:hover {
-            color: var(--primary);
-            transform: translateX(-5px);
-        }
-
-        .nav-logo {
-            height: 35px;
-            border-radius: 8px;
-        }
-
-        /* Container chính */
-        #post-detail-container {
-            max-width: var(--container-width);
-            margin: 40px auto;
-            padding: 0 20px;
-            min-height: 60vh;
-        }
-
-        /* Card nội dung bài viết */
-        .post-article-card {
-            background: var(--post-bg);
-            border-radius: 24px;
-            overflow: hidden;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-            border: 1px solid rgba(226, 232, 240, 0.8);
-        }
-
-        /* Skeleton loading animation */
-        .loading-state {
-            text-align: center;
-            padding: 100px 0;
-            color: #94a3b8;
-        }
-
-        .spinner {
-            color: var(--primary);
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-        }
-
-        /* Footer */
-        .post-footer {
-            background: #1e293b;
-            color: white;
-            padding: 60px 20px;
-            text-align: center;
-            margin-top: 80px;
-        }
-
-        .post-footer h3 {
-            letter-spacing: 2px;
-            font-weight: 800;
-            margin-bottom: 10px;
-        }
-
-        /* Responsive */
-        @media (max-width: 640px) {
-            #post-detail-container {
-                margin: 20px auto;
-            }
-            .post-article-card {
-                border-radius: 0; /* Full screen trên mobile */
-                border: none;
-            }
-        }
-/* Style cho nút chia sẻ nằm cạnh tiêu đề */
-        .share-btn-title {
-            background: #f1f5f9;
-            border: none;
-            color: #475569;
-            font-size: 1.1rem;
-            cursor: pointer;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            margin-left: 10px; /* Khoảng cách với chữ tiêu đề */
-        }
-
-        .share-btn-title:hover {
-            background: #e2e8f0;
-            color: #2563eb; /* Chuyển màu xanh khi di chuột */
-            transform: scale(1.05);
-        }
-    </style>
 </head>
 <body>
+    <!-- Hệ thống minh họa nền thiên nhiên sống động -->
+    <div class="decorations-container">
+        <!-- Dàn dây leo rũ trên cùng -->
+        <div class="top-vines-container">
+            <svg class="top-vines" viewBox="0 0 1440 120" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M 0,0 Q 120,70 240,0 T 480,0 T 720,0 T 960,0 T 1200,0 T 1440,0" stroke="#1b4332" stroke-width="3" fill="none"/>
+                <path d="M 60,0 Q 180,90 300,0 T 540,0 T 780,0 T 1020,0 T 1260,0 T 1440,0" stroke="#2d6a4f" stroke-width="2" fill="none" opacity="0.7"/>
+                <path d="M 130,0 Q 250,110 370,0 T 610,0 T 850,0 T 1090,0 T 1330,0" stroke="#40916c" stroke-width="2" fill="none" opacity="0.6"/>
+                
+                <!-- Các lá dây leo bổ trợ -->
+                <path d="M 110,35 Q 100,45 110,55 Q 120,45 110,35 Z" fill="#2d6a4f"/>
+                <path d="M 320,30 Q 310,40 320,50 Q 330,40 320,30 Z" fill="#1b4332"/>
+                <path d="M 530,35 Q 520,45 530,55 Q 540,45 530,35 Z" fill="#40916c"/>
+                <path d="M 740,30 Q 730,40 740,50 Q 750,40 740,30 Z" fill="#2d6a4f"/>
+                <path d="M 950,35 Q 940,45 950,55 Q 960,45 950,35 Z" fill="#1b4332"/>
+                <path d="M 1160,30 Q 1150,40 1160,50 Q 1170,40 1160,30 Z" fill="#40916c"/>
+                
+                <path d="M 170,45 Q 185,55 170,65 Q 155,55 170,45 Z" fill="#40916c"/>
+                <path d="M 390,45 Q 405,55 390,65 Q 375,55 390,45 Z" fill="#2d6a4f"/>
+                <path d="M 610,45 Q 625,55 610,65 Q 595,55 610,45 Z" fill="#1b4332"/>
+                <path d="M 830,45 Q 845,55 830,65 Q 815,55 830,45 Z" fill="#40916c"/>
+                <path d="M 1050,45 Q 1065,55 1050,65 Q 1035,55 1050,45 Z" fill="#2d6a4f"/>
+                
+                <path d="M 230,50 Q 220,65 230,80 Q 240,65 230,50 Z" fill="#1b4332"/>
+                <path d="M 470,50 Q 460,65 470,80 Q 480,65 470,50 Z" fill="#40916c"/>
+                <path d="M 710,50 Q 700,65 710,80 Q 720,65 710,50 Z" fill="#2d6a4f"/>
+                <path d="M 950,50 Q 940,65 950,80 Q 960,65 950,50 Z" fill="#1b4332"/>
+                <path d="M 1190,50 Q 1180,65 1190,80 Q 1200,65 1190,50 Z" fill="#40916c"/>
+            </svg>
+            <!-- Giọt nước đọng rơi nhẹ từ dây leo -->
+            <div class="water-droplets">
+                <div class="droplet drop-1"></div>
+                <div class="droplet drop-2"></div>
+                <div class="droplet drop-3"></div>
+                <div class="droplet drop-4"></div>
+                <div class="droplet drop-5"></div>
+                <div class="droplet drop-6"></div>
+            </div>
+        </div>
 
+        <!-- Đám mây trôi trên bầu trời -->
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="cloud cloud-3"></div>
+        <div class="cloud cloud-4"></div>
+        <div class="cloud cloud-5"></div>
+        
+        <!-- Lá rơi phong cách anime -->
+        <div class="falling-leaf leaf-1"></div>
+        <div class="falling-leaf leaf-2"></div>
+        <div class="falling-leaf leaf-3"></div>
+        <div class="falling-leaf leaf-4"></div>
+        <div class="falling-leaf leaf-5"></div>
+        <div class="falling-leaf leaf-6"></div>
+        <div class="falling-leaf leaf-7"></div>
+        <div class="falling-leaf leaf-8"></div>
+        <div class="falling-leaf leaf-9"></div>
+        <div class="falling-leaf leaf-10"></div>
+        <div class="falling-leaf leaf-11"></div>
+        <div class="falling-leaf leaf-12"></div>
+    </div>
+
+    <!-- Cụm cây rừng thông viền lửng lơ hai bên sườn -->
+    <svg class="side-forest-left" viewBox="0 0 280 800" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M-50,800 L80,500 L20,420 L120,280 L60,200 L180,50 L100,50 L200,-50 L30,-50 L-50,800 Z" fill="#2d6a4f" opacity="0.3"/>
+        <path d="M-80,800 L40,550 L-10,480 L80,320 L20,250 L120,80 L-80,800 Z" fill="#1b4332" opacity="0.5"/>
+        <path d="M-100,800 L10,620 L-40,560 L30,420 L-20,380 L60,250 L-100,800 Z" fill="#40916c" opacity="0.4"/>
+    </svg>
+
+    <svg class="side-forest-right" viewBox="0 0 280 800" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M330,800 L200,500 L260,420 L160,280 L220,200 L100,50 L180,50 L80,-50 L250,-50 L330,800 Z" fill="#2d6a4f" opacity="0.3"/>
+        <path d="M360,800 L240,550 L290,480 L200,320 L260,250 L160,80 L360,800 Z" fill="#1b4332" opacity="0.5"/>
+        <path d="M380,800 L270,620 L320,560 L250,420 L300,380 L220,250 L380,800 Z" fill="#40916c" opacity="0.4"/>
+    </svg>
+
+    <!-- Thanh định hướng viên nang lơ lửng không cố định -->
     <nav class="post-nav">
         <div class="nav-content">
             <a href="index.html" class="back-link">
@@ -153,54 +98,72 @@
         </div>
     </nav>
 
+    <!-- Phân vùng nội dung giải mã từ CSDL mang hiệu ứng Giọt nước kính -->
     <main id="post-detail-container">
+        <!-- Nhánh dây leo góc trên bên phải -->
+        <svg class="glass-vine glass-vine-tr" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M130,-10 C100,20 80,40 50,45 C20,50 10,70 -10,80" stroke="#1b4332" stroke-width="3.5" stroke-linecap="round"/>
+            <path d="M120,-20 C90,10 75,25 45,30 C15,35 5,55 -5,65" stroke="#2d6a4f" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+            <path d="M75,15 Q60,10 65,28 Q80,28 75,15 Z" fill="#40916c"/>
+            <path d="M45,25 Q30,25 35,40 Q50,35 45,25 Z" fill="#2d6a4f"/>
+            <path d="M20,42 Q8,40 12,52 Q25,50 20,42 Z" fill="#1b4332"/>
+            <path d="M95,5 Q85,-5 80,10 Q95,15 95,5 Z" fill="#52b788" opacity="0.95"/>
+        </svg>
+
+        <!-- Nhánh dây leo góc dưới bên trái -->
+        <svg class="glass-vine glass-vine-bl" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M-10,130 C20,100 40,80 45,50 C50,20 70,10 80,-10" stroke="#1b4332" stroke-width="3.5" stroke-linecap="round"/>
+            <path d="M-20,120 C10,90 25,75 30,45 C35,15 55,5 65,-5" stroke="#2d6a4f" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+            <path d="M15,75 Q10,60 28,65 Q28,80 15,75 Z" fill="#40916c"/>
+            <path d="M25,45 Q25,30 40,35 Q35,50 25,45 Z" fill="#1b4332"/>
+            <path d="M42,20 Q40,8 52,12 Q50,25 42,20 Z" fill="#2d6a4f"/>
+            <path d="M5,95 Q-5,85 10,80 Q15,95 5,95 Z" fill="#52b788" opacity="0.95"/>
+        </svg>
+
         <div class="loading-state">
             <i class="fas fa-circle-notch fa-spin spinner"></i>
-            <p>Đang chuẩn bị nội dung cho bạn...</p>
+            <p style="font-weight: 500; letter-spacing: 0.5px;">Đang thiết lập không gian nội dung...</p>
         </div>
     </main>
-    <footer class="post-footer">
-        <h3>Phòng Y tế- Trường Trung học Phổ thông Võ Thị Sáu</h3>
-        <p style="opacity: 0.6; font-size: 0.9rem;">Website phát triển bởi Văn Tính</p>
-        <div style="margin-top: 20px; font-size: 1.2rem; display: flex; justify-content: center; gap: 20px; opacity: 0.8;">
-        </div>
-    </footer>
+    
+    <!-- Đáy trang đồi cỏ đồng bộ -->
+    <div class="footer-grass-wrapper">
+        <svg class="grass-wave" viewBox="0 0 1440 60" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,30 Q360,10 720,40 T1440,20 L1440,60 L0,60 Z" fill="#2d6a4f"/>
+            <path d="M0,45 Q400,25 800,50 T1440,35 L1440,60 L0,60 Z" fill="#1b4332" opacity="0.5"/>
+        </svg>
+        <footer class="post-footer">
+            <h3>Phòng Y tế - Trường Trung học Phổ thông Võ Thị Sáu</h3>
+            <p>Website phát triển bởi Văn Tính</p>
+        </footer>
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="assets/config.js"></script>
     <script src="assets/js/app.js"></script>
-<script>
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Thiết lập "Người quan sát" để chờ app.js render nội dung
             const observer = new MutationObserver((mutations, obs) => {
                 const container = document.getElementById('post-detail-container');
-                
-                // Tìm thẻ tiêu đề (Thường trong web tin tức nó sẽ là thẻ <h1>)
                 const titleElement = container.querySelector('h1');
 
-                // Nếu tìm thấy tiêu đề VÀ nút chia sẻ chưa được tạo
                 if (titleElement && !document.getElementById('share-btn-title')) {
-                    
-                    // 1. Chỉnh CSS của tiêu đề để nó và nút nằm ngang hàng nhau
-                    titleElement.style.display = 'flex';
+                    titleElement.style.display = 'inline-flex';
                     titleElement.style.alignItems = 'center';
-                    // Nếu muốn nút nằm tít bên phải: dùng titleElement.style.justifyContent = 'space-between';
+                    titleElement.style.flexWrap = 'wrap';
 
-                    // 2. Tạo nút chia sẻ
                     const shareBtn = document.createElement('button');
                     shareBtn.id = 'share-btn-title';
                     shareBtn.className = 'share-btn-title';
                     shareBtn.title = 'Chia sẻ bài viết';
                     shareBtn.innerHTML = '<i class="fa-solid fa-arrow-up-from-bracket"></i>';
 
-                    // 3. Viết chức năng mở bảng chia sẻ của iPhone/Android
                     shareBtn.addEventListener('click', async (e) => {
-                        e.preventDefault(); // Ngăn hành vi mặc định
-                        
+                        e.preventDefault();
                         const shareData = {
-                            title: titleElement.innerText, // Lấy luôn text của tiêu đề bài viết
+                            title: titleElement.innerText.replace(' ', ' ').trim(),
                             text: 'Đọc bài viết này trên website Phòng Y tế THPT Võ Thị Sáu:',
                             url: window.location.href
                         };
@@ -212,22 +175,17 @@
                                 console.log('Hủy chia sẻ: ', err);
                             }
                         } else {
-                            // Dự phòng cho thiết bị không hỗ trợ (Copy link)
                             navigator.clipboard.writeText(window.location.href).then(() => {
                                 alert('Đã sao chép liên kết bài viết!');
                             });
                         }
                     });
 
-                    // 4. Nhét nút vào ngay bên cạnh chữ của tiêu đề
                     titleElement.appendChild(shareBtn);
-                    
-                    // 5. Ngừng quan sát để đỡ tốn tài nguyên máy
                     obs.disconnect(); 
                 }
             });
 
-            // Bắt đầu quan sát khu vực bài viết
             observer.observe(document.getElementById('post-detail-container'), { 
                 childList: true, 
                 subtree: true 

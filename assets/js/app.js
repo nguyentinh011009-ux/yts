@@ -96,36 +96,29 @@ firebase.auth().onAuthStateChanged(async (user) => {
         }
     }
 });
-// --- Hàm 1: Đăng nhập bằng Email & Mật khẩu ---
+// Hàm 1: handleEmailLogin
 function handleEmailLogin() {
     const email = document.getElementById('admin-email-input').value.trim();
     const password = document.getElementById('admin-pass-input').value;
-    const btn = document.getElementById('btn-login-email');
 
-    if (!email || !password) return alert("Vui lòng nhập đầy đủ Email và Mật khẩu!");
+    if (!email || !password) return sysAlert("Vui lòng nhập đầy đủ Email và Mật khẩu!", "error");
 
-    // Hiệu ứng Loading
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang kiểm tra...';
-    btn.disabled = true;
-
+    sysLoading(true, "Đang kiểm tra thông tin..."); // Bật loading
+    
     firebase.auth().signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
-		writeAuditLog("LOGIN", "yt_auth", userCredential.user.uid, `Tài khoản ${email} đăng nhập hệ thống thành công bằng Email.`);
-            // Thành công (hàm onAuthStateChanged ở trên sẽ tự động ẩn form)
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+            writeAuditLog("LOGIN", "yt_auth", userCredential.user.uid, `Tài khoản ${email} đăng nhập hệ thống.`);
+            sysLoading(false); // Tắt loading
+            sysAlert("Đăng nhập thành công!", "success");
         })
         .catch((error) => {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-            // Xử lý báo lỗi tiếng Việt cho thân thiện
+            sysLoading(false);
             if(error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                alert("❌ Sai Email hoặc Mật khẩu!");
+                sysAlert("Sai Email hoặc Mật khẩu!", "error");
             } else if (error.code === 'auth/invalid-email') {
-                alert("❌ Định dạng Email không hợp lệ!");
+                sysAlert("Định dạng Email không hợp lệ!", "error");
             } else {
-                alert("❌ Lỗi đăng nhập: " + error.message);
+                sysAlert("Lỗi đăng nhập: " + error.message, "error");
             }
         });
 }
@@ -161,19 +154,19 @@ function handleGoogleLogin() {
         });
 }
 // --- Hàm 3: Đăng xuất ---
-// Sửa lại hàm handleLogout dùng chung của bạn:
 async function handleLogout() {
-    if(confirm("Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?")) {
+    const isConfirm = await sysConfirm("Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?", "Đăng xuất", true);
+    if (isConfirm) {
+        sysLoading(true, "Đang đăng xuất...");
         const currentUser = firebase.auth().currentUser;
-        
         if (currentUser) {
-            // 👉 BẮT BUỘC: Gọi ghi log với await để đảm bảo ghi xong lên mây rồi mới thoát hẳn tài khoản
-            await writeAuditLog("LOGOUT", "yt_auth", currentUser.uid, `Tài khoản Admin ${currentUser.email} đã đăng xuất khỏi hệ thống.`);
+            await writeAuditLog("LOGOUT", "yt_auth", currentUser.uid, `Tài khoản Admin ${currentUser.email} đăng xuất.`);
         }
-	sessionStorage.removeItem('vts_session_logged');
+        sessionStorage.removeItem('vts_session_logged');
         firebase.auth().signOut().then(() => {
             document.getElementById('admin-email-input').value = '';
             document.getElementById('admin-pass-input').value = '';
+            sysLoading(false);
         });
     }
 }
@@ -237,26 +230,25 @@ async function savePost() {
         isPinned: document.getElementById('p-pin').checked
     };
 
-    if (!data.title || !data.content) return alert("Vui lòng nhập đủ Tiêu đề và Nội dung!");
+    if (!data.title || !data.content) return sysAlert("Vui lòng nhập đủ Tiêu đề và Nội dung!", "warning");
 
+    sysLoading(true, "Đang lưu bài viết...");
     try {
         if (id) {
-            // Kiểm tra nút tick tùy chọn cập nhật thời gian (Yêu cầu 2)
             const shouldUpdateTime = document.getElementById('p-update-time').checked;
-            if (shouldUpdateTime) {
-                data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-            }
+            if (shouldUpdateTime) data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
             await db.collection("posts").doc(id).update(data);
-            alert("✅ Đã cập nhật bài viết!");
+            sysAlert("Đã cập nhật bài viết!", "success");
         } else {
-            // Đăng bài mới luôn luôn gán thời gian hiện tại
             data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
             await db.collection("posts").add(data);
-            alert("✅ Đã đăng bài mới thành công!");
+            sysAlert("Đã đăng bài mới thành công!", "success");
         }
         hidePostEditor();
     } catch (e) { 
-        alert("Lỗi khi lưu: " + e.message); 
+        sysAlert("Lỗi khi lưu: " + e.message, "error"); 
+    } finally {
+        sysLoading(false);
     }
 }
 
@@ -896,12 +888,12 @@ try {
             });
         } catch(e) { console.error("Lỗi gửi thông báo:", e); }
 
-        alert("✅ Tiếp nhận thành công! " + (pendingMedicineDeductions.length > 0 ? "\n(Đã tự động trừ kho thuốc)" : ""));
+        sysAlert("Tiếp nhận thành công! " + (pendingMedicineDeductions.length > 0 ? "(Đã trừ kho thuốc)" : ""), "success");
         resetReceptionForm(); 
-
     } catch(err) {
-        alert("Lỗi khi lưu: " + err.message);
-        console.error(err);
+        sysAlert("Lỗi khi lưu: " + err.message, "error");
+    } finally {
+        sysLoading(false);
     }
 }
 // ==========================================
@@ -1211,20 +1203,23 @@ async function deleteStudentCompletely(sid) {
 }
 // 2. Hàm kích hoạt khi bấm nút THÙNG RÁC MÀU ĐỎ (Xóa 1 người)
 async function deleteStudent(sid, name) {
-    // Dự phòng trường hợp không lấy được tên thì hiển thị Mã YT
     const displayName = name && name !== 'undefined' ? name : sid; 
+    const isConfirm = await sysConfirm(`CẢNH BÁO: Xóa học sinh ${displayName} cùng toàn bộ LỊCH SỬ KHÁM. Hành động không thể hoàn tác.`, "Xóa dữ liệu vĩnh viễn", true);
     
-    if (confirm(`⚠️ CẢNH BÁO NGUY HIỂM:\n\nBạn đang chuẩn bị xóa học sinh: ${displayName}.\nToàn bộ HỒ SƠ, LỊCH SỬ KHÁM và CHỮ KÝ của học sinh này sẽ bị XÓA VĨNH VIỄN khỏi hệ thống.\n\nHành động này KHÔNG THỂ HOÀN TÁC. Bạn có chắc chắn?`)) {
+    if (isConfirm) {
+        sysLoading(true, "Đang xóa sạch dữ liệu...");
         try {
             await deleteStudentCompletely(sid);
-            alert("✅ Đã xóa hoàn toàn hồ sơ và dữ liệu y tế của học sinh này!");
-            loadStudentData(); // Tự động tải lại bảng sau khi xóa xong
+            sysAlert("Đã xóa hoàn toàn hồ sơ học sinh!", "success");
+            loadStudentData(); 
         } catch(e) {
-            alert("Lỗi khi xóa: " + e.message);
-            console.error(e);
+            sysAlert("Lỗi khi xóa: " + e.message, "error");
+        } finally {
+            sysLoading(false);
         }
     }
 }
+
 // --- TÍNH NĂNG CHỌN NHIỀU (XÓA / LÊN LỚP HÀNG LOẠT) ---
 
 // 1. Bật/Tắt chế độ hiển thị ô Checkbox và 2 nút chức năng
@@ -1734,8 +1729,12 @@ async function notifyParent(visitId, studentId) {
     }
 }
 async function clearBed(bedNum) {
-    if(confirm(`Xác nhận trả giường số ${bedNum}?`)) {
+    const isConfirm = await sysConfirm(`Xác nhận trả giường số ${bedNum}?`, "Trả giường");
+    if(isConfirm) {
+        sysLoading(true, "Đang cập nhật...");
         await db.collection('yt_beds').doc('bed_' + bedNum).delete();
+        sysLoading(false);
+        sysAlert("Đã trả giường thành công!", "success");
         loadBeds(); 
     }
 }
@@ -2092,9 +2091,10 @@ function formatExcelDateToHTML5(dateVal) {
 async function handleExcelUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
+    event.target.value = ""; 
 
-    event.target.value = ""; // Reset input
-
+    sysLoading(true, "Đang đọc cấu trúc file Excel...");
+    
     const reader = new FileReader();
     reader.onload = async function(e) {
         try {
@@ -2171,7 +2171,7 @@ async function handleExcelUpload(event) {
             };
 
             // --- BƯỚC 1: LẤY DỮ LIỆU CŨ TỪ DATABASE ĐỂ ĐỐI CHIẾU ---
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đối chiếu dữ liệu...';
+            sysLoading(true, "Đang đối chiếu dữ liệu...");
             const snapshot = await db.collection('yt_students').get();
             
             const existingStudentsMap = new Map();
@@ -2230,7 +2230,7 @@ async function handleExcelUpload(event) {
                                 existingData[field] = excelValue; 
                             }
                         };
-			checkAndUpdate('studentCode', studentCode);
+			            checkAndUpdate('studentCode', studentCode);
                         checkAndUpdate('height', height);
                         checkAndUpdate('weight', weight);
                         checkAndUpdate('dob', dob); // Update Ngày Sinh
@@ -2291,31 +2291,22 @@ async function handleExcelUpload(event) {
                 return alert(`ℹ️ Quá trình kết thúc.\nĐã bỏ qua ${skippedCount} dòng do mọi thông tin của các học sinh này trên hệ thống đã đầy đủ.`);
             }
 
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu lên mây...';
+            sysLoading(true, "Đang đồng bộ lên Cloud...");
+            for (let batch of batches) { await batch.commit(); }
             
-            for (let batch of batches) {
-                await batch.commit();
-            }
-	    sessionStorage.removeItem('vts_students_cache');
+            sessionStorage.removeItem('vts_students_cache');
             window.allStudents = [];
-            btn.innerHTML = originalText; btn.disabled = false;
-            
-            alert(`✅ Hoàn tất nhập Excel!\n- Tạo mới thành công: ${successCount} hồ sơ.\n- Cập nhật thêm thông tin cho: ${updatedCount} hồ sơ cũ.\n- Bỏ qua (Đã đủ thông tin): ${skippedCount} dòng.`);
+            sysAlert(`Hoàn tất!\n- Tạo mới: ${successCount}\n- Cập nhật: ${updatedCount}\n- Bỏ qua: ${skippedCount}`, "success");
             loadStudentData(); 
-
         } catch (error) {
-            alert("Lỗi khi xử lý file Excel: " + error.message);
-            console.error(error);
-            const btn = document.querySelector('button[onclick="document.getElementById(\'excel-upload\').click()"]');
-            btn.innerHTML = '<i class="fas fa-file-excel"></i> Nhập từ Excel'; btn.disabled = false;
+            sysAlert("Lỗi xử lý file Excel: " + error.message, "error");
+        } finally {
+            sysLoading(false);
         }
     };
-    
     reader.readAsArrayBuffer(file);
 }
-// ==========================================
-// TÍNH NĂNG XUẤT DANH SÁCH HỌC SINH (A4 DỌC)
-// ==========================================
+
 // TÍNH NĂNG XUẤT DANH SÁCH HỌC SINH (A4 DỌC)
 // ==========================================
 function openExportStudentModal() { document.getElementById('export-student-modal').style.display = 'flex'; }
@@ -2347,7 +2338,7 @@ async function executeExportStudents() {
     const originalText = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
     btn.disabled = true;
-
+    sysLoading(true, "Đang trích xuất dữ liệu tạo bản in...");
     try {
         const snap = await db.collection('yt_students').get();
         let allStudents = [];
@@ -2489,18 +2480,15 @@ async function executeExportStudents() {
         printArea.style.display = 'block';
         
         setTimeout(() => {
+            sysLoading(false); // Tắt loading trước khi hiện hộp thoại in của Windows
             window.print();
             printArea.style.display = 'none';
             printArea.innerHTML = '';
             document.getElementById('print-portrait-style').remove();
-        }, 500);
-
+        }, 800);
     } catch (err) {
-        alert("Lỗi xuất dữ liệu: " + err.message);
-        console.error(err);
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+        sysLoading(false);
+        sysAlert("Lỗi xuất dữ liệu: " + err.message, "error");
     }
 }
 // ==========================================
@@ -2724,12 +2712,9 @@ function toggleAIGenerator() {
 
 async function generateHTMLwithAI() {
     const rawContent = document.getElementById('ai-raw-content').value.trim();
-    if (!rawContent) return alert("Vui lòng dán nội dung thô vào ô để AI xử lý!");
+    if (!rawContent) return sysAlert("Vui lòng dán nội dung thô vào ô để AI xử lý!", "warning");
 
-    const btn = document.getElementById('btn-generate-ai');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AI đang phân tích và viết Code...';
-    btn.disabled = true;
+    sysLoading(true, "AI đang phân tích và viết Code...");
 
     try {
         // Link Cloudflare Worker của bạn
@@ -2795,15 +2780,13 @@ async function generateHTMLwithAI() {
         aiHTML = aiHTML.replace(/```html/g, '').replace(/```/g, '').trim();
 
         document.getElementById('p-content').value = aiHTML;
-        alert("✨ Thành công! AI đã phân tích và tự động điền Code HTML vào ô Nội dung.");
+        sysAlert("Thành công! AI đã tự động điền Code HTML.", "success");
         toggleAIGenerator(); 
-
     } catch (error) {
-        alert("❌ Lỗi AI: " + error.message);
-        console.error("Chi tiết lỗi:", error);
+        sysAlert("Lỗi AI: " + error.message, "error");
+        console.error(error);
     } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+        sysLoading(false);
     }
 }
 // ==========================================
@@ -3073,7 +3056,7 @@ async function sendStudentNotification() {
     const targetType = document.getElementById('noti-target-type').value;
     let targetValue = document.getElementById('noti-target-value').value.trim();
 
-    if (!title || !content) return alert("Vui lòng nhập Tiêu đề và Nội dung!");
+    if (!title || !content) return sysAlert("Vui lòng nhập Tiêu đề và Nội dung!", "warning");
     
     let finalTargetValue = "";
 
@@ -3086,7 +3069,6 @@ async function sendStudentNotification() {
         if (!targetValue) return alert("Vui lòng nhập đối tượng nhận!");
         finalTargetValue = targetType === 'class' ? targetValue.toUpperCase() : targetValue;
     }
-
     try {
     const btn = document.querySelector('button[onclick="sendStudentNotification()"]');
     const ogText = btn.innerHTML;

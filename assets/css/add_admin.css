@@ -90,3 +90,30 @@
 .glass-scroll-body::-webkit-scrollbar-thumb:hover {
     background: rgba(15, 23, 42, 0.28) !important; /* Đậm nét hơn khi rê chuột vào */
 }
+/* CSS cho Toast Alert */
+.yt-toast {
+    background: white;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    animation: slideInRight 0.3s ease-out forwards;
+    pointer-events: auto;
+    border-left: 5px solid;
+}
+.yt-toast.success { border-color: #10b981; color: #065f46; }
+.yt-toast.error { border-color: #ef4444; color: #991b1b; }
+.yt-toast.warning { border-color: #f59e0b; color: #92400e; }
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+@keyframes fadeOutRight {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}

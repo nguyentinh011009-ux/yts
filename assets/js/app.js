@@ -329,8 +329,13 @@ async function editPost(id) {
 }
 
 async function deletePost(id) {
-    if (confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) {
+    // Dùng await sysConfirm để đợi người dùng bấm nút
+    const isOk = await sysConfirm("Bạn có chắc chắn muốn xóa bài viết này không?", "Xóa bài viết", true);
+    if (isOk) {
+        sysLoading(true, "Đang xóa..."); // Bật Loading
         await db.collection("posts").doc(id).delete();
+        sysLoading(false); // Tắt Loading
+        sysAlert("Đã xóa bài viết!", "success"); // Báo thành công
     }
 }
 
@@ -1521,14 +1526,14 @@ const dataToSave = {
     weight: document.getElementById('edit-hs-weight').value.trim(),
     medicalNote: document.getElementById('edit-hs-medical-note').value.trim()
 };
-    if (!dataToSave.name || !dataToSave.class) return alert("❌ Tên và lớp không được để trống!");
+    if (!dataToSave.name || !dataToSave.class) return sysAlert("Tên và lớp không được để trống!", "error");
 
     try {
         await db.collection('yt_students').doc(sid).update(dataToSave);
 	sessionStorage.removeItem('vts_students_cache');
         window.allStudents = []; 
         ytStudentsCache = null;
-        alert("✅ Cập nhật thông tin thành công!");
+        sysAlert("Cập nhật thông tin thành công!", "success");
         closeEditModal();
         
         // Nếu đang ở tab Tiếp Nhận thì gọi tải lại khung Lịch sử
@@ -1540,7 +1545,7 @@ const dataToSave = {
         ytStudentsCache = null; 
     window.allStudents = []; 
     adminLookupCache = null;
-    allStudentsForNotiCache = [];} catch(e) { alert("Lỗi cập nhật: " + e.message); }
+    allStudentsForNotiCache = [];} catch(e) { sysAlert("Lỗi cập nhật: " + e.message); }
 }
 // Hàm hiển thị toàn bộ lịch sử & Mã Y Tế khi gõ tên học sinh
 // ==========================================

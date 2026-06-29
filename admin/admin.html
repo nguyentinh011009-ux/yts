@@ -1368,5 +1368,30 @@
         </div>
     </div>
 </div>
+    <!-- ======================================================== -->
+<!-- HỆ THỐNG POPUP CUSTOM (LOADING, CONFIRM, TOAST) -->
+<!-- ======================================================== -->
+
+<!-- 1. Màn hình Loading -->
+<div id="yt-sys-loading" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 99999; align-items: center; justify-content: center; flex-direction: column;">
+    <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: #3b82f6; margin-bottom: 15px;"></i>
+    <div id="yt-sys-loading-text" style="color: white; font-size: 1.1rem; font-weight: 500;">Đang xử lý...</div>
+</div>
+
+<!-- 2. Hộp thoại Xác nhận (Confirm) -->
+<div id="yt-sys-confirm" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); z-index: 99998; align-items: center; justify-content: center; padding: 20px;">
+    <div class="form-card fade-in" style="width: 100%; max-width: 400px; padding: 25px; border-radius: 16px; text-align: center; background: white;">
+        <i id="yt-sys-confirm-icon" class="fas fa-exclamation-circle" style="font-size: 3rem; color: #f59e0b; margin-bottom: 15px;"></i>
+        <h3 id="yt-sys-confirm-title" style="margin: 0 0 10px; color: #1e293b; font-size: 1.25rem;">Xác nhận</h3>
+        <p id="yt-sys-confirm-text" style="color: #64748b; font-size: 0.95rem; margin-bottom: 25px; line-height: 1.5;"></p>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button id="btn-yt-sys-cancel" class="btn" style="background: #e2e8f0; color: #475569; padding: 10px 20px; font-weight: bold; flex: 1; justify-content: center;">Hủy</button>
+            <button id="btn-yt-sys-ok" class="btn btn-primary" style="padding: 10px 20px; font-weight: bold; flex: 1; justify-content: center;">Đồng ý</button>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Vùng chứa Thông báo nhanh (Toast Alert) -->
+<div id="yt-toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
 </body>
 </html>

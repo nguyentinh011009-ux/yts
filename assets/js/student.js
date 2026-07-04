@@ -30,7 +30,6 @@ function safeParseDate(dateStr) {
         }
 
         // --- XÁC THỰC ---
-// Thay thế hàm Firebase Auth Listener cũ trong student.js của bạn bằng đoạn mã sau:
 firebase.auth().onAuthStateChanged(async (user) => {
     if (user) {
         currentUserEmail = user.email;
@@ -69,6 +68,8 @@ function redirectToLogin() {
     const redirectUrl = encodeURIComponent(currentPath + currentSearch);
     window.location.href = `login.html?redirect=${redirectUrl}`;
 }
+function logoutStudent() { firebase.auth().signOut(); }
+
         // --- LIÊN KẾT & TẢI DATA ---
 async function checkLinkedAccount(email) {
     try {

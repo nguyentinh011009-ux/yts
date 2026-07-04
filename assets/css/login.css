@@ -390,3 +390,93 @@ body {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+/* Nâng cấp giao diện chung cho các ô nhập liệu trong biểu mẫu */
+.input-group input[type="text"],
+.input-group input[type="date"] {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: #1e293b;
+    outline: none;
+    background-color: #f8fafc;
+    box-sizing: border-box;
+    transition: all 0.25s ease-in-out;
+}
+
+/* Hiệu ứng mượt mà khi người dùng nhấn chọn ô nhập */
+.input-group input[type="text"]:focus,
+.input-group input[type="date"]:focus {
+    border-color: #0ea5e9;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+}
+
+/* Định dạng riêng cho ô chọn ngày sinh (Date Picker) gọn gàng hơn */
+.input-group input[type="date"] {
+    position: relative;
+    color: #334155;
+    cursor: pointer;
+}
+
+/* Tùy biến nút chọn lịch của trình duyệt trông tối giản */
+.input-group input[type="date"]::-webkit-calendar-picker-indicator {
+    background: transparent;
+    color: transparent;
+    cursor: pointer;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: auto; height: auto;
+}
+
+/* Thêm biểu tượng lịch giả lập phía bên phải ô ngày sinh */
+.input-group input[type="date"]::after {
+    content: "\f073"; /* Mã icon FontAwesome */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    pointer-events: none;
+}
+/* Thiết kế nâng cấp cho ô nhập mã OTP */
+input.otp-input, 
+#sms-otp-input {
+    width: 100%;
+    max-width: 320px;
+    margin: 10px auto;
+    display: block;
+    padding: 16px 20px;
+    border: 2px solid #cbd5e1;
+    border-radius: 16px;
+    font-family: 'Courier New', Courier, monospace; /* Sử dụng font chữ đơn cách */
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: 12px; /* Tạo khoảng giãn cách đều giữa các số */
+    text-align: center;
+    color: #0ea5e9;
+    background-color: #f8fafc;
+    box-sizing: border-box;
+    outline: none;
+    transition: all 0.25s ease-in-out;
+}
+
+/* Hiệu ứng khi nhấp vào ô OTP */
+input.otp-input:focus,
+#sms-otp-input:focus {
+    border-color: #0ea5e9;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 5px rgba(14, 165, 233, 0.15);
+}
+
+/* Căn chỉnh vị trí chữ placeholder khi chưa nhập số */
+input.otp-input::placeholder,
+#sms-otp-input::placeholder {
+    color: #cbd5e1;
+    letter-spacing: 12px;
+    font-weight: 400;
+}

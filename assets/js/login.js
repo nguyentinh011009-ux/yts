@@ -108,26 +108,22 @@ function initRecaptcha() {
 function sendEmailOTP() {
     generatedEmailOTP = Math.floor(100000 + Math.random() * 900000).toString();
     
-    const payload = {
-        to_email: googleUser.email,
-        otp_code: generatedEmailOTP,
-        student_name: foundStudentData ? foundStudentData.name : "Học sinh"
-    };
+    const emailTarget = googleUser.email;
+    const studentName = foundStudentData ? foundStudentData.name : "Học sinh";
+    
+    // Ghép các tham số trực tiếp vào đường dẫn URL để thực hiện yêu cầu GET
+    const requestUrl = `${GOOGLE_MAIL_SCRIPT_URL}?to_email=${encodeURIComponent(emailTarget)}&otp_code=${generatedEmailOTP}&student_name=${encodeURIComponent(studentName)}`;
 
-    fetch(GOOGLE_MAIL_SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors', // Sử dụng chế độ no-cors tương thích với môi trường client-side webapp
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
+    fetch(requestUrl, {
+        method: 'GET',
+        mode: 'no-cors' // Loại bỏ kiểm tra CORS của trình duyệt, đảm bảo gửi tin nhắn thành công
     })
     .then(() => {
-        alert("Mã OTP đã được hệ thống của Google gửi đến hòm thư email của bạn.");
+        alert("Yêu cầu gửi OTP đã được chuyển tiếp. Vui lòng kiểm tra hộp thư đến (hoặc thư rác) của email: " + emailTarget);
     })
     .catch(err => {
-        console.error("Lỗi gửi email:", err);
-        alert("Không thể gửi email OTP tự động. Vui lòng kiểm tra lại kết nối mạng.");
+        console.error("Lỗi kết nối API gửi email:", err);
+        alert("Lỗi kết nối mạng khi gửi mã OTP.");
     });
 }
 

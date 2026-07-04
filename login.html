@@ -146,13 +146,16 @@
                 </div>
 
                 <div id="sms-lookup-step-3" style="display: none;">
-                    <h4>Xác thực mã OTP điện thoại</h4>
-                    <div class="input-group">
-                        <label>NHẬP MÃ OTP SMS</label>
-                        <input type="text" id="sms-otp-input" maxlength="6" placeholder="Nhập 6 số">
-                    </div>
-                    <button onclick="verifySMSOTP()" class="btn-primary" style="width:100%;">Xác nhận mã OTP</button>
-                </div>
+    <h4>Xác thực mã OTP điện thoại</h4>
+    <div class="input-group">
+        <label>NHẬP MÃ OTP SMS</label>
+        <input type="text" id="sms-otp-input" maxlength="6" placeholder="Nhập 6 số" style="text-align: center; font-size: 1.5rem; letter-spacing: 4px; font-weight: bold;">
+    </div>
+    <button onclick="verifySMSOTP()" class="btn-primary" style="width:100%;">Xác nhận mã OTP</button>
+    
+    <!-- NÚT GỬI LẠI SMS OTP MỚI THÊM -->
+    <button id="btn-resend-sms" onclick="triggerSMSResend()" class="btn-secondary" style="margin-top: 10px; width: 100%; font-size: 0.9rem;" disabled>Gửi lại mã OTP (120s)</button>
+</div>
 
                 <div id="sms-lookup-step-4" style="display: none;">
                     <div class="success-banner">

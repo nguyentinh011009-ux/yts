@@ -54,23 +54,27 @@
             </div>
 
             <!-- STEP 3 & 4: RECAPTCHA & OTP EMAIL -->
-            <div id="step-3" class="login-step">
-                <div class="step-info">
-                    <h3>Xác thực bảo mật</h3>
-                    <p>Chúng tôi đã gửi một mã xác minh OTP đến địa chỉ email: <strong id="display-email">...</strong></p>
-                </div>
-                
-                <!-- Recaptcha Widget Container -->
-                <div id="recaptcha-container" class="recaptcha-box"></div>
+<div id="step-3" class="login-step">
+    <div class="step-info">
+        <h3>Xác thực bảo mật</h3>
+        <p>Chúng tôi đã gửi một mã xác minh OTP đến địa chỉ email: <strong id="display-email">...</strong></p>
+    </div>
+    
+    <!-- Recaptcha Widget Container -->
+    <div id="recaptcha-container" class="recaptcha-box"></div>
 
-                <div class="input-group otp-group">
-                    <label for="otp-email-input">MÃ XÁC MINH OTP (6 CHỮ SỐ)</label>
-                    <input type="text" id="otp-email-input" maxlength="6" placeholder="0 0 0 0 0 0" class="otp-input">
-                </div>
+    <div class="input-group otp-group">
+        <label for="otp-email-input">MÃ XÁC MINH OTP (6 CHỮ SỐ)</label>
+        <input type="text" id="otp-email-input" maxlength="6" placeholder="0 0 0 0 0 0" class="otp-input" style="text-align: center; font-size: 1.5rem; letter-spacing: 4px; font-weight: bold;">
+    </div>
 
-                <button onclick="verifyEmailOTP()" class="btn-primary">Hoàn tất liên kết</button>
-                <button onclick="goToStep(2)" class="btn-secondary" style="margin-top: 10px; width: 100%;"><i class="fas fa-arrow-left"></i> Quay lại</button>
-            </div>
+    <button onclick="verifyEmailOTP()" class="btn-primary" style="width: 100%;">Hoàn tất liên kết</button>
+    
+    <!-- NÚT GỬI LẠI EMAIL OTP MỚI THÊM -->
+    <button id="btn-resend-email" onclick="triggerEmailResend()" class="btn-secondary" style="margin-top: 10px; width: 100%; font-size: 0.9rem;" disabled>Gửi lại mã OTP (120s)</button>
+    
+    <button onclick="goToStep(2)" class="btn-secondary" style="margin-top: 10px; width: 100%;"><i class="fas fa-arrow-left"></i> Quay lại</button>
+         </div>
         </div>
     </div>
 

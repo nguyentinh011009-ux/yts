@@ -480,3 +480,18 @@ input.otp-input::placeholder,
     letter-spacing: 12px;
     font-weight: 400;
 }
+/* Khắc phục lỗi đè chữ lên biểu tượng đầu ô nhập liệu */
+.input-wrapper input {
+    padding-left: 45px !important; /* Đẩy chữ lùi về phía bên phải để nhường chỗ cho biểu tượng */
+}
+
+/* Đảm bảo biểu tượng được căn giữa chuẩn xác theo chiều dọc */
+.input-wrapper .input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    pointer-events: none;
+    color: #64748b;
+}

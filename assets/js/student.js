@@ -30,60 +30,45 @@ function safeParseDate(dateStr) {
         }
 
         // --- XÁC THỰC ---
-        firebase.auth().onAuthStateChanged((user) => {
-            if (user) {
-                currentUserEmail = user.email;
-                document.getElementById('auth-section').style.display = 'none';
-                checkLinkedAccount(user.email);
+// Thay thế hàm Firebase Auth Listener cũ trong student.js của bạn bằng đoạn mã sau:
+firebase.auth().onAuthStateChanged(async (user) => {
+    if (user) {
+        currentUserEmail = user.email;
+        // Kiểm tra xem tài khoản đã được liên kết trong CSDL chưa
+        try {
+            const snap = await db.collection('yt_students').where('linkedEmail', '==', user.email).get();
+            if (snap.empty) {
+                // Đăng nhập rồi nhưng chưa liên kết -> Đưa về trang login để hoàn thành liên kết
+                redirectToLogin();
             } else {
-                document.getElementById('auth-section').style.display = 'block';
-                document.getElementById('link-section').style.display = 'none';
-                document.getElementById('dashboard-section').style.display = 'none';
+                // Đã liên kết hợp lệ -> Hiển thị Dashboard
+                document.getElementById('dashboard-section').style.display = 'block';
+                currentStudent = { id: snap.docs[0].id, ...snap.docs[0].data() };
+                
+                try { await loadMasterCryptoKey(); } catch (e) { console.warn(e); }
+                try { renderTabInfo(); } catch(e) { console.error(e); }
+                try { loadHistory(); } catch(e) { console.error(e); }
+                try { loadTickets(); } catch(e) { console.error(e); }
+                try { loadAttendance(); } catch(e) { console.error(e); }
+                try { listenToNotifications(); } catch(e) { console.error(e); }
+                try { loadSchoolHealthStats(); } catch(e) { console.error(e); }
             }
-        });
+        } catch (err) {
+            console.error("Lỗi xác thực:", err);
+            redirectToLogin();
+        }
+    } else {
+        // Chưa đăng nhập -> Chuyển hướng sang trang login kèm tham số chuyển hướng ngược
+        redirectToLogin();
+    }
+});
 
-function loginStudentGoogle() {
-            // Chặn Zalo/Facebook
-            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            if (userAgent.indexOf("Zalo") > -1 || userAgent.indexOf("FBAN") > -1 || userAgent.indexOf("FBAV") > -1) {
-                alert("⚠️ HỆ THỐNG CẢNH BÁO:\nBạn đang mở web bằng Zalo/Facebook.\nVui lòng bấm vào dấu 3 chấm góc phải, chọn 'Mở bằng trình duyệt' (Chrome/Safari) để đăng nhập!");
-                return;
-            }
-
-            const btn = document.querySelector('#auth-section button');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xác thực...';
-            btn.disabled = true;
-
-            const provider = new firebase.auth.GoogleAuthProvider();
-
-            firebase.auth().signInWithPopup(provider)
-                .then((result) => {
-                    // 👉 ÉP BUỘC CHẠY NGAY LẬP TỨC TRÊN iOS (Không đợi onAuthStateChanged)
-                    const user = result.user;
-                    currentUserEmail = user.email;
-                    
-                    document.getElementById('auth-section').style.display = 'none';
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                    
-                    // Gọi hàm kiểm tra hồ sơ ngay lập tức
-                    checkLinkedAccount(user.email);
-                })
-                .catch(err => {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                    
-                    if (err.code !== 'auth/popup-closed-by-user') {
-                        if (err.code === 'auth/unauthorized-domain') {
-                            alert("❌ Tên miền/IP này chưa được cấp quyền trong Firebase! Vui lòng thêm vào Authorized Domains.");
-                        } else {
-                            alert("Lỗi đăng nhập: " + err.message);
-                        }
-                    }
-                });
-        }        function logoutStudent() { firebase.auth().signOut(); }
-
+function redirectToLogin() {
+    const currentPath = window.location.pathname.split('/').pop() || 'student.html';
+    const currentSearch = window.location.search;
+    const redirectUrl = encodeURIComponent(currentPath + currentSearch);
+    window.location.href = `login.html?redirect=${redirectUrl}`;
+}
         // --- LIÊN KẾT & TẢI DATA ---
 async function checkLinkedAccount(email) {
     try {

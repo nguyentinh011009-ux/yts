@@ -9,7 +9,99 @@ let smsRecaptchaVerifier = null;
 
 const GOOGLE_MAIL_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNMYm2NrbF-EYJ_eTOmDurysm9n9n1QS-i4x8eMMJ4Exr1V95DIvMJ3PjjiaYS9CFz/exec";
 
-// Lấy tham số chuyển hướng thông minh khi tải trang
+// Cấu hình quản lý Trạng thái Rate Limit OTP
+const STORAGE_KEY = "vts_otp_limit_state";
+
+function getOTPLimitState() {
+    const defaultState = { count: 0, lockoutUntil: 0 };
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) return JSON.parse(stored);
+    } catch (e) {
+        console.warn("Lỗi đọc trạng thái OTP từ trình duyệt:", e);
+    }
+    return defaultState;
+}
+
+function saveOTPLimitState(state) {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+        console.warn("Lỗi lưu trạng thái OTP:", e);
+    }
+}
+
+// Kiểm tra giới hạn gửi lại mã
+function checkOTPLimit() {
+    const state = getOTPLimitState();
+    const now = Date.now();
+    
+    if (state.lockoutUntil && now < state.lockoutUntil) {
+        const remainingHours = Math.ceil((state.lockoutUntil - now) / (1000 * 60 * 60));
+        alert(`Bạn đã gửi yêu cầu quá 3 lần. Nhằm bảo mật hệ thống, vui lòng thử lại sau ${remainingHours} giờ.`);
+        return false;
+    }
+    return true;
+}
+
+// Ghi nhận lần gửi OTP thành công và áp dụng khóa nếu vượt mức
+function recordOTPSent() {
+    const state = getOTPLimitState();
+    state.count += 1;
+    if (state.count >= 3) {
+        state.lockoutUntil = Date.now() + (24 * 60 * 60 * 1000); // Khóa 24 giờ tiếp theo
+        state.count = 0;
+    }
+    saveOTPLimitState(state);
+}
+
+// Khởi tạo bộ đếm lùi thời gian cho các nút gửi lại
+function startCooldownTimer(buttonId) {
+    const btn = document.getElementById(buttonId);
+    if (!btn) return;
+    
+    let secondsLeft = 120; // 2 phút chờ
+    btn.disabled = true;
+    btn.innerText = `Gửi lại mã OTP (${secondsLeft}s)`;
+    
+    const interval = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft <= 0) {
+            clearInterval(interval);
+            btn.disabled = false;
+            btn.innerText = "Gửi lại mã OTP";
+        } else {
+            btn.innerText = `Gửi lại mã OTP (${secondsLeft}s)`;
+        }
+    }, 1000);
+}
+
+// Hàm bổ trợ phân tích ngày tháng an toàn tránh lỗi lệch định dạng chuỗi
+function safeParseDate(dateStr) {
+    if (!dateStr) return null;
+    if (dateStr instanceof Date) return dateStr;
+    
+    let parts = String(dateStr).split(/[\/\-]/);
+    if (parts.length === 3) {
+        if (parts[0].length === 4) {
+            return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        } else if (parts[2].length === 4) {
+            return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+        }
+    }
+    let parsed = new Date(dateStr);
+    return isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function compareDates(dateStr1, dateStr2) {
+    const d1 = safeParseDate(dateStr1);
+    const d2 = safeParseDate(dateStr2);
+    if (!d1 || !d2) return false;
+    return d1.getFullYear() === d2.getFullYear() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getDate() === d2.getDate();
+}
+
 window.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const redirectParam = urlParams.get('redirect');
@@ -17,13 +109,11 @@ window.addEventListener('DOMContentLoaded', () => {
         redirectTarget = decodeURIComponent(redirectParam);
     }
     
-    // Khởi tạo giải mã dữ liệu bảo mật trong hệ thống
     loadMasterCryptoKey().catch(err => {
-        console.warn("Không thể tải khóa giải mã dữ liệu bảo mật:", err);
+        console.warn("Không thể tải khóa giải mã bảo mật:", err);
     });
 });
 
-// Điều khiển chuyển đổi màn hình các bước đăng nhập
 function goToStep(stepNum) {
     document.querySelectorAll('.login-step').forEach(step => step.classList.remove('active'));
     document.getElementById(`step-${stepNum}`).classList.add('active');
@@ -40,14 +130,11 @@ async function handleGoogleSignIn() {
         const result = await firebase.auth().signInWithPopup(provider);
         googleUser = result.user;
         
-        // Truy vấn dữ liệu để kiểm tra xem tài khoản email này đã được liên kết hay chưa
         const snap = await db.collection('yt_students').where('linkedEmail', '==', googleUser.email).get();
         
         if (!snap.empty) {
-            // Email đã được liên kết trước đó -> Cho phép truy cập trực tiếp trang đích
             window.location.href = redirectTarget;
         } else {
-            // Email mới chưa liên kết -> Đưa sang bước 2 xác nhận mã định danh
             document.getElementById('display-email').innerText = googleUser.email;
             goToStep(2);
         }
@@ -65,7 +152,6 @@ async function verifyStudentCode() {
     if (!code) return alert("Vui lòng nhập Mã học sinh hoặc Mã y tế!");
 
     try {
-        // Tìm kiếm hồ sơ học sinh theo ID tài liệu (Mã y tế) hoặc thuộc tính studentCode (Mã học sinh)
         let queryById = await db.collection('yt_students').doc(code).get();
         let queryByCode = await db.collection('yt_students').where('studentCode', '==', code).get();
 
@@ -76,25 +162,24 @@ async function verifyStudentCode() {
             targetStudentDocId = queryByCode.docs[0].id;
             foundStudentData = queryByCode.docs[0].data();
         } else {
-            return alert("Không tìm thấy thông tin hồ sơ khớp với mã bạn nhập.");
+            return alert("Không tìm thấy hồ sơ khớp với mã bạn nhập.");
         }
 
-        // Ngăn chặn ghi đè nếu hồ sơ học sinh đã có người khác liên kết
         if (foundStudentData.linkedEmail) {
-            return alert(`Hồ sơ này đã được liên kết với email: ${foundStudentData.linkedEmail}. Vui lòng liên hệ Phòng Y Tế để yêu cầu kiểm tra.`);
+            return alert(`Hồ sơ đã được liên kết với: ${foundStudentData.linkedEmail}. Vui lòng liên hệ Phòng Y Tế để được hỗ trợ.`);
         }
 
-        // Tạo reCAPTCHA vô hình phục vụ bảo mật cho quy trình gửi email
+        if (!checkOTPLimit()) return;
+
         initRecaptcha();
         goToStep(3);
         sendEmailOTP();
 
     } catch (err) {
-        alert("Lỗi truy vấn thông tin: " + err.message);
+        alert("Lỗi kiểm tra thông tin: " + err.message);
     }
 }
 
-// Khởi tạo reCAPTCHA vô hình (Invisible)
 function initRecaptcha() {
     if (recaptchaVerifier) return;
     recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
@@ -104,49 +189,54 @@ function initRecaptcha() {
     recaptchaVerifier.render();
 }
 
-// --- BƯỚC 3: GỬI VÀ XÁC MINH OTP EMAIL QUA GOOGLE APPS SCRIPT ---
+// --- BƯỚC 3: GỬI VÀ XÁC MINH OTP EMAIL ---
 function sendEmailOTP() {
     generatedEmailOTP = Math.floor(100000 + Math.random() * 900000).toString();
     
     const emailTarget = googleUser.email;
     const studentName = foundStudentData ? foundStudentData.name : "Học sinh";
     
-    // Ghép các tham số trực tiếp vào đường dẫn URL để thực hiện yêu cầu GET
     const requestUrl = `${GOOGLE_MAIL_SCRIPT_URL}?to_email=${encodeURIComponent(emailTarget)}&otp_code=${generatedEmailOTP}&student_name=${encodeURIComponent(studentName)}`;
 
     fetch(requestUrl, {
         method: 'GET',
-        mode: 'no-cors' // Loại bỏ kiểm tra CORS của trình duyệt, đảm bảo gửi tin nhắn thành công
+        mode: 'no-cors'
     })
     .then(() => {
-        alert("Yêu cầu gửi OTP đã được chuyển tiếp. Vui lòng kiểm tra hộp thư đến (hoặc thư rác) của email: " + emailTarget);
+        alert("Google đã gửi một mã xác minh OTP về hòm thư điện tử: " + emailTarget);
+        startCooldownTimer('btn-resend-email');
     })
     .catch(err => {
-        console.error("Lỗi kết nối API gửi email:", err);
-        alert("Lỗi kết nối mạng khi gửi mã OTP.");
+        console.error("Lỗi gửi email:", err);
+        alert("Không thể gửi mã OTP tự động. Hãy thử lại.");
     });
+}
+
+function triggerEmailResend() {
+    if (!checkOTPLimit()) return;
+    recordOTPSent();
+    sendEmailOTP();
 }
 
 async function verifyEmailOTP() {
     const inputOtp = document.getElementById('otp-email-input').value.trim();
     if (inputOtp !== generatedEmailOTP) {
-        return alert("Mã xác thực OTP Email không chính xác.");
+        return alert("Mã xác thực OTP không khớp.");
     }
 
     try {
-        // Cập nhật trường dữ liệu liên kết trên Firestore
         await db.collection('yt_students').doc(targetStudentDocId).update({
             linkedEmail: googleUser.email
         });
 
-        alert("Liên kết tài khoản học sinh thành công!");
+        alert("Liên kết hồ sơ học sinh thành công!");
         window.location.href = redirectTarget;
     } catch (err) {
-        alert("Lỗi cập nhật liên kết: " + err.message);
+        alert("Lỗi lưu liên kết: " + err.message);
     }
 }
 
-// --- ĐIỀU KHIỂN GIAO DIỆN MODAL HỖ TRỢ KHÔI PHỤC ---
+// --- ĐIỀU KHIỂN MODAL HỖ TRỢ ---
 function openRecoveryModal() {
     document.getElementById('recovery-modal').style.display = 'flex';
 }
@@ -163,7 +253,6 @@ function switchRecoveryTab(tabName) {
     document.getElementById(`tab-${tabName}`).classList.add('active');
 }
 
-// Định dạng số điện thoại Việt Nam sang chuẩn quốc tế E.164 (+84)
 function formatToE164(phoneNumber) {
     let cleanPhone = phoneNumber.replace(/\D/g, '');
     if (cleanPhone.startsWith('0')) {
@@ -174,47 +263,63 @@ function formatToE164(phoneNumber) {
     return cleanPhone;
 }
 
-// Mã hóa hiển thị số điện thoại (Ẩn các số giữa)
 function maskPhoneNumber(phone) {
-    if (!phone || phone.length < 9) return "Không có thông tin";
+    if (!phone || phone.length < 9) return "Không khả dụng";
     return phone.substring(0, 3) + "***" + phone.substring(phone.length - 3);
 }
 
-// --- TRA CỨU HỌC SINH & LIÊN LẠC ĐỂ CHUẨN BỊ GỬI SMS ---
+// --- TRA CỨU HỒ SƠ HỌC SINH (FIXED: LỌC TRÊN CLIENT KHÔNG BỊ LỖI INDEX HỖN HỢP) ---
 async function lookupStudentProfile() {
-    const nameInput = document.getElementById('lookup-name').value.trim().toUpperCase();
+    const nameInputRaw = document.getElementById('lookup-name').value;
     const dobInput = document.getElementById('lookup-dob').value;
-    const classInput = document.getElementById('lookup-class').value.trim().toUpperCase();
+    const classInputRaw = document.getElementById('lookup-class').value;
 
-    if (!nameInput || !dobInput || !classInput) {
-        return alert("Vui lòng điền đầy đủ 3 trường thông tin để tìm kiếm.");
+    if (!nameInputRaw || !dobInput || !classInputRaw) {
+        return alert("Vui lòng điền đủ 3 trường thông tin để tìm kiếm.");
     }
 
-    // Chuyển đổi định dạng ngày từ YYYY-MM-DD sang DD/MM/YYYY để đối chiếu chính xác
-    const formattedDate = dobInput.split('-').reverse().join('/'); 
+    // Chuẩn hóa chuỗi nhập liệu (Xóa khoảng trắng kép, chuyển hoa)
+    const nameInput = nameInputRaw.trim().toUpperCase().replace(/\s+/g, ' ');
+    const classInput = classInputRaw.trim().toUpperCase();
+
+    const searchBtn = document.querySelector('#sms-lookup-step-1 button');
+    searchBtn.disabled = true;
+    searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tìm kiếm...';
 
     try {
-        const snap = await db.collection('yt_students')
-            .where('name', '==', nameInput)
-            .where('class', '==', classInput)
-            .get();
+        // Chỉ truy vấn theo lớp (Tránh Index hỗn hợp của Firebase và hạn chế rủi ro)
+        const snap = await db.collection('yt_students').where('class', '==', classInput).get();
+
+        if (snap.empty) {
+            searchBtn.disabled = false;
+            searchBtn.innerHTML = 'Tìm kiếm thông tin';
+            return alert("Không tìm thấy bất kỳ học sinh nào trong lớp: " + classInput);
+        }
 
         let matchStudent = null;
+        
+        // Quét so sánh song song họ tên và ngày sinh chính xác trên Client
         snap.forEach(doc => {
             const data = doc.data();
-            if (data.dob === formattedDate || data.dob === dobInput) {
-                matchStudent = { id: doc.id, ...data };
+            const dbName = (data.name || "").trim().toUpperCase().replace(/\s+/g, ' ');
+            
+            if (dbName === nameInput) {
+                if (compareDates(data.dob, dobInput)) {
+                    matchStudent = { id: doc.id, ...data };
+                }
             }
         });
 
         if (!matchStudent) {
-            return alert("Không tìm thấy thông tin học sinh khớp với bộ lọc cung cấp.");
+            searchBtn.disabled = false;
+            searchBtn.innerHTML = 'Tìm kiếm thông tin';
+            return alert("Không tìm thấy thông tin học sinh khớp với dữ liệu bạn nhập. Hãy kiểm tra kỹ họ tên hoặc ngày sinh.");
         }
 
         foundStudentData = matchStudent;
         targetStudentDocId = matchStudent.id;
 
-        // Giải mã các trường số điện thoại liên lạc từ cơ sở dữ liệu
+        // Tiến hành giải mã số điện thoại đã lưu
         const studentPhoneDecrypted = decryptField(foundStudentData.phone) || "";
         const parentPhoneDecrypted = decryptField(foundStudentData.parentPhone) || "";
 
@@ -239,14 +344,14 @@ async function lookupStudentProfile() {
         }
 
         if (!phoneFound) {
-            return alert("Không tìm thấy thông tin số điện thoại liên kết trong hệ thống để thực hiện gửi SMS.");
+            searchBtn.disabled = false;
+            searchBtn.innerHTML = 'Tìm kiếm thông tin';
+            return alert("Thông tin số điện thoại của bạn chưa được thiết lập trên cơ sở dữ liệu.");
         }
 
-        // Chuyển sang màn hình xác minh bước 2 trong tab tra cứu SMS
         document.getElementById('sms-lookup-step-1').style.display = 'none';
         document.getElementById('sms-lookup-step-2').style.display = 'block';
 
-        // Khởi tạo reCAPTCHA xác minh cho SMS
         if (!smsRecaptchaVerifier) {
             smsRecaptchaVerifier = new firebase.auth.RecaptchaVerifier('sms-recaptcha', {
                 'size': 'normal',
@@ -257,39 +362,42 @@ async function lookupStudentProfile() {
 
     } catch (err) {
         console.error(err);
-        alert("Lỗi xử lý tra cứu: " + err.message);
+        alert("Lỗi hệ thống khi tra cứu dữ liệu: " + err.message);
+    } finally {
+        searchBtn.disabled = false;
+        searchBtn.innerHTML = 'Tìm kiếm thông tin';
     }
 }
 
-// --- GỬI SMS OTP MIỄN PHÍ QUA FIREBASE ---
+// --- GỬI SMS OTP MIỄN PHÍ ---
 async function sendSMSOTP() {
     const selectedRadio = document.querySelector('input[name="sms-phone-target"]:checked');
-    if (!selectedRadio) return alert("Vui lòng chọn số điện thoại để tiếp nhận mã xác thực.");
+    if (!selectedRadio) return alert("Vui lòng lựa chọn số điện thoại.");
+
+    if (!checkOTPLimit()) return;
 
     const rawPhone = selectedRadio.dataset.phone; 
     const formattedPhone = formatToE164(rawPhone); 
 
     const btn = document.querySelector('#sms-lookup-step-2 button');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi SMS...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi tin nhắn...';
     btn.disabled = true;
 
     try {
         const appVerifier = smsRecaptchaVerifier;
-
-        // Gọi dịch vụ gửi tin nhắn SMS OTP của Google thông qua Firebase Authentication
         const confirmationResult = await firebase.auth().signInWithPhoneNumber(formattedPhone, appVerifier);
         
         phoneConfirmationResult = confirmationResult;
 
-        alert("Hệ thống Google đã gửi mã xác thực SMS OTP thành công đến số điện thoại của bạn.");
+        alert("Google đã gửi tin nhắn chứa mã xác nhận miễn phí về điện thoại di động của bạn.");
         
         document.getElementById('sms-lookup-step-2').style.display = 'none';
         document.getElementById('sms-lookup-step-3').style.display = 'block';
+        startCooldownTimer('btn-resend-sms');
 
     } catch (err) {
         console.error("Lỗi gửi tin nhắn xác thực SMS:", err);
-        alert("Không thể gửi tin nhắn xác minh. Lỗi: " + err.message);
+        alert("Lỗi gửi tin nhắn: " + err.message);
         
         if (smsRecaptchaVerifier) {
             smsRecaptchaVerifier.render().then(widgetId => {
@@ -297,31 +405,35 @@ async function sendSMSOTP() {
             });
         }
     } finally {
-        btn.innerHTML = originalText;
+        btn.innerHTML = 'Gửi mã OTP qua SMS';
         btn.disabled = false;
     }
+}
+
+function triggerSMSResend() {
+    if (!checkOTPLimit()) return;
+    recordOTPSent();
+    sendSMSOTP();
 }
 
 // --- XÁC MINH SMS OTP QUA GOOGLE ---
 async function verifySMSOTP() {
     const otpInput = document.getElementById('sms-otp-input').value.trim();
     if (!otpInput || otpInput.length < 6) {
-        return alert("Vui lòng nhập mã xác thực OTP gồm 6 chữ số.");
+        return alert("Vui lòng điền đúng mã OTP 6 con số.");
     }
 
     if (!phoneConfirmationResult) {
-        return alert("Phiên làm việc đã hết hạn. Vui lòng gửi lại yêu cầu mã OTP khác.");
+        return alert("Phiên làm việc hết hiệu lực. Xin hãy thử lại.");
     }
 
     const btn = document.querySelector('#sms-lookup-step-3 button');
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xác thực...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xác minh...';
 
     try {
-        // Thực hiện so khớp mã xác nhận trên máy chủ Google
         await phoneConfirmationResult.confirm(otpInput);
 
-        // Xác thực hoàn tất -> Hiển thị kết quả tra cứu mã học sinh và mã y tế trực quan
         document.getElementById('res-name').innerText = foundStudentData.name;
         document.getElementById('res-class').innerText = foundStudentData.class;
         document.getElementById('res-stcode').innerText = foundStudentData.studentCode || "Chưa cập nhật";
@@ -332,7 +444,7 @@ async function verifySMSOTP() {
 
     } catch (err) {
         console.error("Lỗi xác minh mã OTP:", err);
-        alert("Mã OTP bạn nhập không chính xác hoặc đã hết thời gian hiệu lực.");
+        alert("Mã OTP không chính xác.");
     } finally {
         btn.disabled = false;
         btn.innerHTML = 'Xác nhận mã OTP';
@@ -342,7 +454,7 @@ async function verifySMSOTP() {
 // --- TỰ ĐỘNG LIÊN KẾT TÀI KHOẢN VÀ ĐĂNG NHẬP SAU KHI TRA CỨU THÀNH CÔNG ---
 async function autoLinkAndLogin() {
     if (!googleUser) {
-        alert("Để tự động liên kết, vui lòng đăng nhập tài khoản bằng Google tại bước 1 trước.");
+        alert("Hãy thực hiện Đăng nhập Google tại Bước 1 để hoàn thành liên kết tự động.");
         closeRecoveryModal();
         goToStep(1);
         return;
@@ -352,9 +464,9 @@ async function autoLinkAndLogin() {
         await db.collection('yt_students').doc(targetStudentDocId).update({
             linkedEmail: googleUser.email
         });
-        alert("Hệ thống đã hoàn tất liên kết hồ sơ của bạn với email của bạn.");
+        alert("Hệ thống đã đồng bộ liên kết thành công!");
         window.location.href = redirectTarget;
     } catch (err) {
-        alert("Lỗi khi đồng bộ liên kết dữ liệu: " + err.message);
+        alert("Lỗi cập nhật dữ liệu: " + err.message);
     }
 }

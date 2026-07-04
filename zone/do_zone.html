@@ -211,14 +211,14 @@
                 const snap = await db.collection('yt_students').where('linkedEmail', '==', user.email).get();
                 
                 if (snap.empty) {
-                    alert("Bạn chưa liên kết Hồ sơ Y tế!"); window.location.href = "../student.html";
+                    alert("Bạn chưa liên kết Hồ sơ Y tế!"); window.location.href = "../login.html";
                 } else {
                     currentStudent = { id: snap.docs[0].id, ...snap.docs[0].data(), email: user.email };
                     document.getElementById('top-user-name').innerText = currentStudent.name;
                     loadTest(); // Bắt đầu tải đề thi
                 }
             } else {
-                window.location.href = "../student.html";
+                window.location.href = "../login.html";
             }
         });
 

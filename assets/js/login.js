@@ -9,7 +9,7 @@ let smsRecaptchaVerifier = null;
 
 const GOOGLE_MAIL_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNMYm2NrbF-EYJ_eTOmDurysm9n9n1QS-i4x8eMMJ4Exr1V95DIvMJ3PjjiaYS9CFz/exec";
 
-// Cấu hình quản lý Trạng thái Rate Limit OTP
+// Cấu hình quản lý Trạng thái Rate Limit OTP cá nhân trên trình duyệt
 const STORAGE_KEY = "vts_otp_limit_state";
 
 function getOTPLimitState() {
@@ -31,7 +31,7 @@ function saveOTPLimitState(state) {
     }
 }
 
-// Kiểm tra giới hạn gửi lại mã
+// Kiểm tra giới hạn gửi lại mã của cá nhân
 function checkOTPLimit() {
     const state = getOTPLimitState();
     const now = Date.now();
@@ -44,7 +44,7 @@ function checkOTPLimit() {
     return true;
 }
 
-// Ghi nhận lần gửi OTP thành công và áp dụng khóa nếu vượt mức
+// Ghi nhận lần gửi OTP cá nhân thành công và áp dụng khóa nếu vượt mức
 function recordOTPSent() {
     const state = getOTPLimitState();
     state.count += 1;
@@ -55,7 +55,7 @@ function recordOTPSent() {
     saveOTPLimitState(state);
 }
 
-// Khởi tạo bộ đếm lùi thời gian cho các nút gửi lại
+// Khởi tạo bộ đếm lùi thời gian cho các nút gửi lại mã
 function startCooldownTimer(buttonId) {
     const btn = document.getElementById(buttonId);
     if (!btn) return;
@@ -74,6 +74,43 @@ function startCooldownTimer(buttonId) {
             btn.innerText = `Gửi lại mã OTP (${secondsLeft}s)`;
         }
     }, 1000);
+}
+
+// Hàm kiểm tra và cộng dồn hạn ngạch SMS toàn hệ thống (Giới hạn 10 tin/ngày)
+async function checkAndIncrementSMSQuota() {
+    const todayStr = new Date().toLocaleDateString('sv-SE'); // Định dạng chuẩn YYYY-MM-DD
+    const docRef = db.collection('yt_settings').doc('sms_quota');
+    
+    try {
+        const doc = await docRef.get();
+        let count = 0;
+        
+        if (doc.exists) {
+            const data = doc.data();
+            if (data.date === todayStr) {
+                count = data.count || 0;
+            }
+        }
+        
+        if (count >= 10) {
+            alert("⚠️ THÔNG BÁO QUAN TRỌNG:\nHệ thống gửi tin xác thực SMS tự động hôm nay đã đạt giới hạn tối đa (10 tin/ngày).\n\nVui lòng xem hướng dẫn lấy mã qua ứng dụng VnEdu Connect có sẵn ngay trên trang web này hoặc quay lại thực hiện vào ngày mai!");
+            // Tự động chuyển tab sang hướng dẫn VnEdu có sẵn trên hệ thống
+            switchRecoveryTab('vnedu');
+            return false;
+        }
+        
+        // Ghi nhận và cộng dồn lượt gửi trong ngày lên Firestore
+        await docRef.set({
+            date: todayStr,
+            count: count + 1
+        }, { merge: true });
+        
+        return true;
+    } catch (err) {
+        console.warn("Lỗi kiểm tra hạn ngạch hệ thống: ", err);
+        // Nếu có lỗi phân quyền bảo mật, cho phép đi tiếp để không khóa cứng đăng nhập
+        return true; 
+    }
 }
 
 // Hàm bổ trợ phân tích ngày tháng an toàn tránh lỗi lệch định dạng chuỗi
@@ -268,7 +305,7 @@ function maskPhoneNumber(phone) {
     return phone.substring(0, 3) + "***" + phone.substring(phone.length - 3);
 }
 
-// --- TRA CỨU HỒ SƠ HỌC SINH (FIXED: LỌC TRÊN CLIENT KHÔNG BỊ LỖI INDEX HỖN HỢP) ---
+// --- TRA CỨU HỒ SƠ HỌC SINH (LỌC TRÊN CLIENT KHÔNG BÌ LỖI INDEX HỖN HỢP) ---
 async function lookupStudentProfile() {
     const nameInputRaw = document.getElementById('lookup-name').value;
     const dobInput = document.getElementById('lookup-dob').value;
@@ -287,18 +324,18 @@ async function lookupStudentProfile() {
     searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tìm kiếm...';
 
     try {
-        // Chỉ truy vấn theo lớp (Tránh Index hỗn hợp của Firebase và hạn chế rủi ro)
+        // Chỉ truy vấn theo lớp (Tránh yêu cầu thiết lập Index hỗn hợp từ Firebase)
         const snap = await db.collection('yt_students').where('class', '==', classInput).get();
 
         if (snap.empty) {
             searchBtn.disabled = false;
             searchBtn.innerHTML = 'Tìm kiếm thông tin';
-            return alert("Không tìm thấy bất kỳ học sinh nào trong lớp: " + classInput);
+            return alert("Không tìm thấy học sinh nào thuộc lớp: " + classInput);
         }
 
         let matchStudent = null;
         
-        // Quét so sánh song song họ tên và ngày sinh chính xác trên Client
+        // Quét đối sánh song song họ tên và ngày sinh chính xác trên trình duyệt
         snap.forEach(doc => {
             const data = doc.data();
             const dbName = (data.name || "").trim().toUpperCase().replace(/\s+/g, ' ');
@@ -319,7 +356,7 @@ async function lookupStudentProfile() {
         foundStudentData = matchStudent;
         targetStudentDocId = matchStudent.id;
 
-        // Tiến hành giải mã số điện thoại đã lưu
+        // Giải mã thông tin liên lạc bảo mật
         const studentPhoneDecrypted = decryptField(foundStudentData.phone) || "";
         const parentPhoneDecrypted = decryptField(foundStudentData.parentPhone) || "";
 
@@ -346,7 +383,7 @@ async function lookupStudentProfile() {
         if (!phoneFound) {
             searchBtn.disabled = false;
             searchBtn.innerHTML = 'Tìm kiếm thông tin';
-            return alert("Thông tin số điện thoại của bạn chưa được thiết lập trên cơ sở dữ liệu.");
+            return alert("Thông tin số điện thoại của bạn chưa được thiết lập trên hệ thống.");
         }
 
         document.getElementById('sms-lookup-step-1').style.display = 'none';
@@ -369,7 +406,7 @@ async function lookupStudentProfile() {
     }
 }
 
-// --- GỬI SMS OTP MIỄN PHÍ ---
+// --- GỬI SMS OTP MIỄN PHÍ QUA GOOGLE ---
 async function sendSMSOTP() {
     const selectedRadio = document.querySelector('input[name="sms-phone-target"]:checked');
     if (!selectedRadio) return alert("Vui lòng lựa chọn số điện thoại.");
@@ -384,14 +421,13 @@ async function sendSMSOTP() {
     btn.disabled = true;
 
     try {
-        // --- CHÈN THÊM LỆNH KIỂM TRA NÀY VÀO ĐÂY ---
+        // Kiểm duyệt hạn ngạch SMS trên hệ thống trước khi gửi
         const isQuotaAvailable = await checkAndIncrementSMSQuota();
         if (!isQuotaAvailable) {
             btn.innerHTML = 'Gửi mã OTP qua SMS';
             btn.disabled = false;
-            return; // Dừng tiến trình gửi SMS nếu hết hạn ngạch
+            return;
         }
-        // --------------------------------------------
 
         const appVerifier = smsRecaptchaVerifier;
         const confirmationResult = await firebase.auth().signInWithPhoneNumber(formattedPhone, appVerifier);
@@ -406,7 +442,7 @@ async function sendSMSOTP() {
 
     } catch (err) {
         console.error("Lỗi gửi tin nhắn xác thực SMS:", err);
-        alert("Lỗi gửi tin nhắn: " + err.message);
+        alert("Lỗi gửi tin nhắn: Hệ thống đang bảo trì" + err.message);
         
         if (smsRecaptchaVerifier) {
             smsRecaptchaVerifier.render().then(widgetId => {
@@ -419,10 +455,11 @@ async function sendSMSOTP() {
     }
 }
 
+// --- GỬI LẠI SMS OTP (BỊ KHÓA, CHUYỂN HƯỚNG SANG HƯỚNG DẪN VNEDU TRÊN WEB) ---
 function triggerSMSResend() {
     alert("⚠️ THÔNG BÁO BẢO MẬT:\nTính năng gửi lại mã OTP qua SMS hiện không khả dụng để tối ưu hạn ngạch viễn thông.\n\nHệ thống sẽ hiển thị phần hướng dẫn lấy mã qua ứng dụng VnEdu Connect có sẵn ngay trên trang web này để bạn thực hiện!");
     
-    // Thực hiện chuyển đổi tab sang phần hướng dẫn VnEdu tích hợp sẵn trên hệ thống
+    // Thực hiện chuyển đổi tab sang phần hướng dẫn VnEdu tích hợp sẵn trên trang web
     switchRecoveryTab('vnedu');
 }
 
@@ -460,45 +497,7 @@ async function verifySMSOTP() {
         btn.innerHTML = 'Xác nhận mã OTP';
     }
 }
-// Hàm kiểm tra và tăng lượt đếm SMS toàn hệ thống (Giới hạn 10 tin/ngày)
-async function checkAndIncrementSMSQuota() {
-    // Lấy ngày hiện tại định dạng YYYY-MM-DD theo múi giờ địa phương
-    const todayStr = new Date().toLocaleDateString('sv-SE'); 
-    const docRef = db.collection('yt_settings').doc('sms_quota');
-    
-    try {
-        const doc = await docRef.get();
-        let count = 0;
-        
-        if (doc.exists) {
-            const data = doc.data();
-            // Nếu trùng ngày hiện tại thì lấy số lượng đã gửi, ngược lại tự reset về 0 (ngày mới)
-            if (data.date === todayStr) {
-                count = data.count || 0;
-            }
-        }
-        
-        // Nếu đã đạt ngưỡng 10 tin trong ngày
-        if (count >= 10) {
-            alert("⚠️ THÔNG BÁO QUAN TRỌNG:\nHệ thống gửi tin xác thực SMS tự động hôm nay đã đạt giới hạn tối đa (10 tin/ngày).\n\nVui lòng nhấn chọn tab bên cạnh để xem hướng dẫn lấy mã qua ứng dụng VnEdu Connect hoặc quay lại thực hiện vào ngày mai!");
-            // Tự động chuyển hướng học sinh sang tab hướng dẫn VnEdu
-            switchRecoveryTab('vnedu');
-            return false;
-        }
-        
-        // Ghi nhận và tăng số lượng tin gửi lên Firestore
-        await docRef.set({
-            date: todayStr,
-            count: count + 1
-        }, { merge: true });
-        
-        return true;
-    } catch (err) {
-        console.warn("Lỗi kiểm tra hạn ngạch hệ thống: ", err);
-        // Phòng vệ nếu Firestore chưa tạo phân quyền cho bảng này, vẫn cho phép tiếp tục
-        return true; 
-    }
-}
+
 // --- TỰ ĐỘNG LIÊN KẾT TÀI KHOẢN VÀ ĐĂNG NHẬP SAU KHI TRA CỨU THÀNH CÔNG ---
 async function autoLinkAndLogin() {
     if (!googleUser) {

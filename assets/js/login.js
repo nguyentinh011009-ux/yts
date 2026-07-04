@@ -384,6 +384,15 @@ async function sendSMSOTP() {
     btn.disabled = true;
 
     try {
+        // --- CHÈN THÊM LỆNH KIỂM TRA NÀY VÀO ĐÂY ---
+        const isQuotaAvailable = await checkAndIncrementSMSQuota();
+        if (!isQuotaAvailable) {
+            btn.innerHTML = 'Gửi mã OTP qua SMS';
+            btn.disabled = false;
+            return; // Dừng tiến trình gửi SMS nếu hết hạn ngạch
+        }
+        // --------------------------------------------
+
         const appVerifier = smsRecaptchaVerifier;
         const confirmationResult = await firebase.auth().signInWithPhoneNumber(formattedPhone, appVerifier);
         
@@ -411,9 +420,10 @@ async function sendSMSOTP() {
 }
 
 function triggerSMSResend() {
-    if (!checkOTPLimit()) return;
-    recordOTPSent();
-    sendSMSOTP();
+    alert("⚠️ THÔNG BÁO BẢO MẬT:\nTính năng gửi lại mã OTP qua SMS hiện không khả dụng để tối ưu hạn ngạch viễn thông.\n\nHệ thống sẽ hiển thị phần hướng dẫn lấy mã qua ứng dụng VnEdu Connect có sẵn ngay trên trang web này để bạn thực hiện!");
+    
+    // Thực hiện chuyển đổi tab sang phần hướng dẫn VnEdu tích hợp sẵn trên hệ thống
+    switchRecoveryTab('vnedu');
 }
 
 // --- XÁC MINH SMS OTP QUA GOOGLE ---
@@ -450,7 +460,45 @@ async function verifySMSOTP() {
         btn.innerHTML = 'Xác nhận mã OTP';
     }
 }
-
+// Hàm kiểm tra và tăng lượt đếm SMS toàn hệ thống (Giới hạn 10 tin/ngày)
+async function checkAndIncrementSMSQuota() {
+    // Lấy ngày hiện tại định dạng YYYY-MM-DD theo múi giờ địa phương
+    const todayStr = new Date().toLocaleDateString('sv-SE'); 
+    const docRef = db.collection('yt_settings').doc('sms_quota');
+    
+    try {
+        const doc = await docRef.get();
+        let count = 0;
+        
+        if (doc.exists) {
+            const data = doc.data();
+            // Nếu trùng ngày hiện tại thì lấy số lượng đã gửi, ngược lại tự reset về 0 (ngày mới)
+            if (data.date === todayStr) {
+                count = data.count || 0;
+            }
+        }
+        
+        // Nếu đã đạt ngưỡng 10 tin trong ngày
+        if (count >= 10) {
+            alert("⚠️ THÔNG BÁO QUAN TRỌNG:\nHệ thống gửi tin xác thực SMS tự động hôm nay đã đạt giới hạn tối đa (10 tin/ngày).\n\nVui lòng nhấn chọn tab bên cạnh để xem hướng dẫn lấy mã qua ứng dụng VnEdu Connect hoặc quay lại thực hiện vào ngày mai!");
+            // Tự động chuyển hướng học sinh sang tab hướng dẫn VnEdu
+            switchRecoveryTab('vnedu');
+            return false;
+        }
+        
+        // Ghi nhận và tăng số lượng tin gửi lên Firestore
+        await docRef.set({
+            date: todayStr,
+            count: count + 1
+        }, { merge: true });
+        
+        return true;
+    } catch (err) {
+        console.warn("Lỗi kiểm tra hạn ngạch hệ thống: ", err);
+        // Phòng vệ nếu Firestore chưa tạo phân quyền cho bảng này, vẫn cho phép tiếp tục
+        return true; 
+    }
+}
 // --- TỰ ĐỘNG LIÊN KẾT TÀI KHOẢN VÀ ĐĂNG NHẬP SAU KHI TRA CỨU THÀNH CÔNG ---
 async function autoLinkAndLogin() {
     if (!googleUser) {

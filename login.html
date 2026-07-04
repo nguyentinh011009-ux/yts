@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cổng Đăng Nhập Học Sinh - THPT Võ Thị Sáu</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png">
+    <link rel="icon" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" sizes="32x32" type="image/png">
+    <link rel="stylesheet" href="assets/css/login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-container">
+            <!-- Header Card -->
+            <div class="login-header">
+                <img src="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" alt="Logo" class="school-logo">
+                <h2>CỔNG Y TẾ SỐ</h2>
+                <p>Trường THPT Võ Thị Sáu</p>
+            </div>
+
+            <!-- STEP 1: ĐĂNG NHẬP GOOGLE -->
+            <div id="step-1" class="login-step active">
+                <div class="step-info">
+                    <h3>Đăng nhập tài khoản</h3>
+                    <p>Sử dụng tài khoản Gmail được cấp hoặc liên kết để bắt đầu.</p>
+                </div>
+                <button onclick="handleGoogleSignIn()" id="btn-google" class="btn-primary google-btn">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google">
+                    Đăng nhập bằng Google
+                </button>
+            </div>
+
+            <!-- STEP 2: NHẬP MÃ Y TẾ / MÃ HỌC SINH -->
+            <div id="step-2" class="login-step">
+                <div class="step-info">
+                    <h3>Xác minh thông tin</h3>
+                    <p>Tài khoản này chưa được liên kết. Vui lòng cung cấp Mã Học Sinh hoặc Mã Y Tế để định danh.</p>
+                </div>
+                <div class="input-group">
+                    <label for="student-code-input">MÃ HỌC SINH HOẶC MÃ Y TẾ</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-id-card input-icon"></i>
+                        <input type="text" id="student-code-input" placeholder="Ví dụ: HS12345 hoặc YT-67890">
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button onclick="verifyStudentCode()" class="btn-primary">Tiếp tục <i class="fas fa-chevron-right"></i></button>
+                    <button onclick="goToStep(1)" class="btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</button>
+                </div>
+                <div class="helper-links">
+                    <a href="#" onclick="openRecoveryModal()"><i class="fas fa-question-circle"></i> Quên mã học sinh / mã y tế?</a>
+                </div>
+            </div>
+
+            <!-- STEP 3 & 4: RECAPTCHA & OTP EMAIL -->
+            <div id="step-3" class="login-step">
+                <div class="step-info">
+                    <h3>Xác thực bảo mật</h3>
+                    <p>Chúng tôi đã gửi một mã xác minh OTP đến địa chỉ email: <strong id="display-email">...</strong></p>
+                </div>
+                
+                <!-- Recaptcha Widget Container -->
+                <div id="recaptcha-container" class="recaptcha-box"></div>
+
+                <div class="input-group otp-group">
+                    <label for="otp-email-input">MÃ XÁC MINH OTP (6 CHỮ SỐ)</label>
+                    <input type="text" id="otp-email-input" maxlength="6" placeholder="0 0 0 0 0 0" class="otp-input">
+                </div>
+
+                <button onclick="verifyEmailOTP()" class="btn-primary">Hoàn tất liên kết</button>
+                <button onclick="goToStep(2)" class="btn-secondary" style="margin-top: 10px; width: 100%;"><i class="fas fa-arrow-left"></i> Quay lại</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KHÔI PHỤC MÃ HỌC SINH / MÃ Y TẾ -->
+    <div id="recovery-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeRecoveryModal()">&times;</span>
+            <div class="tabs-header">
+                <button class="tab-link active" onclick="switchRecoveryTab('vnedu')">Ứng dụng VnEdu</button>
+                <button class="tab-link" onclick="switchRecoveryTab('auto')">Tra cứu qua SMS OTP</button>
+            </div>
+
+            <!-- TAB 1: VNEDU INSTRUCTIONS -->
+            <div id="tab-vnedu" class="tab-panel active">
+                <h4><i class="fas fa-mobile-alt"></i> Cách lấy mã trên VnEdu Connect</h4>
+                <ul class="guide-steps">
+                    <li><span class="step-num">1</span> Truy cập vào ứng dụng <strong>VnEdu Connect</strong> trên điện thoại.</li>
+                    <li><span class="step-num">2</span> Tại giao diện chính, nhấn chọn mục <strong>Xem chi tiết</strong>.</li>
+                    <li><span class="step-num">3</span> Tìm và nhấn vào biểu tượng <strong>"dấu chấm than"</strong> nằm cạnh tên học sinh.</li>
+                    <li><span class="step-num">4</span> Sao chép hoặc ghi nhớ <strong>Mã học sinh</strong> hiển thị tại đó và quay lại trang đăng nhập.</li>
+                </ul>
+            </div>
+
+            <!-- TAB 2: AUTOMATED LOOKUP VIA SMS -->
+            <div id="tab-auto" class="tab-panel">
+                <div id="sms-lookup-step-1">
+                    <h4>Tra cứu thông tin liên lạc</h4>
+                    <div class="input-group">
+                        <label>HỌ VÀ TÊN HỌC SINH (VIẾT HOA CÓ DẤU)</label>
+                        <input type="text" id="lookup-name" placeholder="NGUYỄN VĂN A">
+                    </div>
+                    <div class="grid-2">
+                        <div class="input-group">
+                            <label>NGÀY SINH</label>
+                            <input type="date" id="lookup-dob">
+                        </div>
+                        <div class="input-group">
+                            <label>LỚP</label>
+                            <input type="text" id="lookup-class" placeholder="10A1">
+                        </div>
+                    </div>
+                    <button onclick="lookupStudentProfile()" class="btn-primary" style="width: 100%; margin-top: 10px;">Tìm kiếm thông tin</button>
+                </div>
+
+                <div id="sms-lookup-step-2" style="display: none;">
+                    <h4>Chọn số điện thoại nhận OTP</h4>
+                    <p class="sms-charge-notice">Lưu ý: Hệ thống sử dụng dịch vụ SMS có phí, chi phí tin nhắn sẽ được trừ trực tiếp vào tài khoản thuê bao người nhận khi nhận tin.</p>
+                    
+                    <div class="phone-options">
+                        <label class="phone-option-card" id="option-student-phone-container" style="display:none;">
+                            <input type="radio" name="sms-phone-target" id="opt-student" value="student">
+                            <div class="option-details">
+                                <span class="phone-label">SĐT Học sinh</span>
+                                <span class="phone-masked" id="lbl-student-phone">090***123</span>
+                            </div>
+                        </label>
+                        <label class="phone-option-card" id="option-parent-phone-container" style="display:none;">
+                            <input type="radio" name="sms-phone-target" id="opt-parent" value="parent">
+                            <div class="option-details">
+                                <span class="phone-label">SĐT Phụ huynh</span>
+                                <span class="phone-masked" id="lbl-parent-phone">091***456</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div id="sms-recaptcha" class="recaptcha-box"></div>
+
+                    <button onclick="sendSMSOTP()" class="btn-primary" style="width:100%; margin-top:15px;">Gửi mã OTP qua SMS</button>
+                </div>
+
+                <div id="sms-lookup-step-3" style="display: none;">
+                    <h4>Xác thực mã OTP điện thoại</h4>
+                    <div class="input-group">
+                        <label>NHẬP MÃ OTP SMS</label>
+                        <input type="text" id="sms-otp-input" maxlength="6" placeholder="Nhập 6 số">
+                    </div>
+                    <button onclick="verifySMSOTP()" class="btn-primary" style="width:100%;">Xác nhận mã OTP</button>
+                </div>
+
+                <div id="sms-lookup-step-4" style="display: none;">
+                    <div class="success-banner">
+                        <i class="fas fa-check-circle"></i>
+                        <h4>Xác thực thành công!</h4>
+                    </div>
+                    <div class="info-results">
+                        <p>Học sinh: <strong id="res-name">...</strong></p>
+                        <p>Lớp: <strong id="res-class">...</strong></p>
+                        <p>Mã học sinh: <strong id="res-stcode" class="highlight-code">...</strong></p>
+                        <p>Mã y tế: <strong id="res-ytcode" class="highlight-code">...</strong></p>
+                    </div>
+                    <button onclick="autoLinkAndLogin()" class="btn-primary" style="width: 100%; margin-top: 15px;">Liên kết tài khoản & Đăng nhập ngay</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="assets/config.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="assets/js/crypto.js"></script>
+    <script src="assets/js/login.js"></script>
+</body>
+</html>

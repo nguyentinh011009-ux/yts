@@ -24,7 +24,7 @@
             <nav class="nav-links">
                 <a href="../index.html"><i class="fas fa-home"></i> Trang chủ</a>
                 <div class="nav-divider"></div>
-                <a href="../student.html"><i class="fas fa-user-graduate"></i> Hồ sơ</a>
+                <a href="../login.html"><i class="fas fa-user-graduate"></i> Hồ sơ</a>
                 <div class="nav-divider"></div>
                 <a href="zone.html" class="active"><i class="fas fa-file-lines"></i> Bài Test</a>
 		<div class="nav-divider"></div>
@@ -231,7 +231,7 @@
                 const snap = await db.collection('yt_students').where('linkedEmail', '==', user.email).get();
                 if (snap.empty) {
                     alert("⚠️ Bạn chưa liên kết Hồ sơ Y tế! Vui lòng quay lại trang 'Hồ sơ' để liên kết trước khi làm bài test.");
-                    window.location.href = "../student.html"; // Ép quay về trang student
+                    window.location.href = "../login.html"; // Ép quay về trang student
                 } else {
                     currentStudent = { id: snap.docs[0].id, ...snap.docs[0].data(), email: user.email };
                     document.getElementById('top-user-name').innerText = currentStudent.name;
@@ -243,7 +243,7 @@
                 }
             } else {
                 alert("Vui lòng đăng nhập trước!");
-                window.location.href = "../student.html";
+                window.location.href = "../login.html";
             }
         });
 

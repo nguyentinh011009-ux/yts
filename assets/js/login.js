@@ -99,36 +99,32 @@ function initRecaptcha() {
 
 // --- BƯỚC 3: GỬI OTP EMAIL & XÁC MINH ---
 function sendEmailOTP() {
-    // Tạo mã OTP 6 chữ số
-    generatedEmailOTP = Math.floor(100000 + Math.random() * 900000).toString();
+  generatedEmailOTP = Math.floor(100000 + Math.random() * 900000).toString();
+  
+  // URL nhận được từ bước triển khai Google Apps Script bên trên
+  const gasWebAppUrl = "https://script.google.com/macros/s/AKfycbwNMYm2NrbF-EYJ_eTOmDurysm9n9n1QS-i4x8eMMJ4Exr1V95DIvMJ3PjjiaYS9CFz/exec"; 
+  
+  const payload = {
+    to_email: googleUser.email,
+    otp_code: generatedEmailOTP,
+    student_name: foundStudentData ? foundStudentData.name : "Học sinh"
+  };
 
-    // Tích hợp dịch vụ gửi Email (Sử dụng API EmailJS hoặc Cloud Function của bạn)
-    // Dưới đây là ví dụ gửi thông qua EmailJS REST API (Miễn phí)
-    const emailParams = {
-        service_id: 'default_service',
-        template_id: 'otp_template',
-        user_id: 'YOUR_EMAILJS_PUBLIC_KEY',
-        template_params: {
-            to_email: googleUser.email,
-            to_name: googleUser.displayName || "Học sinh",
-            otp_code: generatedEmailOTP
-        }
-    };
-
-    // Thực hiện gọi API gửi email
-    fetch('https://api.emailjs.com/api/v1.0/email/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(emailParams)
-    })
-    .then(res => {
-        alert("Mã OTP đã được gửi đến email đăng nhập của bạn.");
-    })
-    .catch(err => {
-        console.error("Lỗi gửi email:", err);
-        // Trong trường hợp thử nghiệm chưa cấu hình EmailJS, log ra console để debug nhanh
-        console.log("[DEBUG] OTP Email gửi đến " + googleUser.email + " là: " + generatedEmailOTP);
-    });
+  fetch(gasWebAppUrl, {
+    method: 'POST',
+    mode: 'no-cors', // Sử dụng chế độ no-cors để tránh lỗi phân quyền chéo trên trình duyệt
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  })
+  .then(() => {
+    alert("Mã xác minh OTP đã được gửi đến email đăng nhập Google của bạn.");
+  })
+  .catch(err => {
+    console.error("Lỗi kết nối máy chủ gửi email:", err);
+    alert("Không thể gửi OTP tự động. Hãy kiểm tra lại kết nối mạng.");
+  });
 }
 
 async function verifyEmailOTP() {

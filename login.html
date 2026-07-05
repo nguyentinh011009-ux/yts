@@ -8,6 +8,64 @@
     <link rel="icon" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" sizes="32x32" type="image/png">
     <link rel="stylesheet" href="assets/css/login.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Ép buộc danh sách hướng dẫn VnEdu hiển thị hàng ngang song song */
+        .modal-content .guide-steps {
+            list-style: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+        }
+
+        .modal-content .guide-steps li {
+            display: flex !important;
+            align-items: center !important; /* Căn giữa chữ và ảnh theo chiều dọc */
+            gap: 12px !important;
+            margin-bottom: 20px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        .modal-content .step-content {
+            display: flex !important;
+            flex-direction: row !important; /* Ép buộc luôn nằm trên một hàng ngang */
+            align-items: center !important;
+            justify-content: space-between !important;
+            flex: 1 !important;
+            width: 100% !important;
+            gap: 15px !important;
+        }
+
+        .modal-content .step-text {
+            flex: 1 !important; /* Tự động giãn rộng để chiếm không gian trống */
+            font-size: 0.9rem !important;
+            line-height: 1.5 !important;
+            color: #334155 !important;
+            white-space: normal !important; /* Chặn việc ép chữ xuống dòng từng từ */
+            word-break: break-word !important;
+        }
+
+        /* Khóa cứng kích thước ảnh minh họa thu nhỏ */
+        .modal-content .tutorial-img {
+            width: 75px !important;
+            height: 75px !important;
+            min-width: 75px !important; /* Không cho phép ảnh bị bóp méo */
+            max-width: 75px !important;
+            min-height: 75px !important;
+            max-height: 75px !important;
+            object-fit: cover !important; /* Cắt ảnh vừa vặn khung vuông */
+            border-radius: 10px !important;
+            border: 1.5px solid #e2e8f0 !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08) !important;
+            flex-shrink: 0 !important;
+            cursor: pointer !important;
+            transition: transform 0.2s ease !important;
+        }
+
+        .modal-content .tutorial-img:hover {
+            transform: scale(1.15) !important;
+        }
+    </style>
 </head>
 <body>
     <div class="login-wrapper">

@@ -516,12 +516,11 @@ input.otp-input::placeholder,
 /* Khung chứa nội dung (Chữ bên trái, ảnh bên phải) */
 .step-content {
     display: flex !important;
-    flex-direction: column !important; /* Thay vì row, dùng column để chữ nằm trên, ảnh nằm dưới */
+    flex-direction: column !important; /* Đưa ảnh xuống dưới câu hướng dẫn */
     align-items: flex-start !important;
-    justify-content: flex-start !important;
     flex: 1 !important;
     width: 100% !important;
-    gap: 10px !important; /* Khoảng cách giữa chữ và ảnh */
+    gap: 8px !important; /* Khoảng cách giữa chữ và ảnh */
 }
 
 /* Phần chữ hướng dẫn */
@@ -534,21 +533,21 @@ input.otp-input::placeholder,
 }
 
 /* CƯỠNG CHẾ ẢNH THU NHỎ CHUẨN KHÔNG BỊ ĐÈ MÃ */
+/* Định dạng hình ảnh hiển thị tỉ lệ 16:9 dưới câu hướng dẫn */
 .guide-steps .tutorial-img {
-    width: auto !important;
-    max-width: 100% !important; /* Đảm bảo ảnh không vượt quá chiều rộng khung */
-    height: auto !important; /* Giữ nguyên tỷ lệ gốc của ảnh chụp màn hình */
-    max-height: 160px !important; /* Khống chế chiều cao tối đa để không chiếm quá nhiều diện tích dọc */
-    object-fit: contain !important; /* Đảm bảo hình ảnh hiển thị đầy đủ, không bị cắt mép */
-    border-radius: 12px !important;
+    width: 100% !important;
+    max-width: 300px !important; /* Giới hạn chiều rộng ảnh để cân đối trong khung modal */
+    aspect-ratio: 16 / 9 !important; /* Cưỡng chế tỉ lệ khung hình 16:9 */
+    object-fit: cover !important; /* Giúp ảnh tự lấp đầy khung 16:9 mà không bị méo */
+    object-position: center !important; /* Căn giữa nội dung ảnh */
+    border-radius: 10px !important;
     border: 1.5px solid #e2e8f0 !important;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08) !important;
     flex-shrink: 0 !important;
-    cursor: pointer !important;
-    transition: transform 0.2s ease-in-out !important;
+    transition: transform 0.2s ease !important;
 }
 
-/* Hiệu ứng phóng to nhẹ khi hover */
+/* Hiệu ứng phóng to nhẹ khi di chuột vào ảnh */
 .guide-steps .tutorial-img:hover {
-    transform: scale(1.03) !important;
+    transform: scale(1.04) !important;
 }

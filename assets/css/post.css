@@ -407,19 +407,17 @@ body #post-detail-container .share-btn-title:hover {
     }
 
     /* Khung nội dung kính mờ trên di động */
-    body #post-detail-container {
-        width: 92% !important;
-        padding: 24px 16px !important;
-        margin: 20px auto !important;
-        border-radius: 20px !important;
-        background: linear-gradient(
-            135deg, 
-            rgba(255, 255, 255, 0.8) 0%, 
-            rgba(240, 253, 244, 0.6) 100%
-        ) !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
-    }
+body #post-detail-container {
+    width: 92% !important;
+    padding: 0 !important; /* Đặt về 0 để không tạo khoảng cách viền đúp */
+    margin: 20px auto !important;
+    border-radius: 0 !important; 
+    background: transparent !important; /* Chuyển hoàn toàn thành trong suốt */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
+}
 
     #post-detail-container h1 {
         font-size: 1.6rem !important;

@@ -495,47 +495,63 @@ input.otp-input::placeholder,
     pointer-events: none;
     color: #64748b;
 }
-/* Tối ưu hóa danh sách hướng dẫn VnEdu */
+/* Đảm bảo khung chứa danh sách không bị tràn */
+.guide-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+/* Cấu trúc từng dòng của danh sách */
 .guide-steps li {
     display: flex !important;
-    align-items: flex-start !important; /* Căn lề trên để số thứ tự không bị lệch khi văn bản dài */
-    gap: 12px;
-    margin-bottom: 18px;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    margin-bottom: 20px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
-/* Khung chứa nội dung hàng ngang (văn bản bên trái, ảnh bên phải) */
+/* Khung chứa nội dung (Chữ bên trái, ảnh bên phải) */
 .step-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    gap: 15px; /* Tạo khoảng cách an toàn giữa chữ và ảnh */
+    display: flex !important;
+    flex-direction: row !important; /* Ép buộc luôn nằm trên hàng ngang */
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex: 1 !important;
+    width: 100% !important;
+    gap: 15px !important;
 }
 
-/* Định dạng khối văn bản hướng dẫn */
+/* Phần chữ hướng dẫn */
 .step-text {
-    flex: 1; /* Chiếm trọn không gian trống còn lại */
-    font-size: 0.9rem;
-    line-height: 1.45;
-    color: #334155;
+    flex: 1 !important; /* Tự động nở rộng để chiếm toàn bộ không gian còn lại */
+    font-size: 0.9rem !important;
+    line-height: 1.5 !important;
+    color: #334155 !important;
+    white-space: normal !important; /* Ngăn chặn việc ép chữ xuống dòng từng từ */
+    word-break: break-word !important;
 }
 
-/* Định dạng ảnh minh họa thu nhỏ đồng đều */
-.tutorial-img {
-    width: 60px;
-    height: 60px;
-    object-fit: cover; /* Tự động cắt ảnh vừa khung vuông, không bị méo tỷ lệ ảnh */
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.06);
-    flex-shrink: 0; /* Ngăn chặn ảnh bị bóp méo khi màn hình nhỏ */
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+/* CƯỠNG CHẾ ẢNH THU NHỎ CHUẨN KHÔNG BỊ ĐÈ MÃ */
+.guide-steps .tutorial-img {
+    width: 75px !important;
+    height: 75px !important;
+    min-width: 75px !important; /* Khóa cứng chiều ngang tối thiểu */
+    max-width: 75px !important; /* Khóa cứng chiều ngang tối đa */
+    min-height: 75px !important;
+    max-height: 75px !important;
+    object-fit: cover !important; /* Tự động cắt cúp vừa vặn khung vuông */
+    border-radius: 10px !important;
+    border: 1.5px solid #e2e8f0 !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08) !important;
+    flex-shrink: 0 !important; /* Tuyệt đối không cho phép ảnh tự co giãn */
+    cursor: pointer !important;
+    transition: transform 0.2s ease !important;
 }
 
-/* Hiệu ứng phóng nhẹ khi di chuột vào ảnh */
-.tutorial-img:hover {
-    transform: scale(1.15);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
-    z-index: 10;
+/* Hiệu ứng phóng to nhẹ khi hover */
+.guide-steps .tutorial-img:hover {
+    transform: scale(1.15) !important;
 }

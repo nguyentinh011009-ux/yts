@@ -495,12 +495,47 @@ input.otp-input::placeholder,
     pointer-events: none;
     color: #64748b;
 }
+/* Tối ưu hóa danh sách hướng dẫn VnEdu */
+.guide-steps li {
+    display: flex !important;
+    align-items: flex-start !important; /* Căn lề trên để số thứ tự không bị lệch khi văn bản dài */
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+/* Khung chứa nội dung hàng ngang (văn bản bên trái, ảnh bên phải) */
+.step-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 15px; /* Tạo khoảng cách an toàn giữa chữ và ảnh */
+}
+
+/* Định dạng khối văn bản hướng dẫn */
+.step-text {
+    flex: 1; /* Chiếm trọn không gian trống còn lại */
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: #334155;
+}
+
+/* Định dạng ảnh minh họa thu nhỏ đồng đều */
 .tutorial-img {
-    display: block;
-    max-width: 100%;
-    width: 320px;
-    margin: 10px auto 0;
-    border-radius: 10px;
-    border: 1px solid #ddd;
-    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+    width: 60px;
+    height: 60px;
+    object-fit: cover; /* Tự động cắt ảnh vừa khung vuông, không bị méo tỷ lệ ảnh */
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+    flex-shrink: 0; /* Ngăn chặn ảnh bị bóp méo khi màn hình nhỏ */
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Hiệu ứng phóng nhẹ khi di chuột vào ảnh */
+.tutorial-img:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    z-index: 10;
 }

@@ -83,17 +83,15 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
 }
 
 .admin-sidebar {
-    background: #ffffff; /* Nền trắng tinh tế */
-    padding: 25px 18px;
-    color: #1e293b; /* Chữ tối màu tương phản cao */
+    background: var(--admin-grad); /* Sử dụng lại gradient màu tối: linear-gradient(135deg, #1e293b 0%, #334155 100%) */
+    padding: 40px 20px;
+    color: white;
     position: sticky;
-    top: 0;
+    top: 0; 
     height: 100vh;
     display: flex;
     flex-direction: column;
-    border-right: 1px solid #e2e8f0; /* Đường viền phải mỏng, sạch sẽ */
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
-    overflow-y: auto;
+    overflow-y: auto; /* Cho phép cuộn nếu menu dài */
 }
 .sidebar-brand-box {
     text-align: center;
@@ -280,44 +278,39 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
 }
 .admin-tab-btn {
     width: 100%;
-    padding: 10px 14px;
-    margin: 4px 0;
+    padding: 16px 20px;
+    margin-bottom: 12px;
     border: none;
-    background: transparent;
-    color: #475569; /* Độ tương phản cao */
-    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #cbd5e1;
+    border-radius: 12px;
     cursor: pointer;
     text-align: left;
-    font-size: 0.95rem; /* Tăng kích thước chữ */
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    transition: all 0.2s ease;
     text-decoration: none;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: var(--transition);
+    display: flex; 
+    align-items: center; 
+    gap: 12px;
 }
 .admin-tab-btn i {
     width: 20px;
     text-align: center;
-    font-size: 1.1rem;
-    color: #64748b;
-    transition: color 0.2s ease;
 }
+
 /* Trạng thái Hover của nút con */
 .admin-tab-btn:hover {
-    color: #0f172a;
-    background: #f1f5f9;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
 }
 .admin-tab-btn:hover i {
     color: #0f172a;
 }
 .admin-tab-btn.active {
-    background: #eff6ff; /* Nền xanh pastel trẻ trung */
-    color: #0062ff; /* Chữ xanh nổi bật */
-    font-weight: 700;
-    border-left: 4px solid #0062ff; /* Vạch định vị bên trái */
-    border-radius: 0 8px 8px 0;
-    padding-left: 10px;
+    background: var(--primary-grad);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 98, 255, 0.3);
 }
 .admin-tab-btn.active i {
     color: #0062ff;

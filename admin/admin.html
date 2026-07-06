@@ -72,66 +72,98 @@
     <div id="display-admin-email" style="color: #94a3b8; font-size: 0.8rem;">Đang tải...</div>
 </div>
 <!-- KẾT THÚC: Khối hiển thị thông tin Admin -->
-            <nav>
-    <p style="font-size: 0.7rem; color: #94a3b8; margin: 20px 0 10px 10px; text-transform: uppercase;">Nội dung</p>
-    <button class="admin-tab-btn active" onclick="switchTab('tab-posts', this)">
-        <i class="fas fa-edit"></i> Quản lý bài viết
-    </button>
-    <button class="admin-tab-btn" onclick="switchTab('tab-announce', this)">
-        <i class="fas fa-bullhorn"></i> Quản lý Slider
-    </button>
+<nav>
+    <!-- NHÓM 1: NỘI DUNG -->
+    <div class="sidebar-group">
+        <div class="sidebar-group-header" onclick="toggleSidebarGroup(this)">
+            <span>Nội dung</span>
+            <i class="fas fa-chevron-down toggle-icon"></i>
+        </div>
+        <div class="sidebar-group-content">
+            <button class="admin-tab-btn active" onclick="switchTab('tab-posts', this)">
+                <i class="fas fa-edit"></i> Quản lý bài viết
+            </button>
+            <button class="admin-tab-btn" onclick="switchTab('tab-announce', this)">
+                <i class="fas fa-bullhorn"></i> Quản lý Slider
+            </button>
+        </div>
+    </div>
 
-    <p style="font-size: 0.7rem; color: #94a3b8; margin: 20px 0 10px 10px; text-transform: uppercase;">Tương tác</p>
-    <button class="admin-tab-btn" onclick="switchTab('tab-yte-yeucau', this)">
-        <i class="fas fa-envelope-open-text"></i> Hòm thư học sinh
-    </button>    
-    <a href="../zone/test_admin.html" class="admin-tab-btn" style="text-decoration: none;">
-        <i class="fas fa-heart-pulse"></i> Kiểm tra sức khỏe
-    </a>
-    <button class="admin-tab-btn" onclick="switchTab('tab-send-noti', this)">
-        <i class="fas fa-bell"></i> Quản lý thông báo
-    </button>
-    <button class="admin-tab-btn" onclick="switchTab('tab-fusoftx', this)">
-        <i class="fas fa-headset"></i> Hỗ trợ từ FUSoftX
-    </button>
+    <!-- NHÓM 2: TƯƠNG TÁC -->
+    <div class="sidebar-group">
+        <div class="sidebar-group-header" onclick="toggleSidebarGroup(this)">
+            <span>Tương tác</span>
+            <i class="fas fa-chevron-down toggle-icon"></i>
+        </div>
+        <div class="sidebar-group-content">
+            <button class="admin-tab-btn" onclick="switchTab('tab-yte-yeucau', this)">
+                <i class="fas fa-envelope-open-text"></i> Hòm thư học sinh
+            </button>    
+            <a href="../zone/test_admin.html" class="admin-tab-btn" style="text-decoration: none;">
+                <i class="fas fa-heart-pulse"></i> Kiểm tra sức khỏe
+            </a>
+            <button class="admin-tab-btn" onclick="switchTab('tab-send-noti', this)">
+                <i class="fas fa-bell"></i> Quản lý thông báo
+            </button>
+            <button class="admin-tab-btn" onclick="switchTab('tab-fusoftx', this)">
+                <i class="fas fa-headset"></i> Hỗ trợ từ FUSoftX
+            </button>
+        </div>
+    </div>
 
-    <p style="font-size: 0.7rem; color: #94a3b8; margin: 20px 0 10px 10px; text-transform: uppercase;">Y tế số</p>
-    <button class="admin-tab-btn" onclick="switchTab('tab-yte-tiepnhan', this)">
-        <i class="fas fa-user-plus"></i> Tiếp nhận
-    </button>
-    <button class="admin-tab-btn" onclick="switchTab('tab-yte-giuong', this)">
-        <i class="fas fa-bed"></i> Quản lý giường
-    </button>
-    <button class="admin-tab-btn" onclick="switchTab('tab-yte-dulieu', this)">
-        <i class="fas fa-address-book"></i> Hồ sơ học sinh
-    </button>
-    <a href="duoc.html" class="admin-tab-btn" style="text-decoration: none;">
-        <i class="fas fa-pills"></i> Kho Dược & Vật tư
-    </a>
-    <button class="admin-tab-btn" onclick="switchTab('tab-yte-xuat', this)">
-        <i class="fas fa-file-export"></i> Xuất báo cáo
-    </button>
-    <button class="admin-tab-btn" onclick="switchTab('tab-yte-thongke', this)">
-        <i class="fas fa-chart-pie"></i> Thống kê y tế
-    </button>
-    <a href="baocao.html" class="admin-tab-btn">
-    <i class="fas fa-file-invoice"></i> Điểm danh
-    </a>
-    <button class="admin-tab-btn" onclick="switchTab('tab-physical-exam', this)">
-    <i class="fas fa-file-medical"></i> Khám sức khỏe
-    </button>
-    <button class="admin-tab-btn" onclick="switchTab('tab-yte-tracuu-admin', this)">
-        <i class="fas fa-search-plus"></i> Tra cứu
-    </button>
+    <!-- NHÓM 3: Y TẾ SỐ -->
+    <div class="sidebar-group">
+        <div class="sidebar-group-header" onclick="toggleSidebarGroup(this)">
+            <span>Y tế số</span>
+            <i class="fas fa-chevron-down toggle-icon"></i>
+        </div>
+        <div class="sidebar-group-content">
+            <button class="admin-tab-btn" onclick="switchTab('tab-yte-tiepnhan', this)">
+                <i class="fas fa-user-plus"></i> Tiếp nhận
+            </button>
+            <button class="admin-tab-btn" onclick="switchTab('tab-yte-giuong', this)">
+                <i class="fas fa-bed"></i> Quản lý giường
+            </button>
+            <button class="admin-tab-btn" onclick="switchTab('tab-yte-dulieu', this)">
+                <i class="fas fa-address-book"></i> Hồ sơ học sinh
+            </button>
+            <a href="duoc.html" class="admin-tab-btn" style="text-decoration: none;">
+                <i class="fas fa-pills"></i> Kho Dược & Vật tư
+            </a>
+            <button class="admin-tab-btn" onclick="switchTab('tab-yte-xuat', this)">
+                <i class="fas fa-file-export"></i> Xuất báo cáo
+            </button>
+            <button class="admin-tab-btn" onclick="switchTab('tab-yte-thongke', this)">
+                <i class="fas fa-chart-pie"></i> Thống kê y tế
+            </button>
+            <a href="baocao.html" class="admin-tab-btn">
+                <i class="fas fa-file-invoice"></i> Điểm danh
+            </a>
+            <button class="admin-tab-btn" onclick="switchTab('tab-physical-exam', this)">
+                <i class="fas fa-file-medical"></i> Khám sức khỏe
+            </button>
+            <button class="admin-tab-btn" onclick="switchTab('tab-yte-tracuu-admin', this)">
+                <i class="fas fa-search-plus"></i> Tra cứu
+            </button>
+        </div>
+    </div>
 
-    <p style="font-size: 0.7rem; color: #94a3b8; margin: 20px 0 10px 10px; text-transform: uppercase;">Hệ thống</p>
-    <button class="admin-tab-btn" onclick="switchTab('tab-account', this)">
-        <i class="fas fa-user-cog"></i> Cài đặt tài khoản
-    </button>
-    <a href="system.html" class="admin-tab-btn" style="text-decoration: none;">
-        <i class="fas fa-cogs"></i> Quản lý hệ thống
-    </a>
-   </nav>
+    <!-- NHÓM 4: HỆ THỐNG -->
+    <div class="sidebar-group">
+        <div class="sidebar-group-header" onclick="toggleSidebarGroup(this)">
+            <span>Hệ thống</span>
+            <i class="fas fa-chevron-down toggle-icon"></i>
+        </div>
+        <div class="sidebar-group-content">
+            <button class="admin-tab-btn" onclick="switchTab('tab-account', this)">
+                <i class="fas fa-user-cog"></i> Cài đặt tài khoản
+            </button>
+            <a href="system.html" class="admin-tab-btn" style="text-decoration: none;">
+                <i class="fas fa-cogs"></i> Quản lý hệ thống
+            </a>
+        </div>
+    </div>
+</nav>
             <div style="margin-top:100px;">
                 <button onclick="handleLogout()" class="btn btn-danger" style="width:100%; justify-content:center; background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid #ef4444;">
                     <i class="fas fa-sign-out-alt"></i> Đăng xuất

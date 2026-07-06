@@ -83,51 +83,55 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
 }
 
 .admin-sidebar {
-    background: #0b0f19;
-    padding: 30px 20px;
-    color: #f8fafc;
+    background: #ffffff; /* Nền trắng tinh tế */
+    padding: 25px 18px;
+    color: #1e293b; /* Chữ tối màu tương phản cao */
     position: sticky;
     top: 0;
     height: 100vh;
     display: flex;
     flex-direction: column;
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    border-right: 1px solid #e2e8f0; /* Đường viền phải mỏng, sạch sẽ */
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
+    overflow-y: auto;
 }
 .sidebar-brand-box {
     text-align: center;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px dashed #e2e8f0;
 }
 .brand-title {
-    font-size: 1.6rem;
+    font-size: 1.7rem; /* Chữ to, rõ ràng */
     font-weight: 800;
-    letter-spacing: 2px;
-    background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+    letter-spacing: 1.5px;
+    background: linear-gradient(135deg, #0062ff 0%, #00d4ff 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin: 0;
 }
 .brand-subtitle {
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     color: #64748b;
-    font-weight: 600;
-    letter-spacing: 1px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
 }
 .admin-profile-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #f8fafc; /* Nền xám nhạt dịu mắt */
+    border: 1px solid #e2e8f0;
     border-radius: 16px;
     padding: 16px;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     text-align: center;
     position: relative;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
-
 /* Dynamic Avatar */
 .avatar-wrapper {
     position: relative;
-    width: 64px;
-    height: 64px;
+    width: 68px;
+    height: 68px;
     margin: 0 auto 10px;
 }
 .avatar-wrapper img {
@@ -135,45 +139,45 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     height: 100%;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid #3b82f6;
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+    border: 3px solid #ffffff;
+    box-shadow: 0 4px 10px rgba(0, 98, 255, 0.15);
 }
 .status-indicator {
     position: absolute;
-    bottom: 2px;
-    right: 2px;
-    width: 12px;
-    height: 12px;
+    bottom: 3px;
+    right: 3px;
+    width: 13px;
+    height: 13px;
     border-radius: 50%;
-    border: 2px solid #0f172a;
+    border: 2px solid #ffffff;
 }
 .status-indicator.online {
     background: #10b981;
 }
 .admin-name {
     font-weight: 700;
-    color: #f8fafc;
-    font-size: 0.95rem;
+    color: #0f172a;
+    font-size: 1.05rem; /* Chữ to, dễ đọc */
+    margin-bottom: 3px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-bottom: 2px;
 }
 .admin-email {
     color: #64748b;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     word-break: break-all;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 .admin-badge {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
-    font-size: 0.7rem;
+    background: #eff6ff; /* Badge màu xanh sáng trẻ trung */
+    color: #1e40af;
+    font-size: 0.75rem;
     font-weight: 700;
-    padding: 3px 8px;
+    padding: 4px 10px;
     border-radius: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -186,10 +190,10 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     right: 15px;
     cursor: pointer;
     color: #64748b;
-    transition: color 0.2s ease, transform 0.2s ease;
+    transition: all 0.2s ease;
 }
 .profile-noti-bell:hover {
-    color: #f59e0b;
+    color: #d97706;
     transform: scale(1.1);
 }
 .badge-dot {
@@ -209,43 +213,48 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     flex: 1;
     overflow-y: auto;
     padding-right: 4px;
+    margin-top: 10px;
 }
 .sidebar-nav::-webkit-scrollbar {
-    width: 4px;
+    width: 5px;
 }
 .sidebar-nav::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: #cbd5e1;
     border-radius: 4px;
 }
 
 .sidebar-group {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 8px;
+}
+.sidebar-group:last-child {
+    border-bottom: none;
 }
 .sidebar-group-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 14px;
-    font-size: 0.85rem;
-    color: #94a3b8;
+    padding: 12px 10px;
+    font-size: 0.9rem; /* Chữ to hơn */
+    color: #475569; /* Màu chữ trung tính, dễ phân biệt */
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.8px;
     cursor: pointer;
     border-radius: 8px;
     transition: all 0.2s ease;
-    margin-top: 10px;
 }
 .sidebar-group-header:hover {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.03);
+    color: #0f172a;
+    background: #f1f5f9;
 }
 .sidebar-group-header.active {
-    color: #3b82f6;
+    color: #0062ff; /* Highlight màu xanh thương hiệu khi mở rộng */
 }
 .group-icon {
     margin-right: 10px;
-    font-size: 1rem;
+    font-size: 1.1rem;
 }
 
 .toggle-icon {
@@ -259,60 +268,76 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
 .sidebar-group-content {
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.3s cubic-bezier(0, 1, 0, 1);
-    margin-left: 20px; 
-    border-left: 1.5px solid rgba(255, 255, 255, 0.1); 
-    padding-left: 10px;
+    transition: max-height 0.25s ease-out;
+    margin-left: 12px; 
+    border-left: 2px solid #e2e8f0; /* Đường phân cấp thanh lịch */
+    padding-left: 8px;
 }
 .sidebar-group-content.expanded {
     max-height: 500px;
-    transition: max-height 0.35s cubic-bezier(1, 0, 1, 0);
-    margin-bottom: 10px;
+    margin-top: 4px;
+    margin-bottom: 8px;
 }
 .admin-tab-btn {
     width: 100%;
-    padding: 11px 16px;
-    margin: 6px 0;
+    padding: 10px 14px;
+    margin: 4px 0;
     border: none;
     background: transparent;
-    color: #cbd5e1;
+    color: #475569; /* Độ tương phản cao */
     border-radius: 8px;
     cursor: pointer;
     text-align: left;
-    font-size: 0.95rem;
+    font-size: 0.95rem; /* Tăng kích thước chữ */
     font-weight: 500;
     display: flex;
     align-items: center;
     gap: 12px;
     transition: all 0.2s ease;
+    text-decoration: none;
+}
+.admin-tab-btn i {
+    width: 20px;
+    text-align: center;
+    font-size: 1.1rem;
+    color: #64748b;
+    transition: color 0.2s ease;
+}
+/* Trạng thái Hover của nút con */
+.admin-tab-btn:hover {
+    color: #0f172a;
+    background: #f1f5f9;
+}
+.admin-tab-btn:hover i {
+    color: #0f172a;
 }
 .admin-tab-btn.active {
-    background: rgba(59, 130, 246, 0.16);
-    color: #60a5fa;
-    font-weight: 600;
-    border-left: 3px solid #3b82f6;
+    background: #eff6ff; /* Nền xanh pastel trẻ trung */
+    color: #0062ff; /* Chữ xanh nổi bật */
+    font-weight: 700;
+    border-left: 4px solid #0062ff; /* Vạch định vị bên trái */
     border-radius: 0 8px 8px 0;
-    padding-left: 13px;
+    padding-left: 10px;
 }
 .admin-tab-btn.active i {
-    color: #60a5fa;
+    color: #0062ff;
 }
 .admin-main { padding: 40px; background: #f1f5f9; }
 
 /* --- FOOTER BUTTON (LOGOUT) --- */
 .sidebar-footer {
     padding-top: 15px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid #e2e8f0;
 }
 .btn-logout-modern {
     width: 100%;
     padding: 12px;
-    background: rgba(239, 68, 68, 0.08);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    color: #fca5a5;
+    background: #fef2f2; /* Nền đỏ nhạt */
+    border: 1px solid #fca5a5;
+    color: #b91c1c; /* Chữ đỏ đậm tương phản */
     border-radius: 12px;
-    font-weight: 600;
-    font-size: 0.9rem;
+    font-weight: 700;
+    font-size: 0.95rem;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -323,7 +348,8 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
 .btn-logout-modern:hover {
     background: #ef4444;
     color: #ffffff;
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
 }
 
 /* --- FORMS, INPUTS & LABELS (ĐÃ GỘP VÀ TỐI ƯU ĐỒNG BỘ) --- */

@@ -1,3 +1,6 @@
+/* ==========================================================================
+   1. ROOT VARIABLES & IMPORTS
+   ========================================================================== */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;800&family=Roboto:wght@300;400;500;700&display=swap');
 
 :root {
@@ -16,7 +19,14 @@
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+/* ==========================================================================
+   2. GLOBAL RESET & BASE STYLES
+   ========================================================================== */
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+}
 
 body {
     font-family: 'Roboto', sans-serif;
@@ -26,9 +36,22 @@ body {
     overflow-x: hidden;
 }
 
-h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 700; }
+h1, h2, h3, .font-title { 
+    font-family: 'Montserrat', sans-serif; 
+    font-weight: 700; 
+}
 
-/* --- HEADER & HERO --- */
+/* ==========================================================================
+   3. HEADER & HERO
+   ========================================================================== */
+header {
+    position: relative;
+    background: var(--primary-grad);
+    color: white;
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
 .main-header {
     background: var(--primary-grad);
     color: white;
@@ -39,10 +62,82 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     z-index: 1;
 }
 
-.main-header h1 { font-size: 2.5rem; margin-bottom: 15px; letter-spacing: -1px; }
-.main-header p { font-size: 1.2rem; opacity: 0.9; font-weight: 300; }
+.main-header h1 { 
+    font-size: 2.5rem; 
+    margin-bottom: 15px; 
+    letter-spacing: -1px; 
+}
 
-/* --- SLIDER THÔNG BÁO --- */
+.main-header p { 
+    font-size: 1.2rem; 
+    opacity: 0.9; 
+    font-weight: 300; 
+}
+
+.admin-btn-header {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    text-decoration: none;
+    color: rgba(255,255,255,0.8);
+    border: 1px solid rgba(255,255,255,0.4);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    transition: 0.3s;
+}
+
+.admin-btn-header:hover {
+    background: white;
+    color: #0062ff;
+}
+
+/* Glassmorphism Header */
+.glass-header {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    padding: 10px 25px;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 10000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.5);
+}
+
+.header-left { display: flex; align-items: center; gap: 15px; }
+.header-logo {
+    width: 48px; height: 48px; border-radius: 12px; overflow: hidden; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08); background: white;
+}
+.header-logo img { width: 100%; height: 100%; object-fit: cover; }
+
+.header-titles { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.title-top { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.title-bottom { font-size: 1.15rem; font-weight: 900; color: #0062ff; letter-spacing: 4px; margin-left: 4px; line-height: 1; }
+
+.header-right { display: flex; align-items: center; gap: 20px; }
+.nav-links { display: flex; gap: 10px; align-items: center; }
+.nav-links a { text-decoration: none; color: #475569; font-weight: 600; font-size: 0.9rem; padding: 8px 15px; border-radius: 10px; transition: 0.3s; }
+.nav-links a:hover, .nav-links a.active { background: #f1f5f9; color: #0062ff; }
+.nav-divider { width: 1px; height: 18px; background: #cbd5e1; }
+
+.user-profile {
+    display: none; align-items: center; gap: 10px; background: #f8fafc; 
+    padding: 5px 15px 5px 5px; border-radius: 30px; border: 1px solid #e2e8f0;
+}
+.user-profile img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+.user-name { font-size: 0.85rem; font-weight: 700; color: #1e293b; }
+
+.page-has-header {
+    padding-top: 85px; 
+}
+
+/* ==========================================================================
+   4. ANNOUNCEMENT SLIDER
+   ========================================================================== */
 .announcement-slider {
     max-width: 1100px;
     margin: -60px auto 40px;
@@ -75,7 +170,9 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     color: white;
 }
 
-/* --- ADMIN PANEL LAYOUT --- */
+/* ==========================================================================
+   5. ADMIN PANEL LAYOUT & DARK SIDEBAR
+   ========================================================================== */
 .admin-wrapper {
     display: grid;
     grid-template-columns: 280px 1fr;
@@ -83,7 +180,7 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
 }
 
 .admin-sidebar {
-    background: var(--admin-grad); /* Sử dụng lại gradient màu tối: linear-gradient(135deg, #1e293b 0%, #334155 100%) */
+    background: var(--admin-grad);
     padding: 40px 20px;
     color: white;
     position: sticky;
@@ -91,109 +188,119 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow-y: auto; /* Cho phép cuộn nếu menu dài */
+    overflow-y: auto;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
+
 .sidebar-brand-box {
     text-align: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px dashed #e2e8f0;
+    margin-bottom: 25px;
 }
+
 .brand-title {
-    font-size: 1.7rem; /* Chữ to, rõ ràng */
+    font-size: 1.6rem;
     font-weight: 800;
-    letter-spacing: 1.5px;
-    background: linear-gradient(135deg, #0062ff 0%, #00d4ff 100%);
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin: 0;
 }
+
 .brand-subtitle {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     color: #64748b;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    margin-top: 4px;
+    font-weight: 600;
+    letter-spacing: 1px;
 }
+
+/* Profile Card - Dark Glassmorphism */
 .admin-profile-card {
-    background: #f8fafc; /* Nền xám nhạt dịu mắt */
-    border: 1px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 16px;
     padding: 16px;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     text-align: center;
     position: relative;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
-/* Dynamic Avatar */
+
 .avatar-wrapper {
     position: relative;
-    width: 68px;
-    height: 68px;
+    width: 64px;
+    height: 64px;
     margin: 0 auto 10px;
 }
+
 .avatar-wrapper img {
     width: 100%;
     height: 100%;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid #ffffff;
-    box-shadow: 0 4px 10px rgba(0, 98, 255, 0.15);
+    border: 2px solid #3b82f6;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
 }
+
 .status-indicator {
     position: absolute;
-    bottom: 3px;
-    right: 3px;
-    width: 13px;
-    height: 13px;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
-    border: 2px solid #ffffff;
+    border: 2px solid #0f172a;
 }
+
 .status-indicator.online {
     background: #10b981;
 }
+
 .admin-name {
     font-weight: 700;
-    color: #0f172a;
-    font-size: 1.05rem; /* Chữ to, dễ đọc */
-    margin-bottom: 3px;
+    color: #f8fafc;
+    font-size: 0.95rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    margin-bottom: 2px;
 }
+
 .admin-email {
-    color: #64748b;
-    font-size: 0.8rem;
+    color: #94a3b8;
+    font-size: 0.75rem;
     word-break: break-all;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
+
 .admin-badge {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    background: #eff6ff; /* Badge màu xanh sáng trẻ trung */
-    color: #1e40af;
-    font-size: 0.75rem;
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    font-size: 0.7rem;
     font-weight: 700;
-    padding: 4px 10px;
+    padding: 3px 8px;
     border-radius: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-/* Floating Notification Icon */
 .profile-noti-bell {
     position: absolute;
     top: 15px;
     right: 15px;
     cursor: pointer;
     color: #64748b;
-    transition: all 0.2s ease;
+    transition: color 0.2s ease, transform 0.2s ease;
 }
+
 .profile-noti-bell:hover {
-    color: #d97706;
+    color: #f59e0b;
     transform: scale(1.1);
 }
+
 .badge-dot {
     display: none;
     position: absolute;
@@ -206,76 +313,23 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     border: 1px solid #0f172a;
 }
 
-/* --- SIDEBAR ACCORDION STYLES --- */
+/* Sidebar Nav Scrollbar */
 .sidebar-nav {
     flex: 1;
     overflow-y: auto;
     padding-right: 4px;
-    margin-top: 10px;
 }
+
 .sidebar-nav::-webkit-scrollbar {
-    width: 5px;
+    width: 4px;
 }
+
 .sidebar-nav::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 4px;
 }
 
-.sidebar-group {
-    margin-bottom: 8px;
-    border-bottom: 1px solid #f1f5f9;
-    padding-bottom: 8px;
-}
-.sidebar-group:last-child {
-    border-bottom: none;
-}
-.sidebar-group-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 10px;
-    font-size: 0.9rem; /* Chữ to hơn */
-    color: #475569; /* Màu chữ trung tính, dễ phân biệt */
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-}
-.sidebar-group-header:hover {
-    color: #0f172a;
-    background: #f1f5f9;
-}
-.sidebar-group-header.active {
-    color: #0062ff; /* Highlight màu xanh thương hiệu khi mở rộng */
-}
-.group-icon {
-    margin-right: 10px;
-    font-size: 1.1rem;
-}
-
-.toggle-icon {
-    font-size: 0.8rem;
-    transition: transform 0.2s ease;
-}
-.sidebar-group-header.active .toggle-icon {
-    transform: rotate(180deg);
-}
-
-.sidebar-group-content {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.25s ease-out;
-    margin-left: 12px; 
-    border-left: 2px solid #e2e8f0; /* Đường phân cấp thanh lịch */
-    padding-left: 8px;
-}
-.sidebar-group-content.expanded {
-    max-height: 500px;
-    margin-top: 4px;
-    margin-bottom: 8px;
-}
+/* Dark Sidebar Buttons */
 .admin-tab-btn {
     width: 100%;
     padding: 16px 20px;
@@ -294,43 +348,43 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     align-items: center; 
     gap: 12px;
 }
+
 .admin-tab-btn i {
     width: 20px;
     text-align: center;
 }
 
-/* Trạng thái Hover của nút con */
 .admin-tab-btn:hover {
     background: rgba(255, 255, 255, 0.1);
     color: white;
 }
-.admin-tab-btn:hover i {
-    color: #0f172a;
-}
+
 .admin-tab-btn.active {
     background: var(--primary-grad);
     color: white;
     box-shadow: 0 4px 12px rgba(0, 98, 255, 0.3);
 }
-.admin-tab-btn.active i {
-    color: #0062ff;
-}
-.admin-main { padding: 40px; background: #f1f5f9; }
 
-/* --- FOOTER BUTTON (LOGOUT) --- */
+.admin-main { 
+    padding: 40px; 
+    background: #f1f5f9; 
+}
+
+/* Modern Dark Logout Button */
 .sidebar-footer {
     padding-top: 15px;
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
+
 .btn-logout-modern {
     width: 100%;
     padding: 12px;
-    background: #fef2f2; /* Nền đỏ nhạt */
-    border: 1px solid #fca5a5;
-    color: #b91c1c; /* Chữ đỏ đậm tương phản */
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
     border-radius: 12px;
-    font-weight: 700;
-    font-size: 0.95rem;
+    font-weight: 600;
+    font-size: 0.9rem;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -338,14 +392,17 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     gap: 8px;
     transition: all 0.2s ease;
 }
+
 .btn-logout-modern:hover {
     background: #ef4444;
     color: #ffffff;
     border-color: #ef4444;
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
 
-/* --- FORMS, INPUTS & LABELS (ĐÃ GỘP VÀ TỐI ƯU ĐỒNG BỘ) --- */
+/* ==========================================================================
+   6. FORMS, INPUTS & SPECIAL MEDICAL ZONES
+   ========================================================================== */
 .form-card {
     background: white;
     padding: 35px;
@@ -354,9 +411,10 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     margin-bottom: 30px;
 }
 
-.input-group { margin-bottom: 25px; }
+.input-group { 
+    margin-bottom: 25px; 
+}
 
-/* Tiêu đề ô nhập liệu (Labels) */
 .input-group label { 
     display: block; 
     margin-bottom: 8px; 
@@ -367,14 +425,14 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     letter-spacing: 0.5px;
 }
 
-/* Định dạng chung đồng bộ cho TOÀN BỘ các ô nhập (Bao gồm cả text, email, mật khẩu, ngày tháng...) */
+/* Unified Inputs */
 .input-group input, 
 .input-group textarea, 
 .input-group select {
     width: 100%;
     padding: 12px 16px;
     background-color: #ffffff;
-    border: 1.5px solid #cbd5e1; /* Viền xám trung tính, sắc nét */
+    border: 1.5px solid #cbd5e1;
     border-radius: 8px;
     font-size: 0.95rem;
     color: #1e293b;
@@ -382,13 +440,11 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
-/* Định dạng chữ gợi ý ẩn (Placeholder) */
 .input-group input::placeholder, 
 .input-group textarea::placeholder { 
     color: #94a3b8; 
 }
 
-/* Hiệu ứng trỏ chuột vào ô đồng bộ cho mọi ô (Focus State) */
 .input-group input:focus, 
 .input-group textarea:focus, 
 .input-group select:focus { 
@@ -398,9 +454,7 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     background-color: #ffffff;
 }
 
-/* --- ĐỊNH DẠNG CÁC VÙNG ĐẶC BIỆT (TĂNG ĐỘ NỔI BẬT & DỄ SỬ DỤNG) --- */
-
-/* Khu vực Quét Mã Tự Động (Indigo Zone) */
+/* Indigo Zone (Auto Scan) */
 #tab-yte-tiepnhan .input-group[style*="background: #e0e7ff"],
 #tab-yte-tiepnhan .input-group[style*="background:#e0e7ff"],
 #tab-yte-tiepnhan .input-group[style*="background: rgb"] {
@@ -411,7 +465,6 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     box-shadow: 0 4px 12px rgba(79, 70, 229, 0.05) !important;
 }
 
-/* Ô nhập liệu bên trong khu vực Quét mã */
 #yt-scan-id {
     border: 1.5px solid #818cf8 !important;
 }
@@ -420,7 +473,7 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15) !important;
 }
 
-/* Khung hiển thị Lịch Sử Khám & Mã Y Tế (Info Blue Zone) */
+/* Info Blue Zone (History Preview) */
 #yt-history-preview {
     background-color: #f0f9ff !important;
     border: 1.5px solid #bae6fd !important;
@@ -434,7 +487,7 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     color: #0c4a6e !important;
 }
 
-/* Vùng Cấp Thuốc (Green Zone) */
+/* Green Zone (Medicine Dispensing checkbox) */
 #chk-cap-thuoc {
     cursor: pointer;
 }
@@ -450,7 +503,63 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     gap: 10px;
 }
 
-/* --- TRÌNH BÀY NỘI DUNG BÀI VIẾT --- */
+/* ==========================================================================
+   7. POST CARD & ARTICLE LAYOUT (EQUAL HEIGHT HEIGHT DESIGN)
+   ========================================================================== */
+.post-card {
+    background: white; 
+    border-radius: 15px; 
+    overflow: hidden; 
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.post-card-img {
+    width: 100%; 
+    height: 200px; 
+    object-fit: cover;
+}
+
+.post-card-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.post-card-title {
+    font-size: 1.05rem; 
+    line-height: 1.4;
+    height: 2.8em; 
+    margin-bottom: 10px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; 
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.post-card-desc {
+    color: var(--text-gray); 
+    font-size: 0.85rem; 
+    line-height: 1.5;
+    height: 3em; 
+    margin-bottom: 15px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; 
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.post-card-btn {
+    margin-top: auto; 
+    width: 100%; 
+    justify-content: center; 
+    text-decoration: none;
+}
+
+/* Article Description Details */
 .card-desc { 
     font-size: 0.9rem; 
     color: #666; 
@@ -462,6 +571,7 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     -webkit-box-orient: vertical; 
     overflow: hidden; 
 }
+
 .card-body { 
     padding: 15px; 
     display: flex;
@@ -469,15 +579,111 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     min-height: 150px;
 }
 
-/* --- TABLES --- */
-.admin-table {
-    width: 100%; border-collapse: collapse;
-    background: white; border-radius: 12px; overflow: hidden;
+/* ==========================================================================
+   8. HEALTH TESTING & ROW CARDS
+   ========================================================================== */
+#test-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
 }
-.admin-table th { background: #f8fafc; padding: 18px; text-align: left; font-size: 0.8rem; text-transform: uppercase; color: var(--text-gray); border-bottom: 2px solid #e2e8f0; }
-.admin-table td { padding: 18px; border-bottom: 1px solid #f1f5f9; }
 
-/* --- BUTTONS --- */
+.test-row-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    padding: 25px 30px;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    width: 100%;
+    box-sizing: border-box;
+    border-left: 5px solid var(--primary);
+    transition: all 0.3s ease;
+}
+
+.test-row-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.test-row-info {
+    flex-grow: 1;
+    padding-right: 30px;
+}
+
+.test-row-code {
+    font-size: 0.85rem;
+    color: var(--primary);
+    font-weight: 800;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+.test-row-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.test-row-meta {
+    display: flex;
+    gap: 25px;
+    font-size: 0.95rem;
+    color: #64748b;
+}
+
+.test-row-meta span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f1f5f9;
+    padding: 5px 12px;
+    border-radius: 8px;
+}
+
+.test-row-action {
+    flex-shrink: 0;
+}
+
+.test-row-action .btn {
+    padding: 12px 25px;
+    font-size: 1rem;
+    border-radius: 10px;
+}
+
+/* ==========================================================================
+   9. TABLES
+   ========================================================================== */
+.admin-table {
+    width: 100%; 
+    border-collapse: collapse;
+    background: white; 
+    border-radius: 12px; 
+    overflow: hidden;
+}
+
+.admin-table th { 
+    background: #f8fafc; 
+    padding: 18px; 
+    text-align: left; 
+    font-size: 0.8rem; 
+    text-transform: uppercase; 
+    color: var(--text-gray); 
+    border-bottom: 2px solid #e2e8f0; 
+}
+
+.admin-table td { 
+    padding: 18px; 
+    border-bottom: 1px solid #f1f5f9; 
+}
+
+/* ==========================================================================
+   10. BUTTONS
+   ========================================================================== */
 .btn {
     padding: 12px 24px;
     border: none;
@@ -485,13 +691,18 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     font-weight: 700;
     cursor: pointer;
     transition: var(--transition);
-    display: inline-flex; align-items: center; gap: 8px;
+    display: inline-flex; 
+    align-items: center; 
+    gap: 8px;
 }
+
 .btn-primary { background: var(--primary-grad); color: white; }
 .btn-danger { background: #ef4444; color: white; }
 .btn-success { background: var(--success-grad); color: white; }
 
-/* --- FOOTER --- */
+/* ==========================================================================
+   11. FOOTER
+   ========================================================================== */
 .footer {
     background: #0f172a;
     color: white;
@@ -499,6 +710,7 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     text-align: center;
     margin-top: 100px;
 }
+
 .footer .designer-tag {
     display: inline-block;
     margin-top: 20px;
@@ -509,28 +721,37 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     letter-spacing: 1px;
 }
 
-/* Modal View */
+/* ==========================================================================
+   12. MODAL DIALOGS
+   ========================================================================== */
 .modal {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    position: fixed; 
+    top: 0; left: 0; 
+    width: 100%; height: 100%;
     background: rgba(15, 23, 42, 0.9);
-    display: none; z-index: 1000;
-    justify-content: center; align-items: center;
+    display: none; 
+    z-index: 1000;
+    justify-content: center; 
+    align-items: center;
     padding: 20px;
 }
-.modal-content {
-    background: white; width: 100%; max-width: 900px;
-    max-height: 90vh; border-radius: 20px; overflow-y: auto;
-    position: relative; padding: 40px;
-}
 
-/* Animations */
-@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-.fade-in { animation: fadeIn 0.6s ease forwards; }
+.modal-content {
+    background: white; 
+    width: 100%; 
+    max-width: 900px;
+    max-height: 90vh; 
+    border-radius: 20px; 
+    overflow-y: auto;
+    position: relative; 
+    padding: 40px;
+}
 
 #modal-body-content {
     white-space: pre-line;
     word-wrap: break-word;
 }
+
 #modal-body-content iframe {
     max-width: 100%;
     border-radius: 10px;
@@ -538,192 +759,10 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     display: block;
 }
 
-/* Thống kê truy cập */
-.visit-stats {
-    margin-top: 30px;
-    padding: 15px;
-    text-align: center;
-    background: #fff;
-    border-radius: 8px;
-    border: 1px dashed #ccc;
-    color: #555;
-    font-size: 0.9rem;
-}
-#visit-count {
-    color: var(--primary);
-    font-size: 1.1rem;
-}
-
-.toolbar { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center;
-    margin-bottom: 20px; 
-    flex-wrap: wrap;
-    gap: 10px; 
-}
-input#search { 
-    padding: 10px; 
-    flex: 1;
-    min-width: 200px;
-    border: 1px solid #ddd; 
-    border-radius: 5px; 
-    box-sizing: border-box;
-}
-.grid { 
-    display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
-    gap: 20px; 
-}
-.container { 
-    max-width: 1000px; 
-    margin: 0 auto; 
-    padding: 15px;
-}
-
-@media screen and (max-width: 600px) {
-    header { padding: 1.5rem 0.5rem; }
-    h1 { font-size: 1.4rem; }
-    .toolbar {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    input#search {
-        max-width: 100%;
-    }
-    .admin-btn {
-        text-align: center;
-    }
-    .login-form, .post-form {
-        margin: 20px 10px;
-        padding: 20px;
-    }
-}
-
-header {
-    position: relative;
-    background: var(--primary);
-    color: white;
-    padding: 3rem 1rem;
-    text-align: center;
-}
-.admin-btn-header {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    text-decoration: none;
-    color: rgba(255,255,255,0.8);
-    border: 1px solid rgba(255,255,255,0.4);
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    transition: 0.3s;
-}
-.admin-btn-header:hover {
-    background: white;
-    color: var(--primary);
-}
-.toolbar {
-    margin-top: -25px;
-    display: block;
-}
-input#search {
-    width: 100%;
-    max-width: 100% !important;
-    height: 50px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-@media screen and (max-width: 600px) {
-    .admin-btn-header {
-        position: static;
-        display: inline-block;
-        margin-top: 15px;
-        background: rgba(0,0,0,0.1);
-    }
-    header {
-        padding: 2rem 1rem;
-    }
-}
-
-/* Suggest box cho tìm kiếm tên */
-.suggest-box { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; z-index: 100; max-height: 200px; overflow-y: auto; display: none; box-shadow: var(--shadow-md); }
-.suggest-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
-.suggest-item:hover { background: #f8fafc; color: #0062ff; } 
-
-.history-box { padding: 10px; background: #f1f5f9; border-radius: 5px; font-size: 0.85rem; color: #475569; min-height: 40px; }
-.bed-card { background: white; padding: 25px; border-radius: 15px; text-align: center; box-shadow: var(--shadow-sm); border-top: 6px solid #e2e8f0; }
-.bed-card.active { border-top-color: var(--accent-grad); }
-
-/* THIẾT LẬP IN BÁO CÁO */
-@media print {
-    img {
-        max-width: 100% !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-    }
-    html, body {
-        background-color: #ffffff !important;
-        background-image: none !important;
-    }
-    body * { visibility: hidden; }
-    #print-section, #print-section * { 
-        visibility: visible; 
-        font-family: "Times New Roman", Times, serif !important; 
-        color: black !important;
-    }
-    #print-section { 
-        position: absolute; 
-        left: 0; 
-        top: 0; 
-        width: 100%; 
-        background-color: #ffffff !important;
-    }
-    @page { size: A3 landscape; margin: 15mm; }
-    .print-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    .print-table th, .print-table td { 
-        border: 1px solid black; 
-        padding: 10px 8px; 
-        font-size: 13.5pt !important; 
-        line-height: 1.5;
-        background-color: #ffffff !important;
-    }
-    .print-table th { font-weight: bold; text-align: center; }
-    .print-header { text-align: center; margin-bottom: 25px; }
-    .print-header h1 { font-size: 20pt !important; margin-bottom: 5px; font-weight: bold; }
-    .print-header p { font-size: 13.5pt !important; font-style: italic; margin: 0; }
-    .print-table thead { display: table-header-group; } 
-    .print-footer { 
-        position: fixed; bottom: 0; width: 100%; 
-        text-align: right; 
-        font-size: 12pt !important; 
-        border-top: 1px solid #000; 
-        padding-top: 5px; 
-        font-style: italic; 
-    }
-}
-
-.admin-sidebar {
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-}
-
-@media (max-width: 767px) {
-    .main-header {
-        position: relative;
-        padding: 40px 20px;
-        text-align: center;
-        color: white;
-    }
-    .slider-container, .swiper-container {
-        height: 200px !important;
-    }
-}
-
-/* =========================================
-   VTS HEALTH AI CHATBOT BUBBLE
-   ========================================= */
+/* ==========================================================================
+   13. CUSTOM MODULES (CHATBOT, SUGGESTIONS, STATS)
+   ========================================================================== */
+/* Chatbot Bubble Interface */
 .chat-bot-btn {
     position: fixed;
     bottom: 30px;
@@ -836,67 +875,107 @@ input#search {
     border-radius: 50%;
     cursor: pointer;
 }
-@media (max-width: 600px) {
-    .chat-window {
-        width: 90%;
-        right: 5%;
-        bottom: 90px;
-        height: 450px;
-    }
+
+/* Suggest Box Autocomplete */
+.suggest-box { 
+    position: absolute; 
+    top: 100%; left: 0; right: 0; 
+    background: white; 
+    border: 1px solid #ddd; 
+    border-top: none; 
+    z-index: 100; 
+    max-height: 200px; 
+    overflow-y: auto; 
+    display: none; 
+    box-shadow: var(--shadow-md); 
+}
+.suggest-item { 
+    padding: 10px; 
+    cursor: pointer; 
+    border-bottom: 1px solid #f1f5f9; 
+}
+.suggest-item:hover { 
+    background: #f8fafc; 
+    color: #0062ff; 
+} 
+
+/* Medical Record Boxes */
+.history-box { 
+    padding: 10px; 
+    background: #f1f5f9; 
+    border-radius: 5px; 
+    font-size: 0.85rem; 
+    color: #475569; 
+    min-height: 40px; 
 }
 
-/* =========================================
-   TRANG CHỦ - GLASSMORPHISM HEADER 
-   ========================================= */
-.glass-header {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(10px);
-    padding: 10px 25px;
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 10000;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-    display: flex;
-    justify-content: space-between;
+/* Bed Card */
+.bed-card { 
+    background: white; 
+    padding: 25px; 
+    border-radius: 15px; 
+    text-align: center; 
+    box-shadow: var(--shadow-sm); 
+    border-top: 6px solid #e2e8f0; 
+}
+.bed-card.active { 
+    border-top-color: var(--accent-grad); 
+}
+
+/* Visitors Statistics */
+.visit-stats {
+    margin-top: 30px;
+    padding: 15px;
+    text-align: center;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px dashed #ccc;
+    color: #555;
+    font-size: 0.9rem;
+}
+#visit-count {
+    color: var(--primary);
+    font-size: 1.1rem;
+}
+
+/* ==========================================================================
+   14. RESPONSIVE GRID LAYOUTS
+   ========================================================================== */
+.toolbar { 
+    display: flex; 
+    justify-content: space-between; 
     align-items: center;
-    border-bottom: 1px solid rgba(255,255,255,0.5);
+    margin-bottom: 20px; 
+    flex-wrap: wrap;
+    gap: 10px; 
 }
 
-.header-left { display: flex; align-items: center; gap: 15px; }
-.header-logo {
-    width: 48px; height: 48px; border-radius: 12px; overflow: hidden; 
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08); background: white;
-}
-.header-logo img { width: 100%; height: 100%; object-fit: cover; }
-
-.header-titles { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.title-top { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-.title-bottom { font-size: 1.15rem; font-weight: 900; color: #0062ff; letter-spacing: 4px; margin-left: 4px; line-height: 1; }
-
-.header-right { display: flex; align-items: center; gap: 20px; }
-.nav-links { display: flex; gap: 10px; align-items: center; }
-.nav-links a { text-decoration: none; color: #475569; font-weight: 600; font-size: 0.9rem; padding: 8px 15px; border-radius: 10px; transition: 0.3s; }
-.nav-links a:hover, .nav-links a.active { background: #f1f5f9; color: #0062ff; }
-.nav-divider { width: 1px; height: 18px; background: #cbd5e1; }
-
-.user-profile {
-    display: none; align-items: center; gap: 10px; background: #f8fafc; 
-    padding: 5px 15px 5px 5px; border-radius: 30px; border: 1px solid #e2e8f0;
-}
-.user-profile img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
-.user-name { font-size: 0.85rem; font-weight: 700; color: #1e293b; }
-
-.announcement-slider { margin: 85px auto 40px !important; }
-.page-has-header {
-    padding-top: 85px; 
-}
-@media screen and (max-width: 900px) {
-    .nav-links a i { margin-right: 0; }
-    .nav-links a { font-size: 0.85rem; padding: 8px 10px; }
+input#search { 
+    padding: 10px; 
+    flex: 1;
+    min-width: 200px;
+    border: 1px solid #ddd; 
+    border-radius: 5px; 
+    box-sizing: border-box;
 }
 
+.grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+    gap: 20px; 
+}
+
+.container { 
+    max-width: 1000px; 
+    margin: 0 auto; 
+    padding: 15px;
+}
+
+/* Responsive Styles (< 768px and < 600px) */
 @media screen and (max-width: 768px) {
-    .page-has-header { padding-top: 105px; } 
+    .page-has-header { 
+        padding-top: 105px; 
+    } 
     .glass-header { 
         flex-direction: column; 
         align-items: flex-start; 
@@ -969,9 +1048,7 @@ input#search {
         font-size: 0.8rem !important;
         margin-top: 8px !important;
     }
-}
 
-@media screen and (max-width: 768px) {
     #pinned-grid, #main-grid {
         grid-template-columns: repeat(2, 1fr) !important; 
         gap: 12px !important;
@@ -986,80 +1063,18 @@ input#search {
         font-size: 0.9rem !important; 
         margin-bottom: 5px !important;
         line-height: 1.4;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
     }
     .post-card p {
         font-size: 0.75rem !important; 
         margin-bottom: 10px !important;
         line-height: 1.4;
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
     }
     .post-card .btn {
         padding: 6px 5px !important;
         font-size: 0.75rem !important;
         border-radius: 8px !important;
     }
-}
-
-.post-card {
-    background: white; 
-    border-radius: 15px; 
-    overflow: hidden; 
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-.post-card-img {
-    width: 100%; 
-    height: 200px; 
-    object-fit: cover;
-}
-.post-card-body {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-}
-.post-card-title {
-    font-size: 1.05rem; 
-    line-height: 1.4;
-    height: 2.8em; 
-    margin-bottom: 10px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2; 
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-.post-card-desc {
-    color: var(--text-gray); 
-    font-size: 0.85rem; 
-    line-height: 1.5;
-    height: 3em; 
-    margin-bottom: 15px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2; 
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-.post-card-btn {
-    margin-top: auto; 
-    width: 100%; 
-    justify-content: center; 
-    text-decoration: none;
-}
-
-@media screen and (max-width: 768px) {
-    #pinned-grid, #main-grid {
-        grid-template-columns: repeat(2, 1fr) !important; 
-        gap: 12px !important;
-    }
+    
     .post-card-img { height: 120px; }
     .post-card-body { padding: 10px; }
     .post-card-title {
@@ -1080,87 +1095,127 @@ input#search {
     }
 }
 
-#test-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    width: 100%;
-}
-.test-row-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: white;
-    padding: 25px 30px;
-    border-radius: 16px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    width: 100%;
-    box-sizing: border-box;
-    border-left: 5px solid var(--primary);
-    transition: all 0.3s ease;
-}
-.test-row-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-}
-.test-row-info {
-    flex-grow: 1;
-    padding-right: 30px;
-}
-.test-row-code {
-    font-size: 0.85rem;
-    color: var(--primary);
-    font-weight: 800;
-    margin-bottom: 8px;
-    letter-spacing: 1px;
-}
-.test-row-title {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 12px;
-    line-height: 1.4;
-}
-.test-row-meta {
-    display: flex;
-    gap: 25px;
-    font-size: 0.95rem;
-    color: #64748b;
-}
-.test-row-meta span {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: #f1f5f9;
-    padding: 5px 12px;
-    border-radius: 8px;
-}
-.test-row-action {
-    flex-shrink: 0;
-}
-.test-row-action .btn {
-    padding: 12px 25px;
-    font-size: 1rem;
-    border-radius: 10px;
+@media screen and (max-width: 600px) {
+    header { padding: 1.5rem 0.5rem; }
+    h1 { font-size: 1.4rem; }
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    input#search {
+        max-width: 100%;
+    }
+    .admin-btn {
+        text-align: center;
+    }
+    .login-form, .post-form {
+        margin: 20px 10px;
+        padding: 20px;
+    }
+    .admin-btn-header {
+        position: static;
+        display: inline-block;
+        margin-top: 15px;
+        background: rgba(0,0,0,0.1);
+    }
+    header {
+        padding: 2rem 1rem;
+    }
+    .toolbar {
+        margin-top: -25px;
+        display: block;
+    }
+    input#search {
+        width: 100%;
+        max-width: 100% !important;
+        height: 50px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .chat-window {
+        width: 90%;
+        right: 5%;
+        bottom: 90px;
+        height: 450px;
+    }
 }
 
-@media (max-width: 768px) {
-    .test-row-card {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 20px;
-        gap: 15px;
+/* Mobile Header Shortener */
+@media (max-width: 767px) {
+    .main-header {
+        position: relative;
+        padding: 40px 20px;
+        text-align: center;
+        color: white;
     }
-    .test-row-meta {
-        flex-direction: column;
-        gap: 10px;
-        width: 100%;
+    .slider-container, .swiper-container {
+        height: 200px !important;
     }
-    .test-row-action {
-        width: 100%;
+}
+
+/* ==========================================================================
+   15. PRINT SETTINGS (STANDARD A3 PROFILE)
+   ========================================================================== */
+@media print {
+    img {
+        max-width: 100% !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
-    .test-row-action .btn {
-        width: 100%;
-        justify-content: center;
+    html, body {
+        background-color: #ffffff !important;
+        background-image: none !important;
     }
+    body * { visibility: hidden; }
+    #print-section, #print-section * { 
+        visibility: visible; 
+        font-family: "Times New Roman", Times, serif !important; 
+        color: black !important;
+    }
+    #print-section { 
+        position: absolute; 
+        left: 0; 
+        top: 0; 
+        width: 100%; 
+        background-color: #ffffff !important;
+    }
+    @page { size: A3 landscape; margin: 15mm; }
+    .print-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    .print-table th, .print-table td { 
+        border: 1px solid black; 
+        padding: 10px 8px; 
+        font-size: 13.5pt !important; 
+        line-height: 1.5;
+        background-color: #ffffff !important;
+    }
+    .print-table th { font-weight: bold; text-align: center; }
+    .print-header { text-align: center; margin-bottom: 25px; }
+    .print-header h1 { font-size: 20pt !important; margin-bottom: 5px; font-weight: bold; }
+    .print-header p { font-size: 13.5pt !important; font-style: italic; margin: 0; }
+    .print-table thead { display: table-header-group; } 
+    .print-footer { 
+        position: fixed; bottom: 0; width: 100%; 
+        text-align: right; 
+        font-size: 12pt !important; 
+        border-top: 1px solid #000; 
+        padding-top: 5px; 
+        font-style: italic; 
+    }
+}
+
+/* ==========================================================================
+   16. GLOBAL ANIMATIONS
+   ========================================================================== */
+@keyframes fadeIn { 
+    from { 
+        opacity: 0; 
+        transform: translateY(20px); 
+    } 
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    } 
+}
+
+.fade-in { 
+    animation: fadeIn 0.6s ease forwards; 
 }

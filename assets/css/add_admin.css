@@ -117,3 +117,53 @@
     from { transform: translateX(0); opacity: 1; }
     to { transform: translateX(100%); opacity: 0; }
 }
+/* Thiết lập tiêu đề nhóm có thể click */
+.sidebar-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 10px;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+    font-weight: 700;
+    transition: color 0.2s ease;
+}
+
+.sidebar-group-header:hover {
+    color: #ffffff; /* Sáng lên khi di chuột qua */
+}
+
+/* Biểu tượng mũi tên xoay khi đóng/mở */
+.sidebar-group-header .toggle-icon {
+    font-size: 0.7rem;
+    transition: transform 0.3s ease;
+}
+
+.sidebar-group-header.active .toggle-icon {
+    transform: rotate(180deg); /* Xoay ngược lên khi mở */
+}
+
+/* Khung chứa các nút con bên trong */
+.sidebar-group-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s cubic-bezier(0, 1, 0, 1); /* Tránh lag khi mở */
+}
+
+/* Khi nhóm được kích hoạt mở */
+.sidebar-group-content.expanded {
+    max-height: 1000px; /* Đủ lớn để hiển thị hết nội dung */
+    transition: max-height 0.3s cubic-bezier(1, 0, 1, 0);
+}
+
+/* Tinh chỉnh khoảng cách nút con để menu gọn hơn */
+.admin-tab-btn {
+    padding: 12px 15px;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+}

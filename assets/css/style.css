@@ -226,8 +226,8 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     justify-content: space-between;
     align-items: center;
     padding: 12px 14px;
-    font-size: 0.85rem; /* Tăng nhẹ kích thước tiêu đề nhóm */
-    color: #94a3b8; /* Tone xám sáng dễ đọc */
+    font-size: 0.85rem;
+    color: #94a3b8;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.8px;
@@ -241,7 +241,7 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     background: rgba(255, 255, 255, 0.03);
 }
 .sidebar-group-header.active {
-    color: #3b82f6; /* Đổi màu xanh nổi bật khi mở rộng */
+    color: #3b82f6;
 }
 .group-icon {
     margin-right: 10px;
@@ -260,7 +260,6 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s cubic-bezier(0, 1, 0, 1);
-    /* Tạo đường kẻ phân cấp dọc mờ ở bên trái nhóm đang mở */
     margin-left: 20px; 
     border-left: 1.5px solid rgba(255, 255, 255, 0.1); 
     padding-left: 10px;
@@ -272,15 +271,15 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
 }
 .admin-tab-btn {
     width: 100%;
-    padding: 11px 16px; /* Tăng padding để vùng click rộng rãi, dễ bấm */
+    padding: 11px 16px;
     margin: 6px 0;
     border: none;
     background: transparent;
-    color: #cbd5e1; /* Màu xám trắng, độ tương phản cực kỳ cao và dịu mắt */
+    color: #cbd5e1;
     border-radius: 8px;
     cursor: pointer;
     text-align: left;
-    font-size: 0.95rem; /* Tăng kích thước chữ lên 15px để nhìn rõ ràng */
+    font-size: 0.95rem;
     font-weight: 500;
     display: flex;
     align-items: center;
@@ -288,17 +287,18 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     transition: all 0.2s ease;
 }
 .admin-tab-btn.active {
-    background: rgba(59, 130, 246, 0.16); /* Nền xanh lam mờ hiện đại */
-    color: #60a5fa; /* Màu chữ xanh sáng */
+    background: rgba(59, 130, 246, 0.16);
+    color: #60a5fa;
     font-weight: 600;
-    border-left: 3px solid #3b82f6; /* Vạch định vị bên trái */
+    border-left: 3px solid #3b82f6;
     border-radius: 0 8px 8px 0;
-    padding-left: 13px; /* Cân bằng lại padding khi có viền */
+    padding-left: 13px;
 }
 .admin-tab-btn.active i {
-    color: #60a5fa; /* Icon cũng chuyển sang màu xanh tương ứng */
+    color: #60a5fa;
 }
 .admin-main { padding: 40px; background: #f1f5f9; }
+
 /* --- FOOTER BUTTON (LOGOUT) --- */
 .sidebar-footer {
     padding-top: 15px;
@@ -325,7 +325,8 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     color: #ffffff;
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
-/* --- FORMS & INPUTS --- */
+
+/* --- FORMS, INPUTS & LABELS (ĐÃ GỘP VÀ TỐI ƯU ĐỒNG BỘ) --- */
 .form-card {
     background: white;
     padding: 35px;
@@ -335,43 +336,125 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
 }
 
 .input-group { margin-bottom: 25px; }
-.input-group label { display: block; margin-bottom: 10px; font-weight: 700; color: var(--text-dark); font-size: 0.9rem; text-transform: uppercase; }
-.input-group input, .input-group textarea, .input-group select {
-    width: 100%;
-    padding: 14px 18px;
-    border: 2px solid #e2e8f0;
-    border-radius: 10px;
-    font-size: 1rem;
-    transition: var(--transition);
+
+/* Tiêu đề ô nhập liệu (Labels) */
+.input-group label { 
+    display: block; 
+    margin-bottom: 8px; 
+    font-weight: 700; 
+    color: #334155; 
+    font-size: 0.85rem; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px;
 }
 
-.input-group input:focus { border-color: #0062ff; outline: none; box-shadow: 0 0 0 4px rgba(0,98,255,0.1); }
-/* Tìm và thay thế đoạn .card-desc cũ trong style.css */
+/* Định dạng chung đồng bộ cho TOÀN BỘ các ô nhập (Bao gồm cả text, email, mật khẩu, ngày tháng...) */
+.input-group input, 
+.input-group textarea, 
+.input-group select {
+    width: 100%;
+    padding: 12px 16px;
+    background-color: #ffffff;
+    border: 1.5px solid #cbd5e1; /* Viền xám trung tính, sắc nét */
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #1e293b;
+    transition: all 0.2s ease;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+/* Định dạng chữ gợi ý ẩn (Placeholder) */
+.input-group input::placeholder, 
+.input-group textarea::placeholder { 
+    color: #94a3b8; 
+}
+
+/* Hiệu ứng trỏ chuột vào ô đồng bộ cho mọi ô (Focus State) */
+.input-group input:focus, 
+.input-group textarea:focus, 
+.input-group select:focus { 
+    border-color: #3b82f6; 
+    outline: none; 
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12); 
+    background-color: #ffffff;
+}
+
+/* --- ĐỊNH DẠNG CÁC VÙNG ĐẶC BIỆT (TĂNG ĐỘ NỔI BẬT & DỄ SỬ DỤNG) --- */
+
+/* Khu vực Quét Mã Tự Động (Indigo Zone) */
+#tab-yte-tiepnhan .input-group[style*="background: #e0e7ff"],
+#tab-yte-tiepnhan .input-group[style*="background:#e0e7ff"],
+#tab-yte-tiepnhan .input-group[style*="background: rgb"] {
+    background: linear-gradient(135deg, #e0e7ff 0%, #eef2ff 100%) !important;
+    border: 1.5px dashed #4f46e5 !important;
+    padding: 20px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.05) !important;
+}
+
+/* Ô nhập liệu bên trong khu vực Quét mã */
+#yt-scan-id {
+    border: 1.5px solid #818cf8 !important;
+}
+#yt-scan-id:focus {
+    border-color: #4f46e5 !important;
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15) !important;
+}
+
+/* Khung hiển thị Lịch Sử Khám & Mã Y Tế (Info Blue Zone) */
+#yt-history-preview {
+    background-color: #f0f9ff !important;
+    border: 1.5px solid #bae6fd !important;
+    border-left: 5px solid #0284c7 !important;
+    color: #0369a1 !important;
+    border-radius: 8px !important;
+    padding: 15px !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.01) !important;
+}
+#yt-history-preview strong {
+    color: #0c4a6e !important;
+}
+
+/* Vùng Cấp Thuốc (Green Zone) */
+#chk-cap-thuoc {
+    cursor: pointer;
+}
+#tab-yte-tiepnhan .input-group label[style*="background:#ecfdf5"],
+#tab-yte-tiepnhan .input-group label[style*="background: #ecfdf5"] {
+    background: #ecfdf5 !important;
+    border: 1.5px dashed #10b981 !important;
+    padding: 12px 16px !important;
+    border-radius: 8px !important;
+    color: #065f46 !important;
+    display: inline-flex !important;
+    align-items: center;
+    gap: 10px;
+}
+
+/* --- TRÌNH BÀY NỘI DUNG BÀI VIẾT --- */
 .card-desc { 
     font-size: 0.9rem; 
     color: #666; 
-    white-space: pre-wrap;       /* Quan trọng: Giúp hiển thị các dấu xuống dòng khi bạn nhấn Enter */
+    white-space: pre-wrap;
     word-wrap: break-word; 
     margin-bottom: 10px;
-    /* Nếu bạn muốn hiện toàn bộ nội dung, hãy xóa các dòng -webkit-line-clamp dưới đây */
     display: -webkit-box; 
-    -webkit-line-clamp: 15;      /* Tăng số dòng hiển thị lên (ví dụ: 10 dòng) */
+    -webkit-line-clamp: 15;
     -webkit-box-orient: vertical; 
     overflow: hidden; 
 }
-/* Thêm vào style.css nếu muốn các ô mô tả đều nhau */
 .card-body { 
     padding: 15px; 
     display: flex;
     flex-direction: column;
-    min-height: 150px; /* Điều chỉnh con số này tùy theo ý bạn */
+    min-height: 150px;
 }
+
 /* --- TABLES --- */
 .admin-table {
     width: 100%; border-collapse: collapse;
     background: white; border-radius: 12px; overflow: hidden;
 }
-
 .admin-table th { background: #f8fafc; padding: 18px; text-align: left; font-size: 0.8rem; text-transform: uppercase; color: var(--text-gray); border-bottom: 2px solid #e2e8f0; }
 .admin-table td { padding: 18px; border-bottom: 1px solid #f1f5f9; }
 
@@ -385,7 +468,6 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     transition: var(--transition);
     display: inline-flex; align-items: center; gap: 8px;
 }
-
 .btn-primary { background: var(--primary-grad); color: white; }
 .btn-danger { background: #ef4444; color: white; }
 .btn-success { background: var(--success-grad); color: white; }
@@ -398,7 +480,6 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     text-align: center;
     margin-top: 100px;
 }
-
 .footer .designer-tag {
     display: inline-block;
     margin-top: 20px;
@@ -417,7 +498,6 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     justify-content: center; align-items: center;
     padding: 20px;
 }
-
 .modal-content {
     background: white; width: 100%; max-width: 900px;
     max-height: 90vh; border-radius: 20px; overflow-y: auto;
@@ -427,18 +507,18 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
 /* Animations */
 @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 .fade-in { animation: fadeIn 0.6s ease forwards; }
-/* Tối ưu hiển thị nội dung trộn lẫn */
+
 #modal-body-content {
-    white-space: pre-line; /* Tự động xuống dòng khi bạn nhấn Enter trong Admin */
+    white-space: pre-line;
     word-wrap: break-word;
 }
-
 #modal-body-content iframe {
-    max-width: 100%; /* Đảm bảo video/file không bị tràn khỏi khung điện thoại */
+    max-width: 100%;
     border-radius: 10px;
     margin: 15px 0;
     display: block;
 }
+
 /* Thống kê truy cập */
 .visit-stats {
     margin-top: 30px;
@@ -450,79 +530,64 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     color: #555;
     font-size: 0.9rem;
 }
-
 #visit-count {
     color: var(--primary);
     font-size: 1.1rem;
 }
-/* Thay thế đoạn .toolbar và input#search cũ */
+
 .toolbar { 
     display: flex; 
     justify-content: space-between; 
     align-items: center;
     margin-bottom: 20px; 
-    flex-wrap: wrap; /* Giúp các thành phần tự xuống dòng trên mobile */
+    flex-wrap: wrap;
     gap: 10px; 
 }
-
 input#search { 
     padding: 10px; 
-    flex: 1; /* Để thanh tìm kiếm chiếm hết không gian còn lại */
-    min-width: 200px; /* Không để nó quá nhỏ trên mobile */
+    flex: 1;
+    min-width: 200px;
     border: 1px solid #ddd; 
     border-radius: 5px; 
     box-sizing: border-box;
 }
-/* Thay thế đoạn .grid cũ */
 .grid { 
     display: grid; 
-    /* Đổi 300px thành 1fr để nó linh hoạt hơn trên màn hình hẹp */
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
     gap: 20px; 
 }
-
 .container { 
     max-width: 1000px; 
     margin: 0 auto; 
-    padding: 15px; /* Giảm padding một chút để tiết kiệm diện tích trên mobile */
+    padding: 15px;
 }
-/* --- PHẦN THÊM MỚI VÀO CUỐI FILE STYLE.CSS --- */
 
 @media screen and (max-width: 600px) {
-    /* Header thu nhỏ lại cho gọn */
     header { padding: 1.5rem 0.5rem; }
     h1 { font-size: 1.4rem; }
-    
-    /* Thanh công cụ xếp dọc trên điện thoại */
     .toolbar {
         flex-direction: column;
         align-items: stretch;
     }
-    
     input#search {
         max-width: 100%;
     }
-
     .admin-btn {
         text-align: center;
     }
-
-    /* Các form đăng nhập/đăng bài rộng ra toàn màn hình */
     .login-form, .post-form {
         margin: 20px 10px;
         padding: 20px;
     }
 }
-/* 1. Thiết lập Header để chứa nút */
+
 header {
-    position: relative; /* Làm điểm tựa cho nút */
+    position: relative;
     background: var(--primary);
     color: white;
     padding: 3rem 1rem;
     text-align: center;
 }
-
-/* 2. Style mới cho nút Admin trong Header */
 .admin-btn-header {
     position: absolute;
     top: 15px;
@@ -535,102 +600,80 @@ header {
     font-size: 0.8rem;
     transition: 0.3s;
 }
-
 .admin-btn-header:hover {
     background: white;
     color: var(--primary);
 }
-
-/* 3. Sửa lại Toolbar để thanh tìm kiếm rộng hết cỡ */
 .toolbar {
-    margin-top: -25px; /* Đẩy thanh tìm kiếm lên một chút cho đẹp */
-    display: block; /* Chuyển về block để input chiếm 100% */
+    margin-top: -25px;
+    display: block;
 }
-
 input#search {
     width: 100%;
-    max-width: 100% !important; /* Ghi đè các giới hạn cũ */
+    max-width: 100% !important;
     height: 50px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-/* 4. Xử lý hiển thị trên Điện thoại (Mobile) */
 @media screen and (max-width: 600px) {
     .admin-btn-header {
-        position: static; /* Bỏ chế độ nằm góc */
+        position: static;
         display: inline-block;
-        margin-top: 15px; /* Đẩy nút xuống dưới tiêu đề */
+        margin-top: 15px;
         background: rgba(0,0,0,0.1);
     }
-    
     header {
         padding: 2rem 1rem;
     }
 }
+
 /* Suggest box cho tìm kiếm tên */
 .suggest-box { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; z-index: 100; max-height: 200px; overflow-y: auto; display: none; box-shadow: var(--shadow-md); }
 .suggest-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
 .suggest-item:hover { background: #f8fafc; color: #0062ff; } 
 
 .history-box { padding: 10px; background: #f1f5f9; border-radius: 5px; font-size: 0.85rem; color: #475569; min-height: 40px; }
-
-/* Bed Card */
 .bed-card { background: white; padding: 25px; border-radius: 15px; text-align: center; box-shadow: var(--shadow-sm); border-top: 6px solid #e2e8f0; }
 .bed-card.active { border-top-color: var(--accent-grad); }
 
-/* THIẾT LẬP IN A3 */
-/* THIẾT LẬP IN BÁO CÁO (Đã chuẩn hóa Font, Cỡ chữ 13.5 và NỀN TRẮNG tuyệt đối) */
+/* THIẾT LẬP IN BÁO CÁO */
 @media print {
     img {
         max-width: 100% !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
-    /* Ép nền tắng cho toàn bộ trang giấy */
     html, body {
         background-color: #ffffff !important;
         background-image: none !important;
     }
-
     body * { visibility: hidden; }
-    
-    /* Cấu hình khu vực in */
     #print-section, #print-section * { 
         visibility: visible; 
         font-family: "Times New Roman", Times, serif !important; 
         color: black !important;
     }
-    
     #print-section { 
         position: absolute; 
         left: 0; 
         top: 0; 
         width: 100%; 
-        background-color: #ffffff !important; /* Xóa ám xám */
+        background-color: #ffffff !important;
     }
-    
     @page { size: A3 landscape; margin: 15mm; }
-    
-    /* Bảng dữ liệu */
     .print-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
     .print-table th, .print-table td { 
         border: 1px solid black; 
         padding: 10px 8px; 
         font-size: 13.5pt !important; 
         line-height: 1.5;
-        background-color: #ffffff !important; /* Ép ô bảng màu trắng */
+        background-color: #ffffff !important;
     }
     .print-table th { font-weight: bold; text-align: center; }
-    
-    /* Phần Header (Tiêu đề in) */
     .print-header { text-align: center; margin-bottom: 25px; }
     .print-header h1 { font-size: 20pt !important; margin-bottom: 5px; font-weight: bold; }
     .print-header p { font-size: 13.5pt !important; font-style: italic; margin: 0; }
-    
-    /* Lặp lại tiêu đề bảng nếu in sang trang 2 */
     .print-table thead { display: table-header-group; } 
-    
-    /* Chân trang */
     .print-footer { 
         position: fixed; bottom: 0; width: 100%; 
         text-align: right; 
@@ -640,43 +683,25 @@ input#search {
         font-style: italic; 
     }
 }
-/* Tối ưu Sidebar khi có nhiều nút */
+
 .admin-sidebar {
     display: flex;
     flex-direction: column;
-    overflow-y: auto; /* Cho phép cuộn nếu menu quá dài */
+    overflow-y: auto;
 }
 
-/* Đảm bảo icon có kích thước cố định để các chữ thẳng hàng */
-.admin-tab-btn i {
-    width: 20px;
-    text-align: center;
-    font-size: 1.05rem; /* Tăng kích thước biểu tượng đi kèm */
-    color: #94a3b8; /* Biểu tượng sáng hơn */
-    transition: color 0.2s ease;
-}
-
-/* Hiệu ứng khi di chuột qua các nút y tế */
-.admin-tab-btn:hover {
-    color: #ffffff; /* Chữ trắng hoàn toàn khi hover */
-    background: rgba(255, 255, 255, 0.06);
-}
-.admin-tab-btn:hover i {
-    color: #ffffff;
-}
-/* --- GIAO DIỆN CHO MOBILE (Dưới 768px) --- */
 @media (max-width: 767px) {
     .main-header {
         position: relative;
-        padding: 40px 20px; /* Thu ngắn header lại */
+        padding: 40px 20px;
         text-align: center;
         color: white;
-          }
-    /* Thu ngắn Slider trên mobile */
+    }
     .slider-container, .swiper-container {
-        height: 200px !important; /* Điều chỉnh chiều cao slider ngắn lại */
+        height: 200px !important;
     }
 }
+
 /* =========================================
    VTS HEALTH AI CHATBOT BUBBLE
    ========================================= */
@@ -800,10 +825,10 @@ input#search {
         height: 450px;
     }
 }
+
 /* =========================================
    TRANG CHỦ - GLASSMORPHISM HEADER 
    ========================================= */
-
 .glass-header {
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(10px);
@@ -850,32 +875,21 @@ input#search {
     .nav-links a i { margin-right: 0; }
     .nav-links a { font-size: 0.85rem; padding: 8px 10px; }
 }
-/* Responsive cho Điện thoại - Tối ưu chống rớt dòng */
-/* =========================================
-   RESPONSIVE CHO ĐIỆN THOẠI (< 768px)
-   ========================================= */
-@media screen and (max-width: 768px) {
-    /* 1. Đẩy riêng trang chủ xuống vừa đủ với Header 2 dòng (Sửa body thành .page-has-header) */
-    .page-has-header { padding-top: 105px; } 
 
-    /* 2. Ép Header thành dạng Cột (2 dòng) */
+@media screen and (max-width: 768px) {
+    .page-has-header { padding-top: 105px; } 
     .glass-header { 
         flex-direction: column; 
         align-items: flex-start; 
         padding: 10px 15px; 
-        gap: 12px; /* Khoảng cách giữa dòng trên và dòng dưới */
+        gap: 12px;
     }
-
-    /* --- DÒNG 1: LOGO & TIÊU ĐỀ --- */
     .header-left { gap: 10px; }
     .header-logo { width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0; }
-    
     .header-titles { align-items: flex-start; }
     .title-top { font-size: 0.6rem; letter-spacing: 0; white-space: nowrap; }
     .title-bottom { font-size: 0.95rem; letter-spacing: 1px; margin-left: 0; white-space: nowrap; }
 
-    /* --- DÒNG 1 (GÓC PHẢI): USER PROFILE --- */
-    /* Dùng absolute để ép nó nhảy lên ngang hàng với Logo */
     .user-profile { 
         position: absolute; 
         top: 12px; 
@@ -888,28 +902,22 @@ input#search {
         font-size: 0.75rem; 
         max-width: 70px; 
         overflow: hidden; 
-        text-overflow: ellipsis; /* Hiện dấu ... nếu tên quá dài */
+        text-overflow: ellipsis; 
         white-space: nowrap; 
     }
-
-    /* --- DÒNG 2: CÁC NÚT BẤM (MENU) --- */
     .header-right { 
         width: 100%; 
         gap: 0; 
     }
-    
     .nav-links { 
         width: 100%;
         display: flex; 
         gap: 8px; 
-        /* Bật tính năng vuốt ngang nếu màn hình quá nhỏ không chứa đủ 4 nút */
         overflow-x: auto; 
         padding-bottom: 5px; 
-        scrollbar-width: none; /* Ẩn thanh cuộn Firefox */
+        scrollbar-width: none;
     }
-    .nav-links::-webkit-scrollbar { display: none; } /* Ẩn thanh cuộn Chrome/Safari */
-    
-    /* Giao diện các nút dạng viên thuốc (Pill) */
+    .nav-links::-webkit-scrollbar { display: none; }
     .nav-links a { 
         display: flex; 
         align-items: center;
@@ -917,91 +925,69 @@ input#search {
         font-size: 0.8rem; 
         padding: 6px 14px; 
         white-space: nowrap; 
-        background: #f1f5f9; /* Nền xám nhạt cho nút chưa chọn */
+        background: #f1f5f9; 
         border-radius: 20px;
     }
     .nav-links a.active {
-        background: #e0e7ff; /* Nền xanh nhạt cho nút đang chọn */
+        background: #e0e7ff; 
         color: #0062ff;
         font-weight: 700;
     }
-    
-    .nav-divider { display: none; } /* Ẩn hoàn toàn vạch kẻ ||| */
-/* Tùy chỉnh Slider trên Mobile: Cách Header 50px và Thu hẹp chiều cao */
+    .nav-divider { display: none; }
     .announcement-slider {
         margin-top: 110px !important; 
-        height: 220px !important; /* Ép chiều cao lùn xuống (tạo dáng banner nằm ngang) */
+        height: 220px !important;
     }
-
-    /* Vì khung Slider lùn đi, ta cần ép chữ và nút bên trong nhỏ lại cho cân đối */
     .slide-content {
-        padding: 30px 20px 20px !important; /* Giảm khoảng trống bên trong */
+        padding: 30px 20px 20px !important;
     }
     .slide-content h2 {
-        font-size: 1.3rem !important; /* Thu nhỏ tiêu đề thông báo */
+        font-size: 1.3rem !important; 
         margin-bottom: 5px;
     }
     .slide-content .btn {
-        padding: 6px 15px !important; /* Thu nhỏ nút "Xem chi tiết" */
+        padding: 6px 15px !important; 
         font-size: 0.8rem !important;
         margin-top: 8px !important;
     }
 }
-/* =========================================
-   NÂNG CẤP: GIAO DIỆN TIN TỨC TRÊN MOBILE (Thu nhỏ thẻ bài viết)
-   ========================================= */
+
 @media screen and (max-width: 768px) {
-    /* 1. Ép lưới hiển thị 2 cột thay vì 1 cột to tổ chảng trên điện thoại */
     #pinned-grid, #main-grid {
         grid-template-columns: repeat(2, 1fr) !important; 
-        gap: 12px !important; /* Giảm khoảng cách giữa các thẻ */
+        gap: 12px !important;
     }
-
-    /* 2. Thu nhỏ chiều cao ảnh bìa (giảm từ 200px xuống 120px) */
     .post-card img {
         height: 120px !important; 
     }
-
-    /* 3. Thu nhỏ khoảng trống (padding) bên trong thẻ */
     .post-card > div {
         padding: 10px !important; 
     }
-
-    /* 4. Thu nhỏ Tiêu đề bài viết */
     .post-card h3 {
         font-size: 0.9rem !important; 
         margin-bottom: 5px !important;
         line-height: 1.4;
-        /* Tự động cắt thêm dấu ... nếu tiêu đề quá dài (giữ nguyên 2 dòng) */
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
-
-    /* 5. Thu nhỏ Nội dung tóm tắt */
     .post-card p {
         font-size: 0.75rem !important; 
         margin-bottom: 10px !important;
         line-height: 1.4;
-        /* Chỉ hiển thị tối đa 3 dòng tóm tắt để thẻ không bị dài thòng lòong */
         display: -webkit-box;
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
-
-    /* 6. Thu nhỏ nút bấm "Xem chi tiết" */
     .post-card .btn {
         padding: 6px 5px !important;
         font-size: 0.75rem !important;
         border-radius: 8px !important;
     }
 }
-/* =========================================
-   NÂNG CẤP: GIAO DIỆN THẺ BÀI VIẾT (ĐỒNG BỘ CHIỀU CAO TOÀN DIỆN)
-   ========================================= */
-/* 1. Ép thẻ hiển thị theo cột linh hoạt (Flexbox) */
+
 .post-card {
     background: white; 
     border-radius: 15px; 
@@ -1009,77 +995,63 @@ input#search {
     box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
-    height: 100%; /* Ép thẻ kéo dài ra cho bằng với thẻ cao nhất trong hàng */
+    height: 100%;
 }
-
 .post-card-img {
     width: 100%; 
     height: 200px; 
     object-fit: cover;
 }
-
-/* 2. Phần chứa chữ: Đẩy nội dung chiếm hết không gian trống */
 .post-card-body {
     padding: 20px;
     display: flex;
     flex-direction: column;
-    flex-grow: 1; /* Rất quan trọng: Bắt khu vực này co giãn lấp đầy khoảng trống */
+    flex-grow: 1;
 }
-
-/* 3. Tiêu đề: Thu nhỏ font chữ, ép khung cao đúng 2 dòng tăm tắp */
 .post-card-title {
-    font-size: 1.05rem; /* Đã thu nhỏ font chữ để chứa được nhiều chữ hơn */
+    font-size: 1.05rem; 
     line-height: 1.4;
-    height: 2.8em; /* THẦN CHÚ: Khung tiêu đề luôn cao ĐÚNG 2 dòng (1.4 x 2) */
+    height: 2.8em; 
     margin-bottom: 10px;
     display: -webkit-box;
-    -webkit-line-clamp: 2; /* Nếu vượt quá 2 dòng sẽ tự động có dấu ... */
+    -webkit-line-clamp: 2; 
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
-
-/* 4. Nội dung tóm tắt: Ép chuẩn 2 dòng */
 .post-card-desc {
     color: var(--text-gray); 
-    font-size: 0.85rem; /* Thu nhỏ chữ tóm tắt */
+    font-size: 0.85rem; 
     line-height: 1.5;
-    height: 3em; /* THẦN CHÚ: Khung tóm tắt luôn cao ĐÚNG 2 dòng (1.5 x 2) */
+    height: 3em; 
     margin-bottom: 15px;
     display: -webkit-box;
-    -webkit-line-clamp: 2; /* Chặn ở mức 2 dòng và thêm ... */
+    -webkit-line-clamp: 2; 
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
-/* 5. Nút "Xem chi tiết": Ép dính chặt xuống đáy khung */
 .post-card-btn {
-    margin-top: auto; /* Thần chú: Đẩy mọi thứ khác lên trên, ép nút xuống sát đáy */
+    margin-top: auto; 
     width: 100%; 
     justify-content: center; 
     text-decoration: none;
 }
 
-/* --- TÙY CHỈNH THU NHỎ CHO MÀN HÌNH ĐIỆN THOẠI --- */
 @media screen and (max-width: 768px) {
     #pinned-grid, #main-grid {
         grid-template-columns: repeat(2, 1fr) !important; 
         gap: 12px !important;
     }
-    
     .post-card-img { height: 120px; }
     .post-card-body { padding: 10px; }
-    
-/* Tùy chỉnh Tiêu đề trên Mobile */
     .post-card-title {
-        font-size: 0.85rem !important; /* Ép font chữ thật nhỏ để vừa 2 dòng */
+        font-size: 0.85rem !important; 
         line-height: 1.4 !important;
-        height: 2.8em !important; /* Vẫn giữ khung chuẩn 2 dòng */
+        height: 2.8em !important; 
     }
-    
-    /* Tùy chỉnh Nội dung tóm tắt trên Mobile */
     .post-card-desc {
         font-size: 0.75rem !important;
         line-height: 1.4 !important;
-        height: 2.8em !important; /* Khung tóm tắt chuẩn 2 dòng */
+        height: 2.8em !important; 
         margin-bottom: 12px !important;
     }
     .post-card-btn {
@@ -1088,15 +1060,13 @@ input#search {
         border-radius: 8px !important;
     }
 }
-/* ====== KHUNG DANH SÁCH BÀI TEST ====== */
+
 #test-grid {
     display: flex;
     flex-direction: column;
-    gap: 20px; /* Khoảng cách giữa các bài test */
-    width: 100%; /* Đảm bảo trải dài 100% */
+    gap: 20px;
+    width: 100%;
 }
-
-/* ====== MỖI BÀI TEST LÀ 1 CARD NGANG ====== */
 .test-row-card {
     display: flex;
     align-items: center;
@@ -1107,21 +1077,17 @@ input#search {
     box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     width: 100%;
     box-sizing: border-box;
-    border-left: 5px solid var(--primary); /* Vạch màu xanh bên trái cho đẹp */
+    border-left: 5px solid var(--primary);
     transition: all 0.3s ease;
 }
-
 .test-row-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 25px rgba(0,0,0,0.1);
 }
-
-/* KHU VỰC THÔNG TIN BÊN TRÁI */
 .test-row-info {
     flex-grow: 1;
     padding-right: 30px;
 }
-
 .test-row-code {
     font-size: 0.85rem;
     color: var(--primary);
@@ -1129,7 +1095,6 @@ input#search {
     margin-bottom: 8px;
     letter-spacing: 1px;
 }
-
 .test-row-title {
     font-size: 1.4rem;
     font-weight: 700;
@@ -1137,14 +1102,12 @@ input#search {
     margin-bottom: 12px;
     line-height: 1.4;
 }
-
 .test-row-meta {
     display: flex;
     gap: 25px;
     font-size: 0.95rem;
     color: #64748b;
 }
-
 .test-row-meta span {
     display: flex;
     align-items: center;
@@ -1153,19 +1116,15 @@ input#search {
     padding: 5px 12px;
     border-radius: 8px;
 }
-
-/* KHU VỰC NÚT BẤM BÊN PHẢI */
 .test-row-action {
     flex-shrink: 0;
 }
-
 .test-row-action .btn {
     padding: 12px 25px;
     font-size: 1rem;
     border-radius: 10px;
 }
 
-/* RESPONSIVE CHO ĐIỆN THOẠI: Tự động xếp dọc lại nếu màn hình nhỏ */
 @media (max-width: 768px) {
     .test-row-card {
         flex-direction: column;
@@ -1185,101 +1144,4 @@ input#search {
         width: 100%;
         justify-content: center;
     }
-}
-/* --- TỐI ƯU HÓA HOÀN TOÀN CÁC Ô NHẬP LIỆU (FORM INPUTS) --- */
-
-/* 1. Nhãn tiêu đề ô (Labels) */
-.input-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 700;
-    color: #334155; /* Slate 700 đậm và rõ ràng */
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* 2. Thiết kế chuẩn cho các ô nhập liệu (Text, Number, Select, Textarea) */
-.input-group input[type="text"],
-.input-group input[type="number"],
-.input-group input[type="date"],
-.input-group textarea,
-.input-group select {
-    width: 100%;
-    padding: 12px 16px;
-    background-color: #ffffff;
-    border: 1.5px solid #cbd5e1; /* Viền xám trung tính, rõ nét nhưng không bị thô */
-    border-radius: 8px;
-    font-size: 0.95rem;
-    color: #1e293b;
-    transition: all 0.2s ease;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02); /* Tạo chiều sâu nhẹ */
-}
-
-/* Định dạng chữ gợi ý (Placeholder) */
-.input-group input::placeholder,
-.input-group textarea::placeholder {
-    color: #94a3b8;
-}
-
-/* 3. Hiệu ứng nổi bật khi trỏ chuột vào ô nhập liệu (Focus State) */
-.input-group input:focus,
-.input-group textarea:focus,
-.input-group select:focus {
-    border-color: #3b82f6; /* Viền xanh đặc trưng công nghệ */
-    outline: none;
-    background-color: #ffffff;
-    /* Tạo vạch sáng mờ (Glow Ring) xung quanh ô */
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12); 
-}
-
-/* --- ĐỊNH DẠNG CÁC VÙNG ĐẶC BIỆT --- */
-
-/* 4. Khu vực Quét Mã Tự Động (Indigo Zone) */
-#tab-yte-tiepnhan .input-group[style*="background: #e0e7ff"] {
-    background: linear-gradient(135deg, #e0e7ff 0%, #eef2ff 100%) !important; /* Tạo màu chuyển sắc nhẹ */
-    border: 1.5px dashed #4f46e5 !important; /* Viền nét đứt nổi bật */
-    padding: 20px !important;
-    border-radius: 12px !important;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.05);
-}
-
-/* Ô nhập liệu bên trong khu vực Quét mã */
-#yt-scan-id {
-    border: 1.5px solid #818cf8 !important;
-}
-#yt-scan-id:focus {
-    border-color: #4f46e5 !important;
-    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15) !important;
-}
-
-/* 5. Khung hiển thị Lịch Sử Khám & Mã Y Tế (Info Blue Zone) */
-#yt-history-preview {
-    background-color: #f0f9ff !important; /* Nền xanh dương nhạt dịu mắt */
-    border: 1.5px solid #bae6fd !important;
-    border-left: 5px solid #0284c7 !important; /* Vạch nhấn đậm bên trái */
-    color: #0369a1 !important;
-    border-radius: 8px !important;
-    padding: 15px !important;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.01);
-}
-
-/* Điều chỉnh màu sắc các chữ thông tin bên trong khung lịch sử để đồng bộ */
-#yt-history-preview strong {
-    color: #0c4a6e !important;
-}
-
-/* 6. Vùng Cấp Thuốc (Green Zone) */
-#chk-cap-thuoc {
-    cursor: pointer;
-}
-#tab-yte-tiepnhan .input-group label[style*="background:#ecfdf5"] {
-    background: #ecfdf5 !important;
-    border: 1.5px dashed #10b981 !important;
-    padding: 12px 16px !important;
-    border-radius: 8px !important;
-    color: #065f46 !important;
-    display: inline-flex !important;
-    align-items: center;
-    gap: 10px;
 }

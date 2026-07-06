@@ -83,7 +83,7 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
 }
 
 .admin-sidebar {
-    background: #0f172a; /* Slate 900 đậm chất công nghệ */
+    background: #0b0f19;
     padding: 30px 20px;
     color: #f8fafc;
     position: sticky;
@@ -225,26 +225,31 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 12px;
-    font-size: 0.8rem;
-    color: #64748b;
+    padding: 12px 14px;
+    font-size: 0.85rem; /* Tăng nhẹ kích thước tiêu đề nhóm */
+    color: #94a3b8; /* Tone xám sáng dễ đọc */
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
     cursor: pointer;
     border-radius: 8px;
     transition: all 0.2s ease;
+    margin-top: 10px;
 }
 .sidebar-group-header:hover {
-    color: #f8fafc;
-    background: rgba(255, 255, 255, 0.02);
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.03);
+}
+.sidebar-group-header.active {
+    color: #3b82f6; /* Đổi màu xanh nổi bật khi mở rộng */
 }
 .group-icon {
-    margin-right: 8px;
-    font-size: 0.9rem;
+    margin-right: 10px;
+    font-size: 1rem;
 }
+
 .toggle-icon {
-    font-size: 0.7rem;
+    font-size: 0.8rem;
     transition: transform 0.2s ease;
 }
 .sidebar-group-header.active .toggle-icon {
@@ -255,37 +260,44 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s cubic-bezier(0, 1, 0, 1);
+    /* Tạo đường kẻ phân cấp dọc mờ ở bên trái nhóm đang mở */
+    margin-left: 20px; 
+    border-left: 1.5px solid rgba(255, 255, 255, 0.1); 
+    padding-left: 10px;
 }
 .sidebar-group-content.expanded {
     max-height: 500px;
     transition: max-height 0.35s cubic-bezier(1, 0, 1, 0);
+    margin-bottom: 10px;
 }
 .admin-tab-btn {
     width: 100%;
-    padding: 10px 12px;
-    margin: 4px 0;
+    padding: 11px 16px; /* Tăng padding để vùng click rộng rãi, dễ bấm */
+    margin: 6px 0;
     border: none;
     background: transparent;
-    color: #94a3b8;
+    color: #cbd5e1; /* Màu xám trắng, độ tương phản cực kỳ cao và dịu mắt */
     border-radius: 8px;
     cursor: pointer;
     text-align: left;
-    font-size: 0.85rem;
+    font-size: 0.95rem; /* Tăng kích thước chữ lên 15px để nhìn rõ ràng */
     font-weight: 500;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     transition: all 0.2s ease;
 }
-
 .admin-tab-btn.active {
-    background: rgba(59, 130, 246, 0.1);
-    color: #60a5fa;
+    background: rgba(59, 130, 246, 0.16); /* Nền xanh lam mờ hiện đại */
+    color: #60a5fa; /* Màu chữ xanh sáng */
     font-weight: 600;
-    border-left: 3px solid #3b82f6;
+    border-left: 3px solid #3b82f6; /* Vạch định vị bên trái */
     border-radius: 0 8px 8px 0;
+    padding-left: 13px; /* Cân bằng lại padding khi có viền */
 }
-
+.admin-tab-btn.active i {
+    color: #60a5fa; /* Icon cũng chuyển sang màu xanh tương ứng */
+}
 .admin-main { padding: 40px; background: #f1f5f9; }
 /* --- FOOTER BUTTON (LOGOUT) --- */
 .sidebar-footer {
@@ -637,18 +649,21 @@ input#search {
 
 /* Đảm bảo icon có kích thước cố định để các chữ thẳng hàng */
 .admin-tab-btn i {
-    width: 16px;
+    width: 20px;
     text-align: center;
-    font-size: 0.95rem;
+    font-size: 1.05rem; /* Tăng kích thước biểu tượng đi kèm */
+    color: #94a3b8; /* Biểu tượng sáng hơn */
+    transition: color 0.2s ease;
 }
 
 /* Hiệu ứng khi di chuột qua các nút y tế */
 .admin-tab-btn:hover {
-    color: #f8fafc;
-    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff; /* Chữ trắng hoàn toàn khi hover */
+    background: rgba(255, 255, 255, 0.06);
 }
-__________
-__________
+.admin-tab-btn:hover i {
+    color: #ffffff;
+}
 /* --- GIAO DIỆN CHO MOBILE (Dưới 768px) --- */
 @media (max-width: 767px) {
     .main-header {

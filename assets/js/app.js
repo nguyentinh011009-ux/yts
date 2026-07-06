@@ -43,7 +43,6 @@ function removeVietnameseTones(str) {
 // ==========================================
 // PHẦN. HỆ THỐNG XÁC THỰC (FIREBASE AUTH)
 // ==========================================
-// --- Theo dõi trạng thái đăng nhập tự động (Thông minh) ---
 firebase.auth().onAuthStateChanged(async (user) => {
     
     // 1. LOGIC XỬ LÝ THANH HEADER (Áp dụng cho mọi trang có dùng chung Header)
@@ -51,8 +50,15 @@ firebase.auth().onAuthStateChanged(async (user) => {
     if (topProfileBox) {
         if (user) {
             topProfileBox.style.display = 'flex';
-            document.getElementById('top-user-name').innerText = user.displayName || user.email.split('@')[0];
-            if (user.photoURL) document.getElementById('top-user-avatar').src = user.photoURL;
+            const topUserName = document.getElementById('top-user-name');
+            const topUserAvatar = document.getElementById('top-user-avatar');
+            
+            if (topUserName) {
+                topUserName.innerText = user.displayName || user.email.split('@')[0];
+            }
+            if (topUserAvatar && user.photoURL) {
+                topUserAvatar.src = user.photoURL;
+            }
         } else {
             topProfileBox.style.display = 'none';
         }
@@ -67,7 +73,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
         if (user) {
             // KIỂM TRA BẢO MẬT ADMIN
             if (ALLOWED_ADMIN_EMAILS.includes(user.email)) {
-		await loadMasterCryptoKey();
+                await loadMasterCryptoKey();
                 checkAndExecuteAutoBackup();
                 if(loginOverlay) loginOverlay.style.display = 'none';
                 if(dashboard) {
@@ -76,12 +82,23 @@ firebase.auth().onAuthStateChanged(async (user) => {
                     loadPharmacyForReception();
                     loadAdminAnnouncements();
                     loadFusoftxNotis();
-		    runDailyStatisticAggregation();
+                    runDailyStatisticAggregation();
 
                     const nameDisplay = document.getElementById('display-admin-name');
                     const emailDisplay = document.getElementById('display-admin-email');
+                    const avatarDisplay = document.getElementById('display-admin-avatar');
+
                     if (emailDisplay) emailDisplay.innerText = user.email;
                     if (nameDisplay) nameDisplay.innerText = user.displayName || "Quản trị viên";
+                    
+                    // Cập nhật ảnh đại diện Google (độ phân giải cao hơn) hoặc fallback qua UI-Avatars
+                    if (avatarDisplay) {
+                        if (user.photoURL) {
+                            avatarDisplay.src = user.photoURL.replace("s96-c", "s120-c"); 
+                        } else {
+                            avatarDisplay.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'Admin')}&background=0062ff&color=fff&bold=true`;
+                        }
+                    }
                 }
             } else {
                 // Rất quan trọng: Nếu không phải Admin thì đá ra khỏi trang Admin

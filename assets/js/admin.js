@@ -66,3 +66,37 @@ function sysConfirm(message, title = "Xác nhận thao tác", isDanger = false) 
         };
     });
 }
+// Hàm chuyển đổi trạng thái đóng mở của nhóm menu
+function toggleSidebarGroup(headerElement) {
+    const content = headerElement.nextElementSibling;
+    const isExpanded = content.classList.contains('expanded');
+    
+    // Đóng tất cả các nhóm khác để tiết kiệm diện tích (Tùy chọn)
+    document.querySelectorAll('.sidebar-group-content').forEach(el => {
+        el.classList.remove('expanded');
+    });
+    document.querySelectorAll('.sidebar-group-header').forEach(el => {
+        el.classList.remove('active');
+    });
+
+    // Nếu nhóm chưa mở thì tiến hành mở
+    if (!isExpanded) {
+        content.classList.add('expanded');
+        headerElement.classList.add('active');
+    }
+}
+
+// Hàm khởi tạo: Tự động mở nhóm chứa nút có class 'active' khi tải trang
+document.addEventListener("DOMContentLoaded", () => {
+    const activeBtn = document.querySelector('.admin-tab-btn.active');
+    if (activeBtn) {
+        const parentContent = activeBtn.closest('.sidebar-group-content');
+        if (parentContent) {
+            parentContent.classList.add('expanded');
+            const header = parentContent.previousElementSibling;
+            if (header) {
+                header.classList.add('active');
+            }
+        }
+    }
+});

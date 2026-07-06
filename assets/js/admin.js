@@ -100,3 +100,51 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 });
+// --- XỬ LÝ ACCORDION SIDEBAR CHO GIAO DIỆN SÁNG ---
+function toggleSidebarGroup(headerElement) {
+    const groupContent = headerElement.nextElementSibling;
+    
+    // Đóng các nhóm khác để giữ sidebar gọn gàng (Tùy chọn)
+    document.querySelectorAll('.sidebar-group-header').forEach(h => {
+        if (h !== headerElement) {
+            h.classList.remove('active');
+            if (h.nextElementSibling) {
+                h.nextElementSibling.classList.remove('expanded');
+            }
+        }
+    });
+
+    // Toggle trạng thái của nhóm hiện tại
+    headerElement.classList.toggle('active');
+    groupContent.classList.toggle('expanded');
+}
+
+// Cập nhật hàm switchTab hiện có để tự động mở rộng nhóm chứa tab được chọn
+const originalSwitchTab = switchTab;
+switchTab = function(tabId, btn) {
+    if (originalSwitchTab) {
+        originalSwitchTab(tabId, btn);
+    }
+    
+    // Tự động tìm và mở rộng group chứa nút active hiện tại
+    if (btn) {
+        const parentGroupContent = btn.closest('.sidebar-group-content');
+        if (parentGroupContent && !parentGroupContent.classList.contains('expanded')) {
+            parentGroupContent.classList.add('expanded');
+            const groupHeader = parentGroupContent.previousElementSibling;
+            if (groupHeader) {
+                groupHeader.classList.add('active');
+            }
+        }
+    }
+};
+
+// Đồng bộ hiển thị Avatar Admin từ dữ liệu Firebase Auth
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        const sidebarAvatar = document.getElementById('top-user-avatar');
+        if (sidebarAvatar && user.photoURL) {
+            sidebarAvatar.src = user.photoURL;
+        }
+    }
+});

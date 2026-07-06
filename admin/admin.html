@@ -53,91 +53,97 @@
 
     <div id="admin-dashboard" class="admin-wrapper" style="display:none;">
         
-        <aside class="admin-sidebar fade-in-left" style="min-width: 250px; flex-shrink: 0;">
-            <div style="text-align:center; margin-bottom:50px;">
-                <h2 style="font-size:1.5rem; color:white;">Y TẾ SỐ</h2>
-                <span style="font-size:0.7rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">THPT VÕ THỊ SÁU-BÀ RỊA VŨNG TÀU</span>
-            </div>
-<!-- BẮT ĐẦU: Khối hiển thị thông tin Admin -->
-<div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 25px; text-align: center; border: 1px solid rgba(255,255,255,0.1); position: relative;">
-    <i class="fas fa-user-shield" style="font-size: 2rem; color: #0062ff; margin-bottom: 10px;"></i>
-    
-    <!-- CHUÔNG THÔNG BÁO TỪ FUSOFTX -->
-    <div style="position: absolute; top: 12px; right: 15px; cursor: pointer; transition: 0.2s;" onclick="toggleAdminNotiModal()" title="Thông báo hệ thống">
-        <i class="fas fa-bell" style="font-size: 1.3rem; color: #cbd5e1;" id="admin-bell-icon"></i>
-        <span id="admin-noti-badge" style="display:none; position: absolute; top: -2px; right: -2px; background: #ef4444; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #1e293b;"></span>
+<aside class="admin-sidebar fade-in-left" style="min-width: 250px; flex-shrink: 0;">
+    <!-- Thương hiệu -->
+    <div style="text-align:center; margin-bottom:50px;">
+        <h2 style="font-size:1.5rem; color:white;">Y TẾ SỐ</h2>
+        <span style="font-size:0.7rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">THPT VÕ THỊ SÁU-BÀ RỊA VŨNG TÀU</span>
     </div>
 
-    <div id="display-admin-name" style="font-weight: bold; color: white; font-size: 0.95rem; margin-bottom: 3px;"></div>
-    <div id="display-admin-email" style="color: #94a3b8; font-size: 0.8rem;">Đang tải...</div>
-</div>
-<!-- KẾT THÚC: Khối hiển thị thông tin Admin -->
-            <nav>
-    <p style="font-size: 0.7rem; color: #94a3b8; margin: 20px 0 10px 10px; text-transform: uppercase;">Nội dung</p>
-    <button class="admin-tab-btn active" onclick="switchTab('tab-posts', this)">
-        <i class="fas fa-edit"></i> Quản lý bài viết
-    </button>
-    <button class="admin-tab-btn" onclick="switchTab('tab-announce', this)">
-        <i class="fas fa-bullhorn"></i> Quản lý Slider
-    </button>
+    <!-- BẮT ĐẦU: Khối hiển thị thông tin Admin -->
+    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 25px; text-align: center; border: 1px solid rgba(255,255,255,0.1); position: relative;">
+        <i class="fas fa-user-shield" style="font-size: 2rem; color: #0062ff; margin-bottom: 10px;"></i>
+        
+        <!-- CHUÔNG THÔNG BÁO TỪ FUSOFTX -->
+        <div style="position: absolute; top: 12px; right: 15px; cursor: pointer; transition: 0.2s;" onclick="toggleAdminNotiModal()" title="Thông báo hệ thống">
+            <i class="fas fa-bell" style="font-size: 1.3rem; color: #cbd5e1;" id="admin-bell-icon"></i>
+            <span id="admin-noti-badge" style="display:none; position: absolute; top: -2px; right: -2px; background: #ef4444; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #1e293b;"></span>
+        </div>
 
-    <p style="font-size: 0.7rem; color: #94a3b8; margin: 20px 0 10px 10px; text-transform: uppercase;">Tương tác</p>
-    <button class="admin-tab-btn" onclick="switchTab('tab-yte-yeucau', this)">
-        <i class="fas fa-envelope-open-text"></i> Hòm thư học sinh
-    </button>    
-    <a href="../zone/test_admin.html" class="admin-tab-btn" style="text-decoration: none;">
-        <i class="fas fa-heart-pulse"></i> Kiểm tra sức khỏe
-    </a>
-    <button class="admin-tab-btn" onclick="switchTab('tab-send-noti', this)">
-        <i class="fas fa-bell"></i> Quản lý thông báo
-    </button>
-    <button class="admin-tab-btn" onclick="switchTab('tab-fusoftx', this)">
-        <i class="fas fa-headset"></i> Hỗ trợ từ FUSoftX
-    </button>
+        <div id="display-admin-name" style="font-weight: bold; color: white; font-size: 0.95rem; margin-bottom: 3px;"></div>
+        <div id="display-admin-email" style="color: #94a3b8; font-size: 0.8rem;">Đang tải...</div>
+    </div>
+    <!-- KẾT THÚC: Khối hiển thị thông tin Admin -->
 
-    <p style="font-size: 0.7rem; color: #94a3b8; margin: 20px 0 10px 10px; text-transform: uppercase;">Y tế số</p>
-    <button class="admin-tab-btn" onclick="switchTab('tab-yte-tiepnhan', this)">
-        <i class="fas fa-user-plus"></i> Tiếp nhận
-    </button>
-    <button class="admin-tab-btn" onclick="switchTab('tab-yte-giuong', this)">
-        <i class="fas fa-bed"></i> Quản lý giường
-    </button>
-    <button class="admin-tab-btn" onclick="switchTab('tab-yte-dulieu', this)">
-        <i class="fas fa-address-book"></i> Hồ sơ học sinh
-    </button>
-    <a href="duoc.html" class="admin-tab-btn" style="text-decoration: none;">
-        <i class="fas fa-pills"></i> Kho Dược & Vật tư
-    </a>
-    <button class="admin-tab-btn" onclick="switchTab('tab-yte-xuat', this)">
-        <i class="fas fa-file-export"></i> Xuất báo cáo
-    </button>
-    <button class="admin-tab-btn" onclick="switchTab('tab-yte-thongke', this)">
-        <i class="fas fa-chart-pie"></i> Thống kê y tế
-    </button>
-    <a href="baocao.html" class="admin-tab-btn">
-    <i class="fas fa-file-invoice"></i> Điểm danh
-    </a>
-    <button class="admin-tab-btn" onclick="switchTab('tab-physical-exam', this)">
-    <i class="fas fa-file-medical"></i> Khám sức khỏe
-    </button>
-    <button class="admin-tab-btn" onclick="switchTab('tab-yte-tracuu-admin', this)">
-        <i class="fas fa-search-plus"></i> Tra cứu
-    </button>
+    <!-- Điều hướng Menu chính -->
+    <nav>
+        <p style="font-size: 0.7rem; color: #94a3b8; margin: 20px 0 10px 10px; text-transform: uppercase;">Nội dung</p>
+        <button class="admin-tab-btn active" onclick="switchTab('tab-posts', this)">
+            <i class="fas fa-edit"></i> Quản lý bài viết
+        </button>
+        <button class="admin-tab-btn" onclick="switchTab('tab-announce', this)">
+            <i class="fas fa-bullhorn"></i> Quản lý Slider
+        </button>
 
-    <p style="font-size: 0.7rem; color: #94a3b8; margin: 20px 0 10px 10px; text-transform: uppercase;">Hệ thống</p>
-    <button class="admin-tab-btn" onclick="switchTab('tab-account', this)">
-        <i class="fas fa-user-cog"></i> Cài đặt tài khoản
-    </button>
-    <a href="system.html" class="admin-tab-btn" style="text-decoration: none;">
-        <i class="fas fa-cogs"></i> Quản lý hệ thống
-    </a>
-   </nav>
-            <div style="margin-top:100px;">
-                <button onclick="handleLogout()" class="btn btn-danger" style="width:100%; justify-content:center; background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid #ef4444;">
-                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
-                </button>
-            </div>
-        </aside>
+        <p style="font-size: 0.7rem; color: #94a3b8; margin: 20px 0 10px 10px; text-transform: uppercase;">Tương tác</p>
+        <button class="admin-tab-btn" onclick="switchTab('tab-yte-yeucau', this)">
+            <i class="fas fa-envelope-open-text"></i> Hòm thư học sinh
+        </button>    
+        <a href="../zone/test_admin.html" class="admin-tab-btn" style="text-decoration: none;">
+            <i class="fas fa-heart-pulse"></i> Kiểm tra sức khỏe
+        </a>
+        <button class="admin-tab-btn" onclick="switchTab('tab-send-noti', this)">
+            <i class="fas fa-bell"></i> Quản lý thông báo
+        </button>
+        <button class="admin-tab-btn" onclick="switchTab('tab-fusoftx', this)">
+            <i class="fas fa-headset"></i> Hỗ trợ từ FUSoftX
+        </button>
+
+        <p style="font-size: 0.7rem; color: #94a3b8; margin: 20px 0 10px 10px; text-transform: uppercase;">Y tế số</p>
+        <button class="admin-tab-btn" onclick="switchTab('tab-yte-tiepnhan', this)">
+            <i class="fas fa-user-plus"></i> Tiếp nhận
+        </button>
+        <button class="admin-tab-btn" onclick="switchTab('tab-yte-giuong', this)">
+            <i class="fas fa-bed"></i> Quản lý giường
+        </button>
+        <button class="admin-tab-btn" onclick="switchTab('tab-yte-dulieu', this)">
+            <i class="fas fa-address-book"></i> Hồ sơ học sinh
+        </button>
+        <a href="duoc.html" class="admin-tab-btn" style="text-decoration: none;">
+            <i class="fas fa-pills"></i> Kho Dược & Vật tư
+        </a>
+        <button class="admin-tab-btn" onclick="switchTab('tab-yte-xuat', this)">
+            <i class="fas fa-file-export"></i> Xuất báo cáo
+        </button>
+        <button class="admin-tab-btn" onclick="switchTab('tab-yte-thongke', this)">
+            <i class="fas fa-chart-pie"></i> Thống kê y tế
+        </button>
+        <a href="baocao.html" class="admin-tab-btn">
+            <i class="fas fa-file-invoice"></i> Điểm danh
+        </a>
+        <button class="admin-tab-btn" onclick="switchTab('tab-physical-exam', this)">
+            <i class="fas fa-file-medical"></i> Khám sức khỏe
+        </button>
+        <button class="admin-tab-btn" onclick="switchTab('tab-yte-tracuu-admin', this)">
+            <i class="fas fa-search-plus"></i> Tra cứu
+        </button>
+
+        <p style="font-size: 0.7rem; color: #94a3b8; margin: 20px 0 10px 10px; text-transform: uppercase;">Hệ thống</p>
+        <button class="admin-tab-btn" onclick="switchTab('tab-account', this)">
+            <i class="fas fa-user-cog"></i> Cài đặt tài khoản
+        </button>
+        <a href="system.html" class="admin-tab-btn" style="text-decoration: none;">
+            <i class="fas fa-cogs"></i> Quản lý hệ thống
+        </a>
+    </nav>
+
+    <!-- Nút Đăng xuất footer -->
+    <div style="margin-top:100px;">
+        <button onclick="handleLogout()" class="btn btn-danger" style="width:100%; justify-content:center; background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid #ef4444;">
+            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+        </button>
+    </div>
+</aside>
 
         <main class="admin-main">
             

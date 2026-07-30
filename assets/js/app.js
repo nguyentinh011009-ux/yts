@@ -1279,28 +1279,113 @@ function toggleCheckAllStudents(source) {
 // 3. THỰC THI: Xóa hàng loạt
 async function executeBulkDelete() {
     const checkedBoxes = document.querySelectorAll('.student-checkbox:checked');
-    if (checkedBoxes.length === 0) return alert("Vui lòng tick chọn ít nhất 1 học sinh để xóa!");
+    if (checkedBoxes.length === 0) return sysAlert("Vui lòng tick chọn ít nhất 1 học sinh để xóa!", "warning");
 
-    if (confirm(`⚠️ CẢNH BÁO:\n\nBạn sắp XÓA VĨNH VIỄN ${checkedBoxes.length} học sinh cùng toàn bộ lịch sử y tế.\nHành động này KHÔNG THỂ HOÀN TÁC. Tiếp tục?`)) {
-        
-        const btn = document.getElementById('btn-confirm-bulk-delete');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xóa...';
-        btn.disabled = true;
+    const studentIds = Array.from(checkedBoxes).map(cb => cb.value);
+    const count = studentIds.length;
 
-        try {
-            for (let box of checkedBoxes) {
-                await deleteStudentCompletely(box.value);
+    const isConfirm = await sysConfirm(
+        `⚠️ CẢNH BÁO TỐI CAO:\n\nBạn sắp XÓA VĨNH VIỄN ${count} học sinh cùng toàn bộ lịch sử y tế liên quan.\nHành động này KHÔNG THỂ HOÀN TÁC. Bạn có chắc chắn thực hiện?`,
+        "Xóa hàng loạt vĩnh viễn",
+        true
+    );
+
+    if (!isConfirm) return;
+
+    sysLoading(true, `Đang xử lý xóa siêu tốc ${count} hồ sơ...`);
+
+    try {
+        let batch = db.batch();
+        let opCount = 0;
+
+        // Hàm phụ trợ tự động commit khi batch đủ 400 lệnh (Giới hạn tối đa của Firestore là 500)
+        const commitIfNeeded = async (force = false) => {
+            if (opCount > 0 && (opCount >= 400 || force)) {
+                await batch.commit();
+                batch = db.batch();
+                opCount = 0;
             }
-            alert(`✅ Đã xóa tận gốc ${checkedBoxes.length} hồ sơ!`);
-            toggleBulkMode(); 
-            loadStudentData(); 
-        } catch (e) {
-            alert("Lỗi: " + e.message);
-        } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+        };
+
+        // 1. TẢI TOÀN BỘ GIƯỜNG BỆNH NẰM 1 LẦN DUY NHẤT VÀO RAM (Tránh tải 400 lần)
+        const bedsSnap = await db.collection('yt_beds').get();
+        const allBeds = [];
+        bedsSnap.forEach(doc => allBeds.push({ id: doc.id, ...doc.data() }));
+
+        let processedVisits = new Set();
+
+        // 2. CHIA 400 HỌC SINH THÀNH CÁC KHỐI NHỎ (MỖI KHỐI 30 HỌC SINH ĐỂ TẬN DỤNG TOÁN TỬ 'IN')
+        const chunkSize = 30;
+        const chunks = [];
+        for (let i = 0; i < studentIds.length; i += chunkSize) {
+            chunks.push(studentIds.slice(i, i + chunkSize));
         }
+
+        // 3. QUÉT THEO KHỐI VÀ CHẠY SONG SONG BẰNG PROMISE.ALL
+        for (let idx = 0; idx < chunks.length; idx++) {
+            const chunk = chunks[idx];
+            
+            // Chạy đồng thời 5 truy vấn gom nhóm cho 30 học sinh cùng lúc
+            const [visitsSnap, attSnap, ticketsSnap, examsSnap, notiSnap] = await Promise.all([
+                db.collection('yt_visits').where('studentId', 'in', chunk).get(),
+                db.collection('yt_attendance').where('studentId', 'in', chunk).get(),
+                db.collection('yt_tickets').where('studentId', 'in', chunk).get(),
+                db.collection('yt_physical_exams').where('studentId', 'in', chunk).get(),
+                db.collection('yt_notifications').where('targetValue', 'in', chunk).get()
+            ]);
+
+            // Gom lệnh xóa Visits
+            visitsSnap.forEach(doc => {
+                processedVisits.add(doc.id);
+                batch.delete(doc.ref); opCount++;
+            });
+
+            // Gom lệnh xóa Attendance
+            attSnap.forEach(doc => { batch.delete(doc.ref); opCount++; });
+
+            // Gom lệnh xóa Tickets
+            ticketsSnap.forEach(doc => { batch.delete(doc.ref); opCount++; });
+
+            // Gom lệnh xóa Exams
+            examsSnap.forEach(doc => { batch.delete(doc.ref); opCount++; });
+
+            // Gom lệnh xóa Notifications
+            notiSnap.forEach(doc => { batch.delete(doc.ref); opCount++; });
+
+            // Gom lệnh xóa Hồ sơ gốc Học sinh
+            chunk.forEach(sid => {
+                batch.delete(db.collection('yt_students').doc(sid));
+                opCount++;
+            });
+
+            // Kiểm tra và commit nếu đầy batch
+            await commitIfNeeded();
+        }
+
+        // 4. GIẢI PHÓNG GIƯỜNG BỆNH (NẾU HỌC SINH ĐANG NẰM TRÊN CÁC VISITS BỊ XÓA)
+        allBeds.forEach(bed => {
+            if (bed.visitId && processedVisits.has(bed.visitId)) {
+                batch.delete(db.collection('yt_beds').doc(bed.id));
+                opCount++;
+            }
+        });
+
+        // 5. COMMIT LẦN CUỐI CÙNG CHO CÁC LỆNH CÒN LẠI
+        await commitIfNeeded(true);
+
+        // Xóa đệm bộ nhớ RAM & Trình duyệt
+        sessionStorage.removeItem('vts_students_cache');
+        window.allStudents = [];
+
+        sysAlert(`✅ Hoàn tất! Đã xóa sạch ${count} học sinh cùng toàn bộ lịch sử trong vài giây!`, "success");
+        toggleBulkMode();
+        loadStudentData();
+
+    } catch (e) {
+        console.error("Bulk Delete Error:", e);
+        sysAlert("Lỗi khi xóa hàng loạt: " + e.message, "error");
+    } finally {
+        sysLoading(false);
     }
 }
 

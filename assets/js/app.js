@@ -1292,7 +1292,7 @@ async function executeBulkDelete() {
 
     if (!isConfirm) return;
 
-    sysLoading(true, `Đang xử lý xóa siêu tốc ${count} hồ sơ...`);
+    sysLoading(true, `Đang xử lý xóa ${count} hồ sơ...`);
 
     try {
         let batch = db.batch();
@@ -1377,7 +1377,7 @@ async function executeBulkDelete() {
         sessionStorage.removeItem('vts_students_cache');
         window.allStudents = [];
 
-        sysAlert(`✅ Hoàn tất! Đã xóa sạch ${count} học sinh cùng toàn bộ lịch sử trong vài giây!`, "success");
+        sysAlert(`Hoàn tất! Đã xóa ${count} hồ sơ!`, "success");
         toggleBulkMode();
         loadStudentData();
 

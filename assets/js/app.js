@@ -1285,7 +1285,7 @@ async function executeBulkDelete() {
     const count = studentIds.length;
 
     const isConfirm = await sysConfirm(
-        `⚠️ CẢNH BÁO TỐI CAO:\n\nBạn sắp XÓA VĨNH VIỄN ${count} học sinh cùng toàn bộ lịch sử y tế liên quan.\nHành động này KHÔNG THỂ HOÀN TÁC. Bạn có chắc chắn thực hiện?`,
+        `⚠️ CẢNH BÁO: \n\nBạn sắp XÓA VĨNH VIỄN ${count} học sinh cùng toàn bộ lịch sử y tế liên quan.\nHành động này KHÔNG THỂ HOÀN TÁC. Bạn có chắc chắn thực hiện?`,
         "Xóa hàng loạt vĩnh viễn",
         true
     );
@@ -1307,15 +1307,15 @@ async function executeBulkDelete() {
             }
         };
 
-        // 1. TẢI TOÀN BỘ GIƯỜNG BỆNH NẰM 1 LẦN DUY NHẤT VÀO RAM (Tránh tải 400 lần)
+        // 1. TẢI TOÀN BỘ GIƯỜNG BỆNH NẰM 1 LẦN DUY NHẤT VÀO RAM
         const bedsSnap = await db.collection('yt_beds').get();
         const allBeds = [];
         bedsSnap.forEach(doc => allBeds.push({ id: doc.id, ...doc.data() }));
 
         let processedVisits = new Set();
 
-        // 2. CHIA 400 HỌC SINH THÀNH CÁC KHỐI NHỎ (MỖI KHỐI 30 HỌC SINH ĐỂ TẬN DỤNG TOÁN TỬ 'IN')
-        const chunkSize = 10;
+        // 2. CHIA HỌC SINH THÀNH CÁC KHỐI NHỎ (MỖI KHỐI TỐI ĐA 10 HỌC SINH ĐỂ ĐÁP ỨNG QUY ĐỊNH FIRESTORE)
+        const chunkSize = 10; 
         const chunks = [];
         for (let i = 0; i < studentIds.length; i += chunkSize) {
             chunks.push(studentIds.slice(i, i + chunkSize));
@@ -1325,7 +1325,7 @@ async function executeBulkDelete() {
         for (let idx = 0; idx < chunks.length; idx++) {
             const chunk = chunks[idx];
             
-            // Chạy đồng thời 5 truy vấn gom nhóm cho 30 học sinh cùng lúc
+            // Chạy đồng thời 5 truy vấn gom nhóm cho 10 học sinh cùng lúc
             const [visitsSnap, attSnap, ticketsSnap, examsSnap, notiSnap] = await Promise.all([
                 db.collection('yt_visits').where('studentId', 'in', chunk).get(),
                 db.collection('yt_attendance').where('studentId', 'in', chunk).get(),

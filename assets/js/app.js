@@ -1315,7 +1315,7 @@ async function executeBulkDelete() {
         let processedVisits = new Set();
 
         // 2. CHIA 400 HỌC SINH THÀNH CÁC KHỐI NHỎ (MỖI KHỐI 30 HỌC SINH ĐỂ TẬN DỤNG TOÁN TỬ 'IN')
-        const chunkSize = 30;
+        const chunkSize = 10;
         const chunks = [];
         for (let i = 0; i < studentIds.length; i += chunkSize) {
             chunks.push(studentIds.slice(i, i + chunkSize));

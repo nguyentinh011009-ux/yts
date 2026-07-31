@@ -269,12 +269,16 @@ async function savePost() {
     }
 }
 
+let adminPostsListener = null;
+
 function loadAdminPosts() {
     const body = document.getElementById('admin-post-list-body');
     if (!body) return;
-    body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;"><i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...</td></tr>';
+    
+    // Hủy listener cũ nếu đã tồn tại trước khi tạo listener mới
+    if (adminPostsListener) adminPostsListener();
 
-    db.collection("posts").orderBy("createdAt", "desc").onSnapshot(snap => {
+    adminPostsListener = db.collection("posts").orderBy("createdAt", "desc").onSnapshot(snap => {
         cachedAdminPosts = [];
         snap.forEach(doc => {
             cachedAdminPosts.push({ id: doc.id, ...doc.data() });
@@ -353,26 +357,30 @@ async function loadAdminAnnouncements() {
     const container = document.getElementById('announce-list-admin');
     if(!container) return;
     
-    // Tạo 4 ô nhập thông báo
+    container.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
+    
+    // Đọc 1 lần lấy toàn bộ 4 slots thay vì gọi 4 lần riêng biệt
+    const snap = await db.collection("announcements").get();
+    let slotsData = {};
+    snap.forEach(doc => slotsData[doc.id] = doc.data());
+
     container.innerHTML = '';
     for (let i = 1; i <= 4; i++) {
-        const doc = await db.collection("announcements").doc(`slot_${i}`).get();
-        const data = doc.exists ? doc.data() : { text: "", image: "", link: "" };
-        
+        const data = slotsData[`slot_${i}`] || { text: "", image: "", link: "" };
         container.innerHTML += `
             <div class="form-card">
                 <h3>Thông báo #${i}</h3>
                 <div class="input-group">
                     <label>Ảnh nền</label>
-                    <input type="text" id="ann-img-${i}" value="${data.image}" placeholder="Link ảnh...">
+                    <input type="text" id="ann-img-${i}" value="${data.image || ''}" placeholder="Link ảnh...">
                 </div>
                 <div class="input-group">
                     <label>Tiêu đề ngắn</label>
-                    <input type="text" id="ann-txt-${i}" value="${data.text}" placeholder="Nội dung...">
+                    <input type="text" id="ann-txt-${i}" value="${data.text || ''}" placeholder="Nội dung...">
                 </div>
                 <div class="input-group">
                     <label>Link liên kết</label>
-                    <input type="text" id="ann-lnk-${i}" value="${data.link}" placeholder="Khi bấm vào sẽ đi đâu?">
+                    <input type="text" id="ann-lnk-${i}" value="${data.link || ''}" placeholder="Khi bấm vào sẽ đi đâu?">
                 </div>
                 <button onclick="saveAnnouncement(${i})" class="btn btn-primary" style="width:100%; justify-content:center;">Cập nhật slot ${i}</button>
             </div>
@@ -2404,9 +2412,7 @@ async function executeExportStudents() {
 
     sysLoading(true, "Đang trích xuất dữ liệu tạo bản in...");
     try {
-        const snap = await db.collection('yt_students').get();
-        let allStudents = [];
-        snap.forEach(doc => allStudents.push(doc.data()));
+        const allStudents = await getStudentsList();
 
         if (allStudents.length === 0) {
             if (btn) { btn.innerHTML = originalText; btn.disabled = false; }

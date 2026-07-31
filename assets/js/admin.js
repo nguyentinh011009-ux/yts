@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
 async function forceRefreshSystem() {
     // 1. Hiển thị màn hình Loading
     if (typeof sysLoading === 'function') {
-        sysLoading(true, "Đang dọn dẹp bộ nhớ đệm & Làm mới dữ liệu...");
+        sysLoading(true, "Đang làm mới dữ liệu...");
     }
     
     // 2. Xóa sạch bộ nhớ đệm Cache (RAM & SessionStorage)

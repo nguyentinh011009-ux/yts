@@ -1,7 +1,3 @@
-// ========================================================
-// HỆ THỐNG POPUP UI CONTROL
-// ========================================================
-
 // 1. Hàm bật/tắt Loading Toàn màn hình
 function sysLoading(show = true, text = "Đang xử lý...") {
     const loadingEl = document.getElementById('yt-sys-loading');
@@ -100,3 +96,25 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 });
+// CHỨC NĂNG LÀM MỚI HỆ THỐNG (TƯƠNG ĐƯƠNG CTRL + F5)
+async function forceRefreshSystem() {
+    // 1. Hiển thị màn hình Loading
+    if (typeof sysLoading === 'function') {
+        sysLoading(true, "Đang dọn dẹp bộ nhớ đệm & Làm mới dữ liệu...");
+    }
+    
+    // 2. Xóa sạch bộ nhớ đệm Cache (RAM & SessionStorage)
+    sessionStorage.removeItem('vts_students_cache');
+    window.allStudents = [];
+    if (typeof ytStudentsCache !== 'undefined') ytStudentsCache = null;
+    if (typeof adminLookupCache !== 'undefined') adminLookupCache = null;
+    if (typeof allStudentsForNotiCache !== 'undefined') allStudentsForNotiCache = [];
+    if (typeof cachedAdminPosts !== 'undefined') cachedAdminPosts = [];
+    if (typeof cachedNotifications !== 'undefined') cachedNotifications = [];
+    if (typeof cachedTickets !== 'undefined') cachedTickets = [];
+
+    // 3. Tải lại trang web từ Server (Tương đương Ctrl + F5)
+    setTimeout(() => {
+        window.location.reload(true);
+    }, 400);
+}

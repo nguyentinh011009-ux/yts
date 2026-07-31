@@ -117,3 +117,23 @@
     from { transform: translateX(0); opacity: 1; }
     to { transform: translateX(100%); opacity: 0; }
 }
+.btn-refresh-system {
+    background: #ecfdf5 !important;
+    color: #059669 !important;
+    border: 1px solid #a7f3d0 !important;
+    margin-top: 15px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-refresh-system:hover {
+    background: #10b981 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important;
+}
+
+/* Hiệu ứng xoay icon khi di chuột vào nút */
+.btn-refresh-system:hover .icon-refresh {
+    transform: rotate(180deg);
+    transition: transform 0.5s ease;
+}

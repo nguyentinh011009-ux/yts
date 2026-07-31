@@ -564,23 +564,6 @@ function switchTab(tabId, btn) {
 if (document.getElementById('pinned-grid') || document.getElementById('main-slider')) {
     renderHome();
 }
-// Thống kê truy cập: Tự động tăng và hiển thị số lượt
-const statsRef = db.collection("settings").doc("stats");
-
-// 1. Tăng số lượt truy cập thêm 1 mỗi khi load trang
-statsRef.set({
-    visitCount: firebase.firestore.FieldValue.increment(1)
-}, { merge: true });
-
-// 2. Lắng nghe và hiển thị số lượt truy cập thời gian thực
-statsRef.onSnapshot((doc) => {
-    if (doc.exists && doc.data().visitCount) {
-        const visitCountEl = document.getElementById('visit-count');
-        if (visitCountEl) {
-            visitCountEl.innerText = doc.data().visitCount.toLocaleString();
-        }
-    }
-});
 // --- 6. XỬ LÝ TRANG CHI TIẾT BÀI VIẾT LẺ ---
 async function loadSinglePost() {
     const params = new URLSearchParams(window.location.search);

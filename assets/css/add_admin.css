@@ -118,22 +118,33 @@
     to { transform: translateX(100%); opacity: 0; }
 }
 .btn-refresh-system {
-    background: #ecfdf5 !important;
-    color: #059669 !important;
-    border: 1px solid #a7f3d0 !important;
-    margin-top: 15px !important;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 15px !important;
+    margin-top: 14px !important;
+    background: rgba(16, 185, 129, 0.12) !important; /* Nền xanh lục trong suốt */
+    color: #34d399 !important; /* Chữ & icon xanh Mint sáng */
+    border: 1px solid rgba(16, 185, 129, 0.3) !important; /* Viền mỏng tinh tế */
+    border-radius: 10px !important;
+    font-size: 0.85rem !important;
     font-weight: 600 !important;
-    transition: all 0.3s ease !important;
+    cursor: pointer;
+    transition: all 0.25s ease-in-out !important;
 }
 
+/* Hiệu ứng khi di chuột vào (Hover) */
 .btn-refresh-system:hover {
-    background: #10b981 !important;
-    color: #ffffff !important;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important;
+    background: #10b981 !important; /* Chuyển màu xanh lá rực rỡ */
+    color: #ffffff !important; /* Chữ đổi sang trắng */
+    border-color: #10b981 !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important; /* Phát sáng nhẹ */
 }
 
-/* Hiệu ứng xoay icon khi di chuột vào nút */
+/* Hiệu ứng xoay icon */
 .btn-refresh-system:hover .icon-refresh {
     transform: rotate(180deg);
-    transition: transform 0.5s ease;
+    transition: transform 0.4s ease;
 }

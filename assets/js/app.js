@@ -2515,8 +2515,8 @@ async function executeExportStudents() {
                     ${showHeight ? `<td style="text-align:center;">${hs.height ? hs.height+' cm' : ''}</td>` : ''}
                     ${showWeight ? `<td style="text-align:center;">${hs.weight ? hs.weight+' kg' : ''}</td>` : ''}
                     ${showBmi ? `<td style="text-align:center; font-weight:bold;">${bmiValue}</td>` : ''}
-                    ${showPhone ? `<td style="text-align:center;">${hs.phone || ''}</td>` : ''}
-                    ${showParentPhone ? `<td style="text-align:center;">${hs.parentPhone || ''}</td>` : ''}
+                    ${showPhone ? `<td style="text-align:center;">${decryptedPhone}</td>` : ''}
+                    ${showParentPhone ? `<td style="text-align:center;">${decryptedParentPhone}</td>` : ''}
                     ${showEmail ? `<td>${hs.linkedEmail || ''}</td>` : ''}
                     ${showAddress ? `<td style="text-align:left; font-size:0.7em;">${fullAddress}</td>` : ''}
                     ${showNote ? `<td style="text-align:left; font-size:0.7em; color:#e11d48;">${hs.medicalNote || ''}</td>` : ''}

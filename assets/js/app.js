@@ -2195,30 +2195,30 @@ async function handleExcelUpload(event) {
     if (!file) return;
     event.target.value = ""; 
 
+    const btn = document.querySelector('button[onclick="document.getElementById(\'excel-upload\').click()"]');
+    let originalText = "";
+    if (btn) {
+        originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đọc dữ liệu...';
+        btn.disabled = true;
+    }
+
     sysLoading(true, "Đang đọc cấu trúc file Excel...");
     
     const reader = new FileReader();
     reader.onload = async function(e) {
         try {
-            const btn = document.querySelector('button[onclick="document.getElementById(\'excel-upload\').click()"]');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đọc dữ liệu...';
-            btn.disabled = true;
-
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
             const firstSheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[firstSheetName];
             
-            // Xóa raw: false đi để lấy dữ liệu thô xác thực nhất từ Excel
             const rawJson = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
             
             if (rawJson.length === 0) {
-                btn.innerHTML = originalText; btn.disabled = false;
                 return alert("File Excel không có dữ liệu!");
             }
 
-            // Chuẩn hóa tên cột
             const json = rawJson.map(row => {
                 let normalizedRow = {};
                 for (let key in row) {
@@ -2227,40 +2227,27 @@ async function handleExcelUpload(event) {
                 return normalizedRow;
             });
 
-            // 🌟 THUẬT TOÁN ÉP ĐỊNH DẠNG NGÀY THÁNG EXCEL CỰC MẠNH
             const parseExcelDate = (excelDate) => {
                 if (!excelDate || excelDate === "") return "";
-                
-                // Trường hợp 1: Nếu Excel lưu ngày tháng dưới dạng số Serial (VD: 38975)
                 if (typeof excelDate === 'number') {
-                    // Chuyển đổi số của Excel thành ngày của Javascript (Trừ đi 25569 ngày chênh lệch giữa năm 1900 và 1970)
                     const jsDate = new Date(Math.round((excelDate - 25569) * 86400 * 1000));
-                    return jsDate.toISOString().split('T')[0]; // Trả về YYYY-MM-DD
+                    return jsDate.toISOString().split('T')[0];
                 }
-
-                // Trường hợp 2: Nếu Excel lưu dưới dạng Chữ (Text)
-                let dateStr = String(excelDate).trim();
-                
-                // Xóa bỏ phần giờ phút nếu có (VD: "15/09/2006 12:00:00" -> "15/09/2006")
-                dateStr = dateStr.split(" ")[0]; 
-
-                // Nếu dùng dấu gạch chéo DD/MM/YYYY
+                let dateStr = String(excelDate).trim().split(" ")[0]; 
                 if (dateStr.includes('/')) {
                     const parts = dateStr.split('/');
                     if (parts.length === 3) {
                         const d = parts[0].padStart(2, '0');
                         const m = parts[1].padStart(2, '0');
                         let y = parts[2];
-                        if (y.length === 2) y = "20" + y; // Xử lý nếu gõ năm là "06" -> "2006"
+                        if (y.length === 2) y = "20" + y;
                         return `${y}-${m}-${d}`;
                     }
                 }
-                
-                // Nếu dùng dấu gạch ngang DD-MM-YYYY hoặc YYYY-MM-DD
                 if (dateStr.includes('-')) {
                      const parts = dateStr.split('-');
                      if (parts.length === 3) {
-                         if (parts[0].length === 4) return dateStr; // Đã đúng chuẩn YYYY-MM-DD thì giữ nguyên
+                         if (parts[0].length === 4) return dateStr;
                          const d = parts[0].padStart(2, '0');
                          const m = parts[1].padStart(2, '0');
                          let y = parts[2];
@@ -2268,14 +2255,11 @@ async function handleExcelUpload(event) {
                          return `${y}-${m}-${d}`;
                      }
                 }
-
-                return ""; // Nếu hoàn toàn không thể nhận diện được thì trả về rỗng
+                return "";
             };
 
-            // --- BƯỚC 1: LẤY DỮ LIỆU CŨ TỪ DATABASE ĐỂ ĐỐI CHIẾU ---
             sysLoading(true, "Đang đối chiếu dữ liệu...");
             const snapshot = await db.collection('yt_students').get();
-            
             const existingStudentsMap = new Map();
             const existingIds = new Set(); 
 
@@ -2288,11 +2272,9 @@ async function handleExcelUpload(event) {
                 }
             });
 
-            // --- BƯỚC 2: XỬ LÝ DỮ LIỆU EXCEL ---
             let batches = [];
             let currentBatch = db.batch();
             let operationCount = 0;
-            
             let successCount = 0;  
             let updatedCount = 0;  
             let skippedCount = 0;  
@@ -2304,11 +2286,8 @@ async function handleExcelUpload(event) {
                 const className = row['lớp'] || row['lop'] || "";
                 const height = (row['chiều cao'] || row['cao'] || "").toString().trim();
                 const weight = (row['cân nặng'] || row['nặng'] || "").toString().trim();
-                
-                // 👉 DÙNG HÀM XỬ LÝ NGÀY THÁNG VỪA TẠO
                 const rawDob = row['ngày sinh'] || row['ngày/tháng/năm sinh'] || "";
                 const dob = parseExcelDate(rawDob);
-                
                 const gender = (row['giới tính'] || "").toString().trim();
                 const phone = (row['số điện thoại'] || row['sđt'] || "").toString().trim();
                 const parentPhone = (row['số điện thoại ph'] || row['sđt ph'] || "").toString().trim();
@@ -2322,7 +2301,6 @@ async function handleExcelUpload(event) {
                     const studentKey = `${cleanName.toLowerCase()}_${cleanClass.toLowerCase()}`;
 
                     if (existingStudentsMap.has(studentKey)) {
-                        // CẬP NHẬT THÊM THÔNG TIN VÀO CHỖ TRỐNG
                         const existingData = existingStudentsMap.get(studentKey);
                         let updatePayload = {};
 
@@ -2332,10 +2310,10 @@ async function handleExcelUpload(event) {
                                 existingData[field] = excelValue; 
                             }
                         };
-			            checkAndUpdate('studentCode', studentCode);
+                        checkAndUpdate('studentCode', studentCode);
                         checkAndUpdate('height', height);
                         checkAndUpdate('weight', weight);
-                        checkAndUpdate('dob', dob); // Update Ngày Sinh
+                        checkAndUpdate('dob', dob);
                         checkAndUpdate('gender', gender);
                         checkAndUpdate('phone', phone);
                         checkAndUpdate('parentPhone', parentPhone);
@@ -2351,9 +2329,7 @@ async function handleExcelUpload(event) {
                         } else {
                             skippedCount++;
                         }
-
                     } else {
-                        // TẠO MỚI HOÀN TOÀN
                         let sid;
                         let isUnique = false;
                         while (!isUnique) {
@@ -2370,9 +2346,7 @@ async function handleExcelUpload(event) {
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         };
                         currentBatch.set(ref, newData);
-
                         existingStudentsMap.set(studentKey, newData);
-                        
                         successCount++;
                         operationCount++;
                     }
@@ -2387,10 +2361,8 @@ async function handleExcelUpload(event) {
 
             if (operationCount > 0) batches.push(currentBatch);
 
-            // --- BƯỚC 3: THỰC THI GHI DỮ LIỆU ---
             if (successCount === 0 && updatedCount === 0) {
-                btn.innerHTML = originalText; btn.disabled = false;
-                return alert(`ℹ️ Quá trình kết thúc.\nĐã bỏ qua ${skippedCount} dòng do mọi thông tin của các học sinh này trên hệ thống đã đầy đủ.`);
+                return alert(`ℹ️ Quá trình kết thúc.\nĐã bỏ qua ${skippedCount} dòng do dữ liệu đã đầy đủ.`);
             }
 
             sysLoading(true, "Đang đồng bộ lên Cloud...");
@@ -2404,6 +2376,11 @@ async function handleExcelUpload(event) {
             sysAlert("Lỗi xử lý file Excel: " + error.message, "error");
         } finally {
             sysLoading(false);
+            // KHI TẤT CẢ TÁC VỤ HOÀN THÀNH (HOẶC LỖI), KHÔI PHỤC NÚT BẤM
+            if (btn) {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
         }
     };
     reader.readAsArrayBuffer(file);
@@ -2415,20 +2392,18 @@ function openExportStudentModal() { document.getElementById('export-student-moda
 function closeExportStudentModal() { document.getElementById('export-student-modal').style.display = 'none'; }
 
 async function executeExportStudents() {
-    // 1. Lấy thông tin Tùy chọn cột
     const showId = document.getElementById('col-id').checked;
     const showHeight = document.getElementById('col-height').checked;
     const showWeight = document.getElementById('col-weight').checked;
     const showNote = document.getElementById('col-note').checked;
     const showStCode = document.getElementById('col-stcode').checked;
-    // CÁC CỘT MỚI
     const showDob = document.getElementById('col-dob').checked;
     const showGender = document.getElementById('col-gender').checked;
     const showPhone = document.getElementById('col-phone').checked;
     const showParentPhone = document.getElementById('col-parentphone').checked;
     const showAddress = document.getElementById('col-address').checked;
     const showEmail = document.getElementById('col-email').checked;
-    const showBmi = document.getElementById('col-bmi').checked; // Thêm dòng này
+    const showBmi = document.getElementById('col-bmi').checked;
 
     const classFilterInput = document.getElementById('export-class-filter').value.trim().toLowerCase();
     let targetClasses = [];
@@ -2437,9 +2412,13 @@ async function executeExportStudents() {
     }
 
     const btn = document.querySelector('#export-student-modal .btn-primary');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
-    btn.disabled = true;
+    let originalText = "";
+    if (btn) {
+        originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+        btn.disabled = true;
+    }
+
     sysLoading(true, "Đang trích xuất dữ liệu tạo bản in...");
     try {
         const snap = await db.collection('yt_students').get();
@@ -2447,7 +2426,8 @@ async function executeExportStudents() {
         snap.forEach(doc => allStudents.push(doc.data()));
 
         if (allStudents.length === 0) {
-            btn.innerHTML = originalText; btn.disabled = false;
+            if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
+            sysLoading(false);
             return alert("Hiện chưa có học sinh nào trong hệ thống!");
         }
 
@@ -2456,7 +2436,8 @@ async function executeExportStudents() {
             : allStudents;
 
         if (filteredStudents.length === 0) {
-            btn.innerHTML = originalText; btn.disabled = false;
+            if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
+            sysLoading(false);
             return alert("Không tìm thấy học sinh nào thuộc các lớp đã nhập!");
         }
 
@@ -2468,10 +2449,8 @@ async function executeExportStudents() {
         });
 
         const sortedClasses = Object.keys(studentsByClass).sort((a, b) => a.localeCompare(b, 'vi'));
-
         let fullPrintHTML = '';
 
-        // Hàm hỗ trợ tách tên chuẩn Việt Nam (Chỉ dùng riêng cho lúc in PDF)
         const getSortableName = (fullName) => {
             if (!fullName) return "";
             let parts = fullName.trim().split(/\s+/);
@@ -2483,8 +2462,6 @@ async function executeExportStudents() {
 
         sortedClasses.forEach((className, index) => {
             let classStudents = studentsByClass[className];
-            
-            // Chỉ sắp xếp lại mảng dữ liệu tạm dùng để in
             classStudents.sort((a, b) => {
                 let nameA = getSortableName(a.name);
                 let nameB = getSortableName(b.name);
@@ -2493,11 +2470,10 @@ async function executeExportStudents() {
 
             const pageBreakCSS = index > 0 ? 'page-break-before: always; break-before: page;' : '';
 
-            // TẠO HEADER BẢNG DỰA TRÊN TÙY CHỌN
             let theadHTML = `<tr>
                 <th style="width: 5%;">STT</th>
                 ${showId ? '<th>Mã YT</th>' : ''}
-                ${showStCode ? '<th>Mã HS</th>' : ''} <!-- Dòng THÊM MỚI -->
+                ${showStCode ? '<th>Mã HS</th>' : ''}
                 <th>Họ và tên</th>
                 <th>Lớp</th>
                 ${showDob ? '<th>Ngày sinh</th>' : ''}
@@ -2512,7 +2488,6 @@ async function executeExportStudents() {
                 ${showNote ? '<th style="width: 15%;">Ghi chú LS</th>' : ''}
             </tr>`;
 
-            // TẠO BODY BẢNG
             let tbodyHTML = '';
             classStudents.forEach((hs, i) => {
                 const dobFormat = hs.dob ? new Date(hs.dob).toLocaleDateString('vi-VN') : '';
@@ -2539,7 +2514,7 @@ async function executeExportStudents() {
                     ${showGender ? `<td style="text-align:center;">${hs.gender || ''}</td>` : ''}
                     ${showHeight ? `<td style="text-align:center;">${hs.height ? hs.height+' cm' : ''}</td>` : ''}
                     ${showWeight ? `<td style="text-align:center;">${hs.weight ? hs.weight+' kg' : ''}</td>` : ''}
-                    ${showBmi ? `<td style="text-align:center; font-weight:bold;">${bmiValue}</td>` : ''} <!-- Thêm dòng này -->
+                    ${showBmi ? `<td style="text-align:center; font-weight:bold;">${bmiValue}</td>` : ''}
                     ${showPhone ? `<td style="text-align:center;">${hs.phone || ''}</td>` : ''}
                     ${showParentPhone ? `<td style="text-align:center;">${hs.parentPhone || ''}</td>` : ''}
                     ${showEmail ? `<td>${hs.linkedEmail || ''}</td>` : ''}
@@ -2566,7 +2541,6 @@ async function executeExportStudents() {
         const printArea = document.getElementById('print-section');
         printArea.innerHTML = fullPrintHTML;
 
-// Ép định dạng A4 Dọc và Ép cỡ chữ nhỏ lại cho bảng
         const style = document.createElement('style');
         style.id = 'print-portrait-style';
         style.innerHTML = `
@@ -2582,14 +2556,24 @@ async function executeExportStudents() {
         printArea.style.display = 'block';
         
         setTimeout(() => {
-            sysLoading(false); // Tắt loading trước khi hiện hộp thoại in của Windows
+            sysLoading(false);
             window.print();
             printArea.style.display = 'none';
             printArea.innerHTML = '';
             document.getElementById('print-portrait-style').remove();
+            
+            // KHÔI PHỤC LẠI NÚT IN SAU KHI ĐÃ HIỂN THỊ HỘP THOẠI IN
+            if (btn) {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
         }, 800);
     } catch (err) {
         sysLoading(false);
+        if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
         sysAlert("Lỗi xuất dữ liệu: " + err.message, "error");
     }
 }
@@ -3171,31 +3155,35 @@ async function sendStudentNotification() {
         if (!targetValue) return alert("Vui lòng nhập đối tượng nhận!");
         finalTargetValue = targetType === 'class' ? targetValue.toUpperCase() : targetValue;
     }
-    try {
+
     const btn = document.querySelector('button[onclick="sendStudentNotification()"]');
-    const ogText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
-    btn.disabled = true;
+    let ogText = "";
+    if (btn) {
+        ogText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
+        btn.disabled = true;
+    }
 
-    await db.collection('yt_notifications').add({
-        title: title,
-        content: content,
-        targetType: targetType,
-        targetValue: finalTargetValue,
-        sender: "Phòng Y Tế",
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    try {
+        await db.collection('yt_notifications').add({
+            title: title,
+            content: content,
+            targetType: targetType,
+            targetValue: finalTargetValue,
+            sender: "Phòng Y Tế",
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-    alert("✅ Đã gửi thông báo thành công!");
-    
-    // Thay thế đoạn ẩn box cũ bằng hàm đóng Modal mới
-    closeNewNotiModal();
-    
-    btn.innerHTML = ogText;
-    btn.disabled = false;
-} catch (e) {
-    alert("Lỗi gửi thông báo: " + e.message);
-}
+        alert("✅ Đã gửi thông báo thành công!");
+        closeNewNotiModal();
+    } catch (e) {
+        alert("Lỗi gửi thông báo: " + e.message);
+    } finally {
+        if (btn) {
+            btn.innerHTML = ogText;
+            btn.disabled = false;
+        }
+    }
 }
 // 6. Tải danh sách đã gửi
 // 1. Thay đổi bộ lọc hiện tại khi người dùng click
@@ -3754,4 +3742,16 @@ function closeNewNotiModal() {
     toggleNotiTargetInput();
     selectedStudentsForNoti = [];
     renderSelectedStudentsNoti();
+}
+// Hàm tự động mở lại tất cả các nút bị kẹt hiệu ứng Spinner khi tắt Loading
+function autoResetStuckButtons() {
+    document.querySelectorAll('button:disabled').forEach(btn => {
+        if (btn.innerHTML.includes('fa-spinner')) {
+            btn.disabled = false;
+            // Nếu có dữ liệu chữ gốc lưu sẵn thì khôi phục, hoặc xóa icon xoay
+            if (btn.dataset.originalText) {
+                btn.innerHTML = btn.dataset.originalText;
+            }
+        }
+    });
 }

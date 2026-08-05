@@ -119,42 +119,85 @@ async function forceRefreshSystem() {
     }, 400);
 }
 // =========================================================================
-// AI DỰ ĐOÁN NGUY CƠ DỊCH BỆNH HỌC ĐƯỜNG (SỐT XUẤT HUYẾT, CÚM, ĐAU MẮT ĐỎ...)
+// AI DỰ ĐOÁN NGUY CƠ DỊCH BỆNH HỌC ĐƯỜNG (BẢN BÁO LỖI CHI TIẾT & CHỐNG KẸT)
 // =========================================================================
 
-// 1. Chạy phân tích AI dựa trên khoảng thời gian đang chọn
-async function runAIPrediction() {
-    const startInput = document.getElementById('stat-start').value;
-    const endInput = document.getElementById('stat-end').value;
+// Hàm hỗ trợ thông báo an toàn (Dùng sysAlert nếu có, không có thì dùng alert chuẩn)
+function safeAlert(message, type = "error") {
+    console.log(`[AI Predict Alert - ${type}]:`, message);
+    if (typeof sysAlert === 'function') {
+        sysAlert(message, type);
+    } else {
+        alert((type === 'error' ? '❌ ' : '✅ ') + message);
+    }
+}
 
+// 1. Hàm chính: Chạy phân tích AI
+window.runAIPrediction = async function() {
+    console.log("=== [1/5] BẮT ĐẦU TIẾN TRÌNH DỰ ĐOÁN AI ===");
+
+    // Kiểm tra nút bấm và hiệu ứng
+    const btn = document.getElementById('btn-run-ai-predict');
+    const loadingBox = document.getElementById('ai-predict-loading');
+    
+    if (!btn) {
+        alert("❌ Lỗi HTML: Không tìm thấy nút #btn-run-ai-predict trên trang!");
+        return;
+    }
+
+    const originalBtnText = btn.innerHTML;
+
+    // Lấy thông tin ngày từ ô nhập liệu
+    let startInput = document.getElementById('stat-start')?.value;
+    let endInput = document.getElementById('stat-end')?.value;
+
+    // TỰ ĐỘNG XỬ LÝ: Nếu chưa chọn ngày, tự lấy 30 ngày gần nhất để không làm kẹt ứng dụng
     if (!startInput || !endInput) {
-        return sysAlert("Vui lòng chọn Từ ngày và Đến ngày ở bộ lọc trên trước khi bấm dự đoán!", "warning");
+        const today = new Date();
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+
+        endInput = today.toISOString().split('T')[0];
+        startInput = thirtyDaysAgo.toISOString().split('T')[0];
+
+        // Tự điền vào ô ngày nếu có ô
+        if (document.getElementById('stat-start')) document.getElementById('stat-start').value = startInput;
+        if (document.getElementById('stat-end')) document.getElementById('stat-end').value = endInput;
+
+        safeAlert(`Tự động chọn khoảng thời gian 30 ngày gần đây (${startInput} đến ${endInput}) để phân tích.`, "warning");
     }
 
     const startDate = new Date(startInput + "T00:00:00");
     const endDate = new Date(endInput + "T23:59:59");
 
-    const btn = document.getElementById('btn-run-ai-predict');
-    const loadingBox = document.getElementById('ai-predict-loading');
-    const originalBtnText = btn.innerHTML;
-
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang thu thập dữ liệu...';
+    // Bật hiệu ứng Loading
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang kết nối dữ liệu...';
     btn.disabled = true;
-    loadingBox.style.display = 'block';
+    if (loadingBox) loadingBox.style.display = 'block';
 
     try {
-        // Bước 1: Quét danh sách lượt khám trong khoảng thời gian
-        const snap = await db.collection('yt_visits')
-            .where('timestamp', '>=', startDate)
-            .where('timestamp', '<=', endDate)
-            .get();
-
-        if (snap.empty) {
-            sysAlert("Không có dữ liệu lượt khám nào trong khoảng thời gian này để AI phân tích!", "warning");
-            return;
+        // BƯỚC 1: TRUY VẤN FIRESTORE
+        console.log(`=== [2/5] ĐANG TRUY VẤN FIRESTORE (Từ ${startInput} đến ${endInput}) ===`);
+        
+        let snap;
+        try {
+            snap = await db.collection('yt_visits')
+                .where('timestamp', '>=', startDate)
+                .where('timestamp', '<=', endDate)
+                .get();
+        } catch (dbErr) {
+            console.error("Lỗi Firestore Query:", dbErr);
+            throw new Error("Lỗi truy vấn Database: " + dbErr.message + "\n(Nếu do thiếu Index, hãy nhấn F12 mở Console để bấm vào link tạo Index của Firebase)");
         }
 
-        // Bước 2: Gom nhóm triệu chứng siêu gọn trên RAM để tiết kiệm Token gửi cho AI
+        console.log(`-> Tìm thấy ${snap.size} lượt khám trong Database.`);
+
+        if (snap.empty) {
+            throw new Error(`Không có dữ liệu lượt khám nào từ ngày ${startInput} đến ${endInput}. Hãy chọn khoảng thời gian khác có dữ liệu khám!`);
+        }
+
+        // BƯỚC 2: GOM NHÓM TRIỆU CHỨNG TRÊN RAM
+        console.log("=== [3/5] ĐANG TỔNG HỢP TRIỆU CHỨNG ===");
         let symptomCounts = {};
         let totalVisits = snap.size;
 
@@ -171,18 +214,21 @@ async function runAIPrediction() {
             }
         });
 
-        // Chuyển danh sách triệu chứng thành dạng text tóm tắt gọn gàng
         let symptomSummaryText = Object.keys(symptomCounts)
             .map(k => `${k}: ${symptomCounts[k]} ca`)
             .join(", ");
 
-        // Bước 3: Tạo Prompt tối ưu cho AI Gemini
-        const systemPrompt = `Bạn là chuyên gia Dịch tễ học học đường của Trường THPT Võ Thị Sáu.
-Dựa trên dữ liệu tổng hợp lượt khám Y tế từ ${startInput} đến ${endInput}:
+        if (!symptomSummaryText) symptomSummaryText = "Không có mô tả triệu chứng chi tiết";
+
+        // BƯỚC 3: GỬI REQUEST SANG AI SERVER (CLOUDFLARE WORKER)
+        console.log("=== [4/5] ĐANG GỬI DỮ LIỆU SANG AI SERVER ===");
+        
+        const systemPrompt = `Bạn là chuyên gia Dịch tễ học học đường của THPT Võ Thị Sáu.
+Dữ liệu lượt khám Y tế từ ${startInput} đến ${endInput}:
 - Tổng số lượt khám: ${totalVisits} ca.
 - Triệu chứng thống kê: ${symptomSummaryText}.
 
-Nhiệm vụ: Phân tích nguy cơ bùng phát dịch bệnh tại trường học và trả về nội dung theo ĐÚNG định dạng HTML ngắn gọn (KHÔNG dùng markdown code block ```html, chỉ trả về code HTML thuần túy bọc trong <div class="ai-report-body">):
+Nhiệm vụ: Phân tích nguy cơ bùng phát dịch bệnh tại trường học và trả về nội dung theo ĐÚNG định dạng HTML ngắn gọn (KHÔNG dùng markdown code block \`\`\`html, chỉ trả về code HTML thuần túy bọc trong <div class="ai-report-body">):
 
 <div class="ai-report-body">
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px;">
@@ -191,7 +237,7 @@ Nhiệm vụ: Phân tích nguy cơ bùng phát dịch bệnh tại trường h�
             Nguy cơ: <span style="font-weight:bold; color:[MÀU_HEX]">[Thấp/Trung bình/Cao]</span>
         </div>
         <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border-left: 4px solid [MÀU_HEX];">
-            <strong style="color: #38bdf8;">2. Cúm & Bệnh hô hấp:</strong> <br>
+            <strong style="color: #38bdf8;">2. Cúm & Hô hấp:</strong> <br>
             Nguy cơ: <span style="font-weight:bold; color:[MÀU_HEX]">[Thấp/Trung bình/Cao]</span>
         </div>
         <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border-left: 4px solid [MÀU_HEX];">
@@ -204,68 +250,88 @@ Nhiệm vụ: Phân tích nguy cơ bùng phát dịch bệnh tại trường h�
         </div>
     </div>
     <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; font-size: 0.9rem; line-height: 1.6;">
-        <strong style="color: #f59e0b;"><i class="fas fa-exclamation-triangle"></i> Đánh giá & Đề xuất hành động:</strong>
-        <p style="margin: 5px 0 0 0; color: #e2e8f0;">[Nhận xét ngắn gọn 2-3 câu về tình hình dịch bệnh và 3 hành động phòng ngừa khuyến nghị cho Phòng Y Tế/Nhà trường]</p>
+        <strong style="color: #f59e0b;"><i class="fas fa-exclamation-triangle"></i> Đánh giá & Đề xuất:</strong>
+        <p style="margin: 5px 0 0 0; color: #e2e8f0;">[Nhận xét ngắn gọn 2-3 câu và 3 hành động phòng ngừa cho Phòng Y Tế]</p>
     </div>
 </div>
 
-Lưu ý: MÀU_HEX chọn theo mức độ nguy cơ: Thấp = #10b981 (Xanh), Trung bình = #f59e0b (Vàng), Cao = #ef4444 (Đỏ).`;
+Lưu ý MÀU_HEX: Thấp = #10b981 (Xanh), Trung bình = #f59e0b (Vàng), Cao = #ef4444 (Đỏ).`;
 
-        // Bước 4: Gọi Cloudflare Worker AI Proxy
         const AI_SERVER_URL = "https://vts-health-ai.yte-thptvothisaubrvt.workers.dev";
-        const response = await fetch(AI_SERVER_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: systemPrompt }] }]
-            })
-        });
+        let response;
+        try {
+            response = await fetch(AI_SERVER_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: systemPrompt }] }]
+                })
+            });
+        } catch (netErr) {
+            throw new Error("Không thể kết nối đến AI Server Worker (" + AI_SERVER_URL + "). Kiểm tra kết nối mạng hoặc Cloudflare Worker!");
+        }
+
+        if (!response.ok) {
+            throw new Error(`AI Server trả về lỗi HTTP ${response.status}: ${response.statusText}`);
+        }
 
         const data = await response.json();
-        if (data.error) throw new Error(data.error.message || "Lỗi phản hồi từ AI");
+        console.log("-> AI Response Raw Data:", data);
+
+        if (data.error) {
+            throw new Error("Lỗi từ AI API: " + (data.error.message || JSON.stringify(data.error)));
+        }
 
         let aiHTML = "";
-        if (data.candidates && data.candidates[0]) {
+        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
             aiHTML = data.candidates[0].content.parts[0].text;
         } else if (data.choices && data.choices[0]) {
             aiHTML = data.choices[0].message.content;
+        } else {
+            throw new Error("Dữ liệu AI trả về không đúng cấu trúc mong đợi!");
         }
 
-        // Lọc bỏ markdown bọc nếu AI lỡ viết
+        // Lọc sạch thẻ markdown bọc
         aiHTML = aiHTML.replace(/```html/g, '').replace(/```/g, '').trim();
 
-        // Bước 5: LƯU KẾT QUẢ DỰ ĐOÁN VÀO FIRESTORE
+        // BƯỚC 4: LƯU VÀO FIRESTORE
+        console.log("=== [5/5] ĐANG LƯU KẾT QUẢ VÀO FIRESTORE ===");
         const activeUser = firebase.auth().currentUser;
-        await db.collection('yt_ai_predictions').add({
-            rangeText: `${startInput} đến ${endInput}`,
-            totalVisits: totalVisits,
-            symptomSummary: symptomSummaryText,
-            aiResultHTML: aiHTML,
-            createdByName: activeUser ? (activeUser.displayName || activeUser.email) : 'Admin',
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        
+        try {
+            await db.collection('yt_ai_predictions').add({
+                rangeText: `${startInput} đến ${endInput}`,
+                totalVisits: totalVisits,
+                symptomSummary: symptomSummaryText,
+                aiResultHTML: aiHTML,
+                createdByName: activeUser ? (activeUser.displayName || activeUser.email) : 'Admin',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (saveErr) {
+            throw new Error("Lỗi lưu vào bộ nhớ Firestore ('yt_ai_predictions'): " + saveErr.message + "\n(Vui lòng kiểm tra Firebase Security Rules)");
+        }
 
-        sysAlert("AI đã phân tích và lưu kết quả dự đoán thành công!", "success");
-        loadSavedAIPredictions(); // Tải lại danh sách dự đoán
+        safeAlert("Đã phân tích và lưu dự đoán AI thành công!", "success");
+        window.loadSavedAIPredictions(); // Tải lại danh sách
 
     } catch (err) {
-        console.error("Lỗi dự đoán AI:", err);
-        sysAlert("Lỗi phân tích AI: " + err.message, "error");
+        console.error("❌ LỖI TIẾN TRÌNH DỰ ĐOÁN AI:", err);
+        alert("❌ LỖI PHÂN TÍCH AI:\n\n" + err.message);
     } finally {
         btn.innerHTML = originalBtnText;
         btn.disabled = false;
-        loadingBox.style.display = 'none';
+        if (loadingBox) loadingBox.style.display = 'none';
     }
-}
+};
 
-// 2. Tải và hiển thị danh sách dự đoán đã lưu từ Firestore
-function loadSavedAIPredictions() {
+// 2. Hàm tải danh sách đã lưu
+window.loadSavedAIPredictions = function() {
     const container = document.getElementById('ai-predictions-history-container');
     if (!container) return;
 
     db.collection('yt_ai_predictions')
         .orderBy('timestamp', 'desc')
-        .limit(5) // Tối đa 5 bản ghi mới nhất để tiết kiệm diện tích
+        .limit(5)
         .onSnapshot(snap => {
             if (snap.empty) {
                 container.innerHTML = `<p style="color: #94a3b8; text-align: center; margin: 20px 0;">Chưa có bản dự đoán nào được lưu. Bấm nút "Phân tích & Dự đoán bằng AI" để tạo mới.</p>`;
@@ -279,19 +345,18 @@ function loadSavedAIPredictions() {
 
                 html += `
                     <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 18px; margin-bottom: 15px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                             <div>
-                                <span style="color: #38bdf8; font-weight: bold; font-size: 0.95rem;">📅 Dữ liệu từ: ${d.rangeText}</span>
-                                <span style="color: #94a3b8; font-size: 0.8rem; margin-left: 10px;">(${d.totalVisits} lượt khám)</span>
+                                <span style="color: #38bdf8; font-weight: bold; font-size: 0.95rem;">📅 Dữ liệu: ${d.rangeText}</span>
+                                <span style="color: #94a3b8; font-size: 0.8rem; margin-left: 8px;">(${d.totalVisits} lượt khám)</span>
                             </div>
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 <span style="color: #64748b; font-size: 0.75rem;"><i class="far fa-clock"></i> ${timeStr}</span>
-                                <button onclick="deleteAIPrediction('${doc.id}')" title="Xóa bản dự đoán này" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 0.8rem;">
+                                <button onclick="deleteAIPrediction('${doc.id}')" title="Xóa bản dự đoán này" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 0.8rem;">
                                     <i class="fas fa-trash"></i> Xóa
                                 </button>
                             </div>
                         </div>
-                        
                         <div>${d.aiResultHTML}</div>
                     </div>
                 `;
@@ -299,30 +364,28 @@ function loadSavedAIPredictions() {
 
             container.innerHTML = html;
         }, err => {
-            console.error("Lỗi tải lịch sử dự đoán:", err);
+            console.error("Lỗi nạp danh sách dự đoán AI:", err);
         });
-}
+};
 
-// 3. Xóa bản dự đoán AI
-async function deleteAIPrediction(docId) {
-    const isOk = await sysConfirm("Bạn có chắc chắn muốn xóa bản dự đoán nguy cơ dịch bệnh này?", "Xóa dự đoán AI", true);
+// 3. Hàm xóa dự đoán AI
+window.deleteAIPrediction = async function(docId) {
+    const isOk = confirm("Bạn có chắc chắn muốn xóa bản dự đoán nguy cơ dịch bệnh này?");
     if (isOk) {
         try {
             await db.collection('yt_ai_predictions').doc(docId).delete();
-            sysAlert("Đã xóa bản dự đoán!", "success");
+            safeAlert("Đã xóa bản dự đoán!", "success");
         } catch (e) {
-            sysAlert("Lỗi khi xóa: " + e.message, "error");
+            safeAlert("Lỗi khi xóa: " + e.message, "error");
         }
     }
-}
-
-// 4. Kích hoạt tải tự động khi chuyển sang Tab Thống Kê
-const originalSwitchTabFunc = window.switchTab;
-window.switchTab = function(tabId, btn) {
-    if (typeof originalSwitchTabFunc === 'function') {
-        originalSwitchTabFunc(tabId, btn);
-    }
-    if (tabId === 'tab-yte-thongke') {
-        loadSavedAIPredictions();
-    }
 };
+
+// 4. Lắng nghe tự động nạp lịch sử dự đoán khi vào trang
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => {
+        if (document.getElementById('ai-predictions-history-container')) {
+            window.loadSavedAIPredictions();
+        }
+    }, 1000);
+});

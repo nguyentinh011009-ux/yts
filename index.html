@@ -136,65 +136,100 @@
             if (e.key === 'Enter') sendChatMessage();
         }
 
-async function sendChatMessage() {
-            const inputField = document.getElementById('chat-input');
-            const message = inputField.value.trim();
-            if (!message) return;
+// Variable lưu đệm bộ nhớ AI trong RAM (0ms latency, không tốn Firestore reads nhiều lần)
+let cachedAIMemoryContext = null;
 
-            const chatBody = document.getElementById('chat-body');
-
-            // 1. In tin nhắn User
-            chatBody.innerHTML += `<div class="chat-msg user">${message}</div>`;
-            inputField.value = '';
-            chatBody.scrollTop = chatBody.scrollHeight;
-
-            // 2. Hiển thị loading
-            const loadingId = 'loading-' + Date.now();
-            chatBody.innerHTML += `<div class="chat-msg bot" id="${loadingId}"><i class="fas fa-ellipsis-h fa-fade"></i> AI đang suy nghĩ...</div>`;
-            chatBody.scrollTop = chatBody.scrollHeight;
-
-            try {
-                const systemPrompt = "Bạn là VTS Health AI, trợ lý y tế của THPT Võ Thị Sáu. Trả lời ngắn gọn, dễ hiểu, xưng hô là Mình. Bệnh nặng khuyên học sinh xuống Phòng Y Tế. (Các thông tin mở rộng để Gemini có thể tư vấn tốt hơn cho Học sinh (Chỉ trả lời khi học sinh hỏi): Các thông tin cung cấp phải tham khảo từ các nguồn uy tín (ví dụ: WHO, HCDC, website y tế của trường: yteso-thptvothisaubrvt.netlify.app), Giờ mở cửa của Phòng Y tế: Từ thứ 2 đến Thứ 6 (Sáng: 7:00-11:00, Chiều: 1:30-4:30) hoặc theo dõi thêm giờ hoạt động trên website của trường. Nhân viên Y tế là Cô Đồng nha. Giao diện câu trả lời được tối ưu) Câu hỏi: ";
-                
-                // Vẫn gọi đến Cloudflare Worker của bạn
-                const response = await fetch(AI_SERVER_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: systemPrompt + message }] }]
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (data.error) {
-                    throw new Error(data.error.message || "Lỗi máy chủ AI");
-                }
-
-                let aiText = "Xin lỗi, hệ thống AI đang bảo trì. Vui lòng thử lại sau.";
-
-                // 👉 CƠ CHẾ NHẬN DIỆN THÔNG MINH:
-                if (data.candidates && data.candidates.length > 0) {
-                    // Nếu trả về chuẩn Gemini
-                    aiText = data.candidates[0].content.parts[0].text;
-                } else if (data.choices && data.choices.length > 0) {
-                    // Nếu trả về chuẩn OpenRouter / OpenAI
-                    aiText = data.choices[0].message.content;
-                }
-
-                // Format lại chữ đậm/xuống dòng cho đẹp
-                aiText = aiText.replace(/\*\*/g, '').replace(/\*/g, '<br>•');
-
-                document.getElementById(loadingId).remove();
-                chatBody.innerHTML += `<div class="chat-msg bot">${aiText}</div>`;
-                
-            } catch (error) {
-                document.getElementById(loadingId).remove();
-                chatBody.innerHTML += `<div class="chat-msg bot" style="color:red;">❌ ${error.message}</div>`;
-                console.error(error);
-            }
-            chatBody.scrollTop = chatBody.scrollHeight;
+// Hàm tải bộ nhớ tri thức AI tích hợp Caching
+async function getAIMemoryContext() {
+    if (cachedAIMemoryContext !== null) {
+        return cachedAIMemoryContext; // Trả về ngay từ RAM nếu đã nạp
+    }
+    
+    try {
+        const snap = await db.collection('ai_memory_notes').where('isActive', '==', true).get();
+        if (snap.empty) {
+            cachedAIMemoryContext = "";
+            return "";
         }
+        
+        let memoryItems = [];
+        snap.forEach(doc => {
+            const d = doc.data();
+            memoryItems.push(`- [${d.topic}]: ${d.content}`);
+        });
+        
+        cachedAIMemoryContext = memoryItems.join("\n");
+        return cachedAIMemoryContext;
+    } catch (e) {
+        console.warn("Không thể nạp bộ nhớ AI:", e);
+        return "";
+    }
+}
+
+async function sendChatMessage() {
+    const inputField = document.getElementById('chat-input');
+    const message = inputField.value.trim();
+    if (!message) return;
+
+    const chatBody = document.getElementById('chat-body');
+
+    // 1. In tin nhắn User
+    chatBody.innerHTML += `<div class="chat-msg user">${message}</div>`;
+    inputField.value = '';
+    chatBody.scrollTop = chatBody.scrollHeight;
+
+    // 2. Hiển thị loading
+    const loadingId = 'loading-' + Date.now();
+    chatBody.innerHTML += `<div class="chat-msg bot" id="${loadingId}"><i class="fas fa-ellipsis-h fa-fade"></i> AI đang suy nghĩ...</div>`;
+    chatBody.scrollTop = chatBody.scrollHeight;
+
+    try {
+        // Lấy bộ nhớ tri thức đã được Admin cập nhật
+        const dynamicMemory = await getAIMemoryContext();
+
+        const baseSystemPrompt = `Bạn là VTS Health AI, trợ lý y tế của THPT Võ Thị Sáu. Trả lời ngắn gọn, dễ hiểu, xưng hô là Mình. Bệnh nặng khuyên học sinh xuống Phòng Y Tế. (Các thông tin mở rộng để Gemini có thể tư vấn tốt hơn cho Học sinh: Tham khảo WHO, HCDC, website y tế của trường. Giờ mở cửa: Từ thứ 2 đến Thứ 6 sáng 7:00-11:00, chiều 1:30-4:30. Nhân viên Y tế là Cô Đồng).`;
+        
+        // Ghép tri thức động từ Admin vào Prompt
+        let fullPrompt = baseSystemPrompt;
+        if (dynamicMemory) {
+            fullPrompt += `\n\nCÁC THÔNG TIN VÀ NỘI QUY CẬP NHẬT THỰC TẾ MỚI NHẤT DÀNH CHO BẠN:\n${dynamicMemory}\n`;
+        }
+        fullPrompt += `\nCâu hỏi của học sinh: ${message}`;
+        
+        // Gọi đến Cloudflare Worker Proxy
+        const response = await fetch(AI_SERVER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: fullPrompt }] }]
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.error) throw new Error(data.error.message || "Lỗi máy chủ AI");
+
+        let aiText = "Xin lỗi, hệ thống AI đang bảo trì. Vui lòng thử lại sau.";
+
+        if (data.candidates && data.candidates.length > 0) {
+            aiText = data.candidates[0].content.parts[0].text;
+        } else if (data.choices && data.choices.length > 0) {
+            aiText = data.choices[0].message.content;
+        }
+
+        // Format chữ đậm/xuống dòng
+        aiText = aiText.replace(/\*\*/g, '').replace(/\*/g, '<br>•');
+
+        document.getElementById(loadingId).remove();
+        chatBody.innerHTML += `<div class="chat-msg bot">${aiText}</div>`;
+        
+    } catch (error) {
+        document.getElementById(loadingId).remove();
+        chatBody.innerHTML += `<div class="chat-msg bot" style="color:red;">❌ ${error.message}</div>`;
+        console.error(error);
+    }
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
     </script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>

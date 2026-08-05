@@ -800,7 +800,31 @@
 <section id="tab-yte-thongke" class="tab-pane" style="display:none;">
     <h2>Thống kê & Phân tích Y tế</h2>
     <p style="color:var(--text-gray); margin-bottom:20px;">Phân tích các triệu chứng phổ biến và tần suất khám bệnh của học sinh.</p>
+    <!-- KHUNG AI DỰ BÁO NGUY CƠ DỊCH BỆNH (TIẾT KIỆM TÀI NGUYÊN) -->
+<div class="form-card fade-in" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; border-radius: 16px; margin-bottom: 30px; position: relative; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+    <!-- Trang trí hiệu ứng ánh kim -->
+    <div style="position: absolute; top: -30px; right: -30px; width: 150px; height: 150px; background: rgba(59, 130, 246, 0.15); border-radius: 50%; filter: blur(30px);"></div>
 
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; position: relative; z-index: 2;">
+        <div>
+            <h3 style="margin: 0; color: #38bdf8; font-size: 1.3rem; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-microscope" style="color: #38bdf8;"></i> AI Dự Báo Nguy Cơ Dịch Bệnh Học Đường
+            </h3>
+            <p style="margin: 5px 0 0 0; color: #94a3b8; font-size: 0.85rem;">Phân tích các triệu chứng 14 ngày gần nhất để cảnh báo dịch Cúm, Sốt xuất huyết, Đau mắt đỏ...</p>
+        </div>
+        <button id="btn-run-ai-outbreak" onclick="analyzeOutbreakRiskWithAI(true)" class="btn" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: white; border: none; font-size: 0.9rem; font-weight: bold; border-radius: 10px; padding: 10px 20px;">
+            <i class="fas fa-brain"></i> Phân tích ngay bằng AI
+        </button>
+    </div>
+
+    <!-- KHU VỰC HIỂN THỊ KẾT QUẢ PHÂN TÍCH -->
+    <div id="ai-outbreak-result-box" style="position: relative; z-index: 2; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 20px;">
+        <div style="text-align: center; color: #94a3b8; padding: 20px 0;">
+            <i class="fas fa-robot fa-2x" style="opacity: 0.5; margin-bottom: 10px;"></i>
+            <p style="margin: 0;">Nhấn nút <strong>"Phân tích ngay bằng AI"</strong> để quét dữ liệu triệu chứng học sinh gần đây.</p>
+        </div>
+    </div>
+</div>
     <!-- Bộ lọc thời gian -->
     <div class="form-card" style="display: flex; gap: 15px; align-items: flex-end; margin-bottom: 30px; flex-wrap: wrap;">
         <div class="input-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">

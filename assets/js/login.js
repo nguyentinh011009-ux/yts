@@ -226,26 +226,31 @@ function initRecaptcha() {
 }
 
 // --- BƯỚC 3: GỬI VÀ XÁC MINH OTP EMAIL ---
-function sendEmailOTP() {
+async function sendEmailOTP() {
     generatedEmailOTP = Math.floor(100000 + Math.random() * 900000).toString();
     
     const emailTarget = googleUser.email;
     const studentName = foundStudentData ? foundStudentData.name : "Học sinh";
-    
-    const requestUrl = `${GOOGLE_MAIL_SCRIPT_URL}?to_email=${encodeURIComponent(emailTarget)}&otp_code=${generatedEmailOTP}&student_name=${encodeURIComponent(studentName)}`;
 
-    fetch(requestUrl, {
-        method: 'GET',
-        mode: 'no-cors'
-    })
-    .then(() => {
-        alert("Google đã gửi một mã xác minh OTP về hòm thư điện tử: " + emailTarget);
+    // Khóa nút/Hiển thị trạng thái chờ trong khi gửi
+    const resendBtn = document.getElementById('btn-resend-email');
+    if (resendBtn) resendBtn.disabled = true;
+
+    try {
+        const res = await EmailService.sendOTP({
+            toEmail: emailTarget,
+            otpCode: generatedEmailOTP,
+            studentName: studentName
+        });
+
+        alert(`Mã xác minh OTP đã được gửi đến: ${emailTarget}`);
         startCooldownTimer('btn-resend-email');
-    })
-    .catch(err => {
-        console.error("Lỗi gửi email:", err);
-        alert("Không thể gửi mã OTP tự động. Hãy thử lại.");
-    });
+
+    } catch (err) {
+        console.error("Lỗi gửi OTP qua tất cả các kênh:", err);
+        alert("⚠️ Không thể gửi mã OTP tự động lúc này.\nLý do: " + err.message);
+        if (resendBtn) resendBtn.disabled = false;
+    }
 }
 
 function triggerEmailResend() {

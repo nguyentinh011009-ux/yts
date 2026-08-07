@@ -232,23 +232,40 @@ async function sendEmailOTP() {
     const emailTarget = googleUser.email;
     const studentName = foundStudentData ? foundStudentData.name : "Học sinh";
 
-    // Khóa nút/Hiển thị trạng thái chờ trong khi gửi
+    // 1. TỰ SOẠN TIÊU ĐỀ VÀ NỘI DUNG EMAIL TẠI ĐÂY
+    const mailSubject = `[Trường Trung học Phổ thông Võ Thị Sáu - Bà Rịa - Vũng Tàu] - Mã xác minh OTP liên kết hồ sơ y tế`;
+    const mailHtmlBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px;">
+        <h2 style="color: #0284c7; text-align: center;">MÃ XÁC MINH OTP</h2>
+        <p>Xin chào <strong>${studentName}</strong>,</p>
+        <p>Bạn đang thực hiện liên kết tài khoản Email với hồ sơ y tế học sinh tại hệ thống Y tế số Trường Trung học Phổ thông Võ Thị Sáu- Bà Rịa- Vũng Tàu.</p>
+        <div style="background: #f0f9ff; border: 1.5px dashed #0ea5e9; border-radius: 8px; padding: 15px; text-align: center; margin: 20px 0;">
+          <span style="font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #0369a1;">${generatedEmailOTP}</span>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b;">Mã này có hiệu lực trong vòng 5 phút. Vui lòng tuyệt đối không chia sẻ mã này cho bất kỳ ai.</p>
+        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+        <p style="font-size: 0.75rem; color: #94a3b8; text-align: center;">Đây là email tự động từ hệ thống quản lý y tế số.</p>
+        <p style="font-size: 0.75rem; color: #40312F; text-align: center;">Bộ phận Chăm sóc khách hàng: yte.thptvothisaubrvt@gmail.com</p>
+      </div>
+    `;
+
     const resendBtn = document.getElementById('btn-resend-email');
     if (resendBtn) resendBtn.disabled = true;
 
     try {
-        const res = await EmailService.sendOTP({
-            toEmail: emailTarget,
-            otpCode: generatedEmailOTP,
-            studentName: studentName
+        // 2. ĐẨY LỆNH SANG FILE EMAIL SERVICE ĐỂ PHÂN CHIA VÀ GỬI
+        await EmailService.sendEmail({
+            to: emailTarget,
+            subject: mailSubject,
+            htmlBody: mailHtmlBody
         });
 
-        alert(`Mã xác minh OTP đã được gửi đến: ${emailTarget}`);
+        alert(`Google đã gửi mã xác minh OTP về hòm thư: ${emailTarget}`);
         startCooldownTimer('btn-resend-email');
 
     } catch (err) {
-        console.error("Lỗi gửi OTP qua tất cả các kênh:", err);
-        alert("⚠️ Không thể gửi mã OTP tự động lúc này.\nLý do: " + err.message);
+        console.error("Lỗi gửi mail:", err);
+        alert("⚠️ " + err.message);
         if (resendBtn) resendBtn.disabled = false;
     }
 }

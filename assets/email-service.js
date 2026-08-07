@@ -89,7 +89,7 @@ const EmailService = (function () {
         
         // Cấu hình Timeout 9 giây tránh treo giao diện người dùng
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 9000);
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
         try {
             const response = await fetch(requestUrl, {

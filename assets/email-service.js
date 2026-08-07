@@ -1,53 +1,95 @@
 /**
- * EMAIL SERVICE - MODULE ĐIỀU PHỐI VÀ DỰ PHÒNG GỬI MAIL
+ * EMAIL SERVICE - HỆ THỐNG ĐIỀU PHỐI & QUẢN LÝ HẠN NGẠCH GỬI MAIL
+ * THPT VÕ THỊ SÁU
  */
+
 const EmailService = (function () {
-    // Danh sách các Tuyến đường gửi (Provider)
+    // 1. CẤU HÌNH DANH SÁCH CÁC KÊNH GỬI (ĐỒNG BỘ NGHỆ THUẬT FAILOVER)
     const PROVIDERS = [
         {
-            name: "GAS_Primary_Noreply1",
+            id: "gas_noreply1",
+            name: "GAS Chính (Noreply1)",
             sender: "noreply1.yte.thptvothisaubrvt@gmail.com",
-            url: "https://script.google.com/macros/s/YOUR_GAS_NOREPLY1_ID/exec"
+            url: "https://script.google.com/macros/s/AKfycbx_PASTE_LINK_GAS_NOREPLY1_HERE/exec",
+            dailyLimit: 95 // Đặt ngưỡng an toàn (Gmail cho 100, chừa 5 tin dự phòng)
         },
         {
-            name: "Brevo_Primary_Noreply1",
-            sender: "noreply1.yte.thptvothisaubrvt@gmail.com",
-            url: "https://script.google.com/macros/s/YOUR_GAS_NOREPLY1_ID/exec"
-        },
-        {
-            name: "Resend_Primary_Noreply1",
-            sender: "noreply1.yte.thptvothisaubrvt@gmail.com",
-            url: "https://script.google.com/macros/s/YOUR_GAS_NOREPLY1_ID/exec"
-        },
-        {
-            name: "GAS_Backup_YTeGoc",
+            id: "gas_yte",
+            name: "GAS Dự Phòng (Y Tế Gốc)",
             sender: "yte.thptvothisaubrvt@gmail.com",
-            url: "https://script.google.com/macros/s/AKfycbwNMYm2NrbF-EYJ_eTOmDurysm9n9n1QS-i4x8eMMJ4Exr1V95DIvMJ3PjjiaYS9CFz/exec"
-        },
-        {
-            name: "Resend_Backup_YTeGoc",
-            sender: "yte.thptvothisaubrvt@gmail.com",
-            url: "https://script.google.com/macros/s/YOUR_GAS_YTE_ID/exec"
+            url: "https://script.google.com/macros/s/AKfycbwNMYm2NrbF-EYJ_eTOmDurysm9n9n1QS-i4x8eMMJ4Exr1V95DIvMJ3PjjiaYS9CFz/exec",
+            dailyLimit: 95
         }
+        /* SAU NÀY CÓ TÊN MIỀN RIÊNG BẠN CHỈ CẦN THÊM BREVO / RESEND VÀO ĐÂY:
+        ,
+        {
+            id: "resend_custom_domain",
+            name: "Resend (Tên miền trường)",
+            sender: "noreply@thptvothisau.edu.vn",
+            url: "https://script.google.com/macros/s/LINK_GAS_RESEND/exec",
+            dailyLimit: 1000
+        }
+        */
     ];
 
-    /**
-     * Thực hiện đẩy lệnh sang Google Apps Script Backend
-     */
-    async function executeSend(provider, to, subject, htmlBody) {
-        // Đóng gói tham số gửi đi
+    const STORAGE_KEY = "vts_email_quota_tracker";
+
+    // 2. HÀM QUẢN LÝ QUOTA VÀ ĐẾM LƯỢT GỬI TRÊN BỘ NHỚ TRÌNH DUYỆT (LOCAL STORAGE)
+    function getQuotaData() {
+        const todayStr = new Date().toISOString().split('T')[0]; // Định dạng YYYY-MM-DD
+        const defaultData = { date: todayStr, counts: {} };
+
+        try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                // Nếu sang ngày mới -> Tự động Reset bộ đếm hạn ngạch về 0
+                if (parsed.date === todayStr) {
+                    return parsed;
+                }
+            }
+        } catch (e) {
+            console.warn("[EmailService] Lỗi đọc bộ nhớ Quota:", e);
+        }
+        return defaultData;
+    }
+
+    function saveQuotaData(data) {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (e) {
+            console.warn("[EmailService] Lỗi lưu bộ nhớ Quota:", e);
+        }
+    }
+
+    // Ghi nhận thêm 1 lần gửi thành công cho Provider tương ứng
+    function incrementUsage(providerId) {
+        const data = getQuotaData();
+        data.counts[providerId] = (data.counts[providerId] || 0) + 1;
+        saveQuotaData(data);
+    }
+
+    // Kiểm tra Provider xem đã chạm ngưỡng giới hạn trong ngày chưa
+    function isProviderQuotaAvailable(provider) {
+        const data = getQuotaData();
+        const currentCount = data.counts[provider.id] || 0;
+        return currentCount < provider.dailyLimit;
+    }
+
+    // 3. THỰC THI GỬI HTTP FETCH SANG GOOGLE APPS SCRIPT
+    async function executeFetch(provider, to, subject, htmlBody) {
         const params = new URLSearchParams({
             to_email: to,
             subject: subject,
             html_body: htmlBody,
-            provider_name: provider.name
+            provider_name: provider.id
         });
 
         const requestUrl = `${provider.url}?${params.toString()}`;
         
-        // Cấu hình Timeout 8s cho mỗi tuyến
+        // Cấu hình Timeout 9 giây tránh treo giao diện người dùng
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const timeoutId = setTimeout(() => controller.abort(), 9000);
 
         try {
             const response = await fetch(requestUrl, {
@@ -56,45 +98,57 @@ const EmailService = (function () {
             });
             clearTimeout(timeoutId);
 
-            if (!response.ok) throw new Error(`HTTP Status: ${response.status}`);
+            if (!response.ok) throw new Error(`HTTP Status Error: ${response.status}`);
 
             const result = await response.json();
+            
             if (result && result.status === "success") {
+                // Ghi nhận cộng dồn quota khi gửi thành công
+                incrementUsage(provider.id);
                 return { success: true, provider: provider.name, sender: provider.sender };
             } else {
-                throw new Error(result.message || "Tuyến gửi trả về lỗi.");
+                throw new Error(result.message || "Script trả về trạng thái lỗi.");
             }
         } catch (err) {
             clearTimeout(timeoutId);
-            console.warn(`[EmailService] Lỗi tuyến ${provider.name}:`, err.message);
+            console.warn(`[EmailService] Tuyến ${provider.name} thất bại:`, err.message);
             return { success: false, error: err.message };
         }
     }
 
-    /**
-     * HÀM CHÍNH: Nhận lệnh gửi mail tổng quát và tự động phân chia / chuyển luồng
-     */
+    // 4. HÀM ĐIỀU PHỐI CHÍNH (PUBLIC API)
     async function sendEmail({ to, subject, htmlBody }) {
         if (!to || !subject || !htmlBody) {
-            throw new Error("Lỗi tham số: Thiếu người nhận (to), tiêu đề (subject) hoặc nội dung (htmlBody).");
+            throw new Error("Lỗi lập trình: Thiếu tham số to, subject hoặc htmlBody.");
         }
 
-        console.log(`[EmailService] Bắt đầu điều phối gửi email tới: ${to}`);
+        console.log(`[EmailService] Khởi tạo luồng gửi mail tới: ${to}`);
 
-        // Chạy lần lượt từ kênh Ưu tiên -> Kênh Dự phòng
+        // Quét danh sách các kênh gửi
         for (let i = 0; i < PROVIDERS.length; i++) {
             const provider = PROVIDERS[i];
-            console.log(`[EmailService] Thử tuyến ${i + 1}/${PROVIDERS.length}: ${provider.name}`);
 
-            const res = await executeSend(provider, to, subject, htmlBody);
-            if (res.success) {
-                console.log(`[EmailService] Gửi THÀNH CÔNG qua tuyến: ${res.provider}`);
-                return res; // Trả kết quả thành công về cho nơi gọi
+            // BƯỚC THÔNG MINH 1: Kiểm tra xem Kênh này hôm nay đã hết Quota chưa
+            if (!isProviderQuotaAvailable(provider)) {
+                console.warn(`[EmailService] Kênh ${provider.name} đã đạt hạn ngạch tối đa trong ngày. Tự động nhảy sang kênh tiếp theo...`);
+                continue; // Nhảy qua provider tiếp theo luôn, không tốn thời gian gọi Fetch
             }
+
+            console.log(`[EmailService] Thử gửi qua Kênh: ${provider.name}...`);
+
+            // BƯỚC THÔNG MINH 2: Đẩy lệnh gửi
+            const res = await executeFetch(provider, to, subject, htmlBody);
+            
+            if (res.success) {
+                console.log(`[EmailService] Gửi THÀNH CÔNG qua: ${res.provider} (${res.sender})`);
+                return res; // Thoát và báo thành công
+            }
+
+            // Nếu thất bại (VD: Google báo hết quota đột xuất) -> Vòng lặp for sẽ tự nhảy sang Kênh tiếp theo
         }
 
-        // Nếu tất cả các tuyến đều thất bại
-        throw new Error("Tất cả các hệ thống gửi mail hiện đang bận hoặc quá hạn ngạch. Vui lòng thử lại sau!");
+        // Nếu tất cả các kênh đều thất bại hoặc hết Quota trong ngày
+        throw new Error("Tất cả các hòm thư tự động hôm nay đã đạt giới hạn gửi (200 thư/ngày). Vui lòng thử lại vào ngày mai!");
     }
 
     return {

@@ -1015,7 +1015,14 @@
                 </div>
             </div>
         </div>
-        
+        <!-- TÙY CHỌN GỬI KÈM EMAIL -->
+        <div class="input-group" style="margin-top: 15px; background: #ecfdf5; padding: 12px 15px; border-radius: 10px; border: 1px dashed #10b981;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #065f46; font-weight: bold; margin: 0; font-size: 0.9rem;">
+                <input type="checkbox" id="chk-send-email" style="width: 18px; height: 18px; cursor: pointer;">
+                <i class="fas fa-envelope" style="color: #10b981; font-size: 1.1rem;"></i> 
+                Gửi đồng thời qua Email cá nhân (Dành cho HS đã liên kết Email)
+            </label>
+        </div>
         <div style="display: flex; gap: 10px; margin-top: 25px;">
             <button onclick="sendStudentNotification()" class="btn btn-primary" style="background: #10b981; flex: 1; justify-content: center;"><i class="fas fa-paper-plane"></i> Gửi Thông Báo</button>
             <button onclick="closeNewNotiModal()" class="btn" style="background: #e2e8f0; color: #475569; flex-shrink: 0;">Hủy</button>
@@ -1216,6 +1223,7 @@
     <script src="../assets/js/app.js"></script>
     <script src="../assets/js/suckhoe.js"></script>
     <script src="../assets/js/system.js"></script>
+    <script src="../assets/email-service.js"></script>
 <!-- POPUP: DANH SÁCH THÔNG BÁO TỪ FUSOFTX -->
 <div id="admin-noti-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 10001; align-items: flex-start; justify-content: flex-end; padding: 20px;">
     <div class="form-card fade-in" style="width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto; position: relative; padding: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); margin-top: 50px;">

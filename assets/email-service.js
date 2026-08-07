@@ -10,14 +10,14 @@ const EmailService = (function () {
             id: "gas_noreply1",
             name: "GAS Chính (Noreply1)",
             sender: "noreply1.yte.thptvothisaubrvt@gmail.com",
-            url: "https://script.google.com/macros/s/AKfycbx_PASTE_LINK_GAS_NOREPLY1_HERE/exec",
+            url: "https://script.google.com/macros/s/AKfycbyYlJK7ifekJhkUkHVW_jKMY1nItkHUYABcsezIuiY1f2UyyhBY42uodWNlLW7Pm3wFgA/exec",
             dailyLimit: 95 // Đặt ngưỡng an toàn (Gmail cho 100, chừa 5 tin dự phòng)
         },
         {
             id: "gas_yte",
             name: "GAS Dự Phòng (Y Tế Gốc)",
             sender: "yte.thptvothisaubrvt@gmail.com",
-            url: "https://script.google.com/macros/s/AKfycbwNMYm2NrbF-EYJ_eTOmDurysm9n9n1QS-i4x8eMMJ4Exr1V95DIvMJ3PjjiaYS9CFz/exec",
+            url: "https://script.google.com/macros/s/AKfycbwxC8WvkDMzkhTdW5tzQYIAHw-KNsFsFVUDjdKc_10AbENlUQQnhQeuuLHLpOFGTAM0/exec",
             dailyLimit: 95
         }
         /* SAU NÀY CÓ TÊN MIỀN RIÊNG BẠN CHỈ CẦN THÊM BREVO / RESEND VÀO ĐÂY:

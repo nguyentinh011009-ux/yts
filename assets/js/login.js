@@ -7,7 +7,6 @@ let redirectTarget = "student.html";
 let recaptchaVerifier = null;
 let smsRecaptchaVerifier = null;
 
-const GOOGLE_MAIL_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNMYm2NrbF-EYJ_eTOmDurysm9n9n1QS-i4x8eMMJ4Exr1V95DIvMJ3PjjiaYS9CFz/exec";
 
 // Cấu hình quản lý Trạng thái Rate Limit OTP cá nhân trên trình duyệt
 const STORAGE_KEY = "vts_otp_limit_state";

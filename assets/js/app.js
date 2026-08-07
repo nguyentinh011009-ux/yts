@@ -3122,14 +3122,46 @@ function renderSelectedStudentsNoti() {
         `;
     });
 }
+// --- HÀM PHỤ TRỢ: LẤY DANH SÁCH EMAIL CỦA ĐỐI TƯỢNG NHẬN THÔNG BÁO ---
+async function getTargetEmailsForNoti(targetType, targetValue) {
+    let emails = [];
+    // Tận dụng đệm danh sách học sinh từ RAM
+    const allStudents = await getStudentsList();
 
+    if (targetType === 'student') {
+        // targetValue là mảng chứa danh sách ID học sinh [ 'YT-123', 'YT-456' ]
+        if (Array.isArray(targetValue)) {
+            emails = allStudents
+                .filter(s => targetValue.includes(s.id) && s.linkedEmail && s.linkedEmail.trim() !== '')
+                .map(s => s.linkedEmail.trim());
+        }
+    } else if (targetType === 'class') {
+        // Lọc theo Lớp (VD: "11A4")
+        emails = allStudents
+            .filter(s => (s.class || "").toUpperCase() === targetValue.toUpperCase() && s.linkedEmail && s.linkedEmail.trim() !== '')
+            .map(s => s.linkedEmail.trim());
+    } else if (targetType === 'grade') {
+        // Lọc theo Khối (VD: "10", "11", "12")
+        emails = allStudents
+            .filter(s => (s.class || "").startsWith(targetValue) && s.linkedEmail && s.linkedEmail.trim() !== '')
+            .map(s => s.linkedEmail.trim());
+    } else if (targetType === 'all') {
+        // Lấy tất cả học sinh toàn trường có liên kết email
+        emails = allStudents
+            .filter(s => s.linkedEmail && s.linkedEmail.trim() !== '')
+            .map(s => s.linkedEmail.trim());
+    }
+
+    // Loại bỏ các email trùng lặp (nếu có)
+    return [...new Set(emails)];
+}
 // 5. Gửi thông báo lên Firebase
-// Gửi thông báo lên Firebase
 async function sendStudentNotification() {
     const title = document.getElementById('noti-title').value.trim();
     const content = document.getElementById('noti-content').value.trim();
     const targetType = document.getElementById('noti-target-type').value;
     let targetValue = document.getElementById('noti-target-value').value.trim();
+    const isSendEmail = document.getElementById('chk-send-email').checked;
 
     if (!title || !content) return sysAlert("Vui lòng nhập Tiêu đề và Nội dung!", "warning");
     
@@ -3138,10 +3170,10 @@ async function sendStudentNotification() {
     if (targetType === 'all') {
         finalTargetValue = "all";
     } else if (targetType === 'student') {
-        if (selectedStudentsForNoti.length === 0) return alert("Vui lòng chọn ít nhất 1 học sinh ở bảng bên dưới!");
+        if (selectedStudentsForNoti.length === 0) return sysAlert("Vui lòng chọn ít nhất 1 học sinh ở bảng bên dưới!", "warning");
         finalTargetValue = selectedStudentsForNoti.map(s => s.id); 
     } else {
-        if (!targetValue) return alert("Vui lòng nhập đối tượng nhận!");
+        if (!targetValue) return sysAlert("Vui lòng nhập đối tượng nhận!", "warning");
         finalTargetValue = targetType === 'class' ? targetValue.toUpperCase() : targetValue;
     }
 
@@ -3154,6 +3186,7 @@ async function sendStudentNotification() {
     }
 
     try {
+        // 1. Lưu thông báo lên cơ sở dữ liệu Firebase như bình thường
         await db.collection('yt_notifications').add({
             title: title,
             content: content,
@@ -3163,11 +3196,54 @@ async function sendStudentNotification() {
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        alert("✅ Đã gửi thông báo thành công!");
+        // 2. XỬ LÝ GỬI EMAIL NẾU ĐƯỢC TICK CHỌN
+        if (isSendEmail) {
+            sysLoading(true, "Đang quét danh sách Email liên kết...");
+            const emailList = await getTargetEmailsForNoti(targetType, finalTargetValue);
+
+            if (emailList.length === 0) {
+                sysAlert("⚠️ Đã tạo thông báo trên App, nhưng KHÔNG tìm thấy học sinh nào có liên kết Email trong danh sách đối tượng chọn!", "warning");
+            } else {
+                sysLoading(true, `Đang gửi Email tới ${emailList.length} địa chỉ...`);
+                let successEmailCount = 0;
+
+                // Soạn nội dung HTML cho Email
+                const mailSubject = `[THÔNG BÁO Y TẾ] ${title}`;
+                const mailHtmlBody = `
+                    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; line-height: 1.6;">
+                        <h2 style="color: #059669; margin-top: 0;">${title}</h2>
+                        <p style="font-weight: bold; color: #1e293b;">Từ: Phòng Y Tế - Trường THPT Võ Thị Sáu</p>
+                        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+                        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; white-space: pre-wrap; font-size: 0.95rem;">${content}</div>
+                        <p style="margin-top: 20px; font-size: 0.8rem; color: #64748b; font-style: italic;">Email này được gửi tự động từ Hệ thống Y tế số THPT Võ Thị Sáu.</p>
+                    </div>
+                `;
+
+                // Gửi qua bộ điều phối EmailService (Gửi tuần tự từng email)
+                for (const recipientEmail of emailList) {
+                    try {
+                        await EmailService.sendEmail({
+                            to: recipientEmail,
+                            subject: mailSubject,
+                            htmlBody: mailHtmlBody
+                        });
+                        successEmailCount++;
+                    } catch (err) {
+                        console.warn(`[NotiEmail] Gửi thất bại tới ${recipientEmail}:`, err.message);
+                    }
+                }
+
+                sysAlert(`✅ Đã gửi thông báo trên App & gửi thành công ${successEmailCount}/${emailList.length} Email!`, "success");
+            }
+        } else {
+            sysAlert("✅ Đã gửi thông báo thành công!", "success");
+        }
+
         closeNewNotiModal();
     } catch (e) {
-        alert("Lỗi gửi thông báo: " + e.message);
+        sysAlert("Lỗi gửi thông báo: " + e.message, "error");
     } finally {
+        sysLoading(false);
         if (btn) {
             btn.innerHTML = ogText;
             btn.disabled = false;
@@ -3728,6 +3804,11 @@ function closeNewNotiModal() {
     document.getElementById('noti-content').value = '';
     document.getElementById('noti-target-value').value = '';
     document.getElementById('noti-target-type').value = 'all';
+    
+    // Uncheck nút tick gửi email
+    const chkEmail = document.getElementById('chk-send-email');
+    if (chkEmail) chkEmail.checked = false;
+
     toggleNotiTargetInput();
     selectedStudentsForNoti = [];
     renderSelectedStudentsNoti();

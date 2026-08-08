@@ -76,24 +76,23 @@ const EmailService = (function () {
         return currentCount < provider.dailyLimit;
     }
 
-    // 3. THỰC THI GỬI HTTP FETCH SANG GOOGLE APPS SCRIPT
+// 3. THỰC THI GỬI HTTP POST SANG GOOGLE APPS SCRIPT (ĐÃ NÂNG CẤP CHỐNG TRAN HẠN DỮ LIỆU)
     async function executeFetch(provider, to, subject, htmlBody) {
-        const params = new URLSearchParams({
-            to_email: to,
-            subject: subject,
-            html_body: htmlBody,
-            provider_name: provider.id
-        });
-
-        const requestUrl = `${provider.url}?${params.toString()}`;
-        
-        // Cấu hình Timeout 9 giây tránh treo giao diện người dùng
+        // Cấu hình Timeout 15 giây
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
 
         try {
-            const response = await fetch(requestUrl, {
-                method: 'GET',
+            // Dùng POST để truyền nội dung HTML dài không bị giới hạn URL
+            const response = await fetch(provider.url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Dùng text/plain để tránh dính CORS preflight của Google
+                body: JSON.stringify({
+                    to_email: to,
+                    subject: subject,
+                    html_body: htmlBody,
+                    provider_name: provider.id
+                }),
                 signal: controller.signal
             });
             clearTimeout(timeoutId);
@@ -103,7 +102,6 @@ const EmailService = (function () {
             const result = await response.json();
             
             if (result && result.status === "success") {
-                // Ghi nhận cộng dồn quota khi gửi thành công
                 incrementUsage(provider.id);
                 return { success: true, provider: provider.name, sender: provider.sender };
             } else {

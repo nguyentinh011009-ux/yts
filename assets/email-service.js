@@ -17,7 +17,7 @@ const EmailService = (function () {
             id: "gas_yte",
             name: "GAS Dự Phòng (Y Tế Gốc)",
             sender: "yte.thptvothisaubrvt@gmail.com",
-            url: "https://script.google.com/macros/s/AKfycbwxC8WvkDMzkhTdW5tzQYIAHw-KNsFsFVUDjdKc_10AbENlUQQnhQeuuLHLpOFGTAM0/exec",
+            url: "",
             dailyLimit: 95
         }
         /* SAU NÀY CÓ TÊN MIỀN RIÊNG BẠN CHỈ CẦN THÊM BREVO / RESEND VÀO ĐÂY:

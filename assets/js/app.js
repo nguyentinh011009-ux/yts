@@ -3208,7 +3208,7 @@ async function sendStudentNotification() {
                 sysLoading(true, `Đang gửi Email tới ${emailList.length} địa chỉ...`);
                 let successEmailCount = 0;
 
-                const mailSubject = `${title} - [Trường THPT Võ Thị Sáu]`;
+                const mailSubject = `${title} - [Trường Trung học Phổ thông Võ Thị Sáu - Bà Rịa - Vũng Tàu] `;
                 const isHtmlContent = /<[a-z][\s\S]*>/i.test(content);
 
                 const mandatoryFooter = `

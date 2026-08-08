@@ -3186,7 +3186,7 @@ async function sendStudentNotification() {
     }
 
     try {
-        // 1. Lưu thông báo lên cơ sở dữ liệu Firebase như bình thường
+        // 1. Lưu thông báo lên cơ sở dữ liệu Firebase
         await db.collection('yt_notifications').add({
             title: title,
             content: content,
@@ -3202,17 +3202,15 @@ async function sendStudentNotification() {
             const emailList = await getTargetEmailsForNoti(targetType, finalTargetValue);
 
             if (emailList.length === 0) {
+                sysLoading(false);
                 sysAlert("⚠️ Đã tạo thông báo trên App, nhưng KHÔNG tìm thấy học sinh nào có liên kết Email trong danh sách đối tượng chọn!", "warning");
             } else {
                 sysLoading(true, `Đang gửi Email tới ${emailList.length} địa chỉ...`);
                 let successEmailCount = 0;
 
-                // Soạn nội dung HTML cho Email
-                const mailSubject = `${title} - [Trường Trung học Phổ thông Võ Thị Sáu - Bà Rịa - Vũng Tàu]`;
-// 1. Kiểm tra xem nội dung content có chứa các thẻ mã HTML hay không
+                const mailSubject = `${title} - [Trường THPT Võ Thị Sáu]`;
                 const isHtmlContent = /<[a-z][\s\S]*>/i.test(content);
 
-                // 2. Chân trang cố định theo quy chuẩn hệ thống
                 const mandatoryFooter = `
                     <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 12px; color: #64748b; line-height: 1.5;">
                         <p style="margin: 0 0 4px 0; font-style: italic;">Email này được gửi tự động từ Hệ thống Y tế số THPT Võ Thị Sáu.</p>
@@ -3221,9 +3219,7 @@ async function sendStudentNotification() {
                 `;
 
                 let mailHtmlBody = "";
-
                 if (isHtmlContent) {
-                    // DẠNG 1: NẾU NỘI DUNG LÀ MÃ HTML -> GIẢI MÃ VÀ GỬI TRỰC TIẾP (KÈM CHÂN TRANG CỐ ĐỊNH)
                     mailHtmlBody = `
                         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #334155; max-width: 650px; margin: 0 auto; padding: 20px;">
                             ${content}
@@ -3231,39 +3227,29 @@ async function sendStudentNotification() {
                         </div>
                     `;
                 } else {
-                    // DẠNG 2: VĂN BẢN THƯỜNG -> DÙNG GIAO DIỆN MẪU CARD CAO CẤP
                     mailHtmlBody = `
                         <div style="background-color: #f8fafc; padding: 30px 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #334155;">
                             <div style="max-width: 580px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);">
-                                
-                                <!-- CARD HEADER (GRADIENT) -->
                                 <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); padding: 25px 30px; text-align: left;">
                                     <div style="display: inline-block; background: rgba(255, 255, 255, 0.2); color: #ffffff; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
-                                        THÔNG BÁO Y TẾ SỐ
+                                        THÔNG BÁO TỪ PHÒNG Y TẾ
                                     </div>
                                     <h2 style="color: #ffffff; margin: 0; font-size: 19px; font-weight: 700; line-height: 1.3;">${title}</h2>
                                 </div>
-
-                                <!-- CARD BODY -->
                                 <div style="padding: 25px 30px;">
                                     <div style="margin-bottom: 18px; color: #64748b; font-size: 13px; font-weight: 600;">
                                         <span style="background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 6px; margin-right: 6px;">Từ</span>
                                         Phòng Y Tế - Trường THPT Võ Thị Sáu
                                     </div>
-
-                                    <!-- NỘI DUNG VĂN BẢN -->
                                     <div style="background-color: #f8fafc; padding: 18px 20px; border-radius: 12px; border: 1px solid #e2e8f0; border-left: 4px solid #0284c7; font-size: 14.5px; color: #1e293b; white-space: pre-wrap; line-height: 1.6;">${content}</div>
-
-                                    <!-- CHÂN TRANG CỐ ĐỊNH -->
                                     ${mandatoryFooter}
                                 </div>
-
                             </div>
                         </div>
                     `;
                 }
 
-                // Gửi qua bộ điều phối EmailService (Gửi tuần tự từng email)
+                // Gửi qua bộ điều phối EmailService
                 for (const recipientEmail of emailList) {
                     try {
                         await EmailService.sendEmail({
@@ -3277,6 +3263,7 @@ async function sendStudentNotification() {
                     }
                 }
 
+                sysLoading(false);
                 sysAlert(`✅ Đã gửi thông báo trên App & gửi thành công ${successEmailCount}/${emailList.length} Email!`, "success");
             }
         } else {

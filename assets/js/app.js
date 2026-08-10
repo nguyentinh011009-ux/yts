@@ -222,10 +222,10 @@ function changePostFilter(filterType) {
 }
 // --- 3. QUẢN LÝ BÀI VIẾT (CRUD) ---
 function showPostEditor(postId = null) {
-    // 1. Hiện Modal lên trước để CKEditor tính toán chiều cao
-    document.getElementById('post-editor-modal').style.display = 'flex';
+    // Chuyển sang Tab Soạn Thảo (Không dùng Modal nữa)
+    switchTab('tab-post-editor');
 
-    // 2. Khởi tạo CKEditor sau khi Modal đã hiển thị
+    // Khởi tạo CKEditor khi giao diện đã hiển thị 100%
     initCKEditor(() => {
         if (!postId) {
             document.getElementById('editor-mode-title').innerText = "Thêm bài viết mới";
@@ -233,8 +233,12 @@ function showPostEditor(postId = null) {
             document.getElementById('p-title').value = "";
             document.getElementById('p-cover').value = "";
             
-            if (ckEditorInstance) ckEditorInstance.setData("");
-            else document.getElementById('p-content').value = "";
+            if (ckEditorInstance) {
+                ckEditorInstance.setData("");
+                ckEditorInstance.editing.view.focus(); // Tự động focus con trỏ vào ô nhập
+            } else {
+                document.getElementById('p-content').value = "";
+            }
 
             document.getElementById('p-pin').checked = false;
             document.getElementById('p-update-time').checked = true;
@@ -244,7 +248,7 @@ function showPostEditor(postId = null) {
 }
 
 function hidePostEditor() {
-    document.getElementById('post-editor-modal').style.display = 'none';
+    switchTab('tab-posts');
 }
 
 async function savePost() {
@@ -341,7 +345,7 @@ function renderAdminPostsTable() {
 async function editPost(id) {
     showPostEditor(id);
     
-    sysLoading(true, "Đang tải bài viết...");
+    sysLoading(true, "Đang tải nội dung bài viết...");
     try {
         const doc = await db.collection("posts").doc(id).get();
         if (doc.exists) {
@@ -351,9 +355,9 @@ async function editPost(id) {
             document.getElementById('p-title').value = p.title || "";
             document.getElementById('p-cover').value = p.cover || "";
             
-            // Gán dữ liệu vào CKEditor
             if (ckEditorInstance) {
                 ckEditorInstance.setData(p.content || "");
+                ckEditorInstance.editing.view.focus();
             } else {
                 document.getElementById('p-content').value = p.content || "";
             }

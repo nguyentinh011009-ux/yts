@@ -364,3 +364,62 @@ function filterPickerCategory(cat) {
 function searchPickerFiles(kw) {
     renderPickerGrid(kw);
 }
+// KHỞI TẠO CKEDITOR 5 SUPERBUILD CHUẨN (TỰ ĐỘNG THỬ LẠI NẾU TẢI CHẬM)
+function initCKEditor() {
+    const editorEl = document.querySelector('#p-content');
+    if (!editorEl) return;
+    if (ckEditorInstance) return; // Đã khởi tạo rồi thì bỏ qua
+
+    if (typeof CKEDITOR !== 'undefined' && CKEDITOR.ClassicEditor) {
+        CKEDITOR.ClassicEditor
+            .create(editorEl, {
+                licenseKey: '', // 👉 BẮT BUỘC CÓ ĐỂ NÚT FONT/MÀU SẮC HOẠT ĐỘNG
+                toolbar: {
+                    items: [
+                        'heading', '|',
+                        'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor', '|',
+                        'bold', 'italic', 'underline', 'strikethrough', '|',
+                        'alignment', 'outdent', 'indent', '|',
+                        'bulletedList', 'numberedList', '|',
+                        'link', 'insertTable', 'blockQuote', 'horizontalLine', '|',
+                        'undo', 'redo'
+                    ],
+                    shouldNotGroupWhenFull: true
+                },
+                fontFamily: {
+                    options: [
+                        'default',
+                        'Arial, Helvetica, sans-serif',
+                        'Roboto, sans-serif',
+                        'Times New Roman, Times, serif',
+                        'Montserrat, sans-serif',
+                        'Courier New, Courier, monospace',
+                        'Georgia, serif',
+                        'Tahoma, Geneva, sans-serif',
+                        'Verdana, Geneva, sans-serif'
+                    ],
+                    supportAllValues: true
+                },
+                fontSize: {
+                    options: [ 10, 12, 14, 'default', 18, 20, 24, 28, 32, 36 ],
+                    supportAllValues: true
+                },
+                alignment: {
+                    options: [ 'left', 'center', 'right', 'justify' ]
+                }
+            })
+            .then(editor => {
+                ckEditorInstance = editor;
+                console.log("✅ CKEditor 5 Superbuild đã khởi tạo thành công!");
+            })
+            .catch(error => {
+                console.error("❌ Lỗi khởi tạo CKEditor 5:", error);
+            });
+    } else {
+        // Nếu CDN chưa tải xong, hẹn 300ms sau thử lại tự động
+        setTimeout(initCKEditor, 300);
+    }
+}
+
+// Gọi hàm ngay khi trang web sẵn sàng
+document.addEventListener("DOMContentLoaded", initCKEditor);

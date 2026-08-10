@@ -99,8 +99,7 @@ function openCloudinaryWidgetForEditor() {
 // 3. TẢI VÀ HIỂN THỊ DANH SÁCH FILE MEDIA
 function loadCloudinaryMedia() {
     const grid = document.getElementById('cloudinary-media-grid');
-    if (!grid) return;
-
+    
     db.collection('yt_media_assets').orderBy('timestamp', 'desc').onSnapshot(snap => {
         cachedMediaAssets = [];
         let counts = { all: 0, image: 0, video: 0, raw: 0 };
@@ -121,7 +120,8 @@ function loadCloudinaryMedia() {
         if(document.getElementById('cnt-media-video')) document.getElementById('cnt-media-video').innerText = counts.video;
         if(document.getElementById('cnt-media-raw')) document.getElementById('cnt-media-raw').innerText = counts.raw;
 
-        renderMediaGrid();
+        renderMediaGrid();  // Vẽ lưới ngoài Tab chính
+        renderPickerGrid(); // 👉 THÊM DÒNG NÀY: Vẽ lưới trong Popup Chọn Ảnh!
     });
 }
 
@@ -266,6 +266,10 @@ function openMediaPickerModal(target = 'editor') {
     mediaPickerTarget = target;
     document.getElementById('media-picker-modal').style.display = 'flex';
     
+    // Nếu đã có dữ liệu lưu tạm -> Vẽ ngay ra Popup
+    if (cachedMediaAssets.length > 0) {
+        renderPickerGrid();
+    }
     loadCloudinaryMedia();
 }
 

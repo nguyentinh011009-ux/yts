@@ -390,7 +390,9 @@ function initCKEditor(callback) {
         height: 500, // Chiều cao vùng soạn thảo
         allowedContent: true, // Cho phép mọi thẻ HTML (Iframe, Style, Class...)
         removeFormatAttributes: '',
-        
+        uiColor: '#F8FAFC', // Đổ màu nền thanh công cụ sang màu Slate 50 siêu sang
+        removePlugins: 'elementspath', // Xóa cái thanh trạng thái HTML thừa thãi ở dưới cùng
+        resize_enabled: false, // Tắt cái viền kéo giãn xấu xí ở góc dưới
         // Cấu hình thanh công cụ y hệt Microsoft Word
         toolbar: [
             { name: 'document', items: [ 'Source', '-', 'Preview' ] },

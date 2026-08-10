@@ -231,3 +231,65 @@
     top: 0 !important;
     z-index: 10 !important;
 }
+/* ==========================================================================
+   LỘT XÁC GIAO DIỆN CKEDITOR 4 THÀNH WORD 365 (FLAT DESIGN)
+   ========================================================================== */
+
+/* Bo cong toàn bộ khung soạn thảo và đổ bóng mờ */
+.cke_chrome {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important;
+    overflow: hidden !important;
+}
+
+/* Làm phẳng thanh công cụ bên trên */
+.cke_top {
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 12px 15px !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
+/* Xóa viền 3D của các nhóm công cụ */
+.cke_toolgroup {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    margin-right: 8px !important;
+}
+
+/* Tinh chỉnh nút bấm (Bỏ bóng, bo góc tròn) */
+.cke_button {
+    border-radius: 6px !important;
+    padding: 5px 6px !important;
+    transition: all 0.2s ease !important;
+    border: 1px solid transparent !important;
+}
+
+/* Hiệu ứng di chuột vào nút */
+.cke_button:hover, .cke_button_on {
+    background: #e2e8f0 !important;
+    box-shadow: none !important;
+}
+
+/* Tinh chỉnh các ô dropdown (Font chữ, Cỡ chữ) */
+.cke_combo_button {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+    background: white !important;
+    padding: 4px 8px !important;
+    transition: 0.2s !important;
+}
+
+.cke_combo_button:hover {
+    border-color: #94a3b8 !important;
+}
+
+/* Ẩn triệt để dải thông báo đỏ của bản LTS và thanh đáy */
+.cke_notification_warning, 
+.cke_notification_info,
+.cke_bottom {
+    display: none !important;
+}

@@ -651,36 +651,6 @@
         <div style="text-align: center; padding: 40px; color: #94a3b8;"><i class="fas fa-spinner fa-spin fa-2x"></i><br>Đang tải danh sách đợt khám...</div>
     </div>
     <!-- ===================================================================== -->
-    <!-- [POPUP 0]: CHỌN MEDIA TRỰC TIẾP TỪ KHO LƯU TRỮ -->
-    <!-- ===================================================================== --><div id="media-picker-modal" class="modal" style="display:none; z-index: 99999; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); align-items: center; justify-content: center; padding: 20px;">
-    <div class="form-card fade-in" style="width: 100%; max-width: 950px; height: 85vh; position: relative; padding: 25px; border-radius: 20px; display: flex; flex-direction: column; background: white;">
-        <button onclick="closeMediaPickerModal()" style="position:absolute; top:18px; right:20px; border:none; background:#f1f5f9; width:35px; height:35px; border-radius:50%; font-size:1.4rem; cursor:pointer; color:#64748b;">&times;</button>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-right: 40px;">
-            <h3 style="margin: 0; color: #0284c7; font-size: 1.3rem;"><i class="fas fa-images"></i> Chọn Media từ Kho Lưu Trữ</h3>
-            <button onclick="openCloudinaryWidgetGeneral()" class="btn btn-sm" style="background: #10b981; color: white; padding: 8px 16px; border-radius: 8px; font-weight: bold;">
-                <i class="fas fa-cloud-upload-alt"></i> Tải lên File mới
-            </button>
-        </div>
-
-        <!-- BỘ LỌC VÀ TÌM KIẾM TRONG POPUP -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #f8fafc; padding: 10px 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
-            <div style="display: flex; gap: 8px;">
-                <button type="button" onclick="filterPickerCategory('all')" id="btn-picker-flt-all" class="btn btn-sm" style="background: #0284c7; color: white; border-radius: 15px;">Tất cả</button>
-                <button type="button" onclick="filterPickerCategory('image')" id="btn-picker-flt-image" class="btn btn-sm" style="background: white; color: #64748b; border: 1px solid #cbd5e1; border-radius: 15px;">🖼️ Hình ảnh</button>
-                <button type="button" onclick="filterPickerCategory('video')" id="btn-picker-flt-video" class="btn btn-sm" style="background: white; color: #64748b; border: 1px solid #cbd5e1; border-radius: 15px;">🎥 Video</button>
-                <button type="button" onclick="filterPickerCategory('raw')" id="btn-picker-flt-raw" class="btn btn-sm" style="background: white; color: #64748b; border: 1px solid #cbd5e1; border-radius: 15px;">📄 Tài liệu</button>
-            </div>
-            <input type="text" id="picker-search-input" placeholder="Tìm tên file..." oninput="searchPickerFiles(this.value)" style="padding: 6px 12px; border-radius: 15px; border: 1px solid #cbd5e1; outline: none; font-size: 0.85rem; width: 200px;">
-        </div>
-
-        <!-- LƯỚI DANH SÁCH FILE ĐỂ BẤM CHỌN -->
-        <div id="picker-media-grid" style="flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; padding: 5px;">
-            <!-- JS đổ dữ liệu thẻ file có thể bấm vào -->
-        </div>
-    </div>
-</div>
-    <!-- ===================================================================== -->
     <!-- [POPUP 1]: KHỞI TẠO ĐỢT KHÁM SỨC KHỎE MỚI -->
     <!-- ===================================================================== -->
     <div id="create-campaign-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 10005; align-items: center; justify-content: center; padding: 20px;">
@@ -1318,6 +1288,32 @@
     <script src="../assets/js/system.js"></script>
     <script src="../assets/js/media.js"></script>
     <script src="../assets/email-service.js"></script>
+<!-- DÁN POPUP MEDIA PICKER VÀO ĐÂY (NGAY TRÊN THẺ BODY) -->
+<div id="media-picker-modal" class="modal" style="display:none; z-index: 99999; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); align-items: center; justify-content: center; padding: 20px;">
+    <div class="form-card fade-in" style="width: 100%; max-width: 950px; height: 85vh; position: relative; padding: 25px; border-radius: 20px; display: flex; flex-direction: column; background: white;">
+        <button onclick="closeMediaPickerModal()" style="position:absolute; top:18px; right:20px; border:none; background:#f1f5f9; width:35px; height:35px; border-radius:50%; font-size:1.4rem; cursor:pointer; color:#64748b;">&times;</button>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-right: 40px;">
+            <h3 style="margin: 0; color: #0284c7; font-size: 1.3rem;"><i class="fas fa-images"></i> Chọn Media từ Kho Lưu Trữ</h3>
+            <button onclick="openCloudinaryWidgetGeneral()" class="btn btn-sm" style="background: #10b981; color: white; padding: 8px 16px; border-radius: 8px; font-weight: bold;">
+                <i class="fas fa-cloud-upload-alt"></i> Tải lên File mới
+            </button>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #f8fafc; padding: 10px 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <div style="display: flex; gap: 8px;">
+                <button type="button" onclick="filterPickerCategory('all')" id="btn-picker-flt-all" class="btn btn-sm" style="background: #0284c7; color: white; border-radius: 15px;">Tất cả</button>
+                <button type="button" onclick="filterPickerCategory('image')" id="btn-picker-flt-image" class="btn btn-sm" style="background: white; color: #64748b; border: 1px solid #cbd5e1; border-radius: 15px;">🖼️ Hình ảnh</button>
+                <button type="button" onclick="filterPickerCategory('video')" id="btn-picker-flt-video" class="btn btn-sm" style="background: white; color: #64748b; border: 1px solid #cbd5e1; border-radius: 15px;">🎥 Video</button>
+                <button type="button" onclick="filterPickerCategory('raw')" id="btn-picker-flt-raw" class="btn btn-sm" style="background: white; color: #64748b; border: 1px solid #cbd5e1; border-radius: 15px;">📄 Tài liệu</button>
+            </div>
+            <input type="text" id="picker-search-input" placeholder="Tìm tên file..." oninput="searchPickerFiles(this.value)" style="padding: 6px 12px; border-radius: 15px; border: 1px solid #cbd5e1; outline: none; font-size: 0.85rem; width: 200px;">
+        </div>
+
+        <div id="picker-media-grid" style="flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; padding: 5px;">
+        </div>
+    </div>
+</div>
 <!-- POPUP: DANH SÁCH THÔNG BÁO TỪ FUSOFTX -->
 <div id="admin-noti-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 10001; align-items: flex-start; justify-content: flex-end; padding: 20px;">
     <div class="form-card fade-in" style="width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto; position: relative; padding: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); margin-top: 50px;">

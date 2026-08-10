@@ -379,15 +379,20 @@ function searchPickerFiles(kw) {
 // =========================================================================
 // KHỞI TẠO CKEDITOR 5 SUPERBUILD CHUẨN BÁO CHÍ & WORD CAO CẤP
 // =========================================================================
-function initCKEditor() {
+function initCKEditor(callback) {
     const editorEl = document.querySelector('#p-content');
     if (!editorEl) return;
-    if (ckEditorInstance) return; // Đã khởi tạo rồi thì bỏ qua
+
+    // Nếu đã khởi tạo rồi thì chỉ cần chạy callback (nếu có)
+    if (ckEditorInstance) {
+        if (typeof callback === 'function') callback();
+        return;
+    }
 
     if (typeof CKEDITOR !== 'undefined' && CKEDITOR.ClassicEditor) {
         CKEDITOR.ClassicEditor
             .create(editorEl, {
-                // Tự động giữ nguyên mọi thẻ HTML thô (iframe, style, script, custom tags)
+                licenseKey: '', // 👉 BẮT BUỘC CÓ ĐỂ KHÔNG BỊ KHÓA TOOLBAR
                 htmlSupport: {
                     allow: [
                         {
@@ -398,11 +403,7 @@ function initCKEditor() {
                         }
                     ]
                 },
-                // Cấu hình nhúng đa phương tiện (YouTube, Facebook, TikTok, Instagram...)
-                mediaEmbed: {
-                    previewsInData: true
-                },
-                // Thanh công cụ chuẩn Microsoft Word
+                mediaEmbed: { previewsInData: true },
                 toolbar: {
                     items: [
                         'sourceEditing', 'htmlEmbed', '|',
@@ -417,7 +418,6 @@ function initCKEditor() {
                     ],
                     shouldNotGroupWhenFull: true
                 },
-                // Bảng Font chữ đa dạng chuẩn hệ thống & Web
                 fontFamily: {
                     options: [
                         'default',
@@ -426,7 +426,6 @@ function initCKEditor() {
                         'Times New Roman, Times, serif',
                         'Montserrat, sans-serif',
                         'Inter, sans-serif',
-                        'Segoe UI, Tahoma, sans-serif',
                         'Courier New, Courier, monospace',
                         'Georgia, serif',
                         'Tahoma, Geneva, sans-serif',
@@ -434,24 +433,13 @@ function initCKEditor() {
                     ],
                     supportAllValues: true
                 },
-                // Cỡ chữ phong phú giống Microsoft Word (8 - 72)
                 fontSize: {
                     options: [ 8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 22, 24, 28, 32, 36, 48, 72 ],
                     supportAllValues: true
                 },
-                // Bảng màu sắc 16 triệu màu tự do
-                fontColor: {
-                    columns: 5,
-                    documentColors: 10
-                },
-                fontBackgroundColor: {
-                    columns: 5,
-                    documentColors: 10
-                },
-                alignment: {
-                    options: [ 'left', 'center', 'right', 'justify' ]
-                },
-                // Cấu hình thuộc tính bảng (Table)
+                fontColor: { columns: 5, documentColors: 10 },
+                fontBackgroundColor: { columns: 5, documentColors: 10 },
+                alignment: { options: [ 'left', 'center', 'right', 'justify' ] },
                 table: {
                     contentToolbar: [
                         'tableColumn', 'tableRow', 'mergeTableCells',
@@ -461,13 +449,13 @@ function initCKEditor() {
             })
             .then(editor => {
                 ckEditorInstance = editor;
-                console.log("✅ CKEditor 5 Superbuild báo chí đã khởi tạo thành công!");
+                console.log("✅ CKEditor 5 đã hiện thanh công cụ thành công!");
+                if (typeof callback === 'function') callback();
             })
             .catch(error => {
                 console.error("❌ Lỗi khởi tạo CKEditor 5:", error);
             });
     } else {
-        // Nếu CDN chưa tải xong, hẹn 300ms sau thử lại tự động
-        setTimeout(initCKEditor, 300);
+        setTimeout(() => initCKEditor(callback), 300);
     }
 }

@@ -469,5 +469,5 @@ function createNewCKEditor(editorEl, callback) {
             // Nếu mạng chậm chưa tải xong CDN, thử lại sau 300ms
             setTimeout(() => createNewCKEditor(editorEl, callback), 300);
         }
-    }, 200); // Khoảng thời gian chờ vàng (200ms)
+    }, 2000); // Khoảng thời gian chờ vàng (200ms)
 }

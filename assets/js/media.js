@@ -377,6 +377,7 @@ function searchPickerFiles(kw) {
     renderPickerGrid(kw);
 }
 // KHỞI TẠO CKEDITOR 5 SUPERBUILD CHUẨN (TỰ ĐỘNG THỬ LẠI NẾU TẢI CHẬM)
+// KHỞI TẠO CKEDITOR 5 SUPERBUILD CHUẨN (TẮT PLUGIN ĐÁM MÂY ĐỂ KHÔNG BỊ CRASH)
 function initCKEditor() {
     const editorEl = document.querySelector('#p-content');
     if (!editorEl) return;
@@ -385,7 +386,14 @@ function initCKEditor() {
     if (typeof CKEDITOR !== 'undefined' && CKEDITOR.ClassicEditor) {
         CKEDITOR.ClassicEditor
             .create(editorEl, {
-                licenseKey: '', // 👉 BẮT BUỘC CÓ ĐỂ NÚT FONT/MÀU SẮC HOẠT ĐỘNG
+                licenseKey: '',
+                // 👉 BẮT BUỘC CÓ DÒNG NÀY ĐỂ TẮT CÁC PLUGIN ĐÁM MÂY GÂY XUNG ĐỘT CRASH
+                removePlugins: [
+                    'CKBox', 'CKFinder', 'EasyImage', 'RealTimeCollaborativeComments',
+                    'RealTimeCollaborativeTrackChanges', 'RealTimeCollaborativeRevisionHistory',
+                    'PresenceList', 'Comments', 'TrackChanges', 'TrackChangesData',
+                    'RevisionHistory', 'Pagination', 'WProofreader', 'MathType'
+                ],
                 toolbar: {
                     items: [
                         'heading', '|',
@@ -428,10 +436,8 @@ function initCKEditor() {
                 console.error("❌ Lỗi khởi tạo CKEditor 5:", error);
             });
     } else {
-        // Nếu CDN chưa tải xong, hẹn 300ms sau thử lại tự động
         setTimeout(initCKEditor, 300);
     }
 }
 
-// Gọi hàm ngay khi trang web sẵn sàng
 document.addEventListener("DOMContentLoaded", initCKEditor);

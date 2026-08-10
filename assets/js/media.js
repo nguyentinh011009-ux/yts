@@ -381,93 +381,40 @@ function searchPickerFiles(kw) {
 // =========================================================================
 
 function initCKEditor(callback) {
-    const editorEl = document.querySelector('#p-content');
-    if (!editorEl) return;
-
-    // TÌM VÀ TIÊU DIỆT: Nếu có bộ soạn thảo cũ bị kẹt, hủy nó đi để tạo cái mới
-    if (ckEditorInstance) {
-        ckEditorInstance.destroy().then(() => {
-            ckEditorInstance = null;
-            createNewCKEditor(editorEl, callback);
-        });
-    } else {
-        createNewCKEditor(editorEl, callback);
+    // Nếu đã khởi tạo rồi thì bỏ qua
+    if (CKEDITOR.instances['p-content']) {
+        if (typeof callback === 'function') callback();
+        return;
     }
+
+    // Khởi tạo CKEditor 4
+    CKEDITOR.replace('p-content', {
+        height: 500, // Chiều cao vùng soạn thảo
+        allowedContent: true, // Cho phép mọi thẻ HTML (Iframe, Style, Class...)
+        removeFormatAttributes: '',
+        
+        // Cấu hình thanh công cụ y hệt Microsoft Word
+        toolbar: [
+            { name: 'document', items: [ 'Source', '-', 'Preview' ] },
+            { name: 'clipboard', items: [ 'Undo', 'Redo' ] },
+            { name: 'styles', items: [ 'Font', 'FontSize' ] },
+            { name: 'colors', items: [ 'TextColor', 'BGColor' ] },
+            { name: 'basicstyles', items: [ 'Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-', 'RemoveFormat' ] },
+            '/',
+            { name: 'paragraph', items: [ 'NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock' ] },
+            { name: 'links', items: [ 'Link', 'Unlink' ] },
+            { name: 'insert', items: [ 'Image', 'Table', 'HorizontalRule', 'SpecialChar', 'Iframe' ] }
+        ]
+    });
+
+    CKEDITOR.instances['p-content'].on('instanceReady', function() {
+        console.log("✅ Trình soạn thảo Word (CKEditor 4) đã sẵn sàng!");
+        if (typeof callback === 'function') callback();
+    });
 }
-
-function createNewCKEditor(editorEl, callback) {
-    // CHỜ 200ms: Đảm bảo Tab Soạn Thảo đã hiện hình 100% trước khi vẽ thanh công cụ
-    setTimeout(() => {
-        if (typeof CKEDITOR !== 'undefined' && CKEDITOR.ClassicEditor) {
-            CKEDITOR.ClassicEditor
-                .create(editorEl, {
-                    licenseKey: '', // Khóa trống an toàn
-                    
-                    // Tắt các tính năng trả phí để không bị hỏi bản quyền
-                    removePlugins: [
-                        'AIAssistant', 'CKBox', 'CKFinder', 'EasyImage', 'ExportPdf', 'ExportWord',
-                        'ImportWord', 'RealTimeCollaborativeComments', 'RealTimeCollaborativeTrackChanges',
-                        'RealTimeCollaborativeRevisionHistory', 'PresenceList', 'Comments', 'TrackChanges',
-                        'TrackChangesData', 'RevisionHistory', 'Pagination', 'WProofreader', 'MathType',
-                        'FormatPainter', 'Template', 'DocumentOutline', 'SlashCommand', 'PasteFromOfficeEnhanced', 'CaseChange'
-                    ],
-
-                    // Giữ nguyên định dạng HTML thô
-                    htmlSupport: {
-                        allow: [{ name: /.*/, attributes: true, classes: true, styles: true }]
-                    },
-                    mediaEmbed: { previewsInData: true },
-
-                    // THANH CÔNG CỤ SIÊU ĐẦY ĐỦ CỦA WORD
-                    toolbar: {
-                        items: [
-                            'sourceEditing', 'htmlEmbed', '|',
-                            'heading', '|',
-                            'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor', 'highlight', '|',
-                            'bold', 'italic', 'underline', 'strikethrough', 'removeFormat', '|',
-                            'alignment', 'outdent', 'indent', '|',
-                            'bulletedList', 'numberedList', '|',
-                            'link', 'insertImage', 'mediaEmbed', 'insertTable', 'blockQuote', 'horizontalLine', '|',
-                            'undo', 'redo'
-                        ],
-                        shouldNotGroupWhenFull: true
-                    },
-                    
-                    fontFamily: {
-                        options: [
-                            'default', 'Arial, Helvetica, sans-serif', 'Roboto, sans-serif',
-                            'Times New Roman, Times, serif', 'Montserrat, sans-serif', 'Inter, sans-serif',
-                            'Tahoma, Geneva, sans-serif', 'Verdana, Geneva, sans-serif'
-                        ],
-                        supportAllValues: true
-                    },
-                    
-                    fontSize: {
-                        options: [ 10, 12, 14, 'default', 18, 20, 24, 28, 32, 36, 48 ],
-                        supportAllValues: true
-                    },
-                    
-                    fontColor: { columns: 5, documentColors: 10 },
-                    fontBackgroundColor: { columns: 5, documentColors: 10 },
-                    alignment: { options: [ 'left', 'center', 'right', 'justify' ] }
-                })
-                .then(editor => {
-                    ckEditorInstance = editor;
-                    
-                    // Ép mở khóa nếu hệ thống lỡ gán chế độ Read-Only
-                    if (editor.isReadOnly) {
-                        editor.disableReadOnlyMode('main-lock');
-                    }
-                    
-                    console.log("✅ Trình soạn thảo Word đã tái sinh và MỞ KHÓA HOÀN TOÀN!");
-                    if (typeof callback === 'function') callback();
-                })
-                .catch(error => {
-                    console.error("❌ Lỗi khởi tạo CKEditor:", error);
-                });
-        } else {
-            // Nếu mạng chậm chưa tải xong CDN, thử lại sau 300ms
-            setTimeout(() => createNewCKEditor(editorEl, callback), 300);
-        }
-    }, 2000); // Khoảng thời gian chờ vàng (200ms)
+function toggleSourceView() {
+    if (CKEDITOR.instances['p-content']) {
+        const currentMode = CKEDITOR.instances['p-content'].mode;
+        CKEDITOR.instances['p-content'].setMode(currentMode === 'wysiwyg' ? 'source' : 'wysiwyg');
+    }
 }

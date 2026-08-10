@@ -78,6 +78,9 @@
 <!-- KẾT THÚC: Khối hiển thị thông tin Admin -->
             <nav>
     <p style="font-size: 0.7rem; color: #94a3b8; margin: 20px 0 10px 10px; text-transform: uppercase;">Nội dung</p>
+    <button class="admin-tab-btn" onclick="switchTab('tab-cloudinary-manager', this)">
+    <i class="fas fa-photo-video"></i> Kho Phương tiện
+    </button>
     <button class="admin-tab-btn active" onclick="switchTab('tab-posts', this)">
         <i class="fas fa-edit"></i> Quản lý bài viết
     </button>
@@ -210,13 +213,28 @@
                 </div>
                 <div class="input-group">
                     <label>Link ảnh bìa (Thumbnail)</label>
-                    <input type="text" id="p-cover" placeholder="Dán link ảnh...">
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="p-cover" placeholder="Dán link ảnh hoặc chọn từ Cloudinary..." style="flex: 1;">
+                        <button type="button" onclick="openCloudinaryWidgetForCover()" class="btn" style="background: #0ea5e9; color: white; white-space: nowrap;">
+                            <i class="fas fa-cloud-upload-alt"></i> Kho ảnh Cloudinary
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <div class="input-group">
-                <label>Nội dung chi tiết</label>
-                <textarea id="p-content" rows="12" placeholder="Nhập nội dung mô tả hoặc dán mã nhúng tại đây..." style="resize: vertical;"></textarea>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="margin: 0;">Nội dung chi tiết (Trình soạn thảo tin tức)</label>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" onclick="openCloudinaryWidgetForEditor()" class="btn-sm" style="background: #0284c7; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                            <i class="fas fa-image"></i> Chèn ảnh từ Cloudinary
+                        </button>
+                        <button type="button" onclick="toggleSourceView()" class="btn-sm" style="background: #475569; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                            <i class="fas fa-code"></i> Xem/Sửa HTML
+                        </button>
+                    </div>
+                </div>
+                <textarea id="p-content" rows="12" placeholder="Nhập nội dung mô tả..."></textarea>
             </div>
 
             <!-- Các tùy chọn ghim và cập nhật thời gian chìm mịn vào nền kính -->
@@ -256,7 +274,6 @@
                     </table>
                 </div>
             </section>
-
             <section id="tab-announce" class="tab-pane" style="display:none;">
                 <div style="margin-bottom:30px;">
                     <h2>Hệ thống Slider thông báo</h2>
@@ -419,7 +436,22 @@
         </div>
     </div>
 </section>
-
+<section id="tab-cloudinary-manager" class="tab-pane" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h2>Quản lý Kho dữ liệu Cloudinary</h2>
+        <button onclick="openCloudinaryWidgetGeneral()" class="btn btn-primary" style="background:#0284c7;">
+            <i class="fas fa-cloud-upload-alt"></i> Tải lên File / Ảnh mới
+        </button>
+    </div>
+    <div class="form-card" style="text-align: center; padding: 40px;">
+        <i class="fas fa-cloud fa-3x" style="color: #0284c7; margin-bottom: 15px;"></i>
+        <h3>Kho lưu trữ Đám mây Cloudinary</h3>
+        <p style="color: #64748b; margin-bottom: 20px;">Tải lên ảnh bài viết, tài liệu, video trực tiếp lên đám mây Cloudinary không giới hạn dung lượng host.</p>
+        <button onclick="openCloudinaryWidgetGeneral()" class="btn btn-primary" style="background:#0062ff;">
+            <i class="fas fa-folder-open"></i> Mở Trình Quản Lý & Tải Lên Media
+        </button>
+    </div>
+</section>
 <section id="tab-yte-giuong" class="tab-pane" style="display:none;">
     <h2>Tiếp nhận trong ngày & Trạng thái Giường</h2>
     
@@ -1165,7 +1197,6 @@
     </div>
 </div>
 <!-- TAB HỖ TRỢ TỪ ĐƠN VỊ CUNG CẤP -->
-<!-- TAB HỖ TRỢ TỪ ĐƠN VỊ CUNG CẤP -->
 <section id="tab-fusoftx" class="tab-pane" style="display:none;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>Kênh Hỗ trợ Kỹ thuật FUSoftX</h2>
@@ -1216,6 +1247,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
     <script src="../assets/js/admin.js"></script>
     <script src="../assets/js/crypto.js"></script>
     <script src="../assets/config.js"></script>

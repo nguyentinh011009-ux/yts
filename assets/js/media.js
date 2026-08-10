@@ -392,7 +392,7 @@ function initCKEditor(callback) {
     if (typeof CKEDITOR !== 'undefined' && CKEDITOR.ClassicEditor) {
         CKEDITOR.ClassicEditor
             .create(editorEl, {
-                licenseKey: '', // 👉 BẮT BUỘC CÓ ĐỂ KHÔNG BỊ KHÓA TOOLBAR
+                licenseKey: 'GPL', // 👉 BẮT BUỘC CÓ ĐỂ KHÔNG BỊ KHÓA TOOLBAR
                 htmlSupport: {
                     allow: [
                         {

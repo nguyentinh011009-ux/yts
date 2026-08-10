@@ -376,8 +376,9 @@ function filterPickerCategory(cat) {
 function searchPickerFiles(kw) {
     renderPickerGrid(kw);
 }
-// KHỞI TẠO CKEDITOR 5 SUPERBUILD CHUẨN (TỰ ĐỘNG THỬ LẠI NẾU TẢI CHẬM)
-// KHỞI TẠO CKEDITOR 5 SUPERBUILD CHUẨN (TẮT PLUGIN ĐÁM MÂY ĐỂ KHÔNG BỊ CRASH)
+// =========================================================================
+// KHỞI TẠO CKEDITOR 5 SUPERBUILD CHUẨN BÁO CHÍ & WORD CAO CẤP
+// =========================================================================
 function initCKEditor() {
     const editorEl = document.querySelector('#p-content');
     if (!editorEl) return;
@@ -386,26 +387,37 @@ function initCKEditor() {
     if (typeof CKEDITOR !== 'undefined' && CKEDITOR.ClassicEditor) {
         CKEDITOR.ClassicEditor
             .create(editorEl, {
-                licenseKey: '',
-                // 👉 BẮT BUỘC CÓ DÒNG NÀY ĐỂ TẮT CÁC PLUGIN ĐÁM MÂY GÂY XUNG ĐỘT CRASH
-                removePlugins: [
-                    'CKBox', 'CKFinder', 'EasyImage', 'RealTimeCollaborativeComments',
-                    'RealTimeCollaborativeTrackChanges', 'RealTimeCollaborativeRevisionHistory',
-                    'PresenceList', 'Comments', 'TrackChanges', 'TrackChangesData',
-                    'RevisionHistory', 'Pagination', 'WProofreader', 'MathType'
-                ],
+                // Tự động giữ nguyên mọi thẻ HTML thô (iframe, style, script, custom tags)
+                htmlSupport: {
+                    allow: [
+                        {
+                            name: /.*/,
+                            attributes: true,
+                            classes: true,
+                            styles: true
+                        }
+                    ]
+                },
+                // Cấu hình nhúng đa phương tiện (YouTube, Facebook, TikTok, Instagram...)
+                mediaEmbed: {
+                    previewsInData: true
+                },
+                // Thanh công cụ chuẩn Microsoft Word
                 toolbar: {
                     items: [
+                        'sourceEditing', 'htmlEmbed', '|',
+                        'findAndReplace', 'selectAll', '|',
                         'heading', '|',
-                        'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor', '|',
-                        'bold', 'italic', 'underline', 'strikethrough', '|',
+                        'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor', 'highlight', '|',
+                        'bold', 'italic', 'underline', 'strikethrough', 'subscript', 'superscript', 'code', 'removeFormat', '|',
                         'alignment', 'outdent', 'indent', '|',
-                        'bulletedList', 'numberedList', '|',
-                        'link', 'insertTable', 'blockQuote', 'horizontalLine', '|',
+                        'bulletedList', 'numberedList', 'todoList', '|',
+                        'link', 'insertImage', 'mediaEmbed', 'insertTable', 'blockQuote', 'horizontalLine', 'specialCharacters', '|',
                         'undo', 'redo'
                     ],
                     shouldNotGroupWhenFull: true
                 },
+                // Bảng Font chữ đa dạng chuẩn hệ thống & Web
                 fontFamily: {
                     options: [
                         'default',
@@ -413,6 +425,8 @@ function initCKEditor() {
                         'Roboto, sans-serif',
                         'Times New Roman, Times, serif',
                         'Montserrat, sans-serif',
+                        'Inter, sans-serif',
+                        'Segoe UI, Tahoma, sans-serif',
                         'Courier New, Courier, monospace',
                         'Georgia, serif',
                         'Tahoma, Geneva, sans-serif',
@@ -420,24 +434,40 @@ function initCKEditor() {
                     ],
                     supportAllValues: true
                 },
+                // Cỡ chữ phong phú giống Microsoft Word (8 - 72)
                 fontSize: {
-                    options: [ 10, 12, 14, 'default', 18, 20, 24, 28, 32, 36 ],
+                    options: [ 8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 22, 24, 28, 32, 36, 48, 72 ],
                     supportAllValues: true
+                },
+                // Bảng màu sắc 16 triệu màu tự do
+                fontColor: {
+                    columns: 5,
+                    documentColors: 10
+                },
+                fontBackgroundColor: {
+                    columns: 5,
+                    documentColors: 10
                 },
                 alignment: {
                     options: [ 'left', 'center', 'right', 'justify' ]
+                },
+                // Cấu hình thuộc tính bảng (Table)
+                table: {
+                    contentToolbar: [
+                        'tableColumn', 'tableRow', 'mergeTableCells',
+                        'tableProperties', 'tableCellProperties'
+                    ]
                 }
             })
             .then(editor => {
                 ckEditorInstance = editor;
-                console.log("✅ CKEditor 5 Superbuild đã khởi tạo thành công!");
+                console.log("✅ CKEditor 5 Superbuild báo chí đã khởi tạo thành công!");
             })
             .catch(error => {
                 console.error("❌ Lỗi khởi tạo CKEditor 5:", error);
             });
     } else {
+        // Nếu CDN chưa tải xong, hẹn 300ms sau thử lại tự động
         setTimeout(initCKEditor, 300);
     }
 }
-
-document.addEventListener("DOMContentLoaded", initCKEditor);

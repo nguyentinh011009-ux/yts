@@ -253,7 +253,7 @@ async function savePost() {
     const data = {
         title: document.getElementById('p-title').value,
         cover: document.getElementById('p-cover').value,
-        content: document.getElementById('p-content').value,
+        content: contentData,
         isPinned: document.getElementById('p-pin').checked
     };
 

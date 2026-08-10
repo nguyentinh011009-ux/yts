@@ -265,7 +265,8 @@ let currentPickerCategory = 'all';
 function openMediaPickerModal(target = 'editor') {
     mediaPickerTarget = target;
     document.getElementById('media-picker-modal').style.display = 'flex';
-    renderPickerGrid();
+    
+    loadCloudinaryMedia();
 }
 
 function closeMediaPickerModal() {
@@ -288,10 +289,17 @@ function renderPickerGrid(searchKw = '') {
         filtered = filtered.filter(item => (item.original_filename || '').toLowerCase().includes(kw));
     }
 
+    // NẾU KHO CHƯA CÓ FILE NÀO -> HIỆN NÚT TẢI LÊN NGAY TẠI POPUP
     if (filtered.length === 0) {
-        grid.innerHTML = `<div style="grid-column: span 4; text-align:center; padding:40px; color:#94a3b8;">
-            Không tìm thấy file nào trong kho.
-        </div>`;
+        grid.innerHTML = `
+            <div style="grid-column: span 4; text-align:center; padding:40px 20px; color:#64748b;">
+                <i class="fas fa-folder-open fa-3x" style="color:#cbd5e1; margin-bottom:15px;"></i>
+                <p style="font-weight:bold; font-size:1.05rem; color:#1e293b; margin-bottom:5px;">Kho hiện chưa có file/ảnh nào!</p>
+                <p style="font-size:0.85rem; color:#64748b; margin-bottom:20px;">Hãy tải lên file mới hoặc chọn từ Google Drive của bạn.</p>
+                <button onclick="openCloudinaryWidgetGeneral()" class="btn btn-primary" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%); padding:10px 22px; font-weight:bold;">
+                    <i class="fab fa-google-drive"></i> Tải lên ngay (Từ Google Drive / Máy tính)
+                </button>
+            </div>`;
         return;
     }
 

@@ -436,21 +436,52 @@
         </div>
     </div>
 </section>
+<!-- SECTION: QUẢN LÝ KHO MEDIA CLOUDINARY THẬT -->
 <section id="tab-cloudinary-manager" class="tab-pane" style="display:none;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h2>Quản lý Kho dữ liệu Cloudinary</h2>
-        <button onclick="openCloudinaryWidgetGeneral()" class="btn btn-primary" style="background:#0284c7;">
-            <i class="fas fa-cloud-upload-alt"></i> Tải lên File / Ảnh mới
+    
+    <!-- HEADER & NÚT TẢI LÊN -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px; flex-wrap:wrap; gap:15px;">
+        <div>
+            <h2 style="margin:0; color:#1e293b;"><i class="fas fa-photo-video" style="color:#0284c7;"></i> Quản lý Kho Dữ Liệu Cloudinary</h2>
+            <p style="color:#64748b; margin-top:5px; font-size:0.9rem;">Quản lý, phân loại, lưu trữ và xóa vĩnh viễn các file dữ liệu trên Đám mây</p>
+        </div>
+        <button onclick="openCloudinaryWidgetGeneral()" class="btn btn-primary" style="background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); padding:12px 24px; font-weight:bold;">
+            <i class="fab fa-google-drive"></i> Tải lên mới / Chọn từ Google Drive
         </button>
     </div>
-    <div class="form-card" style="text-align: center; padding: 40px;">
-        <i class="fas fa-cloud fa-3x" style="color: #0284c7; margin-bottom: 15px;"></i>
-        <h3>Kho lưu trữ Đám mây Cloudinary</h3>
-        <p style="color: #64748b; margin-bottom: 20px;">Tải lên ảnh bài viết, tài liệu, video trực tiếp lên đám mây Cloudinary không giới hạn dung lượng host.</p>
-        <button onclick="openCloudinaryWidgetGeneral()" class="btn btn-primary" style="background:#0062ff;">
-            <i class="fas fa-folder-open"></i> Mở Trình Quản Lý & Tải Lên Media
-        </button>
+
+    <!-- THANH BỘ LỌC PHÂN LOẠI & TÌM KIẾM -->
+    <div class="form-card" style="padding:15px 20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">
+        <!-- Tab bộ lọc phân loại -->
+        <div style="display:flex; gap:8px; overflow-x:auto;">
+            <button id="btn-media-flt-all" onclick="filterMediaCategory('all')" class="btn" style="background:#0284c7; color:white; border-radius:20px; padding:8px 18px; font-size:0.85rem;">
+                Tất cả (<span id="cnt-media-all">0</span>)
+            </button>
+            <button id="btn-media-flt-image" onclick="filterMediaCategory('image')" class="btn" style="background:white; color:#64748b; border:1px solid #cbd5e1; border-radius:20px; padding:8px 18px; font-size:0.85rem;">
+                🖼️ Hình ảnh (<span id="cnt-media-image">0</span>)
+            </button>
+            <button id="btn-media-flt-video" onclick="filterMediaCategory('video')" class="btn" style="background:white; color:#64748b; border:1px solid #cbd5e1; border-radius:20px; padding:8px 18px; font-size:0.85rem;">
+                🎥 Video (<span id="cnt-media-video">0</span>)
+            </button>
+            <button id="btn-media-flt-raw" onclick="filterMediaCategory('raw')" class="btn" style="background:white; color:#64748b; border:1px solid #cbd5e1; border-radius:20px; padding:8px 18px; font-size:0.85rem;">
+                📄 Tài liệu / File (<span id="cnt-media-raw">0</span>)
+            </button>
+        </div>
+
+        <!-- Ô tìm kiếm file -->
+        <div style="position:relative; width:260px;">
+            <input type="text" id="media-search-input" placeholder="Tìm tên file..." oninput="searchMediaFiles(this.value)" style="width:100%; padding:8px 12px 8px 35px; border-radius:20px; border:1px solid #cbd5e1; outline:none; font-size:0.85rem;">
+            <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;"></i>
+        </div>
     </div>
+
+    <!-- LƯỚI HIỂN THỊ DANH SÁCH FILE MEDIA -->
+    <div id="cloudinary-media-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:20px;">
+        <div style="grid-column: span 4; text-align:center; padding:50px; color:#94a3b8;">
+            <i class="fas fa-spinner fa-spin fa-2x"></i><br><br>Đang đồng bộ kho dữ liệu Cloudinary...
+        </div>
+    </div>
+
 </section>
 <section id="tab-yte-giuong" class="tab-pane" style="display:none;">
     <h2>Tiếp nhận trong ngày & Trạng thái Giường</h2>

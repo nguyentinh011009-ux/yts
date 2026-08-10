@@ -377,83 +377,97 @@ function searchPickerFiles(kw) {
     renderPickerGrid(kw);
 }
 // =========================================================================
-// KHỞI TẠO CKEDITOR 5 SUPERBUILD CHUẨN BÁO CHÍ & WORD CAO CẤP
+// KHỞI TẠO CKEDITOR 5 (GIẢI PHÁP TÁI TẠO CHỐNG ĐÓNG BĂNG THANH CÔNG CỤ)
+// =========================================================================
+
 function initCKEditor(callback) {
     const editorEl = document.querySelector('#p-content');
     if (!editorEl) return;
 
+    // TÌM VÀ TIÊU DIỆT: Nếu có bộ soạn thảo cũ bị kẹt, hủy nó đi để tạo cái mới
     if (ckEditorInstance) {
-        // Tắt triệt để chế độ Read-Only nếu có
-        if (ckEditorInstance.isReadOnly) {
-            ckEditorInstance.disableReadOnlyMode('main-lock');
-        }
-        if (typeof callback === 'function') callback();
-        return;
-    }
-
-    if (typeof CKEDITOR !== 'undefined' && CKEDITOR.ClassicEditor) {
-        CKEDITOR.ClassicEditor
-            .create(editorEl, {
-                licenseKey: 'GPL',
-                removePlugins: [
-                    'AIAssistant', 'CKBox', 'CKFinder', 'EasyImage', 'ExportPdf', 'ExportWord',
-                    'ImportWord', 'RealTimeCollaborativeComments', 'RealTimeCollaborativeTrackChanges',
-                    'RealTimeCollaborativeRevisionHistory', 'PresenceList', 'Comments', 'TrackChanges',
-                    'TrackChangesData', 'RevisionHistory', 'Pagination', 'WProofreader', 'MathType',
-                    'FormatPainter', 'Template', 'DocumentOutline', 'SlashCommand', 'PasteFromOfficeEnhanced', 'CaseChange'
-                ],
-                htmlSupport: {
-                    allow: [{ name: /.*/, attributes: true, classes: true, styles: true }]
-                },
-                mediaEmbed: { previewsInData: true },
-                toolbar: {
-                    items: [
-                        'sourceEditing', 'htmlEmbed', '|',
-                        'findAndReplace', 'selectAll', '|',
-                        'heading', '|',
-                        'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor', 'highlight', '|',
-                        'bold', 'italic', 'underline', 'strikethrough', 'subscript', 'superscript', 'code', 'removeFormat', '|',
-                        'alignment', 'outdent', 'indent', '|',
-                        'bulletedList', 'numberedList', 'todoList', '|',
-                        'link', 'insertImage', 'mediaEmbed', 'insertTable', 'blockQuote', 'horizontalLine', 'specialCharacters', '|',
-                        'undo', 'redo'
-                    ],
-                    shouldNotGroupWhenFull: true
-                },
-                fontFamily: {
-                    options: [
-                        'default', 'Arial, Helvetica, sans-serif', 'Roboto, sans-serif',
-                        'Times New Roman, Times, serif', 'Montserrat, sans-serif', 'Inter, sans-serif',
-                        'Courier New, Courier, monospace', 'Georgia, serif', 'Tahoma, Geneva, sans-serif', 'Verdana, Geneva, sans-serif'
-                    ],
-                    supportAllValues: true
-                },
-                fontSize: {
-                    options: [ 8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 22, 24, 28, 32, 36, 48, 72 ],
-                    supportAllValues: true
-                },
-                fontColor: { columns: 5, documentColors: 10 },
-                fontBackgroundColor: { columns: 5, documentColors: 10 },
-                alignment: { options: [ 'left', 'center', 'right', 'justify' ] },
-                table: {
-                    contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells', 'tableProperties', 'tableCellProperties']
-                }
-            })
-            .then(editor => {
-                ckEditorInstance = editor;
-                
-                // ÉP MỞ KHÓA KHÔNG CHO PHÉP CHẾ ĐỘ READ-ONLY
-                if (editor.isReadOnly) {
-                    editor.disableReadOnlyMode('main-lock');
-                }
-                
-                console.log("✅ Soạn thảo Word/Báo chí đã mở khóa 100%!");
-                if (typeof callback === 'function') callback();
-            })
-            .catch(error => {
-                console.error("❌ Lỗi khởi tạo CKEditor:", error);
-            });
+        ckEditorInstance.destroy().then(() => {
+            ckEditorInstance = null;
+            createNewCKEditor(editorEl, callback);
+        });
     } else {
-        setTimeout(() => initCKEditor(callback), 300);
+        createNewCKEditor(editorEl, callback);
     }
+}
+
+function createNewCKEditor(editorEl, callback) {
+    // CHỜ 200ms: Đảm bảo Tab Soạn Thảo đã hiện hình 100% trước khi vẽ thanh công cụ
+    setTimeout(() => {
+        if (typeof CKEDITOR !== 'undefined' && CKEDITOR.ClassicEditor) {
+            CKEDITOR.ClassicEditor
+                .create(editorEl, {
+                    licenseKey: '', // Khóa trống an toàn
+                    
+                    // Tắt các tính năng trả phí để không bị hỏi bản quyền
+                    removePlugins: [
+                        'AIAssistant', 'CKBox', 'CKFinder', 'EasyImage', 'ExportPdf', 'ExportWord',
+                        'ImportWord', 'RealTimeCollaborativeComments', 'RealTimeCollaborativeTrackChanges',
+                        'RealTimeCollaborativeRevisionHistory', 'PresenceList', 'Comments', 'TrackChanges',
+                        'TrackChangesData', 'RevisionHistory', 'Pagination', 'WProofreader', 'MathType',
+                        'FormatPainter', 'Template', 'DocumentOutline', 'SlashCommand', 'PasteFromOfficeEnhanced', 'CaseChange'
+                    ],
+
+                    // Giữ nguyên định dạng HTML thô
+                    htmlSupport: {
+                        allow: [{ name: /.*/, attributes: true, classes: true, styles: true }]
+                    },
+                    mediaEmbed: { previewsInData: true },
+
+                    // THANH CÔNG CỤ SIÊU ĐẦY ĐỦ CỦA WORD
+                    toolbar: {
+                        items: [
+                            'sourceEditing', 'htmlEmbed', '|',
+                            'heading', '|',
+                            'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor', 'highlight', '|',
+                            'bold', 'italic', 'underline', 'strikethrough', 'removeFormat', '|',
+                            'alignment', 'outdent', 'indent', '|',
+                            'bulletedList', 'numberedList', '|',
+                            'link', 'insertImage', 'mediaEmbed', 'insertTable', 'blockQuote', 'horizontalLine', '|',
+                            'undo', 'redo'
+                        ],
+                        shouldNotGroupWhenFull: true
+                    },
+                    
+                    fontFamily: {
+                        options: [
+                            'default', 'Arial, Helvetica, sans-serif', 'Roboto, sans-serif',
+                            'Times New Roman, Times, serif', 'Montserrat, sans-serif', 'Inter, sans-serif',
+                            'Tahoma, Geneva, sans-serif', 'Verdana, Geneva, sans-serif'
+                        ],
+                        supportAllValues: true
+                    },
+                    
+                    fontSize: {
+                        options: [ 10, 12, 14, 'default', 18, 20, 24, 28, 32, 36, 48 ],
+                        supportAllValues: true
+                    },
+                    
+                    fontColor: { columns: 5, documentColors: 10 },
+                    fontBackgroundColor: { columns: 5, documentColors: 10 },
+                    alignment: { options: [ 'left', 'center', 'right', 'justify' ] }
+                })
+                .then(editor => {
+                    ckEditorInstance = editor;
+                    
+                    // Ép mở khóa nếu hệ thống lỡ gán chế độ Read-Only
+                    if (editor.isReadOnly) {
+                        editor.disableReadOnlyMode('main-lock');
+                    }
+                    
+                    console.log("✅ Trình soạn thảo Word đã tái sinh và MỞ KHÓA HOÀN TOÀN!");
+                    if (typeof callback === 'function') callback();
+                })
+                .catch(error => {
+                    console.error("❌ Lỗi khởi tạo CKEditor:", error);
+                });
+        } else {
+            // Nếu mạng chậm chưa tải xong CDN, thử lại sau 300ms
+            setTimeout(() => createNewCKEditor(editorEl, callback), 300);
+        }
+    }, 200); // Khoảng thời gian chờ vàng (200ms)
 }

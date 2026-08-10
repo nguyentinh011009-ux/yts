@@ -222,25 +222,25 @@ function changePostFilter(filterType) {
 }
 // --- 3. QUẢN LÝ BÀI VIẾT (CRUD) ---
 function showPostEditor(postId = null) {
-	initCKEditor();
+    // 1. Hiện Modal lên trước để CKEditor tính toán chiều cao
     document.getElementById('post-editor-modal').style.display = 'flex';
-    if (!postId) {
-        document.getElementById('editor-mode-title').innerText = "Thêm bài viết mới";
-        document.getElementById('edit-post-id').value = "";
-        document.getElementById('p-title').value = "";
-        document.getElementById('p-cover').value = "";
-        
-        // Cập nhật nội dung cho CKEditor
-        if (ckEditorInstance) ckEditorInstance.setData("");
-        else document.getElementById('p-content').value = "";
 
-        document.getElementById('p-pin').checked = false;
-        document.getElementById('p-update-time').checked = true;
-        document.getElementById('lbl-update-time').style.display = 'none';
-    } else {
-        document.getElementById('p-update-time').checked = false;
-        document.getElementById('lbl-update-time').style.display = 'flex';
-    }
+    // 2. Khởi tạo CKEditor sau khi Modal đã hiển thị
+    initCKEditor(() => {
+        if (!postId) {
+            document.getElementById('editor-mode-title').innerText = "Thêm bài viết mới";
+            document.getElementById('edit-post-id').value = "";
+            document.getElementById('p-title').value = "";
+            document.getElementById('p-cover').value = "";
+            
+            if (ckEditorInstance) ckEditorInstance.setData("");
+            else document.getElementById('p-content').value = "";
+
+            document.getElementById('p-pin').checked = false;
+            document.getElementById('p-update-time').checked = true;
+            document.getElementById('lbl-update-time').style.display = 'none';
+        }
+    });
 }
 
 function hidePostEditor() {
@@ -339,25 +339,34 @@ function renderAdminPostsTable() {
 }
 
 async function editPost(id) {
-    const doc = await db.collection("posts").doc(id).get();
-    const p = doc.data();
     showPostEditor(id);
-    document.getElementById('editor-mode-title').innerText = "Chỉnh sửa bài viết";
-    document.getElementById('edit-post-id').value = id;
-    document.getElementById('p-title').value = p.title;
-    document.getElementById('p-cover').value = p.cover;
     
-    // Cập nhật dữ liệu vào CKEditor
-    if (ckEditorInstance) {
-        ckEditorInstance.setData(p.content || "");
-    } else {
-        document.getElementById('p-content').value = p.content || "";
+    sysLoading(true, "Đang tải bài viết...");
+    try {
+        const doc = await db.collection("posts").doc(id).get();
+        if (doc.exists) {
+            const p = doc.data();
+            document.getElementById('editor-mode-title').innerText = "Chỉnh sửa bài viết";
+            document.getElementById('edit-post-id').value = id;
+            document.getElementById('p-title').value = p.title || "";
+            document.getElementById('p-cover').value = p.cover || "";
+            
+            // Gán dữ liệu vào CKEditor
+            if (ckEditorInstance) {
+                ckEditorInstance.setData(p.content || "");
+            } else {
+                document.getElementById('p-content').value = p.content || "";
+            }
+
+            document.getElementById('p-pin').checked = p.isPinned || false;
+            document.getElementById('lbl-update-time').style.display = 'flex';
+        }
+    } catch (e) {
+        sysAlert("Lỗi tải bài viết: " + e.message, "error");
+    } finally {
+        sysLoading(false);
     }
-
-    document.getElementById('p-pin').checked = p.isPinned;
-    window.scrollTo({top: 0, behavior: 'smooth'});
 }
-
 async function deletePost(id) {
     // Dùng await sysConfirm để đợi người dùng bấm nút
     const isOk = await sysConfirm("Bạn có chắc chắn muốn xóa bài viết này không?", "Xóa bài viết", true);

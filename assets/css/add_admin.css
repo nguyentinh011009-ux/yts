@@ -211,3 +211,23 @@
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
+/* GIAO DIỆN BÀI VIẾT CHUẨN TRANG WORD CUỘN TRỰC TIẾP */
+#tab-post-editor .ck-editor__editable_inline {
+    min-height: 550px !important; /* Độ cao khung gõ rộng rãi */
+    font-size: 1.08rem !important;
+    line-height: 1.8 !important;
+    color: #1e293b !important;
+    padding: 30px 35px !important;
+    background: #ffffff !important;
+    border-radius: 0 0 10px 10px !important;
+}
+
+#tab-post-editor .ck-toolbar {
+    border-radius: 10px 10px 0 0 !important;
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    padding: 8px 12px !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+}

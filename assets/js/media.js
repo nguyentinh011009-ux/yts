@@ -378,15 +378,15 @@ function searchPickerFiles(kw) {
 }
 // =========================================================================
 // KHỞI TẠO CKEDITOR 5 SUPERBUILD CHUẨN BÁO CHÍ & WORD CAO CẤP
-// =========================================================================
-// =========================================================================
-// KHỞI TẠO SUPER-BUILD MỞ KHÓA 100% (CÓ BẢNG MÀU, FONT, CỠ CHỮ, HTML)
-// =========================================================================
 function initCKEditor(callback) {
     const editorEl = document.querySelector('#p-content');
     if (!editorEl) return;
 
     if (ckEditorInstance) {
+        // Tắt triệt để chế độ Read-Only nếu có
+        if (ckEditorInstance.isReadOnly) {
+            ckEditorInstance.disableReadOnlyMode('main-lock');
+        }
         if (typeof callback === 'function') callback();
         return;
     }
@@ -394,9 +394,7 @@ function initCKEditor(callback) {
     if (typeof CKEDITOR !== 'undefined' && CKEDITOR.ClassicEditor) {
         CKEDITOR.ClassicEditor
             .create(editorEl, {
-                licenseKey: 'GPL', // 👉 Khai báo dùng bản Miễn phí
-                
-                // 👉 TẮT CÁC PLUGIN TRẢ PHÍ ĐỂ KHÔNG BỊ KHÓA GIAO DIỆN
+                licenseKey: 'GPL',
                 removePlugins: [
                     'AIAssistant', 'CKBox', 'CKFinder', 'EasyImage', 'ExportPdf', 'ExportWord',
                     'ImportWord', 'RealTimeCollaborativeComments', 'RealTimeCollaborativeTrackChanges',
@@ -404,21 +402,10 @@ function initCKEditor(callback) {
                     'TrackChangesData', 'RevisionHistory', 'Pagination', 'WProofreader', 'MathType',
                     'FormatPainter', 'Template', 'DocumentOutline', 'SlashCommand', 'PasteFromOfficeEnhanced', 'CaseChange'
                 ],
-
-                // Giữ nguyên toàn bộ thuộc tính HTML thô & Iframe
                 htmlSupport: {
-                    allow: [
-                        {
-                            name: /.*/,
-                            attributes: true,
-                            classes: true,
-                            styles: true
-                        }
-                    ]
+                    allow: [{ name: /.*/, attributes: true, classes: true, styles: true }]
                 },
                 mediaEmbed: { previewsInData: true },
-
-                // THANH CÔNG CỤ SIÊU ĐẦY ĐỦ TÍNH NĂNG
                 toolbar: {
                     items: [
                         'sourceEditing', 'htmlEmbed', '|',
@@ -433,52 +420,38 @@ function initCKEditor(callback) {
                     ],
                     shouldNotGroupWhenFull: true
                 },
-
-                // Tùy chỉnh Font chữ
                 fontFamily: {
                     options: [
-                        'default',
-                        'Arial, Helvetica, sans-serif',
-                        'Roboto, sans-serif',
-                        'Times New Roman, Times, serif',
-                        'Montserrat, sans-serif',
-                        'Inter, sans-serif',
-                        'Courier New, Courier, monospace',
-                        'Georgia, serif',
-                        'Tahoma, Geneva, sans-serif',
-                        'Verdana, Geneva, sans-serif'
+                        'default', 'Arial, Helvetica, sans-serif', 'Roboto, sans-serif',
+                        'Times New Roman, Times, serif', 'Montserrat, sans-serif', 'Inter, sans-serif',
+                        'Courier New, Courier, monospace', 'Georgia, serif', 'Tahoma, Geneva, sans-serif', 'Verdana, Geneva, sans-serif'
                     ],
                     supportAllValues: true
                 },
-
-                // Tùy chỉnh Cỡ chữ chuẩn Word
                 fontSize: {
                     options: [ 8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 22, 24, 28, 32, 36, 48, 72 ],
                     supportAllValues: true
                 },
-
-                // Bảng chọn màu sắc 16 triệu màu
                 fontColor: { columns: 5, documentColors: 10 },
                 fontBackgroundColor: { columns: 5, documentColors: 10 },
-                
                 alignment: { options: [ 'left', 'center', 'right', 'justify' ] },
                 table: {
-                    contentToolbar: [
-                        'tableColumn', 'tableRow', 'mergeTableCells',
-                        'tableProperties', 'tableCellProperties'
-                    ]
+                    contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells', 'tableProperties', 'tableCellProperties']
                 }
             })
             .then(editor => {
                 ckEditorInstance = editor;
-            if (editor.isReadOnly) {
-                editor.disableReadOnlyMode('main-lock');
-            }
-                console.log("✅ Superbuild đã mở khóa hoàn toàn! Có Bảng màu, Font, Cỡ chữ & HTML!");
+                
+                // ÉP MỞ KHÓA KHÔNG CHO PHÉP CHẾ ĐỘ READ-ONLY
+                if (editor.isReadOnly) {
+                    editor.disableReadOnlyMode('main-lock');
+                }
+                
+                console.log("✅ Soạn thảo Word/Báo chí đã mở khóa 100%!");
                 if (typeof callback === 'function') callback();
             })
             .catch(error => {
-                console.error("❌ Lỗi khởi tạo Superbuild:", error);
+                console.error("❌ Lỗi khởi tạo CKEditor:", error);
             });
     } else {
         setTimeout(() => initCKEditor(callback), 300);

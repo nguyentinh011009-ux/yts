@@ -254,3 +254,113 @@ window.switchTab = function(tabId, btn) {
         loadCloudinaryMedia();
     }
 };
+// =========================================================================
+// HOẠT ĐỘNG CHỌN MEDIA TRỰC TIẾP TỪ KHO LƯU TRỮ (NO UPLOAD WIDGET REQUIRED)
+// =========================================================================
+
+let mediaPickerTarget = 'editor'; // 'cover' hoặc 'editor'
+let currentPickerCategory = 'all';
+
+// 1. MỞ HỘP THOẠI CHỌN MEDIA
+function openMediaPickerModal(target = 'editor') {
+    mediaPickerTarget = target;
+    document.getElementById('media-picker-modal').style.display = 'flex';
+    renderPickerGrid();
+}
+
+function closeMediaPickerModal() {
+    document.getElementById('media-picker-modal').style.display = 'none';
+}
+
+// 2. VẼ DANH SÁCH FILE TRONG HỘP THOẠI
+function renderPickerGrid(searchKw = '') {
+    const grid = document.getElementById('picker-media-grid');
+    if (!grid) return;
+
+    let filtered = cachedMediaAssets;
+
+    if (currentPickerCategory !== 'all') {
+        filtered = filtered.filter(item => (item.resource_type || 'image') === currentPickerCategory);
+    }
+
+    if (searchKw.trim() !== '') {
+        const kw = searchKw.toLowerCase().trim();
+        filtered = filtered.filter(item => (item.original_filename || '').toLowerCase().includes(kw));
+    }
+
+    if (filtered.length === 0) {
+        grid.innerHTML = `<div style="grid-column: span 4; text-align:center; padding:40px; color:#94a3b8;">
+            Không tìm thấy file nào trong kho.
+        </div>`;
+        return;
+    }
+
+    let html = '';
+    filtered.forEach(item => {
+        const resType = item.resource_type || 'image';
+        let thumbHtml = '';
+
+        if (resType === 'image') {
+            thumbHtml = `<img src="${item.url}" style="width:100%; height:110px; object-fit:cover;">`;
+        } else if (resType === 'video') {
+            thumbHtml = `<div style="height:110px; background:#0f172a; display:flex; align-items:center; justify-content:center; color:#38bdf8;">
+                <i class="fas fa-play-circle fa-2x"></i>
+            </div>`;
+        } else {
+            thumbHtml = `<div style="height:110px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#64748b;">
+                <i class="fas fa-file-alt fa-2x"></i>
+            </div>`;
+        }
+
+        html += `
+            <div class="picker-card" onclick="selectMediaForPost('${item.url}', '${resType}', '${item.original_filename}')">
+                ${thumbHtml}
+                <div style="padding:8px; font-size:0.78rem; font-weight:bold; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${item.original_filename}">
+                    ${item.original_filename}
+                </div>
+            </div>
+        `;
+    });
+
+    grid.innerHTML = html;
+}
+
+// 3. CHỌN MỘT FILE VÀ TỰ ĐỘNG CHÈN VÀO BÀI VIẾT HOẶC ÁNH BÌA
+function selectMediaForPost(url, resourceType, fileName) {
+    if (mediaPickerTarget === 'cover') {
+        document.getElementById('p-cover').value = url;
+        sysAlert("Đã chọn ảnh bìa từ kho thành công!", "success");
+    } else if (mediaPickerTarget === 'editor' && ckEditorInstance) {
+        let mediaHtml = '';
+        if (resourceType === 'image') {
+            mediaHtml = `<p><img src="${url}" style="width:100%; max-width:1000px; border-radius:8px; margin:15px 0;"></p>`;
+        } else if (resourceType === 'video') {
+            mediaHtml = `<p><video controls src="${url}" style="width:100%; max-width:1000px; border-radius:8px; margin:15px 0;"></video></p>`;
+        } else {
+            mediaHtml = `<p><a href="${url}" target="_blank" style="color:#0062ff; font-weight:bold;">📄 Tải về tài liệu: ${fileName}</a></p>`;
+        }
+        
+        const viewFragment = ckEditorInstance.data.processor.toView(mediaHtml);
+        const modelFragment = ckEditorInstance.data.toModel(viewFragment);
+        ckEditorInstance.model.insertContent(modelFragment);
+        sysAlert("Đã chèn file vào nội dung bài viết!", "success");
+    }
+    
+    closeMediaPickerModal();
+}
+
+function filterPickerCategory(cat) {
+    currentPickerCategory = cat;
+    ['all', 'image', 'video', 'raw'].forEach(c => {
+        const btn = document.getElementById(`btn-picker-flt-${c}`);
+        if (btn) {
+            btn.style.background = (c === cat) ? '#0284c7' : 'white';
+            btn.style.color = (c === cat) ? 'white' : '#64748b';
+        }
+    });
+    renderPickerGrid();
+}
+
+function searchPickerFiles(kw) {
+    renderPickerGrid(kw);
+}

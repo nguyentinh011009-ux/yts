@@ -79,19 +79,17 @@ function openCloudinaryWidgetForEditor() {
             const mediaUrl = result.info.secure_url;
             const resourceType = result.info.resource_type;
             
-            if (ckEditorInstance) {
-                let mediaHtml = '';
-                if (resourceType === 'image') {
-                    mediaHtml = `<p><img src="${mediaUrl}" style="width:100%; max-width:1000px; border-radius:8px; margin:15px 0;"></p>`;
-                } else if (resourceType === 'video') {
-                    mediaHtml = `<p><video controls src="${mediaUrl}" style="width:100%; max-width:1000px; border-radius:8px; margin:15px 0;"></video></p>`;
-                } else {
-                    mediaHtml = `<p><a href="${mediaUrl}" target="_blank" style="color:#0062ff; font-weight:bold;">📄 Tải về tài liệu: ${result.info.original_filename}</a></p>`;
-                }
-                const viewFragment = ckEditorInstance.data.processor.toView(mediaHtml);
-                const modelFragment = ckEditorInstance.data.toModel(viewFragment);
-                ckEditorInstance.model.insertContent(modelFragment);
-            }
+if (CKEDITOR.instances['p-content']) {
+    let mediaHtml = '';
+    if (resourceType === 'image') {
+        mediaHtml = `<p><img src="${mediaUrl}" style="width:100%; max-width:1000px; border-radius:8px; margin:15px 0;"></p>`;
+    } else if (resourceType === 'video') {
+        mediaHtml = `<p><video controls src="${mediaUrl}" style="width:100%; max-width:1000px; border-radius:8px; margin:15px 0;"></video></p>`;
+    } else {
+        mediaHtml = `<p><a href="${mediaUrl}" target="_blank" style="color:#0062ff; font-weight:bold;">📄 Tải về tài liệu: ${result.info.original_filename}</a></p>`;
+    }
+    CKEDITOR.instances['p-content'].insertHtml(mediaHtml);
+}
         }
     });
 }
@@ -342,21 +340,21 @@ function selectMediaForPost(url, resourceType, fileName) {
     if (mediaPickerTarget === 'cover') {
         document.getElementById('p-cover').value = url;
         sysAlert("Đã chọn ảnh bìa từ kho thành công!", "success");
-    } else if (mediaPickerTarget === 'editor' && ckEditorInstance) {
-        let mediaHtml = '';
-        if (resourceType === 'image') {
-            mediaHtml = `<p><img src="${url}" style="width:100%; max-width:1000px; border-radius:8px; margin:15px 0;"></p>`;
-        } else if (resourceType === 'video') {
-            mediaHtml = `<p><video controls src="${url}" style="width:100%; max-width:1000px; border-radius:8px; margin:15px 0;"></video></p>`;
-        } else {
-            mediaHtml = `<p><a href="${url}" target="_blank" style="color:#0062ff; font-weight:bold;">📄 Tải về tài liệu: ${fileName}</a></p>`;
-        }
-        
-        const viewFragment = ckEditorInstance.data.processor.toView(mediaHtml);
-        const modelFragment = ckEditorInstance.data.toModel(viewFragment);
-        ckEditorInstance.model.insertContent(modelFragment);
+} else if (mediaPickerTarget === 'editor') {
+    let mediaHtml = '';
+    if (resourceType === 'image') {
+        mediaHtml = `<p><img src="${url}" style="width:100%; max-width:1000px; border-radius:8px; margin:15px 0;"></p>`;
+    } else if (resourceType === 'video') {
+        mediaHtml = `<p><video controls src="${url}" style="width:100%; max-width:1000px; border-radius:8px; margin:15px 0;"></video></p>`;
+    } else {
+        mediaHtml = `<p><a href="${url}" target="_blank" style="color:#0062ff; font-weight:bold;">📄 Tải về tài liệu: ${fileName}</a></p>`;
+    }
+    
+    if (CKEDITOR.instances['p-content']) {
+        CKEDITOR.instances['p-content'].insertHtml(mediaHtml);
         sysAlert("Đã chèn file vào nội dung bài viết!", "success");
     }
+}
     
     closeMediaPickerModal();
 }

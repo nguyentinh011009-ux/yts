@@ -3878,7 +3878,7 @@ function autoResetStuckButtons() {
     });
 }
 // KHỞI TẠO CKEDITOR 5 CHO BÀI VIẾT
-document.addEventListener("DOMContentLoaded", function() {
+/* document.addEventListener("DOMContentLoaded", function() {
     const editorEl = document.querySelector('#p-content');
     if (editorEl && typeof ClassicEditor !== 'undefined') {
         ClassicEditor
@@ -3905,7 +3905,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 console.error("Lỗi khởi tạo CKEditor 5:", error);
             });
     }
-});
+}); 
+*/
 // --- HÀM TƯƠNG TÁC CLOUDINARY UPLOAD WIDGET ---
 
 // 1. Mở Cloudinary chọn ảnh làm Cover Bài viết

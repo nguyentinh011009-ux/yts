@@ -1,7 +1,14 @@
 /* APP CORE LOGIC - YTESO
    Xử lý: Firebase, CRUD, Slider, Auth, Search
 */
+// --- CẤU HÌNH CLOUDINARY & CKEDITOR ---
+const CLOUDINARY_CONFIG = {
+    cloudName: 'uq7hr3wp', // Điền Cloud Name của bạn (Ví dụ lấy từ Cloudinary hiện tại)
+    uploadPreset: 'yte_thptvothisau' // Tên Unsigned Upload Preset tạo trên Cloudinary Dashboard
+};
 
+let ckEditorInstance = null; // Quản lý instance của CKEditor 5
+let isSourceViewMode = false;
 // --- 1. KHỞI TẠO BIẾN TOÀN CỤC ---
 let sliderInterval = null;
 let allPosts = [];
@@ -221,14 +228,15 @@ function showPostEditor(postId = null) {
         document.getElementById('edit-post-id').value = "";
         document.getElementById('p-title').value = "";
         document.getElementById('p-cover').value = "";
-        document.getElementById('p-content').value = "";
-        document.getElementById('p-pin').checked = false;
         
-        // Bài viết mới thì không cần hiển thị lựa chọn cập nhật thời gian
+        // Cập nhật nội dung cho CKEditor
+        if (ckEditorInstance) ckEditorInstance.setData("");
+        else document.getElementById('p-content').value = "";
+
+        document.getElementById('p-pin').checked = false;
         document.getElementById('p-update-time').checked = true;
         document.getElementById('lbl-update-time').style.display = 'none';
     } else {
-        // Chỉnh sửa bài viết cũ thì hiện nút tick tùy chọn
         document.getElementById('p-update-time').checked = false;
         document.getElementById('lbl-update-time').style.display = 'flex';
     }
@@ -239,6 +247,7 @@ function hidePostEditor() {
 }
 
 async function savePost() {
+	const contentData = ckEditorInstance ? ckEditorInstance.getData() : document.getElementById('p-content').value;
     const id = document.getElementById('edit-post-id').value;
     const data = {
         title: document.getElementById('p-title').value,
@@ -336,7 +345,14 @@ async function editPost(id) {
     document.getElementById('edit-post-id').value = id;
     document.getElementById('p-title').value = p.title;
     document.getElementById('p-cover').value = p.cover;
-    document.getElementById('p-content').value = p.content;
+    
+    // Cập nhật dữ liệu vào CKEditor
+    if (ckEditorInstance) {
+        ckEditorInstance.setData(p.content || "");
+    } else {
+        document.getElementById('p-content').value = p.content || "";
+    }
+
     document.getElementById('p-pin').checked = p.isPinned;
     window.scrollTo({top: 0, behavior: 'smooth'});
 }
@@ -2854,7 +2870,11 @@ async function generateHTMLwithAI() {
         let aiHTML = data.candidates[0].content.parts[0].text;
         aiHTML = aiHTML.replace(/```html/g, '').replace(/```/g, '').trim();
 
-        document.getElementById('p-content').value = aiHTML;
+        if (ckEditorInstance) {
+    		ckEditorInstance.setData(aiHTML);
+		} else {
+    		document.getElementById('p-content').value = aiHTML;
+		}
         sysAlert("Thành công! AI đã tự động điền Code HTML.", "success");
         toggleAIGenerator(); 
     } catch (error) {
@@ -3855,4 +3875,123 @@ function autoResetStuckButtons() {
             }
         }
     });
+}
+// KHỞI TẠO CKEDITOR 5 CHO BÀI VIẾT
+document.addEventListener("DOMContentLoaded", function() {
+    const editorEl = document.querySelector('#p-content');
+    if (editorEl && typeof ClassicEditor !== 'undefined') {
+        ClassicEditor
+            .create(editorEl, {
+                toolbar: [
+                    'heading', '|', 
+                    'bold', 'italic', 'underline', 'strikethrough', 'link', '|',
+                    'bulletedList', 'numberedList', 'blockQuote', 'insertTable', '|',
+                    'mediaEmbed', 'undo', 'redo'
+                ],
+                heading: {
+                    options: [
+                        { model: 'paragraph', title: 'Đoạn văn', class: 'ck-heading_paragraph' },
+                        { model: 'heading1', view: 'h1', title: 'Tiêu đề chính (H1)', class: 'ck-heading_heading1' },
+                        { model: 'heading2', view: 'h2', title: 'Tiêu đề phụ (H2)', class: 'ck-heading_heading2' },
+                        { model: 'heading3', view: 'h3', title: 'Tiêu đề nhỏ (H3)', class: 'ck-heading_heading3' }
+                    ]
+                }
+            })
+            .then(editor => {
+                ckEditorInstance = editor;
+            })
+            .catch(error => {
+                console.error("Lỗi khởi tạo CKEditor 5:", error);
+            });
+    }
+});
+// --- HÀM TƯƠNG TÁC CLOUDINARY UPLOAD WIDGET ---
+
+// 1. Mở Cloudinary chọn ảnh làm Cover Bài viết
+function openCloudinaryWidgetForCover() {
+    if (typeof cloudinary === 'undefined') return alert("Chưa tải được thư viện Cloudinary Widget!");
+    
+    cloudinary.openUploadWidget({
+        cloudName: CLOUDINARY_CONFIG.cloudName,
+        uploadPreset: CLOUDINARY_CONFIG.uploadPreset,
+        sources: ['local', 'url', 'camera', 'google_drive'],
+        multiple: false,
+        clientAllowedFormats: ['image'],
+        maxFileSize: 10485760 // Max 10MB
+    }, (error, result) => {
+        if (!error && result && result.event === "success") {
+            const imageUrl = result.info.secure_url;
+            document.getElementById('p-cover').value = imageUrl;
+            sysAlert("Đã chọn ảnh bìa từ Cloudinary thành công!", "success");
+        }
+    });
+}
+
+// 2. Mở Cloudinary chèn ảnh vào trình soạn thảo CKEditor
+function openCloudinaryWidgetForEditor() {
+    if (typeof cloudinary === 'undefined') return alert("Chưa tải được thư viện Cloudinary Widget!");
+
+    cloudinary.openUploadWidget({
+        cloudName: CLOUDINARY_CONFIG.cloudName,
+        uploadPreset: CLOUDINARY_CONFIG.uploadPreset,
+        sources: ['local', 'url', 'camera'],
+        multiple: true,
+        clientAllowedFormats: ['image', 'video']
+    }, (error, result) => {
+        if (!error && result && result.event === "success") {
+            const mediaUrl = result.info.secure_url;
+            const resourceType = result.info.resource_type; // 'image' hoặc 'video'
+            
+            if (ckEditorInstance) {
+                if (resourceType === 'image') {
+                    const imgHtml = `<p><img src="${mediaUrl}" alt="Ảnh bài viết" style="width:100%; max-width:1000px; border-radius:8px; margin:15px 0;"></p>`;
+                    const viewFragment = ckEditorInstance.data.processor.toView(imgHtml);
+                    const modelFragment = ckEditorInstance.data.toModel(viewFragment);
+                    ckEditorInstance.model.insertContent(modelFragment);
+                } else if (resourceType === 'video') {
+                    const videoHtml = `<p><video controls src="${mediaUrl}" style="width:100%; max-width:1000px; border-radius:8px; margin:15px 0;"></video></p>`;
+                    const viewFragment = ckEditorInstance.data.processor.toView(videoHtml);
+                    const modelFragment = ckEditorInstance.data.toModel(viewFragment);
+                    ckEditorInstance.model.insertContent(modelFragment);
+                }
+            }
+        }
+    });
+}
+
+// 3. Mở Cloudinary chung trong Tab Quản lý Kho Media
+function openCloudinaryWidgetGeneral() {
+    if (typeof cloudinary === 'undefined') return alert("Chưa tải được thư viện Cloudinary Widget!");
+
+    cloudinary.openUploadWidget({
+        cloudName: CLOUDINARY_CONFIG.cloudName,
+        uploadPreset: CLOUDINARY_CONFIG.uploadPreset,
+        sources: ['local', 'url', 'camera', 'google_drive']
+    }, (error, result) => {
+        if (!error && result && result.event === "success") {
+            sysAlert(`Đã tải file thành công!\nURL: ${result.info.secure_url}`, "success");
+        }
+    });
+}
+
+// 4. Chuyển đổi giữa chế độ CKEditor (Trực quan) và Mã HTML Thô
+function toggleSourceView() {
+    if (!ckEditorInstance) return;
+
+    const editorContainer = ckEditorInstance.ui.view.element;
+    const textarea = document.getElementById('p-content');
+
+    if (!isSourceViewMode) {
+        // Chuyển sang xem Code HTML Thô
+        textarea.value = ckEditorInstance.getData();
+        editorContainer.style.display = 'none';
+        textarea.style.display = 'block';
+        isSourceViewMode = true;
+    } else {
+        // Chuyển lại CKEditor Trực quan
+        ckEditorInstance.setData(textarea.value);
+        textarea.style.display = 'none';
+        editorContainer.style.display = 'block';
+        isSourceViewMode = false;
+    }
 }

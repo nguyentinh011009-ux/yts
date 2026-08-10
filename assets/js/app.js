@@ -222,6 +222,7 @@ function changePostFilter(filterType) {
 }
 // --- 3. QUẢN LÝ BÀI VIẾT (CRUD) ---
 function showPostEditor(postId = null) {
+	initCKEditor();
     document.getElementById('post-editor-modal').style.display = 'flex';
     if (!postId) {
         document.getElementById('editor-mode-title').innerText = "Thêm bài viết mới";

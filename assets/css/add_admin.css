@@ -148,3 +148,22 @@
     transform: rotate(180deg);
     transition: transform 0.4s ease;
 }
+/* TÙY CHỈNH CKEDITOR CHO BÀI VIẾT */
+.ck-editor__editable_inline {
+    min-height: 320px;
+    max-height: 500px;
+    border-radius: 0 0 10px 10px !important;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #1e293b;
+}
+
+.ck-toolbar {
+    border-radius: 10px 10px 0 0 !important;
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+}
+
+.ck.ck-editor__main>.ck-editor__editable:not(.ck-focused) {
+    border-color: #cbd5e1 !important;
+}

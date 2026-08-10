@@ -233,12 +233,12 @@ function showPostEditor(postId = null) {
             document.getElementById('p-title').value = "";
             document.getElementById('p-cover').value = "";
             
-            if (ckEditorInstance) {
-                ckEditorInstance.setData("");
-                ckEditorInstance.editing.view.focus(); // Tự động focus con trỏ vào ô nhập
-            } else {
-                document.getElementById('p-content').value = "";
-            }
+if (CKEDITOR.instances['p-content']) {
+    CKEDITOR.instances['p-content'].setData("");
+    CKEDITOR.instances['p-content'].focus();
+} else {
+    document.getElementById('p-content').value = "";
+}
 
             document.getElementById('p-pin').checked = false;
             document.getElementById('p-update-time').checked = true;
@@ -252,7 +252,7 @@ function hidePostEditor() {
 }
 
 async function savePost() {
-	const contentData = ckEditorInstance ? ckEditorInstance.getData() : document.getElementById('p-content').value;
+	const contentData = CKEDITOR.instances['p-content'] ? CKEDITOR.instances['p-content'].getData() : document.getElementById('p-content').value;
     const id = document.getElementById('edit-post-id').value;
     const data = {
         title: document.getElementById('p-title').value,
@@ -355,12 +355,12 @@ async function editPost(id) {
             document.getElementById('p-title').value = p.title || "";
             document.getElementById('p-cover').value = p.cover || "";
             
-            if (ckEditorInstance) {
-                ckEditorInstance.setData(p.content || "");
-                ckEditorInstance.editing.view.focus();
-            } else {
-                document.getElementById('p-content').value = p.content || "";
-            }
+if (CKEDITOR.instances['p-content']) {
+    CKEDITOR.instances['p-content'].setData("");
+    CKEDITOR.instances['p-content'].focus();
+} else {
+    document.getElementById('p-content').value = "";
+}
 
             document.getElementById('p-pin').checked = p.isPinned || false;
             document.getElementById('lbl-update-time').style.display = 'flex';
@@ -2884,11 +2884,11 @@ async function generateHTMLwithAI() {
         let aiHTML = data.candidates[0].content.parts[0].text;
         aiHTML = aiHTML.replace(/```html/g, '').replace(/```/g, '').trim();
 
-        if (ckEditorInstance) {
-    		ckEditorInstance.setData(aiHTML);
-		} else {
-    		document.getElementById('p-content').value = aiHTML;
-		}
+if (CKEDITOR.instances['p-content']) {
+    CKEDITOR.instances['p-content'].setData(aiHTML);
+} else {
+    document.getElementById('p-content').value = aiHTML;
+}
         sysAlert("Thành công! AI đã tự động điền Code HTML.", "success");
         toggleAIGenerator(); 
     } catch (error) {

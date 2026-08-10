@@ -471,6 +471,9 @@ function initCKEditor(callback) {
             })
             .then(editor => {
                 ckEditorInstance = editor;
+            if (editor.isReadOnly) {
+                editor.disableReadOnlyMode('main-lock');
+            }
                 console.log("✅ Superbuild đã mở khóa hoàn toàn! Có Bảng màu, Font, Cỡ chữ & HTML!");
                 if (typeof callback === 'function') callback();
             })

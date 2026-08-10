@@ -3877,36 +3877,7 @@ function autoResetStuckButtons() {
         }
     });
 }
-// KHỞI TẠO CKEDITOR 5 CHO BÀI VIẾT
-/* document.addEventListener("DOMContentLoaded", function() {
-    const editorEl = document.querySelector('#p-content');
-    if (editorEl && typeof ClassicEditor !== 'undefined') {
-        ClassicEditor
-            .create(editorEl, {
-                toolbar: [
-                    'heading', '|', 
-                    'bold', 'italic', 'underline', 'strikethrough', 'link', '|',
-                    'bulletedList', 'numberedList', 'blockQuote', 'insertTable', '|',
-                    'mediaEmbed', 'undo', 'redo'
-                ],
-                heading: {
-                    options: [
-                        { model: 'paragraph', title: 'Đoạn văn', class: 'ck-heading_paragraph' },
-                        { model: 'heading1', view: 'h1', title: 'Tiêu đề chính (H1)', class: 'ck-heading_heading1' },
-                        { model: 'heading2', view: 'h2', title: 'Tiêu đề phụ (H2)', class: 'ck-heading_heading2' },
-                        { model: 'heading3', view: 'h3', title: 'Tiêu đề nhỏ (H3)', class: 'ck-heading_heading3' }
-                    ]
-                }
-            })
-            .then(editor => {
-                ckEditorInstance = editor;
-            })
-            .catch(error => {
-                console.error("Lỗi khởi tạo CKEditor 5:", error);
-            });
-    }
-}); 
-*/
+
 // --- HÀM TƯƠNG TÁC CLOUDINARY UPLOAD WIDGET ---
 
 // 1. Mở Cloudinary chọn ảnh làm Cover Bài viết
@@ -3980,20 +3951,25 @@ function openCloudinaryWidgetGeneral() {
 function toggleSourceView() {
     if (!ckEditorInstance) return;
 
-    const editorContainer = ckEditorInstance.ui.view.element;
-    const textarea = document.getElementById('p-content');
-
-    if (!isSourceViewMode) {
-        // Chuyển sang xem Code HTML Thô
-        textarea.value = ckEditorInstance.getData();
-        editorContainer.style.display = 'none';
-        textarea.style.display = 'block';
-        isSourceViewMode = true;
+    // Lấy plugin SourceEditing của CKEditor 5
+    const sourceEditingPlugin = ckEditorInstance.plugins.get('SourceEditing');
+    if (sourceEditingPlugin) {
+        sourceEditingPlugin.isSourceEditingMode = !sourceEditingPlugin.isSourceEditingMode;
     } else {
-        // Chuyển lại CKEditor Trực quan
-        ckEditorInstance.setData(textarea.value);
-        textarea.style.display = 'none';
-        editorContainer.style.display = 'block';
-        isSourceViewMode = false;
+        // Fallback thủ công nếu xem dạng Textarea
+        const editorContainer = ckEditorInstance.ui.view.element;
+        const textarea = document.getElementById('p-content');
+
+        if (!isSourceViewMode) {
+            textarea.value = ckEditorInstance.getData();
+            editorContainer.style.display = 'none';
+            textarea.style.display = 'block';
+            isSourceViewMode = true;
+        } else {
+            ckEditorInstance.setData(textarea.value);
+            textarea.style.display = 'none';
+            editorContainer.style.display = 'block';
+            isSourceViewMode = false;
+        }
     }
 }

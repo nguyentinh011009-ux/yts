@@ -517,77 +517,89 @@
     margin: 0 4px;
 }
 /* ==========================================================================
-   CẤU HÌNH THANH CUỘN (SCROLLBAR) CHO KHUNG SOẠN THẢO TIPTAP
+   BỘ CSS CHUẨN HÓA KHUNG SOẠN THẢO TIPTAP (SỬA LỖI THANH CUỘN & FULLSCREEN)
    ========================================================================== */
 
-/* Giới hạn chiều cao và kích hoạt cuộn dọc mượt mà cho khung giấy Word */
+/* 1. KHUNG NGOÀI NỀN TRẮNG TỰ CO GIÃN TẠI TAB BÀI VIẾT */
+#tab-post-editor .word-document-container,
+#tab-post-editor .form-card {
+    height: auto !important;
+    min-height: 100% !important;
+    display: flow-root !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+}
+
+.tiptap-editor-wrapper {
+    width: 100% !important;
+    height: auto !important;
+    clear: both !important;
+    box-sizing: border-box !important;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    background: #f8fafc;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+/* 2. KHUNG CHỨA GIẤY GÕ Ở CHẾ ĐỘ THƯỜNG (CÓ THANH CUỘN NỘI BỘ MƯỢT MÀ) */
 .tiptap-paper-container {
     background: #f1f5f9;
     padding: 30px 20px;
     min-height: 550px;
-    max-height: 680px; /* Chiều cao tối đa trước khi xuất hiện thanh cuộn */
-    overflow-y: auto;  /* Tự động hiện thanh cuộn khi nội dung dài */
+    max-height: 650px; /* Chiều cao cố định tạo thanh cuộn ở chế độ thường */
+    overflow-y: auto !important; /* Tự động hiện thanh cuộn khi bài dài */
     display: flex;
     justify-content: center;
     scroll-behavior: smooth;
+    box-sizing: border-box !important;
 }
 
-/* Tùy chỉnh thiết kế thanh cuộn siêu sang chuẩn Apple Glass */
+/* Thiết kế thanh cuộn siêu sang chuẩn Apple Glass */
 .tiptap-paper-container::-webkit-scrollbar {
-    width: 8px; /* Độ rộng thanh cuộn mảnh tinh tế */
+    width: 8px !important;
 }
 
 .tiptap-paper-container::-webkit-scrollbar-track {
-    background: #e2e8f0; /* Màu nền đường rãnh cuộn */
+    background: #e2e8f0 !important;
     border-radius: 10px;
     margin: 10px 0;
 }
 
 .tiptap-paper-container::-webkit-scrollbar-thumb {
-    background: #cbd5e1; /* Màu con trượt cuộn */
+    background: #cbd5e1 !important;
     border-radius: 10px;
     transition: background 0.2s ease;
 }
 
 .tiptap-paper-container::-webkit-scrollbar-thumb:hover {
-    background: #0062ff; /* Đổi màu xanh nổi bật khi rê chuột vào */
+    background: #0062ff !important;
 }
 
-/* Giới hạn chiều cao và tạo thanh cuộn cho Chế độ xem Mã HTML thô */
-.tiptap-source-mode {
+/* Tờ giấy gõ văn bản A4 */
+.tiptap-paper {
+    background: #ffffff;
     width: 100%;
     max-width: 900px;
     min-height: 520px;
-    max-height: 620px;
-    overflow-y: auto;
-    padding: 20px;
-    font-family: Consolas, Monaco, monospace;
-    font-size: 0.95rem;
-    line-height: 1.5;
-    background: #0f172a;
-    color: #38bdf8;
+    padding: 40px 50px;
     border-radius: 8px;
-    border: 1px solid #334155;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
     outline: none;
     box-sizing: border-box;
 }
 
-/* Thanh cuộn riêng cho Chế độ xem Mã HTML */
-.tiptap-source-mode::-webkit-scrollbar {
-    width: 8px;
+.tiptap-paper .ProseMirror {
+    outline: none;
+    min-height: 480px;
+    font-size: 1.08rem;
+    line-height: 1.8;
+    color: #1e293b;
+    font-family: Arial, Helvetica, sans-serif;
 }
-.tiptap-source-mode::-webkit-scrollbar-track {
-    background: #1e293b;
-}
-.tiptap-source-mode::-webkit-scrollbar-thumb {
-    background: #475569;
-    border-radius: 6px;
-}
-/* ==========================================================================
-   CHẾ ĐỘ SOẠN THẢO TOÀN MÀN HÌNH (FULLSCREEN FOCUS EDITOR MODE)
-   ========================================================================== */
 
-/* Khi ở chế độ Fullscreen: Phủ kín 100% màn hình thiết bị */
+/* 3. CHẾ ĐỘ PHÓNG TO TOÀN MÀN HÌNH (FULLSCREEN MODE) */
 .tiptap-editor-wrapper.is-fullscreen {
     position: fixed !important;
     inset: 0 !important;
@@ -602,8 +614,8 @@
     box-shadow: none !important;
 }
 
-/* Thanh công cụ khi ở chế độ Fullscreen */
 .tiptap-editor-wrapper.is-fullscreen .tiptap-toolbar {
+    flex: 0 0 auto !important;
     border-radius: 0 !important;
     padding: 10px 25px !important;
     background: #ffffff !important;
@@ -611,46 +623,27 @@
     border-bottom: 1px solid #cbd5e1 !important;
 }
 
-/* Nút "XONG" biến thành màu xanh rực rỡ và tự đẩy sang góc phải */
-.tiptap-editor-wrapper.is-fullscreen #btn-tp-fullscreen {
-    background: #10b981 !important;
-    color: #ffffff !important;
-    width: auto !important;
-    padding: 6px 18px !important;
-    border-radius: 8px !important;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
-    margin-left: auto !important; /* Đẩy nút XONG về bên phải ngoài cùng */
-}
-
-.tiptap-editor-wrapper.is-fullscreen #btn-tp-fullscreen:hover {
-    background: #059669 !important;
-}
-
-/* Khung chứa giấy gõ tự mở rộng tối đa theo độ cao màn hình */
+/* Mở rộng tối đa khung giấy và thanh cuộn trong Fullscreen */
 .tiptap-editor-wrapper.is-fullscreen .tiptap-paper-container {
-    flex: 1 !important;
-    max-height: none !important;
-    height: calc(100vh - 65px) !important;
-    padding: 40px 20px !important;
+    flex: 1 1 auto !important;
+    height: calc(100vh - 60px) !important;
+    max-height: none !important; /* Hủy giới hạn 650px của chế độ thường */
+    padding: 30px 20px !important;
     overflow-y: auto !important;
 }
 
-/* Tờ giấy A4 gõ văn bản mở rộng cao ngút ngàn */
+/* Trang giấy trắng tự động kéo dài tối đa full màn hình */
 .tiptap-editor-wrapper.is-fullscreen .tiptap-paper {
-    min-height: calc(100vh - 140px) !important;
+    min-height: calc(100vh - 120px) !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Khung xem Code HTML thô khi ở Fullscreen */
-.tiptap-editor-wrapper.is-fullscreen .tiptap-source-mode {
-    min-height: calc(100vh - 140px) !important;
-    max-height: none !important;
+/* Vùng gõ chữ tự co giãn đầy trang trắng */
+.tiptap-editor-wrapper.is-fullscreen .ProseMirror {
+    min-height: calc(100vh - 200px) !important;
 }
-/* ==========================================================================
-   TÙY CHỈNH KHUNG XEM CODE HTML Ở CHẾ ĐỘ TOÀN MÀN HÌNH
-   ========================================================================== */
 
-/* Khi chuyển sang xem Code HTML ở chế độ Toàn màn hình */
+/* Chế độ xem HTML thô ở Fullscreen */
 .tiptap-editor-wrapper.is-fullscreen .tiptap-source-mode {
     width: 100% !important;
     max-width: 1000px !important;
@@ -658,148 +651,4 @@
     min-height: calc(100vh - 120px) !important;
     max-height: none !important;
     margin: 0 auto !important;
-}
-
-/* Nổi bật nút Code HTML khi đang ở chế độ xem Code */
-.tp-btn.is-active-source {
-    background: #0f172a !important;
-    color: #38bdf8 !important;
-    border-color: #38bdf8 !important;
-}
-/* ==========================================================================
-   GIAO DIỆN NỔI: ẢNH CO GIÃN (RESIZE DRAG) & DI CHUYỂN VỊ TRÍ KIỂU WORD
-   ========================================================================== */
-
-.tp-image-node-view {
-    position: relative;
-    display: inline-block;
-    max-width: 100%;
-    vertical-align: middle;
-    transition: outline 0.15s ease;
-    border-radius: 8px;
-    box-sizing: border-box;
-}
-
-/* Viền xanh viền quanh khi rê chuột hoặc bấm chọn ảnh */
-.tp-image-node-view:hover,
-.tp-image-node-view.ProseMirror-selectednode {
-    outline: 2px solid #0062ff;
-}
-
-.tp-resizable-img {
-    width: 100%;
-    height: auto;
-    display: block;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-
-/* Thanh công cụ nổi phía trên ảnh */
-.tp-img-toolbar {
-    position: absolute;
-    top: -42px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #0f172a;
-    color: #ffffff;
-    padding: 4px 8px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease, top 0.2s ease;
-    z-index: 50;
-    white-space: nowrap;
-}
-
-.tp-image-node-view:hover .tp-img-toolbar,
-.tp-image-node-view.ProseMirror-selectednode .tp-img-toolbar {
-    opacity: 1;
-    pointer-events: auto;
-    top: -48px;
-}
-
-.tp-img-btn {
-    background: transparent;
-    border: none;
-    color: #cbd5e1;
-    padding: 4px 8px;
-    font-size: 0.78rem;
-    font-weight: bold;
-    border-radius: 4px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    transition: all 0.15s ease;
-}
-
-.tp-img-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-}
-
-.tp-img-btn.tp-img-del:hover {
-    background: #ef4444;
-    color: #ffffff;
-}
-
-.tp-img-sep {
-    color: #475569;
-    font-size: 0.8rem;
-    margin: 0 2px;
-}
-
-/* Nút tròn màu xanh ở góc dưới bên phải để nhấn giữ kéo co giãn */
-.tp-img-resizer {
-    position: absolute;
-    right: -6px;
-    bottom: -6px;
-    width: 14px;
-    height: 14px;
-    background: #0062ff;
-    border: 2px solid #ffffff;
-    border-radius: 50%;
-    cursor: nwse-resize;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    z-index: 40;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-}
-
-.tp-image-node-view:hover .tp-img-resizer,
-.tp-image-node-view.ProseMirror-selectednode .tp-img-resizer {
-    opacity: 1;
-}
-/* ==========================================================================
-   FIX LỖI: KHUNG NỀN TRẮNG TỰ ĐỘNG KÉO DÀI THEO NỘI DUNG SOẠN THẢO
-   ========================================================================== */
-
-/* 1. Ép thẻ nền trắng bên ngoài tự động mở rộng theo độ dài nội dung */
-#tab-post-editor .word-document-container,
-#tab-post-editor .form-card {
-    height: auto !important;
-    min-height: 100% !important;
-    display: flow-root !important; /* Tự động ôm trọn các phần tử con bên trong */
-    overflow: visible !important;
-    box-sizing: border-box !important;
-}
-
-/* 2. Đảm bảo khung bọc Tiptap nằm gọn 100% bên trong nền trắng */
-.tiptap-editor-wrapper {
-    width: 100% !important;
-    height: auto !important;
-    clear: both !important;
-    box-sizing: border-box !important;
-}
-
-/* 3. Khung chứa giấy gõ tự co giãn theo bài viết */
-.tiptap-paper-container {
-    height: auto !important;
-    min-height: 550px !important;
-    max-height: none !important; /* Bỏ giới hạn cứng để nền trắng tự kéo dài */
-    box-sizing: border-box !important;
 }

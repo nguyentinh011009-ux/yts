@@ -256,43 +256,102 @@
         </div>
     </div>
     
-    <!-- TIETAP EDITOR WORD CONTAINER -->
-    <div class="tiptap-editor-wrapper">
-        <!-- THANH CÔNG CỤ DẠNG WORD STICKY -->
-        <div id="tiptap-toolbar" class="tiptap-toolbar">
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('bold')" title="In đậm (Ctrl+B)"><i class="fas fa-bold"></i></button>
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('italic')" title="In nghiêng (Ctrl+I)"><i class="fas fa-italic"></i></button>
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('underline')" title="Gạch chân (Ctrl+U)"><i class="fas fa-underline"></i></button>
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('strike')" title="Gạch ngang"><i class="fas fa-strikethrough"></i></button>
-            <div class="tp-divider"></div>
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('h1')" title="Tiêu đề 1">H1</button>
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('h2')" title="Tiêu đề 2">H2</button>
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('h3')" title="Tiêu đề 3">H3</button>
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('paragraph')" title="Đoạn văn">P</button>
-            <div class="tp-divider"></div>
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('alignLeft')" title="Căn trái"><i class="fas fa-align-left"></i></button>
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('alignCenter')" title="Căn giữa"><i class="fas fa-align-center"></i></button>
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('alignRight')" title="Căn phải"><i class="fas fa-align-right"></i></button>
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('alignJustify')" title="Căn đều 2 bên"><i class="fas fa-align-justify"></i></button>
-            <div class="tp-divider"></div>
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('bulletList')" title="Danh sách chấm"><i class="fas fa-list-ul"></i></button>
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('orderedList')" title="Danh sách số"><i class="fas fa-list-ol"></i></button>
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('blockquote')" title="Trích dẫn"><i class="fas fa-quote-left"></i></button>
-            <div class="tp-divider"></div>
-            <input type="color" id="tp-color-picker" onchange="execTiptapCmd('color', this.value)" title="Màu chữ" style="width: 28px; height: 28px; padding: 0; border: none; cursor: pointer; background: transparent;">
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('unsetLink')" title="Bỏ Link"><i class="fas fa-unlink"></i></button>
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('horizontalRule')" title="Chèn đường kẻ ngang"><i class="fas fa-minus"></i></button>
-            <div class="tp-divider"></div>
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('undo')" title="Hoàn tác"><i class="fas fa-undo"></i></button>
-            <button type="button" class="tp-btn" onclick="execTiptapCmd('redo')" title="Làm lại"><i class="fas fa-redo"></i></button>
+<div class="tiptap-editor-wrapper">
+    <!-- THANH CÔNG CỤ DẠNG WORD FULL TÍNH NĂNG -->
+    <div id="tiptap-toolbar" class="tiptap-toolbar">
+        <!-- Font chữ & Cỡ chữ -->
+        <select class="tp-select" onchange="execTiptapCmd('fontFamily', this.value)" title="Font chữ">
+            <option value="">Font mặc định</option>
+            <option value="Arial">Arial</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Tahoma">Tahoma</option>
+            <option value="Verdana">Verdana</option>
+        </select>
+
+        <select class="tp-select" onchange="execTiptapCmd('fontSize', this.value)" title="Cỡ chữ">
+            <option value="">Cỡ chữ</option>
+            <option value="12px">12px</option>
+            <option value="14px">14px</option>
+            <option value="16px">16px (Chuẩn)</option>
+            <option value="18px">18px</option>
+            <option value="20px">20px</option>
+            <option value="24px">24px</option>
+            <option value="28px">28px</option>
+            <option value="32px">32px</option>
+            <option value="36px">36px</option>
+        </select>
+
+        <div class="tp-divider"></div>
+
+        <!-- Định dạng văn bản -->
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('bold')" title="In đậm"><i class="fas fa-bold"></i></button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('italic')" title="In nghiêng"><i class="fas fa-italic"></i></button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('underline')" title="Gạch chân"><i class="fas fa-underline"></i></button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('strike')" title="Gạch ngang"><i class="fas fa-strikethrough"></i></button>
+
+        <!-- Màu chữ & Màu nền chữ (Highlight) -->
+        <div class="tp-color-wrapper" title="Màu chữ">
+            <i class="fas fa-font" style="font-size:0.75rem;"></i>
+            <input type="color" onchange="execTiptapCmd('color', this.value)">
         </div>
 
-        <!-- KHUNG TRANG GIẤY WORD ĐỂ GÕ BÀI -->
-        <div class="tiptap-paper-container">
-            <div id="tiptap-editor" class="tiptap-paper"></div>
-            <textarea id="p-content-source" class="tiptap-source-mode" style="display:none;" placeholder="Dán code HTML trực tiếp vào đây..."></textarea>
+        <div class="tp-color-wrapper" title="Màu nền chữ (Highlight)">
+            <i class="fas fa-highlighter" style="font-size:0.75rem;"></i>
+            <input type="color" value="#fef08a" onchange="execTiptapCmd('highlight', this.value)">
         </div>
+
+        <div class="tp-divider"></div>
+
+        <!-- Căn chỉnh -->
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('alignLeft')" title="Căn trái"><i class="fas fa-align-left"></i></button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('alignCenter')" title="Căn giữa"><i class="fas fa-align-center"></i></button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('alignRight')" title="Căn phải"><i class="fas fa-align-right"></i></button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('alignJustify')" title="Căn đều"><i class="fas fa-align-justify"></i></button>
+
+        <div class="tp-divider"></div>
+
+        <!-- Heading & Danh sách -->
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('h1')" title="Tiêu đề 1">H1</button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('h2')" title="Tiêu đề 2">H2</button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('h3')" title="Tiêu đề 3">H3</button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('bulletList')" title="Danh sách chấm"><i class="fas fa-list-ul"></i></button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('orderedList')" title="Danh sách số"><i class="fas fa-list-ol"></i></button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('taskList')" title="Danh sách công việc (Checkbox)"><i class="fas fa-tasks"></i></button>
+
+        <div class="tp-divider"></div>
+
+        <!-- Blocks & Embeds -->
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('blockquote')" title="Trích dẫn"><i class="fas fa-quote-left"></i></button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('codeBlock')" title="Khối Mã Code"><i class="fas fa-code"></i></button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('math')" title="Công thức Toán (LaTeX)"><i class="fas fa-square-root-variable"></i></button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('youtube')" title="Chèn Video YouTube"><i class="fab fa-youtube" style="color:#ef4444;"></i></button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('link')" title="Chèn / Sửa Link"><i class="fas fa-link"></i></button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('unsetLink')" title="Bỏ Link"><i class="fas fa-unlink"></i></button>
+
+        <div class="tp-divider"></div>
+
+        <!-- Thao tác Bảng (Table) -->
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('insertTable')" title="Tạo Bảng 3x3"><i class="fas fa-table"></i></button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('addRowAfter')" title="Thêm Dòng"><i class="fas fa-plus-square"></i></button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('deleteRow')" title="Xóa Dòng"><i class="fas fa-minus-square"></i></button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('deleteTable')" title="Xóa Bảng"><i class="fas fa-trash-alt" style="color:#ef4444;"></i></button>
+
+        <div class="tp-divider"></div>
+
+        <!-- Khác -->
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('horizontalRule')" title="Đường kẻ ngang"><i class="fas fa-minus"></i></button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('undo')" title="Undo"><i class="fas fa-undo"></i></button>
+        <button type="button" class="tp-btn" onclick="execTiptapCmd('redo')" title="Redo"><i class="fas fa-redo"></i></button>
     </div>
+
+    <!-- KHUNG TRANG GIẤY WORD ĐỂ GÕ BÀI -->
+    <div class="tiptap-paper-container">
+        <div id="tiptap-editor" class="tiptap-paper"></div>
+        <textarea id="p-content-source" class="tiptap-source-mode" style="display:none;" placeholder="Dán code HTML trực tiếp vào đây..."></textarea>
+    </div>
+</div>
 </div>
             </section>
             <section id="tab-announce" class="tab-pane" style="display:none;">
@@ -1300,16 +1359,44 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
     <script type="module">
-        import { Editor } from 'https://esm.sh/@tiptap/core@2.1.13';
-        import StarterKit from 'https://esm.sh/@tiptap/starter-kit@2.1.13';
-        import Image from 'https://esm.sh/@tiptap/extension-image@2.1.13';
-        import Link from 'https://esm.sh/@tiptap/extension-link@2.1.13';
-        import Underline from 'https://esm.sh/@tiptap/extension-underline@2.1.13';
-        import TextAlign from 'https://esm.sh/@tiptap/extension-text-align@2.1.13';
-        import TextStyle from 'https://esm.sh/@tiptap/extension-text-style@2.1.13';
-        import Color from 'https://esm.sh/@tiptap/extension-color@2.1.13';
-        
-        window.TiptapModules = { Editor, StarterKit, Image, Link, Underline, TextAlign, TextStyle, Color };
+    import { Editor } from 'https://esm.sh/@tiptap/core@2.1.13';
+    import StarterKit from 'https://esm.sh/@tiptap/starter-kit@2.1.13';
+    import Image from 'https://esm.sh/@tiptap/extension-image@2.1.13';
+    import Link from 'https://esm.sh/@tiptap/extension-link@2.1.13';
+    import Underline from 'https://esm.sh/@tiptap/extension-underline@2.1.13';
+    import TextAlign from 'https://esm.sh/@tiptap/extension-text-align@2.1.13';
+    import TextStyle from 'https://esm.sh/@tiptap/extension-text-style@2.1.13';
+    import Color from 'https://esm.sh/@tiptap/extension-color@2.1.13';
+    import FontFamily from 'https://esm.sh/@tiptap/extension-font-family@2.1.13';
+    import Highlight from 'https://esm.sh/@tiptap/extension-highlight@2.1.13';
+    import Youtube from 'https://esm.sh/@tiptap/extension-youtube@2.1.13';
+    import Table from 'https://esm.sh/@tiptap/extension-table@2.1.13';
+    import TableRow from 'https://esm.sh/@tiptap/extension-table-row@2.1.13';
+    import TableHeader from 'https://esm.sh/@tiptap/extension-table-header@2.1.13';
+    import TableCell from 'https://esm.sh/@tiptap/extension-table-cell@2.1.13';
+    import TaskList from 'https://esm.sh/@tiptap/extension-task-list@2.1.13';
+    import TaskItem from 'https://esm.sh/@tiptap/extension-task-item@2.1.13';
+
+    const FontSize = TextStyle.extend({
+        addAttributes() {
+            return {
+                fontSize: {
+                    default: null,
+                    parseHTML: element => element.style.fontSize,
+                    renderHTML: attributes => {
+                        if (!attributes.fontSize) return {};
+                        return { style: `font-size: ${attributes.fontSize}` };
+                    },
+                },
+            };
+        },
+    });
+
+    window.TiptapModules = { 
+        Editor, StarterKit, Image, Link, Underline, TextAlign, TextStyle, 
+        Color, FontFamily, Highlight, Youtube, Table, TableRow, TableHeader, 
+        TableCell, TaskList, TaskItem, FontSize 
+    };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
     <script src="../assets/js/admin.js"></script>

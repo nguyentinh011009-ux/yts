@@ -223,7 +223,7 @@ function getDefaultArticleTemplate(themeColor = '#0062ff', title = 'TIÊU ĐỀ 
     return `<div class="vts-article-container">
 <style>
 .vts-article-container {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     line-height: 1.8;
     color: #2c3e50;
     max-width: 1000px;
@@ -231,7 +231,7 @@ function getDefaultArticleTemplate(themeColor = '#0062ff', title = 'TIÊU ĐỀ 
     padding: 10px;
 }
 .vts-article-container h1 {
-    color: ${themeColor}; /* 🎨 BẠN CÓ THỂ ĐỔI MÀU TIÊU ĐỀ TẠI ĐÂY */
+    color: ${themeColor}; /* 🎨 MÀU CHỦ ĐỀ CHÍNH */
     font-size: clamp(20px, 4vw, 28px);
     border-bottom: 2px solid ${themeColor};
     padding-bottom: 8px;
@@ -264,11 +264,27 @@ function getDefaultArticleTemplate(themeColor = '#0062ff', title = 'TIÊU ĐỀ 
     margin: 18px 0;
     color: #991b1b;
 }
+
+/* 🎨 BỔ SUNG CSS HIỆU ỨNG BẤM VÀO ẢNH ĐỂ PHÓNG TO */
+.vts-article-container a.vts-img-zoom-link {
+    display: block;
+    width: 100%;
+    text-align: center;
+    text-decoration: none;
+    transition: transform 0.25s ease, filter 0.25s ease;
+    margin: 15px 0;
+}
+.vts-article-container a.vts-img-zoom-link:hover {
+    transform: scale(1.015);
+    filter: brightness(1.03);
+}
 .vts-article-container img {
     width: 100%;
     max-width: 1000px;
     border-radius: 10px;
-    margin: 15px 0;
+    margin: 15px auto;
+    display: block;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
 </style>
 
@@ -280,6 +296,13 @@ function getDefaultArticleTemplate(themeColor = '#0062ff', title = 'TIÊU ĐỀ 
 
 <h2>1. Mục đầu tiên của bài viết</h2>
 <p>Nhập nội dung chi tiết bài viết ở đây...</p>
+
+<!-- 🌟 MẪU ẢNH CÓ LINK BẤM VÀO ĐỂ PHÓNG TO (MỞ TAB MỚI) -->
+<p style="text-align:center;">
+    <a href="https://res.cloudinary.com/dsnlbzjby/image/upload/v1783588902/ChatGPT_Image_16_16_04_9_thg_7_2026_yasl0f.png" target="_blank" rel="noopener noreferrer" class="vts-img-zoom-link" title="Bấm vào để xem ảnh phóng to">
+        <img src="https://res.cloudinary.com/dsnlbzjby/image/upload/v1783588902/ChatGPT_Image_16_16_04_9_thg_7_2026_yasl0f.png" alt="Poster chăm sóc sức khỏe" data-alignment="center" style="width: 100%; max-width: 100%; display: block; margin: 15px auto; border-radius: 10px; cursor: pointer;" />
+    </a>
+</p>
 
 <div class="important-box">
     ⚠️ <strong>Lưu ý quan trọng:</strong> Nội dung cảnh báo hoặc thông tin đặc biệt cần chú ý.

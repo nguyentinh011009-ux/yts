@@ -380,7 +380,20 @@ function searchPickerFiles(kw) {
 
 let tiptapEditor = null;
 window.isSourceViewMode = false;
+let currentStyleBlock = '';
 
+function extractStyleBlock(html) {
+    if (!html) return { style: '', body: '' };
+    let styleMatches = [];
+    let body = html.replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, (match) => {
+        styleMatches.push(match);
+        return '';
+    });
+    return {
+        style: styleMatches.join('\n'),
+        body: body.trim()
+    };
+}
 // Gắn hàm initCKEditor vào window để toàn hệ thống (app.js) gọi được
 window.initCKEditor = function(callback) {
     if (tiptapEditor) {
@@ -389,12 +402,10 @@ window.initCKEditor = function(callback) {
     }
 
     if (!window.TiptapModules) {
-        // Chờ ESM Modules tải xong từ CDN
         setTimeout(() => window.initCKEditor(callback), 150);
         return;
     }
 
-    // Bóc tách toàn bộ Modules đã nạp từ HTML
     const { 
         Editor, StarterKit, Image, Link, Underline, TextAlign, TextStyle, 
         Color, FontFamily, Highlight, Youtube, Table, TableRow, TableHeader, 
@@ -403,6 +414,9 @@ window.initCKEditor = function(callback) {
 
     const sourceArea = document.getElementById('p-content-source');
     const initialContent = sourceArea ? sourceArea.value : '';
+    
+    const extracted = extractStyleBlock(initialContent);
+    currentStyleBlock = extracted.style;
 
     tiptapEditor = new Editor({
         element: document.getElementById('tiptap-editor'),
@@ -415,9 +429,9 @@ window.initCKEditor = function(callback) {
             FontFamily,
             Highlight.configure({ multicolors: true }),
             Image.configure({ allowBase64: true }),
-            Link.configure({ openOnClick: false, autolink: true }), // Tự động nhận diện URL
+            Link.configure({ openOnClick: false, autolink: true }),
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
-            Youtube.configure({ controls: true, nocookie: true }), // Iframe Youtube
+            Youtube.configure({ controls: true, nocookie: true }),
             Table.configure({ resizable: true }),
             TableRow,
             TableHeader,
@@ -425,31 +439,41 @@ window.initCKEditor = function(callback) {
             TaskList,
             TaskItem.configure({ nested: true })
         ],
-        content: initialContent
+        content: extracted.body
     });
 
-    console.log("✅ Trình soạn thảo Tiptap Full Tính Năng đã sẵn sàng!");
+    console.log("✅ Trình soạn thảo Tiptap Full Tính Năng & Bảo toàn CSS đã sẵn sàng!");
     if (typeof callback === 'function') callback();
 };
 
 // Lấy nội dung HTML từ Editor
 window.getEditorContent = function() {
     if (window.isSourceViewMode) {
-        return document.getElementById('p-content-source').value;
+        const sourceVal = document.getElementById('p-content-source').value;
+        const extracted = extractStyleBlock(sourceVal);
+        currentStyleBlock = extracted.style;
+        return sourceVal;
     }
-    return tiptapEditor ? tiptapEditor.getHTML() : '';
+    
+    const editorHtml = tiptapEditor ? tiptapEditor.getHTML() : '';
+    
+    // Ghép khối CSS <style> vào đầu bài viết nếu có
+    if (currentStyleBlock && currentStyleBlock.trim() !== '') {
+        return `${currentStyleBlock}\n${editorHtml}`;
+    }
+    return editorHtml;
 };
-
-// Bơm nội dung HTML vào Editor
 window.setEditorContent = function(html = '') {
     const sourceArea = document.getElementById('p-content-source');
+    const extracted = extractStyleBlock(html);
+    currentStyleBlock = extracted.style;
+
     if (sourceArea) sourceArea.value = html || '';
 
     if (tiptapEditor) {
-        tiptapEditor.commands.setContent(html || '');
+        tiptapEditor.commands.setContent(extracted.body || '');
     }
 };
-
 // Chèn Media (Ảnh/Video/File)
 window.insertMediaToEditor = function(url, resourceType, fileName) {
     if (!tiptapEditor) return;
@@ -551,26 +575,25 @@ window.toggleSourceView = function() {
     const btnSource = document.getElementById('btn-tp-source');
 
     if (!window.isSourceViewMode) {
-        // Chuyển sang chế độ Xem / Sửa Code HTML
-        source.value = tiptapEditor ? tiptapEditor.getHTML() : '';
+        // Chuyển từ Word -> HTML
+        const bodyHtml = tiptapEditor ? tiptapEditor.getHTML() : '';
+        source.value = currentStyleBlock ? `${currentStyleBlock}\n${bodyHtml}` : bodyHtml;
         paper.style.display = 'none';
         source.style.display = 'block';
         window.isSourceViewMode = true;
-        
-        // Đổi màu nút HTML trên Toolbar để báo hiệu
         if (btnSource) btnSource.classList.add('is-active-source');
     } else {
-        // Chuyển lại về giao diện soạn thảo trực quan Word
-        if (tiptapEditor) tiptapEditor.commands.setContent(source.value);
+        // Chuyển từ HTML -> Word
+        const sourceVal = source.value;
+        const extracted = extractStyleBlock(sourceVal);
+        currentStyleBlock = extracted.style;
+        if (tiptapEditor) tiptapEditor.commands.setContent(extracted.body);
         source.style.display = 'none';
         paper.style.display = 'block';
         window.isSourceViewMode = false;
-        
-        // Trả màu nút HTML về bình thường
         if (btnSource) btnSource.classList.remove('is-active-source');
     }
 };
-
 // Tích hợp Cloudinary & Media Picker
 function openCloudinaryWidgetForEditor() {
     if (typeof cloudinary === 'undefined') return sysAlert("Chưa tải xong thư viện Cloudinary!", "error");

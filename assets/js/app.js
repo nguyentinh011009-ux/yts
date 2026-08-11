@@ -7,8 +7,6 @@ const CLOUDINARY_CONFIG = {
     uploadPreset: 'yte_thptvothisau' // Tên Unsigned Upload Preset tạo trên Cloudinary Dashboard
 };
 
-let ckEditorInstance = null; // Quản lý instance của CKEditor 5
-let isSourceViewMode = false;
 // --- 1. KHỞI TẠO BIẾN TOÀN CỤC ---
 let sliderInterval = null;
 let allPosts = [];
@@ -3945,31 +3943,4 @@ function openCloudinaryWidgetGeneral() {
             sysAlert(`Đã tải file thành công!\nURL: ${result.info.secure_url}`, "success");
         }
     });
-}
-
-// 4. Chuyển đổi giữa chế độ CKEditor (Trực quan) và Mã HTML Thô
-function toggleSourceView() {
-    if (!ckEditorInstance) return;
-
-    // Lấy plugin SourceEditing của CKEditor 5
-    const sourceEditingPlugin = ckEditorInstance.plugins.get('SourceEditing');
-    if (sourceEditingPlugin) {
-        sourceEditingPlugin.isSourceEditingMode = !sourceEditingPlugin.isSourceEditingMode;
-    } else {
-        // Fallback thủ công nếu xem dạng Textarea
-        const editorContainer = ckEditorInstance.ui.view.element;
-        const textarea = document.getElementById('p-content');
-
-        if (!isSourceViewMode) {
-            textarea.value = ckEditorInstance.getData();
-            editorContainer.style.display = 'none';
-            textarea.style.display = 'block';
-            isSourceViewMode = true;
-        } else {
-            ckEditorInstance.setData(textarea.value);
-            textarea.style.display = 'none';
-            editorContainer.style.display = 'block';
-            isSourceViewMode = false;
-        }
-    }
 }

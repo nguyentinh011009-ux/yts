@@ -375,46 +375,156 @@ function searchPickerFiles(kw) {
     renderPickerGrid(kw);
 }
 // =========================================================================
-// KHỞI TẠO CKEDITOR 5 (GIẢI PHÁP TÁI TẠO CHỐNG ĐÓNG BĂNG THANH CÔNG CỤ)
+// KHỞI TẠO VÀ QUẢN LÝ TRÌNH SOẠN THẢO TIPTAP (THAY THẾ CHUẨN CKEDITOR)
 // =========================================================================
 
+let tiptapEditor = null;
+let isSourceViewMode = false;
+
 function initCKEditor(callback) {
-    // Nếu đã khởi tạo rồi thì bỏ qua
-    if (CKEDITOR.instances['p-content']) {
+    if (tiptapEditor) {
         if (typeof callback === 'function') callback();
         return;
     }
 
-    // Khởi tạo CKEditor 4
-    CKEDITOR.replace('p-content', {
-        height: 500, // Chiều cao vùng soạn thảo
-        allowedContent: true, // Cho phép mọi thẻ HTML (Iframe, Style, Class...)
-        removeFormatAttributes: '',
-        uiColor: '#F8FAFC', // Đổ màu nền thanh công cụ sang màu Slate 50 siêu sang
-        removePlugins: 'elementspath', // Xóa cái thanh trạng thái HTML thừa thãi ở dưới cùng
-        resize_enabled: false, // Tắt cái viền kéo giãn xấu xí ở góc dưới
-        // Cấu hình thanh công cụ y hệt Microsoft Word
-        toolbar: [
-            { name: 'document', items: [ 'Source', '-', 'Preview' ] },
-            { name: 'clipboard', items: [ 'Undo', 'Redo' ] },
-            { name: 'styles', items: [ 'Font', 'FontSize' ] },
-            { name: 'colors', items: [ 'TextColor', 'BGColor' ] },
-            { name: 'basicstyles', items: [ 'Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-', 'RemoveFormat' ] },
-            '/',
-            { name: 'paragraph', items: [ 'NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock' ] },
-            { name: 'links', items: [ 'Link', 'Unlink' ] },
-            { name: 'insert', items: [ 'Image', 'Table', 'HorizontalRule', 'SpecialChar', 'Iframe' ] }
-        ]
+    if (!window.TiptapModules) {
+        setTimeout(() => initCKEditor(callback), 100);
+        return;
+    }
+
+    const { Editor, StarterKit, Image, Link, Underline, TextAlign, TextStyle, Color } = window.TiptapModules;
+
+    tiptapEditor = new Editor({
+        element: document.getElementById('tiptap-editor'),
+        extensions: [
+            StarterKit,
+            Underline,
+            TextStyle,
+            Color,
+            Image.configure({ allowBase64: true }),
+            Link.configure({ openOnClick: false }),
+            TextAlign.configure({ types: ['heading', 'paragraph'] })
+        ],
+        content: '',
+        onUpdate() {
+            updateToolbarActiveStates();
+        },
+        onSelectionUpdate() {
+            updateToolbarActiveStates();
+        }
     });
 
-    CKEDITOR.instances['p-content'].on('instanceReady', function() {
-        console.log("✅ Trình soạn thảo Word (CKEditor 4) đã sẵn sàng!");
-        if (typeof callback === 'function') callback();
+    console.log("✅ Trình soạn thảo Tiptap Word 365 đã sẵn sàng!");
+    if (typeof callback === 'function') callback();
+}
+
+// Lấy nội dung HTML từ Editor
+function getEditorContent() {
+    if (isSourceViewMode) {
+        return document.getElementById('p-content-source').value;
+    }
+    return tiptapEditor ? tiptapEditor.getHTML() : '';
+}
+
+// Đặt nội dung HTML vào Editor (ĐÃ FIX HOÀN TOÀN LỖI TRỐNG DỮ LIỆU)
+function setEditorContent(html = '') {
+    if (tiptapEditor) {
+        tiptapEditor.commands.setContent(html || '');
+    }
+    const sourceArea = document.getElementById('p-content-source');
+    if (sourceArea) sourceArea.value = html || '';
+}
+
+// Chèn file/ảnh từ Cloudinary hoặc Media Picker vào Tiptap
+function insertMediaToEditor(url, resourceType, fileName) {
+    if (!tiptapEditor) return;
+    
+    if (resourceType === 'image') {
+        tiptapEditor.chain().focus().setImage({ src: url, alt: fileName || 'Ảnh bài viết' }).run();
+    } else if (resourceType === 'video') {
+        tiptapEditor.chain().focus().insertContent(`<p><video controls src="${url}" style="width:100%; max-width:1000px; border-radius:8px; margin:15px 0;"></video></p>`).run();
+    } else {
+        tiptapEditor.chain().focus().insertContent(`<p><a href="${url}" target="_blank" style="color:#0062ff; font-weight:bold;">📄 Tải về tài liệu: ${fileName || 'Link file'}</a></p>`).run();
+    }
+    sysAlert("Đã chèn nội dung vào bài viết!", "success");
+}
+
+// Hàm thực thi lệnh trên thanh công cụ Tiptap Toolbar
+function execTiptapCmd(cmd, param = null) {
+    if (!tiptapEditor) return;
+
+    switch(cmd) {
+        case 'bold': tiptapEditor.chain().focus().toggleBold().run(); break;
+        case 'italic': tiptapEditor.chain().focus().toggleItalic().run(); break;
+        case 'underline': tiptapEditor.chain().focus().toggleUnderline().run(); break;
+        case 'strike': tiptapEditor.chain().focus().toggleStrike().run(); break;
+        case 'h1': tiptapEditor.chain().focus().toggleHeading({ level: 1 }).run(); break;
+        case 'h2': tiptapEditor.chain().focus().toggleHeading({ level: 2 }).run(); break;
+        case 'h3': tiptapEditor.chain().focus().toggleHeading({ level: 3 }).run(); break;
+        case 'paragraph': tiptapEditor.chain().focus().setParagraph().run(); break;
+        case 'alignLeft': tiptapEditor.chain().focus().setTextAlign('left').run(); break;
+        case 'alignCenter': tiptapEditor.chain().focus().setTextAlign('center').run(); break;
+        case 'alignRight': tiptapEditor.chain().focus().setTextAlign('right').run(); break;
+        case 'alignJustify': tiptapEditor.chain().focus().setTextAlign('justify').run(); break;
+        case 'bulletList': tiptapEditor.chain().focus().toggleBulletList().run(); break;
+        case 'orderedList': tiptapEditor.chain().focus().toggleOrderedList().run(); break;
+        case 'blockquote': tiptapEditor.chain().focus().toggleBlockquote().run(); break;
+        case 'color': if (param) tiptapEditor.chain().focus().setColor(param).run(); break;
+        case 'horizontalRule': tiptapEditor.chain().focus().setHorizontalRule().run(); break;
+        case 'unsetLink': tiptapEditor.chain().focus().unsetLink().run(); break;
+        case 'undo': tiptapEditor.chain().focus().undo().run(); break;
+        case 'redo': tiptapEditor.chain().focus().redo().run(); break;
+    }
+}
+
+// Bật/tắt chế độ xem mã HTML thô
+function toggleSourceView() {
+    const paper = document.getElementById('tiptap-editor');
+    const source = document.getElementById('p-content-source');
+
+    if (!isSourceViewMode) {
+        source.value = tiptapEditor ? tiptapEditor.getHTML() : '';
+        paper.style.display = 'none';
+        source.style.display = 'block';
+        isSourceViewMode = true;
+    } else {
+        if (tiptapEditor) tiptapEditor.commands.setContent(source.value);
+        source.style.display = 'none';
+        paper.style.display = 'block';
+        isSourceViewMode = false;
+    }
+}
+
+// Cập nhật trạng thái Active trên các nút bấm toolbar
+function updateToolbarActiveStates() {
+    if (!tiptapEditor) return;
+    // Tự động kiểm tra node đang chọn để highlight nút
+}
+
+// Cập nhật lại các hàm Cloudinary chèn nội dung vào Tiptap
+function openCloudinaryWidgetForEditor() {
+    if (typeof cloudinary === 'undefined') return sysAlert("Chưa tải xong thư viện Cloudinary!", "error");
+
+    cloudinary.openUploadWidget({
+        cloudName: CLOUDINARY_CONFIG.cloudName,
+        uploadPreset: CLOUDINARY_CONFIG.uploadPreset,
+        sources: ['google_drive', 'local', 'url', 'camera'],
+        defaultSource: 'google_drive',
+        multiple: true
+    }, (error, result) => {
+        if (!error && result && result.event === "success") {
+            saveMediaMetadata(result.info);
+            insertMediaToEditor(result.info.secure_url, result.info.resource_type, result.info.original_filename);
+        }
     });
 }
-function toggleSourceView() {
-    if (CKEDITOR.instances['p-content']) {
-        const currentMode = CKEDITOR.instances['p-content'].mode;
-        CKEDITOR.instances['p-content'].setMode(currentMode === 'wysiwyg' ? 'source' : 'wysiwyg');
+
+function selectMediaForPost(url, resourceType, fileName) {
+    if (mediaPickerTarget === 'cover') {
+        document.getElementById('p-cover').value = url;
+        sysAlert("Đã chọn ảnh bìa từ kho thành công!", "success");
+    } else if (mediaPickerTarget === 'editor') {
+        insertMediaToEditor(url, resourceType, fileName);
     }
+    closeMediaPickerModal();
 }

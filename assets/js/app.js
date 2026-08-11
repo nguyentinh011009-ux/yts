@@ -4055,3 +4055,14 @@ function openCloudinaryWidgetGeneral() {
         }
     });
 }
+// Hàm hỗ trợ chèn mẫu giao diện bài viết nhanh kèm chọn màu
+function applyPresetTemplate() {
+    const color = prompt("Nhập mã màu chủ đề bài viết (Mã Hex hoặc tên màu Tiếng Anh):", "#0062ff");
+    if (!color) return;
+    
+    const titleVal = document.getElementById('p-title').value.trim() || 'TIÊU ĐỀ BÀI VIẾT';
+    const templateHtml = getDefaultArticleTemplate(color, titleVal);
+    
+    setEditorContent(templateHtml);
+    sysAlert("Đã áp dụng Mẫu CSS mới với màu chủ đề: " + color, "success");
+}

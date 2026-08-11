@@ -1470,11 +1470,25 @@
             };
         },
         renderHTML({ HTMLAttributes }) {
-            const { href, ...imgAttrs } = HTMLAttributes;
-            // Nếu có bật Zoom thì xuất ra thẻ <a href="..." target="_blank"><img ...></a>
-            if (href) {
-                return ['a', { href: href, target: '_blank', rel: 'noopener noreferrer', class: 'vts-img-zoom-link', title: 'Bấm vào để xem ảnh phóng to' }, ['img', imgAttrs]];
+            // Lấy link phóng to từ 'data-href' do Tiptap đã chuyển đổi
+            const linkUrl = HTMLAttributes['data-href'];
+            
+            // Tạo bản sao các thuộc tính và xóa data-href đi để thẻ <img> hiển thị sạch sẽ
+            let imgAttrs = { ...HTMLAttributes };
+            delete imgAttrs['data-href'];
+
+            // Nếu có tick Zoom (có linkUrl) -> Bọc thẻ <a> ra ngoài thẻ <img>
+            if (linkUrl) {
+                return ['a', { 
+                    href: linkUrl, 
+                    target: '_blank', 
+                    rel: 'noopener noreferrer', 
+                    class: 'vts-img-zoom-link', 
+                    title: 'Bấm vào để xem ảnh phóng to' 
+                }, ['img', imgAttrs]];
             }
+            
+            // Nếu không tick Zoom -> Chỉ xuất thẻ <img> bình thường
             return ['img', imgAttrs];
         },
 addNodeView() {

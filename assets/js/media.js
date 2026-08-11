@@ -479,16 +479,31 @@ window.setEditorContent = function(html = '') {
 window.insertMediaToEditor = function(url, resourceType, fileName) {
     if (!tiptapEditor) return;
     
+    // Kiểm tra ô tick Tự động bật link phóng to (Nếu không tìm thấy mặc định là true)
+    const chkZoom = document.getElementById('chk-auto-image-zoom');
+    const isEnableZoom = chkZoom ? chkZoom.checked : true;
+
     if (resourceType === 'image') {
-        tiptapEditor.chain().focus().setImage({ src: url, alt: fileName || 'Ảnh bài viết' }).run();
+        if (isEnableZoom) {
+            // Chèn Ảnh bọc trong thẻ <a href="..." target="_blank"> chuẩn SEO & Phóng to
+            tiptapEditor.chain().focus().insertContent(`
+                <p style="text-align:center;">
+                    <a href="${url}" target="_blank" rel="noopener noreferrer" class="vts-img-zoom-link" title="Bấm vào để xem ảnh phóng to">
+                        <img src="${url}" alt="${fileName || 'Poster chăm sóc sức khỏe'}" data-alignment="center" style="width:100%; max-width:100%; display:block; margin:15px auto; border-radius:10px; cursor:pointer;" />
+                    </a>
+                </p>
+            `).run();
+        } else {
+            // Chèn Ảnh thường không có link
+            tiptapEditor.chain().focus().setImage({ src: url, alt: fileName || 'Ảnh bài viết' }).run();
+        }
     } else if (resourceType === 'video') {
-        tiptapEditor.chain().focus().insertContent(`<p><video controls src="${url}" style="width:100%; max-width:1000px; border-radius:8px; margin:15px 0;"></video></p>`).run();
+        tiptapEditor.chain().focus().insertContent(`<p style="text-align:center;"><video controls src="${url}" style="width:100%; max-width:1000px; border-radius:12px; margin:15px auto;"></video></p>`).run();
     } else {
         tiptapEditor.chain().focus().insertContent(`<p><a href="${url}" target="_blank" style="color:#0062ff; font-weight:bold;">📄 Tải về tài liệu: ${fileName || 'Link file'}</a></p>`).run();
     }
     sysAlert("Đã chèn nội dung vào bài viết!", "success");
 };
-
 // XỬ LÝ TOÀN BỘ LỆNH CỦA THANH CÔNG CỤ TOOLBAR
 window.execTiptapCmd = function(cmd, param = null) {
     if (!tiptapEditor) return;

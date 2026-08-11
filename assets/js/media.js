@@ -422,6 +422,7 @@ window.initCKEditor = function(callback) {
         element: document.getElementById('tiptap-editor'),
         extensions: [
             StarterKit,
+            CustomDiv,
             Underline,
             TextStyle,
             FontSize,

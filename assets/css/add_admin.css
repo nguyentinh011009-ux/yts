@@ -666,3 +666,111 @@
     color: #38bdf8 !important;
     border-color: #38bdf8 !important;
 }
+/* ==========================================================================
+   GIAO DIỆN NỔI: ẢNH CO GIÃN (RESIZE DRAG) & DI CHUYỂN VỊ TRÍ KIỂU WORD
+   ========================================================================== */
+
+.tp-image-node-view {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    vertical-align: middle;
+    transition: outline 0.15s ease;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+/* Viền xanh viền quanh khi rê chuột hoặc bấm chọn ảnh */
+.tp-image-node-view:hover,
+.tp-image-node-view.ProseMirror-selectednode {
+    outline: 2px solid #0062ff;
+}
+
+.tp-resizable-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* Thanh công cụ nổi phía trên ảnh */
+.tp-img-toolbar {
+    position: absolute;
+    top: -42px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0f172a;
+    color: #ffffff;
+    padding: 4px 8px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, top 0.2s ease;
+    z-index: 50;
+    white-space: nowrap;
+}
+
+.tp-image-node-view:hover .tp-img-toolbar,
+.tp-image-node-view.ProseMirror-selectednode .tp-img-toolbar {
+    opacity: 1;
+    pointer-events: auto;
+    top: -48px;
+}
+
+.tp-img-btn {
+    background: transparent;
+    border: none;
+    color: #cbd5e1;
+    padding: 4px 8px;
+    font-size: 0.78rem;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+}
+
+.tp-img-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.tp-img-btn.tp-img-del:hover {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+.tp-img-sep {
+    color: #475569;
+    font-size: 0.8rem;
+    margin: 0 2px;
+}
+
+/* Nút tròn màu xanh ở góc dưới bên phải để nhấn giữ kéo co giãn */
+.tp-img-resizer {
+    position: absolute;
+    right: -6px;
+    bottom: -6px;
+    width: 14px;
+    height: 14px;
+    background: #0062ff;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    cursor: nwse-resize;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 40;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.tp-image-node-view:hover .tp-img-resizer,
+.tp-image-node-view.ProseMirror-selectednode .tp-img-resizer {
+    opacity: 1;
+}

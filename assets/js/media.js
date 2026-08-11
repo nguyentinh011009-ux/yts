@@ -419,24 +419,23 @@ function initCKEditor(callback) {
 }
 
 // Lấy nội dung HTML từ Editor
-function getEditorContent() {
-    if (isSourceViewMode) {
+window.getEditorContent = function() {
+    if (window.isSourceViewMode) {
         return document.getElementById('p-content-source').value;
     }
     return tiptapEditor ? tiptapEditor.getHTML() : '';
-}
+};
 
-// Đặt nội dung HTML vào Editor (ĐÃ FIX HOÀN TOÀN LỖI TRỐNG DỮ LIỆU)
-function setEditorContent(html = '') {
+window.setEditorContent = function(html = '') {
+    const sourceArea = document.getElementById('p-content-source');
+    if (sourceArea) sourceArea.value = html || '';
+
     if (tiptapEditor) {
         tiptapEditor.commands.setContent(html || '');
     }
-    const sourceArea = document.getElementById('p-content-source');
-    if (sourceArea) sourceArea.value = html || '';
-}
+};
 
-// Chèn file/ảnh từ Cloudinary hoặc Media Picker vào Tiptap
-function insertMediaToEditor(url, resourceType, fileName) {
+window.insertMediaToEditor = function(url, resourceType, fileName) {
     if (!tiptapEditor) return;
     
     if (resourceType === 'image') {
@@ -447,10 +446,9 @@ function insertMediaToEditor(url, resourceType, fileName) {
         tiptapEditor.chain().focus().insertContent(`<p><a href="${url}" target="_blank" style="color:#0062ff; font-weight:bold;">📄 Tải về tài liệu: ${fileName || 'Link file'}</a></p>`).run();
     }
     sysAlert("Đã chèn nội dung vào bài viết!", "success");
-}
+};
 
-// Hàm thực thi lệnh trên thanh công cụ Tiptap Toolbar
-function execTiptapCmd(cmd, param = null) {
+window.execTiptapCmd = function(cmd, param = null) {
     if (!tiptapEditor) return;
 
     switch(cmd) {
@@ -475,25 +473,24 @@ function execTiptapCmd(cmd, param = null) {
         case 'undo': tiptapEditor.chain().focus().undo().run(); break;
         case 'redo': tiptapEditor.chain().focus().redo().run(); break;
     }
-}
+};
 
-// Bật/tắt chế độ xem mã HTML thô
-function toggleSourceView() {
+window.toggleSourceView = function() {
     const paper = document.getElementById('tiptap-editor');
     const source = document.getElementById('p-content-source');
 
-    if (!isSourceViewMode) {
+    if (!window.isSourceViewMode) {
         source.value = tiptapEditor ? tiptapEditor.getHTML() : '';
         paper.style.display = 'none';
         source.style.display = 'block';
-        isSourceViewMode = true;
+        window.isSourceViewMode = true;
     } else {
         if (tiptapEditor) tiptapEditor.commands.setContent(source.value);
         source.style.display = 'none';
         paper.style.display = 'block';
-        isSourceViewMode = false;
+        window.isSourceViewMode = false;
     }
-}
+};
 
 // Cập nhật trạng thái Active trên các nút bấm toolbar
 function updateToolbarActiveStates() {

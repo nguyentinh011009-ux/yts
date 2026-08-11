@@ -1392,6 +1392,7 @@
     import TaskList from 'https://esm.sh/@tiptap/extension-task-list@2.1.13';
     import TaskItem from 'https://esm.sh/@tiptap/extension-task-item@2.1.13';
 
+    // Tạo Extension FontSize
     const FontSize = TextStyle.extend({
         addAttributes() {
             return {
@@ -1407,8 +1408,165 @@
         },
     });
 
+    // EXTENSION ẢNH CO GIÃN & BAO QUANH CHỮ KIỂU WORD
+    const ResizableImage = Image.extend({
+        addAttributes() {
+            return {
+                ...this.parent?.(),
+                width: {
+                    default: '100%',
+                    parseHTML: el => el.style.width || el.getAttribute('width') || '100%',
+                    renderHTML: attrs => ({ style: `width: ${attrs.width}; max-width: 100%;` })
+                },
+                alignment: {
+                    default: 'center',
+                    parseHTML: el => el.getAttribute('data-alignment') || 'center',
+                    renderHTML: attrs => {
+                        let alignStyle = 'display: block; margin: 15px auto;';
+                        if (attrs.alignment === 'left') alignStyle = 'display: block; margin: 15px auto 15px 0; float: none;';
+                        else if (attrs.alignment === 'right') alignStyle = 'display: block; margin: 15px 0 15px auto; float: none;';
+                        else if (attrs.alignment === 'float-left') alignStyle = 'float: left; margin: 5px 20px 15px 0;';
+                        else if (attrs.alignment === 'float-right') alignStyle = 'float: right; margin: 5px 0 15px 20px;';
+                        
+                        return {
+                            'data-alignment': attrs.alignment,
+                            style: `width: ${attrs.width}; max-width: 100%; ${alignStyle}`
+                        };
+                    }
+                }
+            };
+        },
+        addNodeView() {
+            return ({ node, getPos, editor }) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'tp-image-node-view';
+                
+                const align = node.attrs.alignment || 'center';
+                const width = node.attrs.width || '100%';
+
+                wrapper.setAttribute('data-alignment', align);
+                wrapper.style.width = width;
+                
+                const applyStyle = (a) => {
+                    wrapper.style.float = 'none';
+                    wrapper.style.display = 'inline-block';
+                    wrapper.style.margin = '0';
+                    if (a === 'center') wrapper.style.cssText += 'display: block; margin: 15px auto; float: none;';
+                    else if (a === 'left') wrapper.style.cssText += 'display: block; margin: 15px auto 15px 0; float: none;';
+                    else if (a === 'right') wrapper.style.cssText += 'display: block; margin: 15px 0 15px auto; float: none;';
+                    else if (a === 'float-left') wrapper.style.cssText += 'float: left; margin: 5px 20px 15px 0;';
+                    else if (a === 'float-right') wrapper.style.cssText += 'float: right; margin: 5px 0 15px 20px;';
+                };
+                applyStyle(align);
+
+                const img = document.createElement('img');
+                img.src = node.attrs.src;
+                img.alt = node.attrs.alt || '';
+                img.className = 'tp-resizable-img';
+
+                // Thanh công cụ nổi tương tác trực tiếp
+                const toolbar = document.createElement('div');
+                toolbar.className = 'tp-img-toolbar';
+                toolbar.innerHTML = `
+                    <button type="button" class="tp-img-btn" data-align="float-left" title="Chữ bao quanh bên phải"><i class="fas fa-indent"></i> Trôi Trái</button>
+                    <button type="button" class="tp-img-btn" data-align="center" title="Căn giữa"><i class="fas fa-align-center"></i> Giữa</button>
+                    <button type="button" class="tp-img-btn" data-align="float-right" title="Chữ bao quanh bên trái"><i class="fas fa-outdent"></i> Trôi Phải</button>
+                    <span class="tp-img-sep">|</span>
+                    <button type="button" class="tp-img-btn" data-size="25%">25%</button>
+                    <button type="button" class="tp-img-btn" data-size="50%">50%</button>
+                    <button type="button" class="tp-img-btn" data-size="75%">75%</button>
+                    <button type="button" class="tp-img-btn" data-size="100%">100%</button>
+                    <span class="tp-img-sep">|</span>
+                    <button type="button" class="tp-img-btn tp-img-del" title="Xóa ảnh"><i class="fas fa-trash"></i></button>
+                `;
+
+                toolbar.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.tp-img-btn');
+                    if (!btn) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    if (typeof getPos !== 'function') return;
+
+                    if (btn.classList.contains('tp-img-del')) {
+                        editor.chain().focus().deleteRange({ from: getPos(), to: getPos() + 1 }).run();
+                        return;
+                    }
+
+                    const newAlign = btn.getAttribute('data-align');
+                    const newSize = btn.getAttribute('data-size');
+
+                    let attrs = { ...node.attrs };
+                    if (newAlign) attrs.alignment = newAlign;
+                    if (newSize) attrs.width = newSize;
+
+                    editor.chain().focus().command(({ tr }) => {
+                        tr.setNodeMarkup(getPos(), undefined, attrs);
+                        return true;
+                    }).run();
+                });
+
+                // Con trượt kéo chuột đổi kích thước ở góc dưới bên phải
+                const resizer = document.createElement('div');
+                resizer.className = 'tp-img-resizer';
+                
+                let startX, startWidth;
+                resizer.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    startX = e.clientX;
+                    startWidth = wrapper.offsetWidth;
+
+                    const onMouseMove = (moveEvt) => {
+                        const currentX = moveEvt.clientX;
+                        const diffX = currentX - startX;
+                        const parentWidth = wrapper.parentElement ? wrapper.parentElement.offsetWidth : 800;
+                        let newWidthPx = Math.max(100, Math.min(parentWidth, startWidth + diffX));
+                        let newWidthPercent = Math.round((newWidthPx / parentWidth) * 100) + '%';
+                        wrapper.style.width = newWidthPercent;
+                    };
+
+                    const onMouseUp = () => {
+                        document.removeEventListener('mousemove', onMouseMove);
+                        document.removeEventListener('mouseup', onMouseUp);
+                        const finalWidth = wrapper.style.width;
+                        if (typeof getPos === 'function') {
+                            editor.chain().focus().command(({ tr }) => {
+                                tr.setNodeMarkup(getPos(), undefined, { ...node.attrs, width: finalWidth });
+                                return true;
+                            }).run();
+                        }
+                    };
+
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                });
+
+                wrapper.appendChild(img);
+                wrapper.appendChild(toolbar);
+                wrapper.appendChild(resizer);
+
+                return {
+                    dom: wrapper,
+                    update: (updatedNode) => {
+                        if (updatedNode.type !== node.type) return false;
+                        node = updatedNode;
+                        img.src = node.attrs.src;
+                        img.alt = node.attrs.alt || '';
+                        const newAlign = node.attrs.alignment || 'center';
+                        const newWidth = node.attrs.width || '100%';
+                        wrapper.style.width = newWidth;
+                        wrapper.setAttribute('data-alignment', newAlign);
+                        applyStyle(newAlign);
+                        return true;
+                    }
+                };
+            };
+        }
+    });
+
     window.TiptapModules = { 
-        Editor, StarterKit, Image, Link, Underline, TextAlign, TextStyle, 
+        Editor, StarterKit, Image: ResizableImage, Link, Underline, TextAlign, TextStyle, 
         Color, FontFamily, Highlight, Youtube, Table, TableRow, TableHeader, 
         TableCell, TaskList, TaskItem, FontSize 
     };

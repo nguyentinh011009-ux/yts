@@ -1477,14 +1477,13 @@
             }
             return ['img', imgAttrs];
         },
-        addNodeView() {
+addNodeView() {
             return ({ node, getPos, editor }) => {
                 const wrapper = document.createElement('div');
                 wrapper.className = 'tp-image-node-view';
                 
                 const align = node.attrs.alignment || 'center';
                 const width = node.attrs.width || '100%';
-                let href = node.attrs.href;
 
                 wrapper.setAttribute('data-alignment', align);
                 wrapper.style.width = width;
@@ -1505,32 +1504,38 @@
                 img.src = node.attrs.src;
                 img.alt = node.attrs.alt || '';
                 img.className = 'tp-resizable-img';
-                if (href) img.style.cursor = 'pointer';
 
-                // 🌟 KHUNG CÔNG CỤ NỔI NẰM CÙNG CÁC NÚT 25%, 50%, 75%, 100%
+                // KHUNG CÔNG CỤ NỔI
                 const toolbar = document.createElement('div');
                 toolbar.className = 'tp-img-toolbar';
                 
-                const isZoomActive = !!href;
-                toolbar.innerHTML = `
-                    <button type="button" class="tp-img-btn ${isZoomActive ? 'is-active-zoom' : ''}" data-action="toggle-zoom" title="Bật/Tắt cho phép người xem bấm vào ảnh để phóng to ở tab mới">
-                        <i class="${isZoomActive ? 'fas fa-check-square' : 'far fa-square'}" style="color: ${isZoomActive ? '#10b981' : '#94a3b8'}; margin-right: 4px;"></i>
-                        <span style="color: ${isZoomActive ? '#10b981' : 'inherit'}; font-weight: ${isZoomActive ? 'bold' : 'normal'};">Bấm Phóng To</span>
-                    </button>
-                    <span class="tp-img-sep">|</span>
-                    <button type="button" class="tp-img-btn" data-align="float-left" title="Chữ bao quanh bên phải"><i class="fas fa-indent"></i> Trôi Trái</button>
-                    <button type="button" class="tp-img-btn" data-align="center" title="Căn giữa"><i class="fas fa-align-center"></i> Giữa</button>
-                    <button type="button" class="tp-img-btn" data-align="float-right" title="Chữ bao quanh bên trái"><i class="fas fa-outdent"></i> Trôi Phải</button>
-                    <span class="tp-img-sep">|</span>
-                    <button type="button" class="tp-img-btn" data-size="25%">25%</button>
-                    <button type="button" class="tp-img-btn" data-size="50%">50%</button>
-                    <button type="button" class="tp-img-btn" data-size="75%">75%</button>
-                    <button type="button" class="tp-img-btn" data-size="100%">100%</button>
-                    <span class="tp-img-sep">|</span>
-                    <button type="button" class="tp-img-btn tp-img-del" title="Xóa ảnh"><i class="fas fa-trash"></i></button>
-                `;
+                // 🌟 HÀM CẬP NHẬT TRẠNG THÁI GIAO DIỆN NÚT BẤM (FIX LỖI KHÔNG ĐỔI TRẠNG THÁI)
+                const renderToolbarContent = (currentHref) => {
+                    const isZoomActive = !!currentHref;
+                    toolbar.innerHTML = `
+                        <button type="button" class="tp-img-btn ${isZoomActive ? 'is-active-zoom' : ''}" data-action="toggle-zoom" title="Bật/Tắt bấm vào ảnh để phóng to ở tab mới">
+                            <i class="${isZoomActive ? 'fas fa-check-square' : 'far fa-square'}" style="color: ${isZoomActive ? '#10b981' : '#cbd5e1'}; pointer-events: none; margin-right: 4px;"></i>
+                            <span style="color: ${isZoomActive ? '#10b981' : 'inherit'}; font-weight: ${isZoomActive ? 'bold' : 'normal'}; pointer-events: none;">Bấm Phóng To</span>
+                        </button>
+                        <span class="tp-img-sep">|</span>
+                        <button type="button" class="tp-img-btn" data-align="float-left" title="Chữ bao quanh bên phải"><i class="fas fa-indent" style="pointer-events: none;"></i> Trôi Trái</button>
+                        <button type="button" class="tp-img-btn" data-align="center" title="Căn giữa"><i class="fas fa-align-center" style="pointer-events: none;"></i> Giữa</button>
+                        <button type="button" class="tp-img-btn" data-align="float-right" title="Chữ bao quanh bên trái"><i class="fas fa-outdent" style="pointer-events: none;"></i> Trôi Phải</button>
+                        <span class="tp-img-sep">|</span>
+                        <button type="button" class="tp-img-btn" data-size="25%">25%</button>
+                        <button type="button" class="tp-img-btn" data-size="50%">50%</button>
+                        <button type="button" class="tp-img-btn" data-size="75%">75%</button>
+                        <button type="button" class="tp-img-btn" data-size="100%">100%</button>
+                        <span class="tp-img-sep">|</span>
+                        <button type="button" class="tp-img-btn tp-img-del" title="Xóa ảnh"><i class="fas fa-trash" style="pointer-events: none;"></i></button>
+                    `;
+                };
 
-                // XỬ LÝ SỰ KIỆN KHI BẤM NÚT TRÊN KHUNG
+                // Vẽ giao diện ban đầu
+                renderToolbarContent(node.attrs.href);
+                if (node.attrs.href) img.style.cursor = 'pointer';
+
+                // BẮT SỰ KIỆN CLICK NÚT BẤM (ĐÃ ĐƯỢC TỐI ƯU SỰ KIỆN)
                 toolbar.addEventListener('click', (e) => {
                     const btn = e.target.closest('.tp-img-btn');
                     if (!btn) return;
@@ -1538,9 +1543,11 @@
                     e.stopPropagation();
 
                     if (typeof getPos !== 'function') return;
+                    const pos = getPos();
+                    if (typeof pos !== 'number') return;
 
                     if (btn.classList.contains('tp-img-del')) {
-                        editor.chain().focus().deleteRange({ from: getPos(), to: getPos() + 1 }).run();
+                        editor.chain().focus().deleteRange({ from: pos, to: pos + 1 }).run();
                         return;
                     }
 
@@ -1550,15 +1557,16 @@
 
                     let attrs = { ...node.attrs };
 
-                    // Bật hoặc Tắt tính năng Zoom khi bấm nút tick
+                    // Đảo ngược trạng thái Link Zoom
                     if (action === 'toggle-zoom') {
-                        attrs.href = attrs.href ? null : (attrs.src || node.attrs.src);
+                        attrs.href = attrs.href ? null : (node.attrs.src || img.src);
                     }
                     if (newAlign) attrs.alignment = newAlign;
                     if (newSize) attrs.width = newSize;
 
+                    // Thực thi cập nhật thuộc tính vào Tiptap Engine
                     editor.chain().focus().command(({ tr }) => {
-                        tr.setNodeMarkup(getPos(), undefined, attrs);
+                        tr.setNodeMarkup(pos, undefined, attrs);
                         return true;
                     }).run();
                 });
@@ -1587,10 +1595,13 @@
                         document.removeEventListener('mouseup', onMouseUp);
                         const finalWidth = wrapper.style.width;
                         if (typeof getPos === 'function') {
-                            editor.chain().focus().command(({ tr }) => {
-                                tr.setNodeMarkup(getPos(), undefined, { ...node.attrs, width: finalWidth });
-                                return true;
-                            }).run();
+                            const pos = getPos();
+                            if (typeof pos === 'number') {
+                                editor.chain().focus().command(({ tr }) => {
+                                    tr.setNodeMarkup(pos, undefined, { ...node.attrs, width: finalWidth });
+                                    return true;
+                                }).run();
+                            }
                         }
                     };
 
@@ -1607,8 +1618,10 @@
                     update: (updatedNode) => {
                         if (updatedNode.type !== node.type) return false;
                         node = updatedNode;
+
                         img.src = node.attrs.src;
                         img.alt = node.attrs.alt || '';
+
                         const newAlign = node.attrs.alignment || 'center';
                         const newWidth = node.attrs.width || '100%';
                         const newHref = node.attrs.href;
@@ -1617,6 +1630,10 @@
                         wrapper.style.width = newWidth;
                         wrapper.setAttribute('data-alignment', newAlign);
                         applyStyle(newAlign);
+
+                        // 🌟 TỰ ĐỘNG CẬP NHẬT TÍCH XANH / Ô XÁM TỚI NÚT BẤM KHI TRẠNG THÁI THAY ĐỔI
+                        renderToolbarContent(newHref);
+
                         return true;
                     }
                 };

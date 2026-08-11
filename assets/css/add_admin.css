@@ -516,3 +516,70 @@
     border-radius: 6px;
     margin: 0 4px;
 }
+/* ==========================================================================
+   CẤU HÌNH THANH CUỘN (SCROLLBAR) CHO KHUNG SOẠN THẢO TIPTAP
+   ========================================================================== */
+
+/* Giới hạn chiều cao và kích hoạt cuộn dọc mượt mà cho khung giấy Word */
+.tiptap-paper-container {
+    background: #f1f5f9;
+    padding: 30px 20px;
+    min-height: 550px;
+    max-height: 680px; /* Chiều cao tối đa trước khi xuất hiện thanh cuộn */
+    overflow-y: auto;  /* Tự động hiện thanh cuộn khi nội dung dài */
+    display: flex;
+    justify-content: center;
+    scroll-behavior: smooth;
+}
+
+/* Tùy chỉnh thiết kế thanh cuộn siêu sang chuẩn Apple Glass */
+.tiptap-paper-container::-webkit-scrollbar {
+    width: 8px; /* Độ rộng thanh cuộn mảnh tinh tế */
+}
+
+.tiptap-paper-container::-webkit-scrollbar-track {
+    background: #e2e8f0; /* Màu nền đường rãnh cuộn */
+    border-radius: 10px;
+    margin: 10px 0;
+}
+
+.tiptap-paper-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1; /* Màu con trượt cuộn */
+    border-radius: 10px;
+    transition: background 0.2s ease;
+}
+
+.tiptap-paper-container::-webkit-scrollbar-thumb:hover {
+    background: #0062ff; /* Đổi màu xanh nổi bật khi rê chuột vào */
+}
+
+/* Giới hạn chiều cao và tạo thanh cuộn cho Chế độ xem Mã HTML thô */
+.tiptap-source-mode {
+    width: 100%;
+    max-width: 900px;
+    min-height: 520px;
+    max-height: 620px;
+    overflow-y: auto;
+    padding: 20px;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    background: #0f172a;
+    color: #38bdf8;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    outline: none;
+    box-sizing: border-box;
+}
+
+/* Thanh cuộn riêng cho Chế độ xem Mã HTML */
+.tiptap-source-mode::-webkit-scrollbar {
+    width: 8px;
+}
+.tiptap-source-mode::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+.tiptap-source-mode::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 6px;
+}

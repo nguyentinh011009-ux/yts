@@ -1458,7 +1458,7 @@
                         };
                     }
                 },
-                // 🌟 THUỘC TÍNH MỚI: QUẢN LÝ LINK PHÓNG TO ẢNH
+                // THUỘC TÍNH LƯU TRỮ LINK PHÓNG TO CỦA ẢNH
                 href: {
                     default: null,
                     parseHTML: el => {
@@ -1471,6 +1471,7 @@
         },
         renderHTML({ HTMLAttributes }) {
             const { href, ...imgAttrs } = HTMLAttributes;
+            // Nếu có bật Zoom thì xuất ra thẻ <a href="..." target="_blank"><img ...></a>
             if (href) {
                 return ['a', { href: href, target: '_blank', rel: 'noopener noreferrer', class: 'vts-img-zoom-link', title: 'Bấm vào để xem ảnh phóng to' }, ['img', imgAttrs]];
             }
@@ -1483,7 +1484,7 @@
                 
                 const align = node.attrs.alignment || 'center';
                 const width = node.attrs.width || '100%';
-                const href = node.attrs.href;
+                let href = node.attrs.href;
 
                 wrapper.setAttribute('data-alignment', align);
                 wrapper.style.width = width;
@@ -1506,15 +1507,15 @@
                 img.className = 'tp-resizable-img';
                 if (href) img.style.cursor = 'pointer';
 
-                // THANH CÔNG CỤ NỔI CỦA ẢNH (BỔ SUNG NÚT BẬT/TẮT PHÓNG TO)
+                // 🌟 KHUNG CÔNG CỤ NỔI NẰM CÙNG CÁC NÚT 25%, 50%, 75%, 100%
                 const toolbar = document.createElement('div');
                 toolbar.className = 'tp-img-toolbar';
                 
                 const isZoomActive = !!href;
                 toolbar.innerHTML = `
-                    <button type="button" class="tp-img-btn ${isZoomActive ? 'is-active' : ''}" data-action="toggle-zoom" title="${isZoomActive ? 'Tắt Bấm phóng to' : 'Bật Bấm vào để phóng to (Zoom)'}">
-                        <i class="fas ${isZoomActive ? 'fa-search-minus' : 'fa-search-plus'}" style="color: ${isZoomActive ? '#10b981' : 'inherit'};"></i> 
-                        ${isZoomActive ? 'Đã bật Zoom' : 'Bật Zoom'}
+                    <button type="button" class="tp-img-btn ${isZoomActive ? 'is-active-zoom' : ''}" data-action="toggle-zoom" title="Bật/Tắt cho phép người xem bấm vào ảnh để phóng to ở tab mới">
+                        <i class="${isZoomActive ? 'fas fa-check-square' : 'far fa-square'}" style="color: ${isZoomActive ? '#10b981' : '#94a3b8'}; margin-right: 4px;"></i>
+                        <span style="color: ${isZoomActive ? '#10b981' : 'inherit'}; font-weight: ${isZoomActive ? 'bold' : 'normal'};">Bấm Phóng To</span>
                     </button>
                     <span class="tp-img-sep">|</span>
                     <button type="button" class="tp-img-btn" data-align="float-left" title="Chữ bao quanh bên phải"><i class="fas fa-indent"></i> Trôi Trái</button>
@@ -1529,6 +1530,7 @@
                     <button type="button" class="tp-img-btn tp-img-del" title="Xóa ảnh"><i class="fas fa-trash"></i></button>
                 `;
 
+                // XỬ LÝ SỰ KIỆN KHI BẤM NÚT TRÊN KHUNG
                 toolbar.addEventListener('click', (e) => {
                     const btn = e.target.closest('.tp-img-btn');
                     if (!btn) return;
@@ -1548,9 +1550,9 @@
 
                     let attrs = { ...node.attrs };
 
-                    // Xử lý bật / tắt Link phóng to
+                    // Bật hoặc Tắt tính năng Zoom khi bấm nút tick
                     if (action === 'toggle-zoom') {
-                        attrs.href = attrs.href ? null : attrs.src;
+                        attrs.href = attrs.href ? null : (attrs.src || node.attrs.src);
                     }
                     if (newAlign) attrs.alignment = newAlign;
                     if (newSize) attrs.width = newSize;
@@ -1584,7 +1586,7 @@
                         document.removeEventListener('mousemove', onMouseMove);
                         document.removeEventListener('mouseup', onMouseUp);
                         const finalWidth = wrapper.style.width;
-                        if (typeof getPos !== 'function') {
+                        if (typeof getPos === 'function') {
                             editor.chain().focus().command(({ tr }) => {
                                 tr.setNodeMarkup(getPos(), undefined, { ...node.attrs, width: finalWidth });
                                 return true;

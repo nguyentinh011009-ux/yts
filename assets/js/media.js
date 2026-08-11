@@ -381,18 +381,23 @@ function searchPickerFiles(kw) {
 let tiptapEditor = null;
 let isSourceViewMode = false;
 
-function initCKEditor(callback) {
+// Gắn hàm initCKEditor vào window để toàn hệ thống (app.js) gọi được
+window.initCKEditor = function(callback) {
     if (tiptapEditor) {
         if (typeof callback === 'function') callback();
         return;
     }
 
     if (!window.TiptapModules) {
-        setTimeout(() => initCKEditor(callback), 100);
+        // Chờ ESM Modules tải xong từ CDN
+        setTimeout(() => window.initCKEditor(callback), 150);
         return;
     }
 
     const { Editor, StarterKit, Image, Link, Underline, TextAlign, TextStyle, Color } = window.TiptapModules;
+
+    const sourceArea = document.getElementById('p-content-source');
+    const initialContent = sourceArea ? sourceArea.value : '';
 
     tiptapEditor = new Editor({
         element: document.getElementById('tiptap-editor'),
@@ -405,18 +410,12 @@ function initCKEditor(callback) {
             Link.configure({ openOnClick: false }),
             TextAlign.configure({ types: ['heading', 'paragraph'] })
         ],
-        content: '',
-        onUpdate() {
-            updateToolbarActiveStates();
-        },
-        onSelectionUpdate() {
-            updateToolbarActiveStates();
-        }
+        content: initialContent
     });
 
     console.log("✅ Trình soạn thảo Tiptap Word 365 đã sẵn sàng!");
     if (typeof callback === 'function') callback();
-}
+};
 
 // Lấy nội dung HTML từ Editor
 window.getEditorContent = function() {

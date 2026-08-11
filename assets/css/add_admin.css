@@ -232,64 +232,153 @@
     z-index: 10 !important;
 }
 /* ==========================================================================
-   LỘT XÁC GIAO DIỆN CKEDITOR 4 THÀNH WORD 365 (FLAT DESIGN)
+   TÙY CHỈNH GIAO DIỆN TRÌNH SOẠN THẢO TIPTAP STYLE WORD 365 (MODERN & WIDE)
    ========================================================================== */
 
-/* Bo cong toàn bộ khung soạn thảo và đổ bóng mờ */
-.cke_chrome {
-    border: 1px solid #cbd5e1 !important;
-    border-radius: 12px !important;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important;
-    overflow: hidden !important;
+.tiptap-editor-wrapper {
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    background: #f8fafc;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
 }
 
-/* Làm phẳng thanh công cụ bên trên */
-.cke_top {
-    border-bottom: 1px solid #e2e8f0 !important;
-    padding: 12px 15px !important;
-    box-shadow: none !important;
-    background: transparent !important;
+/* Thanh công cụ Word Toolbars Sticky */
+.tiptap-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 8px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
-/* Xóa viền 3D của các nhóm công cụ */
-.cke_toolgroup {
-    border: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    margin-right: 8px !important;
+.tp-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
 }
 
-/* Tinh chỉnh nút bấm (Bỏ bóng, bo góc tròn) */
-.cke_button {
-    border-radius: 6px !important;
-    padding: 5px 6px !important;
-    transition: all 0.2s ease !important;
-    border: 1px solid transparent !important;
+.tp-btn:hover {
+    background: #f1f5f9;
+    color: #0062ff;
 }
 
-/* Hiệu ứng di chuột vào nút */
-.cke_button:hover, .cke_button_on {
-    background: #e2e8f0 !important;
-    box-shadow: none !important;
+.tp-btn.is-active {
+    background: #e0e7ff;
+    color: #2563eb;
+    border-color: #bfdbfe;
 }
 
-/* Tinh chỉnh các ô dropdown (Font chữ, Cỡ chữ) */
-.cke_combo_button {
-    border: 1px solid #cbd5e1 !important;
-    border-radius: 6px !important;
-    box-shadow: none !important;
-    background: white !important;
-    padding: 4px 8px !important;
-    transition: 0.2s !important;
+.tp-divider {
+    width: 1px;
+    height: 20px;
+    background: #cbd5e1;
+    margin: 0 6px;
 }
 
-.cke_combo_button:hover {
-    border-color: #94a3b8 !important;
+/* Khung trang giấy gõ văn bản như Microsoft Word */
+.tiptap-paper-container {
+    background: #f1f5f9;
+    padding: 30px 20px;
+    min-height: 550px;
+    display: flex;
+    justify-content: center;
 }
 
-/* Ẩn triệt để dải thông báo đỏ của bản LTS và thanh đáy */
-.cke_notification_warning, 
-.cke_notification_info,
-.cke_bottom {
-    display: none !important;
+.tiptap-paper {
+    background: #ffffff;
+    width: 100%;
+    max-width: 900px;
+    min-height: 520px;
+    padding: 40px 50px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    outline: none;
+}
+
+/* Định dạng kiểu chữ báo chí trong Tiptap */
+.tiptap-paper .ProseMirror {
+    outline: none;
+    min-height: 480px;
+    font-size: 1.08rem;
+    line-height: 1.8;
+    color: #1e293b;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.tiptap-paper .ProseMirror p {
+    margin: 10px 0;
+}
+
+.tiptap-paper .ProseMirror h1 {
+    font-size: 1.8rem;
+    color: #0f172a;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.tiptap-paper .ProseMirror h2 {
+    font-size: 1.4rem;
+    color: #1e293b;
+    margin-top: 18px;
+    margin-bottom: 8px;
+}
+
+.tiptap-paper .ProseMirror h3 {
+    font-size: 1.2rem;
+    color: #334155;
+    margin-top: 15px;
+    margin-bottom: 6px;
+}
+
+.tiptap-paper .ProseMirror img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 15px 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.tiptap-paper .ProseMirror blockquote {
+    border-left: 4px solid #2563eb;
+    background: #f0f9ff;
+    padding: 10px 18px;
+    margin: 15px 0;
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+    color: #0369a1;
+}
+
+/* Khung sửa code HTML thô */
+.tiptap-source-mode {
+    width: 100%;
+    max-width: 900px;
+    min-height: 520px;
+    padding: 20px;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    background: #0f172a;
+    color: #38bdf8;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    outline: none;
+    box-sizing: border-box;
 }

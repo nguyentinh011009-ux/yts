@@ -1432,7 +1432,7 @@
         },
     });
 
-    // EXTENSION ẢNH CO GIÃN & BAO QUANH CHỮ KIỂU WORD
+// EXTENSION ẢNH CO GIÃN, ĐỐI CĂN & TỰ ĐỘNG BẬT LINK PHÓNG TO (ZOOM)
     const ResizableImage = Image.extend({
         addAttributes() {
             return {
@@ -1457,8 +1457,24 @@
                             style: `width: ${attrs.width}; max-width: 100%; ${alignStyle}`
                         };
                     }
+                },
+                // 🌟 THUỘC TÍNH MỚI: QUẢN LÝ LINK PHÓNG TO ẢNH
+                href: {
+                    default: null,
+                    parseHTML: el => {
+                        const parentAnchor = el.closest('a');
+                        return parentAnchor ? parentAnchor.getAttribute('href') : el.getAttribute('data-href');
+                    },
+                    renderHTML: attrs => attrs.href ? { 'data-href': attrs.href } : {}
                 }
             };
+        },
+        renderHTML({ HTMLAttributes }) {
+            const { href, ...imgAttrs } = HTMLAttributes;
+            if (href) {
+                return ['a', { href: href, target: '_blank', rel: 'noopener noreferrer', class: 'vts-img-zoom-link', title: 'Bấm vào để xem ảnh phóng to' }, ['img', imgAttrs]];
+            }
+            return ['img', imgAttrs];
         },
         addNodeView() {
             return ({ node, getPos, editor }) => {
@@ -1467,6 +1483,7 @@
                 
                 const align = node.attrs.alignment || 'center';
                 const width = node.attrs.width || '100%';
+                const href = node.attrs.href;
 
                 wrapper.setAttribute('data-alignment', align);
                 wrapper.style.width = width;
@@ -1487,10 +1504,19 @@
                 img.src = node.attrs.src;
                 img.alt = node.attrs.alt || '';
                 img.className = 'tp-resizable-img';
+                if (href) img.style.cursor = 'pointer';
 
+                // THANH CÔNG CỤ NỔI CỦA ẢNH (BỔ SUNG NÚT BẬT/TẮT PHÓNG TO)
                 const toolbar = document.createElement('div');
                 toolbar.className = 'tp-img-toolbar';
+                
+                const isZoomActive = !!href;
                 toolbar.innerHTML = `
+                    <button type="button" class="tp-img-btn ${isZoomActive ? 'is-active' : ''}" data-action="toggle-zoom" title="${isZoomActive ? 'Tắt Bấm phóng to' : 'Bật Bấm vào để phóng to (Zoom)'}">
+                        <i class="fas ${isZoomActive ? 'fa-search-minus' : 'fa-search-plus'}" style="color: ${isZoomActive ? '#10b981' : 'inherit'};"></i> 
+                        ${isZoomActive ? 'Đã bật Zoom' : 'Bật Zoom'}
+                    </button>
+                    <span class="tp-img-sep">|</span>
                     <button type="button" class="tp-img-btn" data-align="float-left" title="Chữ bao quanh bên phải"><i class="fas fa-indent"></i> Trôi Trái</button>
                     <button type="button" class="tp-img-btn" data-align="center" title="Căn giữa"><i class="fas fa-align-center"></i> Giữa</button>
                     <button type="button" class="tp-img-btn" data-align="float-right" title="Chữ bao quanh bên trái"><i class="fas fa-outdent"></i> Trôi Phải</button>
@@ -1516,10 +1542,16 @@
                         return;
                     }
 
+                    const action = btn.getAttribute('data-action');
                     const newAlign = btn.getAttribute('data-align');
                     const newSize = btn.getAttribute('data-size');
 
                     let attrs = { ...node.attrs };
+
+                    // Xử lý bật / tắt Link phóng to
+                    if (action === 'toggle-zoom') {
+                        attrs.href = attrs.href ? null : attrs.src;
+                    }
                     if (newAlign) attrs.alignment = newAlign;
                     if (newSize) attrs.width = newSize;
 
@@ -1552,7 +1584,7 @@
                         document.removeEventListener('mousemove', onMouseMove);
                         document.removeEventListener('mouseup', onMouseUp);
                         const finalWidth = wrapper.style.width;
-                        if (typeof getPos === 'function') {
+                        if (typeof getPos !== 'function') {
                             editor.chain().focus().command(({ tr }) => {
                                 tr.setNodeMarkup(getPos(), undefined, { ...node.attrs, width: finalWidth });
                                 return true;
@@ -1577,6 +1609,9 @@
                         img.alt = node.attrs.alt || '';
                         const newAlign = node.attrs.alignment || 'center';
                         const newWidth = node.attrs.width || '100%';
+                        const newHref = node.attrs.href;
+
+                        img.style.cursor = newHref ? 'pointer' : 'default';
                         wrapper.style.width = newWidth;
                         wrapper.setAttribute('data-alignment', newAlign);
                         applyStyle(newAlign);

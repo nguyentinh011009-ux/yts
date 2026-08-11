@@ -396,6 +396,7 @@ async function editPost(id) {
         sysLoading(false);
     }
 }
+
 async function deletePost(id) {
     // Dùng await sysConfirm để đợi người dùng bấm nút
     const isOk = await sysConfirm("Bạn có chắc chắn muốn xóa bài viết này không?", "Xóa bài viết", true);

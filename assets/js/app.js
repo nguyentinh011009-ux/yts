@@ -222,26 +222,38 @@ function changePostFilter(filterType) {
 function showPostEditor(postId = null) {
     switchTab('tab-post-editor');
     
-    // Kiểm tra và lấy hàm khởi tạo từ window
     const startInit = window.initCKEditor || (typeof initCKEditor === 'function' ? initCKEditor : null);
 
     if (startInit) {
         startInit(() => {
             if (!postId) {
-                document.getElementById('editor-mode-title').innerText = "Thêm bài viết mới";
-                document.getElementById('edit-post-id').value = "";
-                document.getElementById('p-title').value = "";
-                document.getElementById('p-cover').value = "";
+                const modeTitle = document.getElementById('editor-mode-title');
+                if (modeTitle) modeTitle.innerText = "Thêm bài viết mới";
+                
+                const editId = document.getElementById('edit-post-id');
+                if (editId) editId.value = "";
+                
+                const pTitle = document.getElementById('p-title');
+                if (pTitle) pTitle.value = "";
+                
+                const pCover = document.getElementById('p-cover');
+                if (pCover) pCover.value = "";
                 
                 if (typeof setEditorContent === 'function') setEditorContent("");
 
-                document.getElementById('p-pin').checked = false;
-                document.getElementById('p-update-time').checked = true;
-                document.getElementById('lbl-update-time').style.display = 'none';
+                // Kiểm tra an toàn trước khi gán .checked
+                const pPin = document.getElementById('p-pin');
+                if (pPin) pPin.checked = false;
+
+                const pUpdateTime = document.getElementById('p-update-time');
+                if (pUpdateTime) pUpdateTime.checked = true;
+
+                const lblUpdateTime = document.getElementById('lbl-update-time');
+                if (lblUpdateTime) lblUpdateTime.style.display = 'none';
             }
         });
     } else {
-        console.warn("Đang chờ thư viện Media nạp...");
+        console.warn("Đang chờ thư viện Editor nạp...");
         setTimeout(() => showPostEditor(postId), 200);
     }
 }
@@ -349,16 +361,34 @@ async function editPost(id) {
         const doc = await db.collection("posts").doc(id).get();
         if (doc.exists) {
             const p = doc.data();
-            document.getElementById('editor-mode-title').innerText = "Chỉnh sửa bài viết";
-            document.getElementById('edit-post-id').value = id;
-            document.getElementById('p-title').value = p.title || "";
-            document.getElementById('p-cover').value = p.cover || "";
             
-            // ✅ ĐÃ SỬA LỖI: Đưa trực tiếp nội dung p.content vào Tiptap Editor
-            setEditorContent(p.content || "");
+            // Gán thông tin cơ bản an toàn
+            const modeTitle = document.getElementById('editor-mode-title');
+            if (modeTitle) modeTitle.innerText = "Chỉnh sửa bài viết";
+            
+            const editId = document.getElementById('edit-post-id');
+            if (editId) editId.value = id;
+            
+            const pTitle = document.getElementById('p-title');
+            if (pTitle) pTitle.value = p.title || "";
+            
+            const pCover = document.getElementById('p-cover');
+            if (pCover) pCover.value = p.cover || "";
+            
+            // Bơm nội dung vào Tiptap Editor
+            if (typeof setEditorContent === 'function') {
+                setEditorContent(p.content || "");
+            }
 
-            document.getElementById('p-pin').checked = p.isPinned || false;
-            document.getElementById('lbl-update-time').style.display = 'flex';
+            // KIỂM TRA AN TOÀN TRƯỚC KHÍ GÁN .checked (CHỐNG LỖI NULL)
+            const pPin = document.getElementById('p-pin');
+            if (pPin) pPin.checked = p.isPinned || false;
+
+            const pUpdateTime = document.getElementById('p-update-time');
+            if (pUpdateTime) pUpdateTime.checked = true;
+
+            const lblUpdateTime = document.getElementById('lbl-update-time');
+            if (lblUpdateTime) lblUpdateTime.style.display = 'flex';
         }
     } catch (e) {
         sysAlert("Lỗi tải bài viết: " + e.message, "error");

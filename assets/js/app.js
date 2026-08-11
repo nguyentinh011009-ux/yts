@@ -218,6 +218,77 @@ function changePostFilter(filterType) {
     
     renderAdminPostsTable();
 }
+// Hàm tạo sẵn Mẫu bài viết kèm CSS chuyên nghiệp
+function getDefaultArticleTemplate(themeColor = '#0062ff', title = 'TIÊU ĐỀ BÀI VIẾT TẠI ĐÂY') {
+    return `<div class="vts-article-container">
+<style>
+.vts-article-container {
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.8;
+    color: #2c3e50;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 10px;
+}
+.vts-article-container h1 {
+    color: ${themeColor}; /* 🎨 BẠN CÓ THỂ ĐỔI MÀU TIÊU ĐỀ TẠI ĐÂY */
+    font-size: clamp(20px, 4vw, 28px);
+    border-bottom: 2px solid ${themeColor};
+    padding-bottom: 8px;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+.vts-article-container h2 {
+    color: #1e293b;
+    font-size: clamp(17px, 3vw, 22px);
+    margin-top: 25px;
+    margin-bottom: 10px;
+}
+.vts-article-container p, .vts-article-container li {
+    font-size: 16px;
+    margin: 10px 0;
+}
+.vts-article-container .highlight-box {
+    background-color: #f0f7ff;
+    border-left: 5px solid ${themeColor};
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin: 18px 0;
+    font-weight: 500;
+}
+.vts-article-container .important-box {
+    background-color: #fff1f2;
+    border-left: 5px solid #ef4444;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin: 18px 0;
+    color: #991b1b;
+}
+.vts-article-container img {
+    width: 100%;
+    max-width: 1000px;
+    border-radius: 10px;
+    margin: 15px 0;
+}
+</style>
+
+<h1>${title}</h1>
+
+<div class="highlight-box">
+    📌 <strong>Tóm tắt / Thông điệp chính:</strong> Nhập nội dung tóm tắt quan trọng của bài viết vào đây...
+</div>
+
+<h2>1. Mục đầu tiên của bài viết</h2>
+<p>Nhập nội dung chi tiết bài viết ở đây...</p>
+
+<div class="important-box">
+    ⚠️ <strong>Lưu ý quan trọng:</strong> Nội dung cảnh báo hoặc thông tin đặc biệt cần chú ý.
+</div>
+
+<h2>2. Mục tiếp theo</h2>
+<p>Tiếp tục nhập nội dung bài viết...</p>
+</div>`;
+}
 // --- 3. QUẢN LÝ BÀI VIẾT (CRUD) ---
 function showPostEditor(postId = null) {
     switchTab('tab-post-editor');
@@ -227,6 +298,7 @@ function showPostEditor(postId = null) {
     if (startInit) {
         startInit(() => {
             if (!postId) {
+                // TRƯỜNG HỢP: THÊM BÀI VIẾT MỚI
                 const modeTitle = document.getElementById('editor-mode-title');
                 if (modeTitle) modeTitle.innerText = "Thêm bài viết mới";
                 
@@ -239,9 +311,11 @@ function showPostEditor(postId = null) {
                 const pCover = document.getElementById('p-cover');
                 if (pCover) pCover.value = "";
                 
-                if (typeof setEditorContent === 'function') setEditorContent("");
+                // 👉 TỰ ĐỘNG NẠP MẪU BÀI VIẾT CHUẨN CÓ SẴN CSS
+                if (typeof setEditorContent === 'function') {
+                    setEditorContent(getDefaultArticleTemplate('#0062ff', 'TIÊU ĐỀ BÀI VIẾT MỚI'));
+                }
 
-                // Kiểm tra an toàn trước khi gán .checked
                 const pPin = document.getElementById('p-pin');
                 if (pPin) pPin.checked = false;
 
@@ -253,7 +327,6 @@ function showPostEditor(postId = null) {
             }
         });
     } else {
-        console.warn("Đang chờ thư viện Editor nạp...");
         setTimeout(() => showPostEditor(postId), 200);
     }
 }

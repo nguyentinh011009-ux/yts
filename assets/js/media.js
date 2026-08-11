@@ -375,11 +375,11 @@ function searchPickerFiles(kw) {
     renderPickerGrid(kw);
 }
 // =========================================================================
-// KHỞI TẠO VÀ QUẢN LÝ TRÌNH SOẠN THẢO TIPTAP (THAY THẾ CHUẨN CKEDITOR)
+// KHỞI TẠO TIPTAP EDITOR FULL TÍNH NĂNG (BỔ SUNG ĐẦY ĐỦ EXTENSIONS)
 // =========================================================================
 
 let tiptapEditor = null;
-let isSourceViewMode = false;
+window.isSourceViewMode = false;
 
 // Gắn hàm initCKEditor vào window để toàn hệ thống (app.js) gọi được
 window.initCKEditor = function(callback) {
@@ -394,7 +394,12 @@ window.initCKEditor = function(callback) {
         return;
     }
 
-    const { Editor, StarterKit, Image, Link, Underline, TextAlign, TextStyle, Color } = window.TiptapModules;
+    // Bóc tách toàn bộ Modules đã nạp từ HTML
+    const { 
+        Editor, StarterKit, Image, Link, Underline, TextAlign, TextStyle, 
+        Color, FontFamily, Highlight, Youtube, Table, TableRow, TableHeader, 
+        TableCell, TaskList, TaskItem, FontSize 
+    } = window.TiptapModules;
 
     const sourceArea = document.getElementById('p-content-source');
     const initialContent = sourceArea ? sourceArea.value : '';
@@ -405,15 +410,25 @@ window.initCKEditor = function(callback) {
             StarterKit,
             Underline,
             TextStyle,
+            FontSize,
             Color,
+            FontFamily,
+            Highlight.configure({ multicolors: true }),
             Image.configure({ allowBase64: true }),
-            Link.configure({ openOnClick: false }),
-            TextAlign.configure({ types: ['heading', 'paragraph'] })
+            Link.configure({ openOnClick: false, autolink: true }), // Tự động nhận diện URL
+            TextAlign.configure({ types: ['heading', 'paragraph'] }),
+            Youtube.configure({ controls: true, nocookie: true }), // Iframe Youtube
+            Table.configure({ resizable: true }),
+            TableRow,
+            TableHeader,
+            TableCell,
+            TaskList,
+            TaskItem.configure({ nested: true })
         ],
         content: initialContent
     });
 
-    console.log("✅ Trình soạn thảo Tiptap Word 365 đã sẵn sàng!");
+    console.log("✅ Trình soạn thảo Tiptap Full Tính Năng đã sẵn sàng!");
     if (typeof callback === 'function') callback();
 };
 
@@ -425,6 +440,7 @@ window.getEditorContent = function() {
     return tiptapEditor ? tiptapEditor.getHTML() : '';
 };
 
+// Bơm nội dung HTML vào Editor
 window.setEditorContent = function(html = '') {
     const sourceArea = document.getElementById('p-content-source');
     if (sourceArea) sourceArea.value = html || '';
@@ -434,6 +450,7 @@ window.setEditorContent = function(html = '') {
     }
 };
 
+// Chèn Media (Ảnh/Video/File)
 window.insertMediaToEditor = function(url, resourceType, fileName) {
     if (!tiptapEditor) return;
     
@@ -447,33 +464,87 @@ window.insertMediaToEditor = function(url, resourceType, fileName) {
     sysAlert("Đã chèn nội dung vào bài viết!", "success");
 };
 
+// XỬ LÝ TOÀN BỘ LỆNH CỦA THANH CÔNG CỤ TOOLBAR
 window.execTiptapCmd = function(cmd, param = null) {
     if (!tiptapEditor) return;
 
     switch(cmd) {
+        // Font & Cỡ chữ
+        case 'fontFamily': 
+            if (param) tiptapEditor.chain().focus().setFontFamily(param).run(); 
+            else tiptapEditor.chain().focus().unsetFontFamily().run();
+            break;
+        case 'fontSize': 
+            if (param) tiptapEditor.chain().focus().setMark('textStyle', { fontSize: param }).run(); 
+            break;
+
+        // Định dạng văn bản
         case 'bold': tiptapEditor.chain().focus().toggleBold().run(); break;
         case 'italic': tiptapEditor.chain().focus().toggleItalic().run(); break;
         case 'underline': tiptapEditor.chain().focus().toggleUnderline().run(); break;
         case 'strike': tiptapEditor.chain().focus().toggleStrike().run(); break;
-        case 'h1': tiptapEditor.chain().focus().toggleHeading({ level: 1 }).run(); break;
-        case 'h2': tiptapEditor.chain().focus().toggleHeading({ level: 2 }).run(); break;
-        case 'h3': tiptapEditor.chain().focus().toggleHeading({ level: 3 }).run(); break;
-        case 'paragraph': tiptapEditor.chain().focus().setParagraph().run(); break;
+        case 'color': if (param) tiptapEditor.chain().focus().setColor(param).run(); break;
+        case 'highlight': if (param) tiptapEditor.chain().focus().toggleHighlight({ color: param }).run(); break;
+
+        // Căn chỉnh
         case 'alignLeft': tiptapEditor.chain().focus().setTextAlign('left').run(); break;
         case 'alignCenter': tiptapEditor.chain().focus().setTextAlign('center').run(); break;
         case 'alignRight': tiptapEditor.chain().focus().setTextAlign('right').run(); break;
         case 'alignJustify': tiptapEditor.chain().focus().setTextAlign('justify').run(); break;
+
+        // Headings & Danh sách
+        case 'h1': tiptapEditor.chain().focus().toggleHeading({ level: 1 }).run(); break;
+        case 'h2': tiptapEditor.chain().focus().toggleHeading({ level: 2 }).run(); break;
+        case 'h3': tiptapEditor.chain().focus().toggleHeading({ level: 3 }).run(); break;
+        case 'paragraph': tiptapEditor.chain().focus().setParagraph().run(); break;
         case 'bulletList': tiptapEditor.chain().focus().toggleBulletList().run(); break;
         case 'orderedList': tiptapEditor.chain().focus().toggleOrderedList().run(); break;
+        case 'taskList': tiptapEditor.chain().focus().toggleTaskList().run(); break;
+
+        // Blocks & Embeds
         case 'blockquote': tiptapEditor.chain().focus().toggleBlockquote().run(); break;
-        case 'color': if (param) tiptapEditor.chain().focus().setColor(param).run(); break;
-        case 'horizontalRule': tiptapEditor.chain().focus().setHorizontalRule().run(); break;
+        case 'codeBlock': tiptapEditor.chain().focus().toggleCodeBlock().run(); break;
+        case 'youtube': {
+            const url = prompt('Nhập link Video YouTube (VD: https://www.youtube.com/watch?v=...):');
+            if (url) tiptapEditor.commands.setYoutubeVideo({ src: url });
+            break;
+        }
+        case 'math': {
+            const latex = prompt('Nhập công thức Toán (LaTeX/KaTeX) ví dụ: E = mc^2 hoặc \\frac{a}{b}:', 'E = mc^2');
+            if (latex && window.katex) {
+                const rendered = window.katex.renderToString(latex, { throwOnError: false });
+                const mathHtml = `<span class="math-formula-node" data-latex="${latex}">${rendered}</span>&nbsp;`;
+                tiptapEditor.chain().focus().insertContent(mathHtml).run();
+            }
+            break;
+        }
+        case 'link': {
+            const previousUrl = tiptapEditor.getAttributes('link').href;
+            const url = prompt('Nhập đường dẫn URL:', previousUrl);
+            if (url === null) return;
+            if (url === '') {
+                tiptapEditor.chain().focus().extendMarkRange('link').unsetLink().run();
+                return;
+            }
+            tiptapEditor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+            break;
+        }
         case 'unsetLink': tiptapEditor.chain().focus().unsetLink().run(); break;
+
+        // Thao tác Bảng (Table)
+        case 'insertTable': tiptapEditor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); break;
+        case 'addRowAfter': tiptapEditor.chain().focus().addRowAfter().run(); break;
+        case 'deleteRow': tiptapEditor.chain().focus().deleteRow().run(); break;
+        case 'deleteTable': tiptapEditor.chain().focus().deleteTable().run(); break;
+
+        // Thao tác khác
+        case 'horizontalRule': tiptapEditor.chain().focus().setHorizontalRule().run(); break;
         case 'undo': tiptapEditor.chain().focus().undo().run(); break;
         case 'redo': tiptapEditor.chain().focus().redo().run(); break;
     }
 };
 
+// Chuyển đổi xem mã HTML thô
 window.toggleSourceView = function() {
     const paper = document.getElementById('tiptap-editor');
     const source = document.getElementById('p-content-source');
@@ -491,13 +562,7 @@ window.toggleSourceView = function() {
     }
 };
 
-// Cập nhật trạng thái Active trên các nút bấm toolbar
-function updateToolbarActiveStates() {
-    if (!tiptapEditor) return;
-    // Tự động kiểm tra node đang chọn để highlight nút
-}
-
-// Cập nhật lại các hàm Cloudinary chèn nội dung vào Tiptap
+// Tích hợp Cloudinary & Media Picker
 function openCloudinaryWidgetForEditor() {
     if (typeof cloudinary === 'undefined') return sysAlert("Chưa tải xong thư viện Cloudinary!", "error");
 

@@ -774,3 +774,32 @@
 .tp-image-node-view.ProseMirror-selectednode .tp-img-resizer {
     opacity: 1;
 }
+/* ==========================================================================
+   FIX LỖI: KHUNG NỀN TRẮNG TỰ ĐỘNG KÉO DÀI THEO NỘI DUNG SOẠN THẢO
+   ========================================================================== */
+
+/* 1. Ép thẻ nền trắng bên ngoài tự động mở rộng theo độ dài nội dung */
+#tab-post-editor .word-document-container,
+#tab-post-editor .form-card {
+    height: auto !important;
+    min-height: 100% !important;
+    display: flow-root !important; /* Tự động ôm trọn các phần tử con bên trong */
+    overflow: visible !important;
+    box-sizing: border-box !important;
+}
+
+/* 2. Đảm bảo khung bọc Tiptap nằm gọn 100% bên trong nền trắng */
+.tiptap-editor-wrapper {
+    width: 100% !important;
+    height: auto !important;
+    clear: both !important;
+    box-sizing: border-box !important;
+}
+
+/* 3. Khung chứa giấy gõ tự co giãn theo bài viết */
+.tiptap-paper-container {
+    height: auto !important;
+    min-height: 550px !important;
+    max-height: none !important; /* Bỏ giới hạn cứng để nền trắng tự kéo dài */
+    box-sizing: border-box !important;
+}

@@ -583,3 +583,66 @@
     background: #475569;
     border-radius: 6px;
 }
+/* ==========================================================================
+   CHẾ ĐỘ SOẠN THẢO TOÀN MÀN HÌNH (FULLSCREEN FOCUS EDITOR MODE)
+   ========================================================================== */
+
+/* Khi ở chế độ Fullscreen: Phủ kín 100% màn hình thiết bị */
+.tiptap-editor-wrapper.is-fullscreen {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 999999 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    border-radius: 0 !important;
+    border: none !important;
+    background: #f1f5f9 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: none !important;
+}
+
+/* Thanh công cụ khi ở chế độ Fullscreen */
+.tiptap-editor-wrapper.is-fullscreen .tiptap-toolbar {
+    border-radius: 0 !important;
+    padding: 10px 25px !important;
+    background: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+}
+
+/* Nút "XONG" biến thành màu xanh rực rỡ và tự đẩy sang góc phải */
+.tiptap-editor-wrapper.is-fullscreen #btn-tp-fullscreen {
+    background: #10b981 !important;
+    color: #ffffff !important;
+    width: auto !important;
+    padding: 6px 18px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+    margin-left: auto !important; /* Đẩy nút XONG về bên phải ngoài cùng */
+}
+
+.tiptap-editor-wrapper.is-fullscreen #btn-tp-fullscreen:hover {
+    background: #059669 !important;
+}
+
+/* Khung chứa giấy gõ tự mở rộng tối đa theo độ cao màn hình */
+.tiptap-editor-wrapper.is-fullscreen .tiptap-paper-container {
+    flex: 1 !important;
+    max-height: none !important;
+    height: calc(100vh - 65px) !important;
+    padding: 40px 20px !important;
+    overflow-y: auto !important;
+}
+
+/* Tờ giấy A4 gõ văn bản mở rộng cao ngút ngàn */
+.tiptap-editor-wrapper.is-fullscreen .tiptap-paper {
+    min-height: calc(100vh - 140px) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Khung xem Code HTML thô khi ở Fullscreen */
+.tiptap-editor-wrapper.is-fullscreen .tiptap-source-mode {
+    min-height: calc(100vh - 140px) !important;
+    max-height: none !important;
+}

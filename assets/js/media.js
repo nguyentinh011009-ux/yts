@@ -589,3 +589,50 @@ function selectMediaForPost(url, resourceType, fileName) {
     }
     closeMediaPickerModal();
 }
+// =========================================================================
+// CHỨC NĂNG PHÓNG TO / THU NHỎ TOÀN MÀN HÌNH (FULLSCREEN FOCUS EDITOR)
+// =========================================================================
+
+window.toggleFullscreenEditor = function() {
+    const wrapper = document.querySelector('.tiptap-editor-wrapper');
+    const icon = document.getElementById('ic-tp-fullscreen');
+    const label = document.getElementById('lbl-tp-fullscreen');
+    const btn = document.getElementById('btn-tp-fullscreen');
+
+    if (!wrapper) return;
+
+    // Bật/Tắt class is-fullscreen
+    const isFS = wrapper.classList.toggle('is-fullscreen');
+
+    if (isFS) {
+        // Trạng thái TOÀN MÀN HÌNH
+        document.body.style.overflow = 'hidden'; // Khóa cuộn trang web bên dưới
+        if (icon) icon.className = 'fas fa-check-circle';
+        if (label) {
+            label.innerText = 'XONG';
+            label.style.display = 'inline-block';
+        }
+        if (btn) btn.title = "Hoàn tất và quay về màn hình bài viết";
+        
+        // Con trỏ chuột tự động nhảy vào vị trí đang gõ
+        if (typeof tiptapEditor !== 'undefined' && tiptapEditor) {
+            tiptapEditor.commands.focus();
+        }
+    } else {
+        // Trạng thái THU NHỎ (TRỞ VỀ BÌNH THƯỜNG)
+        document.body.style.overflow = ''; // Mở lại cuộn trang web
+        if (icon) icon.className = 'fas fa-expand';
+        if (label) label.style.display = 'none';
+        if (btn) btn.title = "Phóng to toàn màn hình (Gõ tập trung)";
+    }
+};
+
+// HỖ TRỢ BẤM PHÍM "ESC" ĐỂ THU NHỎ NHANH
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+        const wrapper = document.querySelector('.tiptap-editor-wrapper');
+        if (wrapper && wrapper.classList.contains('is-fullscreen')) {
+            window.toggleFullscreenEditor();
+        }
+    }
+});

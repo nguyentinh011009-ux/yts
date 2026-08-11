@@ -402,49 +402,58 @@ window.initCKEditor = function(callback) {
     }
 
     if (!window.TiptapModules) {
+        // Chờ ESM Modules tải xong từ CDN
         setTimeout(() => window.initCKEditor(callback), 150);
         return;
     }
 
+    // Bóc tách toàn bộ Modules đã nạp từ HTML
     const { 
         Editor, StarterKit, Image, Link, Underline, TextAlign, TextStyle, 
         Color, FontFamily, Highlight, Youtube, Table, TableRow, TableHeader, 
-        TableCell, TaskList, TaskItem, FontSize 
+        TableCell, TaskList, TaskItem, FontSize, CustomDiv 
     } = window.TiptapModules;
 
     const sourceArea = document.getElementById('p-content-source');
     const initialContent = sourceArea ? sourceArea.value : '';
-    
+
     const extracted = extractStyleBlock(initialContent);
     currentStyleBlock = extracted.style;
 
-    tiptapEditor = new Editor({
-        element: document.getElementById('tiptap-editor'),
-        extensions: [
-            StarterKit,
-            CustomDiv,
-            Underline,
-            TextStyle,
-            FontSize,
-            Color,
-            FontFamily,
-            Highlight.configure({ multicolors: true }),
-            Image.configure({ allowBase64: true }),
-            Link.configure({ openOnClick: false, autolink: true }),
-            TextAlign.configure({ types: ['heading', 'paragraph'] }),
-            Youtube.configure({ controls: true, nocookie: true }),
-            Table.configure({ resizable: true }),
-            TableRow,
-            TableHeader,
-            TableCell,
-            TaskList,
-            TaskItem.configure({ nested: true })
-        ],
-        content: extracted.body
-    });
+    // 🌟 LỌC BỎ TẤT CẢ CÁC EXTENSION UNDEFINED -> CHỐNG LỖI CRASH KHUNG SOẠN THẢO TUYỆT ĐỐI
+    const activeExtensions = [
+        StarterKit,
+        CustomDiv, // Tự động bỏ qua nếu chưa nạp kịp
+        Underline,
+        TextStyle,
+        FontSize,
+        Color,
+        FontFamily,
+        Highlight ? Highlight.configure({ multicolors: true }) : null,
+        Image,
+        Link ? Link.configure({ openOnClick: false, autolink: true }) : null,
+        TextAlign ? TextAlign.configure({ types: ['heading', 'paragraph'] }) : null,
+        Youtube ? Youtube.configure({ controls: true, nocookie: true }) : null,
+        Table ? Table.configure({ resizable: true }) : null,
+        TableRow,
+        TableHeader,
+        TableCell,
+        TaskList,
+        TaskItem ? TaskItem.configure({ nested: true }) : null
+    ].filter(Boolean); // 👈 LỌC BỎ CÁC PHẦN TỬ LỖI/UNDEFINED
 
-    console.log("✅ Trình soạn thảo Tiptap Full Tính Năng & Bảo toàn CSS đã sẵn sàng!");
-    if (typeof callback === 'function') callback();
+    try {
+        tiptapEditor = new Editor({
+            element: document.getElementById('tiptap-editor'),
+            extensions: activeExtensions,
+            content: extracted.body || ''
+        });
+
+        console.log("✅ Trình soạn thảo Tiptap đã sẵn sàng!");
+        if (typeof callback === 'function') callback();
+    } catch (err) {
+        console.error("Lỗi khi khởi tạo Tiptap Editor:", err);
+    }
 };
 
 // Lấy nội dung HTML từ Editor

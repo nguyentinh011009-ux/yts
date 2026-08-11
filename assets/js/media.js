@@ -548,17 +548,26 @@ window.execTiptapCmd = function(cmd, param = null) {
 window.toggleSourceView = function() {
     const paper = document.getElementById('tiptap-editor');
     const source = document.getElementById('p-content-source');
+    const btnSource = document.getElementById('btn-tp-source');
 
     if (!window.isSourceViewMode) {
+        // Chuyển sang chế độ Xem / Sửa Code HTML
         source.value = tiptapEditor ? tiptapEditor.getHTML() : '';
         paper.style.display = 'none';
         source.style.display = 'block';
         window.isSourceViewMode = true;
+        
+        // Đổi màu nút HTML trên Toolbar để báo hiệu
+        if (btnSource) btnSource.classList.add('is-active-source');
     } else {
+        // Chuyển lại về giao diện soạn thảo trực quan Word
         if (tiptapEditor) tiptapEditor.commands.setContent(source.value);
         source.style.display = 'none';
         paper.style.display = 'block';
         window.isSourceViewMode = false;
+        
+        // Trả màu nút HTML về bình thường
+        if (btnSource) btnSource.classList.remove('is-active-source');
     }
 };
 

@@ -646,3 +646,23 @@
     min-height: calc(100vh - 140px) !important;
     max-height: none !important;
 }
+/* ==========================================================================
+   TÙY CHỈNH KHUNG XEM CODE HTML Ở CHẾ ĐỘ TOÀN MÀN HÌNH
+   ========================================================================== */
+
+/* Khi chuyển sang xem Code HTML ở chế độ Toàn màn hình */
+.tiptap-editor-wrapper.is-fullscreen .tiptap-source-mode {
+    width: 100% !important;
+    max-width: 1000px !important;
+    height: calc(100vh - 120px) !important;
+    min-height: calc(100vh - 120px) !important;
+    max-height: none !important;
+    margin: 0 auto !important;
+}
+
+/* Nổi bật nút Code HTML khi đang ở chế độ xem Code */
+.tp-btn.is-active-source {
+    background: #0f172a !important;
+    color: #38bdf8 !important;
+    border-color: #38bdf8 !important;
+}

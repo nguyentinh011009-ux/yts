@@ -222,10 +222,8 @@ function changePostFilter(filterType) {
 }
 // --- 3. QUẢN LÝ BÀI VIẾT (CRUD) ---
 function showPostEditor(postId = null) {
-    // Chuyển sang Tab Soạn Thảo (Không dùng Modal nữa)
     switchTab('tab-post-editor');
 
-    // Khởi tạo CKEditor khi giao diện đã hiển thị 100%
     initCKEditor(() => {
         if (!postId) {
             document.getElementById('editor-mode-title').innerText = "Thêm bài viết mới";
@@ -233,12 +231,8 @@ function showPostEditor(postId = null) {
             document.getElementById('p-title').value = "";
             document.getElementById('p-cover').value = "";
             
-if (CKEDITOR.instances['p-content']) {
-    CKEDITOR.instances['p-content'].setData("");
-    CKEDITOR.instances['p-content'].focus();
-} else {
-    document.getElementById('p-content').value = "";
-}
+            // Xóa sạch khung gõ Tiptap khi thêm bài mới
+            setEditorContent("");
 
             document.getElementById('p-pin').checked = false;
             document.getElementById('p-update-time').checked = true;
@@ -252,7 +246,7 @@ function hidePostEditor() {
 }
 
 async function savePost() {
-	const contentData = CKEDITOR.instances['p-content'] ? CKEDITOR.instances['p-content'].getData() : document.getElementById('p-content').value;
+    const contentData = getEditorContent(); // Lấy dữ liệu từ Tiptap
     const id = document.getElementById('edit-post-id').value;
     const data = {
         title: document.getElementById('p-title').value,
@@ -355,12 +349,8 @@ async function editPost(id) {
             document.getElementById('p-title').value = p.title || "";
             document.getElementById('p-cover').value = p.cover || "";
             
-if (CKEDITOR.instances['p-content']) {
-    CKEDITOR.instances['p-content'].setData("");
-    CKEDITOR.instances['p-content'].focus();
-} else {
-    document.getElementById('p-content').value = "";
-}
+            // ✅ ĐÃ SỬA LỖI: Đưa trực tiếp nội dung p.content vào Tiptap Editor
+            setEditorContent(p.content || "");
 
             document.getElementById('p-pin').checked = p.isPinned || false;
             document.getElementById('lbl-update-time').style.display = 'flex';
@@ -2882,13 +2872,10 @@ async function generateHTMLwithAI() {
         }
 
         let aiHTML = data.candidates[0].content.parts[0].text;
-        aiHTML = aiHTML.replace(/```html/g, '').replace(/```/g, '').trim();
+		aiHTML = aiHTML.replace(/```html/g, '').replace(/```/g, '').trim();
 
-if (CKEDITOR.instances['p-content']) {
-    CKEDITOR.instances['p-content'].setData(aiHTML);
-} else {
-    document.getElementById('p-content').value = aiHTML;
-}
+		setEditorContent(aiHTML);
+
         sysAlert("Thành công! AI đã tự động điền Code HTML.", "success");
         toggleAIGenerator(); 
     } catch (error) {

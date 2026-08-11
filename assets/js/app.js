@@ -221,22 +221,29 @@ function changePostFilter(filterType) {
 // --- 3. QUẢN LÝ BÀI VIẾT (CRUD) ---
 function showPostEditor(postId = null) {
     switchTab('tab-post-editor');
+    
+    // Kiểm tra và lấy hàm khởi tạo từ window
+    const startInit = window.initCKEditor || (typeof initCKEditor === 'function' ? initCKEditor : null);
 
-    initCKEditor(() => {
-        if (!postId) {
-            document.getElementById('editor-mode-title').innerText = "Thêm bài viết mới";
-            document.getElementById('edit-post-id').value = "";
-            document.getElementById('p-title').value = "";
-            document.getElementById('p-cover').value = "";
-            
-            // Xóa sạch khung gõ Tiptap khi thêm bài mới
-            setEditorContent("");
+    if (startInit) {
+        startInit(() => {
+            if (!postId) {
+                document.getElementById('editor-mode-title').innerText = "Thêm bài viết mới";
+                document.getElementById('edit-post-id').value = "";
+                document.getElementById('p-title').value = "";
+                document.getElementById('p-cover').value = "";
+                
+                if (typeof setEditorContent === 'function') setEditorContent("");
 
-            document.getElementById('p-pin').checked = false;
-            document.getElementById('p-update-time').checked = true;
-            document.getElementById('lbl-update-time').style.display = 'none';
-        }
-    });
+                document.getElementById('p-pin').checked = false;
+                document.getElementById('p-update-time').checked = true;
+                document.getElementById('lbl-update-time').style.display = 'none';
+            }
+        });
+    } else {
+        console.warn("Đang chờ thư viện Media nạp...");
+        setTimeout(() => showPostEditor(postId), 200);
+    }
 }
 
 function hidePostEditor() {

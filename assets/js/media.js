@@ -374,25 +374,18 @@ function filterPickerCategory(cat) {
 function searchPickerFiles(kw) {
     renderPickerGrid(kw);
 }
-// =========================================================================
-// KHỞI TẠO TIPTAP EDITOR FULL TÍNH NĂNG (BỔ SUNG ĐẦY ĐỦ EXTENSIONS)
-// =========================================================================
-
 let tiptapEditor = null;
 window.isSourceViewMode = false;
 let currentStyleBlock = '';
 
-// 1. TỰ ĐỘNG TẢI DYNAMIC GOOGLE FONTS KHI NGƯỜI DÙNG CHỌN FONT MỚI
 window.loadGoogleFontOnDemand = function(fontName) {
     if (!fontName) return;
     const systemFonts = ['Arial', 'Times New Roman', 'Courier New', 'Georgia', 'Tahoma', 'Verdana', 'Trebuchet MS', 'Impact'];
     if (systemFonts.includes(fontName)) return;
-
     const fontId = 'gfont-' + fontName.toLowerCase().replace(/\s+/g, '-');
     if (!document.getElementById(fontId)) {
         const link = document.createElement('link');
-        link.id = fontId;
-        link.rel = 'stylesheet';
+        link.id = fontId; link.rel = 'stylesheet';
         link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@300;400;600;700&display=swap`;
         document.head.appendChild(link);
     }
@@ -401,61 +394,35 @@ window.loadGoogleFontOnDemand = function(fontName) {
 function extractStyleBlock(html) {
     if (!html) return { style: '', body: '' };
     let styleMatches = [];
-    let body = html.replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, (match) => {
-        styleMatches.push(match);
-        return '';
-    });
-    return {
-        style: styleMatches.join('\n'),
-        body: body.trim()
-    };
+    let body = html.replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, (match) => { styleMatches.push(match); return ''; });
+    return { style: styleMatches.join('\n'), body: body.trim() };
 }
-// 2. KHỞI TẠO TIPTAP EDITOR
-window.initCKEditor = function(callback) {
-    if (tiptapEditor) {
-        if (typeof callback === 'function') callback();
-        return;
-    }
 
-    if (!window.TiptapModules) {
-        setTimeout(() => window.initCKEditor(callback), 150);
-        return;
-    }
+window.initCKEditor = function(callback) {
+    if (tiptapEditor) { if (typeof callback === 'function') callback(); return; }
+    if (!window.TiptapModules) { setTimeout(() => window.initCKEditor(callback), 150); return; }
 
     const { 
         Editor, StarterKit, Image, Link, Underline, TextAlign, TextStyle, 
         Color, FontFamily, Highlight, Youtube, Table, TableRow, TableHeader, 
         TableCell, TaskList, TaskItem, FontSize, CustomDiv,
-        Subscript, Superscript, CharacterCount
+        Subscript, Superscript, CharacterCount, LineHeight // Đã bổ sung
     } = window.TiptapModules;
 
     const sourceArea = document.getElementById('p-content-source');
-    const initialContent = sourceArea ? sourceArea.value : '';
-
-    const extracted = extractStyleBlock(initialContent);
+    const extracted = extractStyleBlock(sourceArea ? sourceArea.value : '');
     currentStyleBlock = extracted.style;
 
     const activeExtensions = [
-        StarterKit,
-        CustomDiv,
-        Underline,
-        TextStyle,
-        FontSize,
-        Color,
-        FontFamily,
-        Subscript,
-        Superscript,
-        CharacterCount,
+        StarterKit, CustomDiv, Underline, TextStyle, FontSize, Color, FontFamily,
+        Subscript, Superscript, CharacterCount, LineHeight,
         Highlight ? Highlight.configure({ multicolors: true }) : null,
         Image,
         Link ? Link.configure({ openOnClick: false, autolink: true }) : null,
         TextAlign ? TextAlign.configure({ types: ['heading', 'paragraph'] }) : null,
         Youtube ? Youtube.configure({ controls: true, nocookie: true }) : null,
         Table ? Table.configure({ resizable: true }) : null,
-        TableRow,
-        TableHeader,
-        TableCell,
-        TaskList,
+        TableRow, TableHeader, TableCell, TaskList,
         TaskItem ? TaskItem.configure({ nested: true }) : null
     ].filter(Boolean);
 
@@ -464,101 +431,63 @@ window.initCKEditor = function(callback) {
             element: document.getElementById('tiptap-editor'),
             extensions: activeExtensions,
             content: extracted.body || '',
-            onUpdate({ editor }) {
-                updateWordCountStats(editor);
+            onUpdate({ editor }) { updateWordCountStats(editor); },
+            onSelectionUpdate({ editor }) {
+                // Tự động đồng bộ Font Name và Font Size khi click vào vùng chữ bất kỳ
+                const fontSelect = document.getElementById('tp-font-family-select');
+                if (fontSelect) {
+                    const currentFont = editor.getAttributes('textStyle').fontFamily || '';
+                    fontSelect.value = currentFont.replace(/['"]/g, '');
+                }
+                const sizeInput = document.getElementById('tp-custom-size-input');
+                if (sizeInput) {
+                    const currentSize = editor.getAttributes('textStyle').fontSize || '16px';
+                    sizeInput.value = currentSize;
+                }
             }
         });
-
         updateWordCountStats(tiptapEditor);
-        console.log("✅ Trình soạn thảo Word 365 đã khởi tạo thành công!");
         if (typeof callback === 'function') callback();
-    } catch (err) {
-        console.error("Lỗi khi khởi tạo Tiptap Editor:", err);
-    }
+    } catch (err) { console.error("Lỗi khi khởi tạo Tiptap Editor:", err); }
 };
-// 3. CẬP NHẬT THỐNG KÊ SỐ TỪ & KÝ TỰ REALTIME
+
 function updateWordCountStats(editor) {
     if (!editor) return;
     const text = editor.getText();
     const words = text.trim() ? text.trim().split(/\s+/).length : 0;
     const chars = text.length;
-
-    const elWords = document.getElementById('tp-stat-words');
-    const elChars = document.getElementById('tp-stat-chars');
-
-    if (elWords) elWords.innerText = words.toLocaleString('vi-VN');
-    if (elChars) elChars.innerText = chars.toLocaleString('vi-VN');
+    if (document.getElementById('tp-stat-words')) document.getElementById('tp-stat-words').innerText = words.toLocaleString('vi-VN');
+    if (document.getElementById('tp-stat-chars')) document.getElementById('tp-stat-chars').innerText = chars.toLocaleString('vi-VN');
 }
-// Lấy nội dung HTML từ Editor
+
 window.getEditorContent = function() {
     if (window.isSourceViewMode) {
-        const sourceArea = document.getElementById('p-content-source');
-        const sourceVal = sourceArea ? sourceArea.value : '';
-        const extracted = extractStyleBlock(sourceVal);
-        currentStyleBlock = extracted.style;
+        const sourceVal = document.getElementById('p-content-source').value;
+        currentStyleBlock = extractStyleBlock(sourceVal).style;
         return sourceVal;
     }
-    
     const editorHtml = tiptapEditor ? tiptapEditor.getHTML() : '';
-    
-    // Ghép khối CSS <style> vào đầu bài viết nếu có
-    if (currentStyleBlock && currentStyleBlock.trim() !== '') {
-        return `${currentStyleBlock}\n${editorHtml}`;
-    }
-    return editorHtml;
+    return currentStyleBlock ? `${currentStyleBlock}\n${editorHtml}` : editorHtml;
 };
 
-// Thiết lập nội dung HTML vào Editor
 window.setEditorContent = function(html = '') {
-    const sourceArea = document.getElementById('p-content-source');
     const extracted = extractStyleBlock(html);
     currentStyleBlock = extracted.style;
-
-    if (sourceArea) sourceArea.value = html || '';
-
+    if (document.getElementById('p-content-source')) document.getElementById('p-content-source').value = html || '';
     if (tiptapEditor) {
-        // 1. Nạp nội dung HTML vào Tiptap
         tiptapEditor.commands.setContent(extracted.body || '');
-
-        // 2. CẬP NHẬT NGAY THỐNG KÊ SỐ TỪ/KÝ TỰ TRÊN THANH TRẠNG THÁI WORD
-        if (typeof updateWordCountStats === 'function') {
-            updateWordCountStats(tiptapEditor);
-        }
-
-        // 3. TỰ ĐỘNG QUÉT VÀ TẢI GOOGLE FONTS CỦA BÀI VIẾT CŨ (NẾU CÓ)
-        if (typeof window.loadGoogleFontOnDemand === 'function' && html) {
-            const fontMatches = html.match(/font-family:\s*['"]?([^'";>]+)['"]?/gi);
-            if (fontMatches) {
-                fontMatches.forEach(f => {
-                    const fontName = f.replace(/font-family:\s*['"]?/i, '').replace(/['"]?$/, '').trim();
-                    window.loadGoogleFontOnDemand(fontName);
-                });
-            }
-        }
+        updateWordCountStats(tiptapEditor);
+        const fontMatches = html.match(/font-family:\s*['"]?([^'";>]+)['"]?/gi);
+        if (fontMatches) fontMatches.forEach(f => window.loadGoogleFontOnDemand(f.replace(/font-family:\s*['"]?/i, '').replace(/['"]?$/, '').trim()));
     }
 };
-// Chèn Media (Ảnh/Video/File)
+
 window.insertMediaToEditor = function(url, resourceType, fileName) {
     if (!tiptapEditor) return;
-    
-    // Kiểm tra ô tick Tự động bật link phóng to (Nếu không tìm thấy mặc định là true)
-    const chkZoom = document.getElementById('chk-auto-image-zoom');
-    const isEnableZoom = chkZoom ? chkZoom.checked : true;
-
+    const isEnableZoom = document.getElementById('chk-auto-image-zoom') ? document.getElementById('chk-auto-image-zoom').checked : true;
     if (resourceType === 'image') {
-        if (isEnableZoom) {
-            // Chèn Ảnh bọc trong thẻ <a href="..." target="_blank"> chuẩn SEO & Phóng to
-            tiptapEditor.chain().focus().insertContent(`
-                <p style="text-align:center;">
-                    <a href="${url}" target="_blank" rel="noopener noreferrer" class="vts-img-zoom-link" title="Bấm vào để xem ảnh phóng to">
-                        <img src="${url}" alt="${fileName || 'Poster chăm sóc sức khỏe'}" data-alignment="center" style="width:100%; max-width:100%; display:block; margin:15px auto; border-radius:10px; cursor:pointer;" />
-                    </a>
-                </p>
-            `).run();
-        } else {
-            // Chèn Ảnh thường không có link
-            tiptapEditor.chain().focus().setImage({ src: url, alt: fileName || 'Ảnh bài viết' }).run();
-        }
+        if (isEnableZoom) tiptapEditor.chain().focus().insertContent(`<p style="text-align:center;"><a href="${url}" target="_blank" rel="noopener noreferrer" class="vts-img-zoom-link"><img src="${url}" alt="${fileName}" data-alignment="center" style="width:100%; max-width:100%; display:block; margin:15px auto; border-radius:10px; cursor:pointer;" /></a></p>`).run();
+        else tiptapEditor.chain().focus().setImage({ src: url, alt: fileName }).run();
     } else if (resourceType === 'video') {
         tiptapEditor.chain().focus().insertContent(`<p style="text-align:center;"><video controls src="${url}" style="width:100%; max-width:1000px; border-radius:12px; margin:15px auto;"></video></p>`).run();
     } else {
@@ -566,28 +495,17 @@ window.insertMediaToEditor = function(url, resourceType, fileName) {
     }
     sysAlert("Đã chèn nội dung vào bài viết!", "success");
 };
+
 window.execTiptapCmd = function(cmd, param = null) {
     if (!tiptapEditor) return;
-
     switch(cmd) {
-        // --- PHÔNG CHỮ & CỠ CHỮ ---
         case 'fontFamily': 
-            if (param) {
-                window.loadGoogleFontOnDemand(param);
-                tiptapEditor.chain().focus().setFontFamily(param).run(); 
-            } else {
-                tiptapEditor.chain().focus().unsetFontFamily().run();
-            }
+            if (param) { window.loadGoogleFontOnDemand(param); tiptapEditor.chain().focus().setFontFamily(param).run(); } 
+            else tiptapEditor.chain().focus().unsetFontFamily().run();
             break;
-
         case 'fontSize': 
-            if (param) {
-                const formattedSize = isNaN(param) ? param : `${param}px`;
-                tiptapEditor.chain().focus().setMark('textStyle', { fontSize: formattedSize }).run(); 
-            }
+            if (param) tiptapEditor.chain().focus().setMark('textStyle', { fontSize: isNaN(param) ? param : `${param}px` }).run(); 
             break;
-
-        // --- ĐỊNH DẠNG CHỮ ---
         case 'bold': tiptapEditor.chain().focus().toggleBold().run(); break;
         case 'italic': tiptapEditor.chain().focus().toggleItalic().run(); break;
         case 'underline': tiptapEditor.chain().focus().toggleUnderline().run(); break;
@@ -596,26 +514,12 @@ window.execTiptapCmd = function(cmd, param = null) {
         case 'superscript': tiptapEditor.chain().focus().toggleSuperscript().run(); break;
         case 'color': if (param) tiptapEditor.chain().focus().setColor(param).run(); break;
         case 'highlight': if (param) tiptapEditor.chain().focus().toggleHighlight({ color: param }).run(); break;
-        
-        case 'clearFormatting':
-            tiptapEditor.chain().focus().unsetAllMarks().clearNodes().run();
-            sysAlert("Đã xóa toàn bộ định dạng chữ!", "success");
-            break;
-
-        // --- CĂN CHỈNH & KHOẢNG CÁCH DÒNG ---
+        case 'clearFormatting': tiptapEditor.chain().focus().unsetAllMarks().clearNodes().run(); break;
         case 'alignLeft': tiptapEditor.chain().focus().setTextAlign('left').run(); break;
         case 'alignCenter': tiptapEditor.chain().focus().setTextAlign('center').run(); break;
         case 'alignRight': tiptapEditor.chain().focus().setTextAlign('right').run(); break;
         case 'alignJustify': tiptapEditor.chain().focus().setTextAlign('justify').run(); break;
-
-        case 'lineHeight':
-            if (param) {
-                // Áp dụng khoảng cách dòng CSS
-                tiptapEditor.chain().focus().setMark('textStyle', { lineHeight: param }).run();
-            }
-            break;
-
-        // --- TIÊU ĐỀ & DANH SÁCH ---
+        case 'lineHeight': if (param && tiptapEditor.commands.setLineHeight) tiptapEditor.chain().focus().setLineHeight(param).run(); break;
         case 'h1': tiptapEditor.chain().focus().toggleHeading({ level: 1 }).run(); break;
         case 'h2': tiptapEditor.chain().focus().toggleHeading({ level: 2 }).run(); break;
         case 'h3': tiptapEditor.chain().focus().toggleHeading({ level: 3 }).run(); break;
@@ -623,9 +527,16 @@ window.execTiptapCmd = function(cmd, param = null) {
         case 'bulletList': tiptapEditor.chain().focus().toggleBulletList().run(); break;
         case 'orderedList': tiptapEditor.chain().focus().toggleOrderedList().run(); break;
         case 'taskList': tiptapEditor.chain().focus().toggleTaskList().run(); break;
-
-        // --- BẢNG (TABLE WORD ADVANCED) ---
-        case 'insertTable': tiptapEditor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); break;
+        
+        // FIX LỖI TẠO BẢNG CỨNG 3x3 -> HỎI NGƯỜI DÙNG KÍCH THƯỚC BẢNG TỰ DO
+        case 'insertTable': 
+            const rows = prompt("Nhập số HÀNG của Bảng:", "3");
+            const cols = prompt("Nhập số CỘT của Bảng:", "3");
+            if(rows && cols && !isNaN(rows) && !isNaN(cols)) {
+                tiptapEditor.chain().focus().insertTable({ rows: parseInt(rows), cols: parseInt(cols), withHeaderRow: true }).run();
+            }
+            break;
+            
         case 'addRowBefore': tiptapEditor.chain().focus().addRowBefore().run(); break;
         case 'addRowAfter': tiptapEditor.chain().focus().addRowAfter().run(); break;
         case 'deleteRow': tiptapEditor.chain().focus().deleteRow().run(); break;
@@ -634,151 +545,72 @@ window.execTiptapCmd = function(cmd, param = null) {
         case 'deleteColumn': tiptapEditor.chain().focus().deleteColumn().run(); break;
         case 'mergeCells': tiptapEditor.chain().focus().mergeCells().run(); break;
         case 'splitCell': tiptapEditor.chain().focus().splitCell().run(); break;
-        case 'tableCellBg':
-            if (param) {
-                tiptapEditor.chain().focus().setCellAttribute('backgroundColor', param).run();
-            }
-            break;
+        case 'tableCellBg': if (param) tiptapEditor.chain().focus().setCellAttribute('backgroundColor', param).run(); break;
         case 'deleteTable': tiptapEditor.chain().focus().deleteTable().run(); break;
-
-        // --- BLOCKS & CHÈN MEDIA ---
         case 'blockquote': tiptapEditor.chain().focus().toggleBlockquote().run(); break;
         case 'codeBlock': tiptapEditor.chain().focus().toggleCodeBlock().run(); break;
-        case 'youtube': {
-            const url = prompt('Nhập link Video YouTube (VD: https://www.youtube.com/watch?v=...):');
-            if (url) tiptapEditor.commands.setYoutubeVideo({ src: url });
+        case 'youtube': 
+            const yUrl = prompt('Nhập link Video YouTube:');
+            if (yUrl) tiptapEditor.commands.setYoutubeVideo({ src: yUrl });
             break;
-        }
-        case 'math': {
+        case 'math':
             const latex = prompt('Nhập công thức Toán (LaTeX/KaTeX):', 'E = mc^2');
             if (latex && window.katex) {
                 const rendered = window.katex.renderToString(latex, { throwOnError: false });
-                const mathHtml = `<span class="math-formula-node" data-latex="${latex}">${rendered}</span>&nbsp;`;
-                tiptapEditor.chain().focus().insertContent(mathHtml).run();
+                tiptapEditor.chain().focus().insertContent(`<span class="math-formula-node" data-latex="${latex}">${rendered}</span>&nbsp;`).run();
             }
             break;
-        }
-        case 'link': {
+        case 'link':
             const previousUrl = tiptapEditor.getAttributes('link').href;
-            const url = prompt('Nhập đường dẫn URL:', previousUrl);
-            if (url === null) return;
-            if (url === '') {
-                tiptapEditor.chain().focus().extendMarkRange('link').unsetLink().run();
-                return;
-            }
-            tiptapEditor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+            const linkUrl = prompt('Nhập đường dẫn URL:', previousUrl);
+            if (linkUrl === null) return;
+            if (linkUrl === '') tiptapEditor.chain().focus().extendMarkRange('link').unsetLink().run();
+            else tiptapEditor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl }).run();
             break;
-        }
         case 'unsetLink': tiptapEditor.chain().focus().unsetLink().run(); break;
         case 'horizontalRule': tiptapEditor.chain().focus().setHorizontalRule().run(); break;
-
-        // --- THAO TÁC LỊCH SỬ ---
         case 'undo': tiptapEditor.chain().focus().undo().run(); break;
         case 'redo': tiptapEditor.chain().focus().redo().run(); break;
     }
 };
 
-// 6. BỔ SUNG SUBSCRIPT, SUPERSCRIPT VÀO NGUỒN ESM MODULE
-window.TiptapModules.Subscript = window.TiptapModules.Subscript || null;
-window.TiptapModules.Superscript = window.TiptapModules.Superscript || null;
-
-// Chuyển đổi xem mã HTML thô
 window.toggleSourceView = function() {
     const paper = document.getElementById('tiptap-editor');
     const source = document.getElementById('p-content-source');
     const btnSource = document.getElementById('btn-tp-source');
-
     if (!window.isSourceViewMode) {
-        // Chuyển từ Word -> HTML
-        const bodyHtml = tiptapEditor ? tiptapEditor.getHTML() : '';
-        source.value = currentStyleBlock ? `${currentStyleBlock}\n${bodyHtml}` : bodyHtml;
-        paper.style.display = 'none';
-        source.style.display = 'block';
+        source.value = currentStyleBlock ? `${currentStyleBlock}\n${tiptapEditor.getHTML()}` : tiptapEditor.getHTML();
+        paper.style.display = 'none'; source.style.display = 'block';
         window.isSourceViewMode = true;
         if (btnSource) btnSource.classList.add('is-active-source');
     } else {
-        // Chuyển từ HTML -> Word
-        const sourceVal = source.value;
-        const extracted = extractStyleBlock(sourceVal);
+        const extracted = extractStyleBlock(source.value);
         currentStyleBlock = extracted.style;
         if (tiptapEditor) tiptapEditor.commands.setContent(extracted.body);
-        source.style.display = 'none';
-        paper.style.display = 'block';
+        source.style.display = 'none'; paper.style.display = 'block';
         window.isSourceViewMode = false;
         if (btnSource) btnSource.classList.remove('is-active-source');
     }
 };
-// Tích hợp Cloudinary & Media Picker
-function openCloudinaryWidgetForEditor() {
-    if (typeof cloudinary === 'undefined') return sysAlert("Chưa tải xong thư viện Cloudinary!", "error");
-
-    cloudinary.openUploadWidget({
-        cloudName: CLOUDINARY_CONFIG.cloudName,
-        uploadPreset: CLOUDINARY_CONFIG.uploadPreset,
-        sources: ['google_drive', 'local', 'url', 'camera'],
-        defaultSource: 'google_drive',
-        multiple: true
-    }, (error, result) => {
-        if (!error && result && result.event === "success") {
-            saveMediaMetadata(result.info);
-            insertMediaToEditor(result.info.secure_url, result.info.resource_type, result.info.original_filename);
-        }
-    });
-}
-
-function selectMediaForPost(url, resourceType, fileName) {
-    if (mediaPickerTarget === 'cover') {
-        document.getElementById('p-cover').value = url;
-        sysAlert("Đã chọn ảnh bìa từ kho thành công!", "success");
-    } else if (mediaPickerTarget === 'editor') {
-        insertMediaToEditor(url, resourceType, fileName);
-    }
-    closeMediaPickerModal();
-}
-// =========================================================================
-// CHỨC NĂNG PHÓNG TO / THU NHỎ TOÀN MÀN HÌNH (FULLSCREEN FOCUS EDITOR)
-// =========================================================================
 
 window.toggleFullscreenEditor = function() {
     const wrapper = document.querySelector('.tiptap-editor-wrapper');
+    if (!wrapper) return;
+    const isFS = wrapper.classList.toggle('is-fullscreen');
+    document.body.style.overflow = isFS ? 'hidden' : '';
     const icon = document.getElementById('ic-tp-fullscreen');
     const label = document.getElementById('lbl-tp-fullscreen');
-    const btn = document.getElementById('btn-tp-fullscreen');
-
-    if (!wrapper) return;
-
-    // Bật/Tắt class is-fullscreen
-    const isFS = wrapper.classList.toggle('is-fullscreen');
-
-    if (isFS) {
-        // Trạng thái TOÀN MÀN HÌNH
-        document.body.style.overflow = 'hidden'; // Khóa cuộn trang web bên dưới
-        if (icon) icon.className = 'fas fa-check-circle';
-        if (label) {
-            label.innerText = 'XONG';
-            label.style.display = 'inline-block';
-        }
-        if (btn) btn.title = "Hoàn tất và quay về màn hình bài viết";
-        
-        // Con trỏ chuột tự động nhảy vào vị trí đang gõ
-        if (typeof tiptapEditor !== 'undefined' && tiptapEditor) {
-            tiptapEditor.commands.focus();
-        }
-    } else {
-        // Trạng thái THU NHỎ (TRỞ VỀ BÌNH THƯỜNG)
-        document.body.style.overflow = ''; // Mở lại cuộn trang web
-        if (icon) icon.className = 'fas fa-expand';
-        if (label) label.style.display = 'none';
-        if (btn) btn.title = "Phóng to toàn màn hình (Gõ tập trung)";
+    if (icon) icon.className = isFS ? 'fas fa-check-circle' : 'fas fa-expand';
+    if (label) {
+        label.innerText = 'XONG';
+        label.style.display = isFS ? 'inline-block' : 'none';
     }
+    if (isFS && tiptapEditor) tiptapEditor.commands.focus();
 };
 
-// HỖ TRỢ BẤM PHÍM "ESC" ĐỂ THU NHỎ NHANH
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' || e.key === 'Esc') {
         const wrapper = document.querySelector('.tiptap-editor-wrapper');
-        if (wrapper && wrapper.classList.contains('is-fullscreen')) {
-            window.toggleFullscreenEditor();
-        }
+        if (wrapper && wrapper.classList.contains('is-fullscreen')) window.toggleFullscreenEditor();
     }
 });

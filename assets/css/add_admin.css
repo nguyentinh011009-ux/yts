@@ -239,7 +239,7 @@
     border: 1px solid #cbd5e1;
     border-radius: 12px;
     background: #f8fafc;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
     overflow: hidden;
 }
 
@@ -247,36 +247,48 @@
 .tiptap-toolbar {
     position: sticky;
     top: 0;
-    z-index: 20;
+    z-index: 25;
     background: #ffffff;
     border-bottom: 1px solid #e2e8f0;
     padding: 8px 12px;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 4px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
+.tp-group {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: #f8fafc;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
 .tp-btn {
+    position: relative;
     background: transparent;
     border: 1px solid transparent;
     border-radius: 6px;
-    width: 32px;
-    height: 32px;
+    min-width: 30px;
+    height: 30px;
+    padding: 0 6px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #475569;
-    font-size: 0.9rem;
+    color: #334155;
+    font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.15s ease;
+    user-select: none;
 }
 
 .tp-btn:hover {
-    background: #f1f5f9;
-    color: #0062ff;
+    background: #e2e8f0;
+    color: #0284c7;
 }
 
 .tp-btn.is-active {
@@ -287,9 +299,9 @@
 
 .tp-divider {
     width: 1px;
-    height: 20px;
+    height: 22px;
     background: #cbd5e1;
-    margin: 0 6px;
+    margin: 0 4px;
 }
 
 /* Khung trang giấy gõ văn bản như Microsoft Word */
@@ -388,14 +400,36 @@
 
 /* Nút Chọn Dropdown trên Toolbar */
 .tp-select {
-    padding: 4px 8px;
+    height: 30px;
+    padding: 0 8px;
     border-radius: 6px;
     border: 1px solid #cbd5e1;
     background: #ffffff;
-    font-size: 0.85rem;
-    color: #334155;
+    font-size: 0.82rem;
+    color: #1e293b;
     outline: none;
     cursor: pointer;
+    transition: border 0.15s;
+}
+
+.tp-select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+.tp-input-size {
+    width: 55px;
+    height: 30px;
+    text-align: center;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    font-size: 0.82rem;
+    font-weight: 600;
+    outline: none;
+    background: #fff;
+}
+.tp-input-size:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
 }
 
 /* Khung bọc nút chọn màu */
@@ -404,14 +438,13 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border-radius: 6px;
     border: 1px solid #cbd5e1;
     background: #ffffff;
     cursor: pointer;
 }
-
 .tp-color-wrapper input[type="color"] {
     position: absolute;
     inset: 0;
@@ -421,12 +454,85 @@
     cursor: pointer;
 }
 
+.tp-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.tp-dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    background: #ffffff;
+    min-width: 180px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 6px;
+    z-index: 100;
+}
+
+.tp-dropdown:hover .tp-dropdown-content {
+    display: block;
+}
+
+.tp-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    border: none;
+    background: transparent;
+    color: #334155;
+    font-size: 0.82rem;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.tp-dropdown-item:hover {
+    background: #f1f5f9;
+    color: #2563eb;
+}
+/* Tooltip Chú thích tiếng Việt */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: -32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0f172a;
+    color: #ffffff;
+    padding: 4px 8px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 200;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+[data-tooltip]:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(2px);
+}
 /* Style Bảng (Table) trong bài viết */
 .tiptap-paper .ProseMirror table {
     border-collapse: collapse;
     table-layout: fixed;
     width: 100%;
-    margin: 15px 0;
+    margin: 18px 0;
     overflow: hidden;
 }
 
@@ -436,7 +542,7 @@
     border: 1px solid #cbd5e1;
     padding: 8px 12px;
     vertical-align: top;
-    box-sizing: border-sizing;
+    box-sizing: border-box;
     position: relative;
 }
 
@@ -830,4 +936,16 @@
     display: flow-root !important;
     overflow: visible !important;
     box-sizing: border-box !important;
+}
+/* Thanh Đếm từ & Trạng thái Word */
+.tiptap-statusbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    padding: 6px 16px;
+    font-size: 0.78rem;
+    color: #64748b;
+    font-weight: 500;
 }

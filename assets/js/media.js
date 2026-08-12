@@ -523,18 +523,18 @@ window.execTiptapCmd = function(cmd, param = null) {
     if (!tiptapEditor) return;
     switch(cmd) {
     case 'insertShape': {
-            const shapeType = param || 'arrow';
-            if (tiptapEditor) {
-                tiptapEditor.chain().focus().insertContent({
-                    type: 'customShape',
-                    attrs: { 
-                        shapeType: shapeType,
-                        text: 'Nhấp chuột vào đây để gõ chữ...'
-                    }
-                }).run();
-                sysAlert("Đã chèn Hình Khối (Shape) vào bài viết!", "success");
+        const shapeType = param || 'arrow';
+        if (tiptapEditor) {
+            tiptapEditor.chain().focus().insertContent({
+                type: 'customShape',
+                attrs: { 
+                    shapeType: shapeType,
+                    text: 'Nội dung Shape'
+                }
+            }).run();
+            sysAlert("Đã chèn Hình Khối (Shape) vào bài viết!", "success");
             }
-            break;
+        break;
         }
         case 'fontFamily': 
             if (param) { window.loadGoogleFontOnDemand(param); tiptapEditor.chain().focus().setFontFamily(param).run(); } 

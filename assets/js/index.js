@@ -196,19 +196,29 @@ function startSlider() {
 }
 
 // --- 7. TÌM KIẾM BÀI VIẾT (TÌM TRÊN CACHE BỘ NHỚ RAM) ---
+function handleSearchKeyPress(event) {
+    if (event.key === 'Enter') {
+        searchPosts();
+    }
+}
 function searchPosts() {
-    const term = document.getElementById('search-input').value.toLowerCase().trim();
-    
+    const inputEl = document.getElementById('search-input');
+    if (!inputEl) return;
+
+    const term = inputEl.value.toLowerCase().trim();
+
+    // Nếu để trống từ khóa thì hiện lại tất cả bài viết
     if (!term) {
         renderPostsUI(allPosts);
         return;
     }
 
+    // Lọc bài viết theo tiêu đề hoặc nội dung
     const filtered = allPosts.filter(p => 
         (p.title && p.title.toLowerCase().includes(term)) || 
         (p.content && p.content.toLowerCase().includes(term))
     );
-    
+
     renderPostsUI(filtered);
 }
 

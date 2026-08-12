@@ -522,12 +522,15 @@ window.insertMediaToEditor = function(url, resourceType, fileName) {
 window.execTiptapCmd = function(cmd, param = null) {
     if (!tiptapEditor) return;
     switch(cmd) {
-        case 'insertShape': {
-            const shapeType = param || 'rectangle';
+    case 'insertShape': {
+            const shapeType = param || 'arrow';
             if (tiptapEditor) {
                 tiptapEditor.chain().focus().insertContent({
                     type: 'customShape',
-                    attrs: { shapeType: shapeType }
+                    attrs: { 
+                        shapeType: shapeType,
+                        text: 'Nhấp chuột vào đây để gõ chữ...'
+                    }
                 }).run();
                 sysAlert("Đã chèn Hình Khối (Shape) vào bài viết!", "success");
             }

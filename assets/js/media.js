@@ -524,7 +524,13 @@ window.execTiptapCmd = function(cmd, param = null) {
         case 'subscript': tiptapEditor.chain().focus().toggleSubscript().run(); break;
         case 'superscript': tiptapEditor.chain().focus().toggleSuperscript().run(); break;
         case 'color': if (param) tiptapEditor.chain().focus().setColor(param).run(); break;
-        case 'highlight': if (param) tiptapEditor.chain().focus().toggleHighlight({ color: param }).run(); break;
+        case 'highlight': 
+            if (param === 'transparent') {
+                tiptapEditor.chain().focus().unsetHighlight().run();
+            } else if (param) {
+                tiptapEditor.chain().focus().toggleHighlight({ color: param }).run(); 
+            }
+            break;
         case 'clearFormatting': tiptapEditor.chain().focus().unsetAllMarks().clearNodes().run(); break;
         case 'alignLeft': tiptapEditor.chain().focus().setTextAlign('left').run(); break;
         case 'alignCenter': tiptapEditor.chain().focus().setTextAlign('center').run(); break;
@@ -538,16 +544,15 @@ window.execTiptapCmd = function(cmd, param = null) {
         case 'bulletList': tiptapEditor.chain().focus().toggleBulletList().run(); break;
         case 'orderedList': tiptapEditor.chain().focus().toggleOrderedList().run(); break;
         case 'taskList': tiptapEditor.chain().focus().toggleTaskList().run(); break;
-        
-        // FIX LỖI TẠO BẢNG CỨNG 3x3 -> HỎI NGƯỜI DÙNG KÍCH THƯỚC BẢNG TỰ DO
-        case 'insertTable': 
-            const rows = prompt("Nhập số HÀNG của Bảng:", "3");
-            const cols = prompt("Nhập số CỘT của Bảng:", "3");
-            if(rows && cols && !isNaN(rows) && !isNaN(cols)) {
-                tiptapEditor.chain().focus().insertTable({ rows: parseInt(rows), cols: parseInt(cols), withHeaderRow: true }).run();
+        case 'insertTable': {
+            let r = prompt("Số hàng:", "3");
+            let c = prompt("Số cột:", "3");
+            r = parseInt(r); c = parseInt(c);
+            if (!isNaN(r) && !isNaN(c) && r > 0 && c > 0) {
+                tiptapEditor.chain().focus().insertTable({ rows: r, cols: c, withHeaderRow: true }).run();
             }
             break;
-            
+        }
         case 'addRowBefore': tiptapEditor.chain().focus().addRowBefore().run(); break;
         case 'addRowAfter': tiptapEditor.chain().focus().addRowAfter().run(); break;
         case 'deleteRow': tiptapEditor.chain().focus().deleteRow().run(); break;

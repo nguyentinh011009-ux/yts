@@ -406,7 +406,7 @@ window.initCKEditor = function(callback) {
         Editor, StarterKit, Image, Link, Underline, TextAlign, TextStyle, 
         Color, FontFamily, Highlight, Youtube, Table, TableRow, TableHeader, 
         TableCell, TaskList, TaskItem, FontSize, CustomDiv,
-        Subscript, Superscript, CharacterCount, LineHeight 
+        Subscript, Superscript, CharacterCount, LineHeight,CustomShape 
     } = window.TiptapModules;
 
     const sourceArea = document.getElementById('p-content-source');
@@ -414,7 +414,7 @@ window.initCKEditor = function(callback) {
     currentStyleBlock = extracted.style;
 
     const activeExtensions = [
-        StarterKit, CustomDiv, Underline, TextStyle, FontSize, Color, FontFamily,
+        StarterKit, CustomDiv, CustomShape, Underline, TextStyle, FontSize, Color, FontFamily,
         Subscript, Superscript, CharacterCount, LineHeight,
         Highlight ? Highlight.configure({ multicolors: true }) : null,
         Image,
@@ -522,6 +522,17 @@ window.insertMediaToEditor = function(url, resourceType, fileName) {
 window.execTiptapCmd = function(cmd, param = null) {
     if (!tiptapEditor) return;
     switch(cmd) {
+        case 'insertShape': {
+            const shapeType = param || 'rectangle';
+            if (tiptapEditor) {
+                tiptapEditor.chain().focus().insertContent({
+                    type: 'customShape',
+                    attrs: { shapeType: shapeType }
+                }).run();
+                sysAlert("Đã chèn Hình Khối (Shape) vào bài viết!", "success");
+            }
+            break;
+        }
         case 'fontFamily': 
             if (param) { window.loadGoogleFontOnDemand(param); tiptapEditor.chain().focus().setFontFamily(param).run(); } 
             else tiptapEditor.chain().focus().unsetFontFamily().run();

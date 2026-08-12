@@ -152,7 +152,7 @@
 
         <main class="admin-main">
             
-<!-- ========================================================================= -->
+            <!-- ========================================================================= -->
             <!-- 1. TAB DANH SÁCH BÀI VIẾT -->
             <!-- ========================================================================= -->
             <section id="tab-posts" class="tab-pane active">
@@ -1610,8 +1610,8 @@
                 };
             },
         });
-    // =========================================================================
-    // TIPTAP CUSTOM EXTENSION: SHAPE WORD TÙY CHỈNH (SVG + INTERACTIVE NODE VIEW)
+// =========================================================================
+    // TIPTAP CUSTOM EXTENSION: SHAPE WORD CAO CẤP (GÕ CHỮ TRỰC TIẾP & CÔNG CỤ NỔI)
     // =========================================================================
     const CustomShape = Node.create({
         name: 'customShape',
@@ -1621,17 +1621,17 @@
 
         addAttributes() {
             return {
-                shapeType: { default: 'rectangle' },
+                shapeType: { default: 'arrow' },
                 fillColor: { default: '#3b82f6' },
                 strokeColor: { default: '#1d4ed8' },
                 strokeWidth: { default: '2' },
                 strokeStyle: { default: 'solid' },
-                width: { default: '220px' },
-                height: { default: '120px' },
+                width: { default: '240px' },
+                height: { default: '130px' },
                 alignment: { default: 'center' },
-                text: { default: 'Chữ trong Shape' },
+                text: { default: 'Gõ chữ vào đây...' },
                 textColor: { default: '#ffffff' },
-                fontSize: { default: '15px' }
+                fontSize: { default: '16' }
             };
         },
 
@@ -1647,7 +1647,6 @@
             else if (align === 'float-left') alignStyle = 'float: left; margin: 5px 20px 15px 0;';
             else if (align === 'float-right') alignStyle = 'float: right; margin: 5px 0 15px 20px;';
 
-            // Tạo SVG xuất ra HTML chuẩn
             const type = HTMLAttributes.shapeType || 'rectangle';
             const fill = HTMLAttributes.fillColor || '#3b82f6';
             const stroke = HTMLAttributes.strokeColor || '#1d4ed8';
@@ -1665,23 +1664,32 @@
 
             return ['div', {
                 'data-type': 'custom-shape',
-                style: `width: ${HTMLAttributes.width || '220px'}; height: ${HTMLAttributes.height || '120px'}; position: relative; ${alignStyle}`
+                style: `width: ${HTMLAttributes.width || '240px'}; height: ${HTMLAttributes.height || '130px'}; position: relative; ${alignStyle}`
             }, 
-            ['div', { class: 'tp-shape-svg-box', style: 'width:100%; height:100%;' }, ['svg', { width: '100%', height: '100%' }, [0]]],
-            ['div', { class: 'tp-shape-text-overlay', style: `color: ${HTMLAttributes.textColor || '#ffffff'}; font-size: ${HTMLAttributes.fontSize || '15px'};` }, HTMLAttributes.text || '']
+            ['div', { class: 'tp-shape-svg', style: 'width:100%; height:100%;' }, ['svg', { width: '100%', height: '100%' }, [0]]],
+            ['div', { class: 'tp-shape-input-text', style: `color: ${HTMLAttributes.textColor || '#ffffff'}; font-size: ${HTMLAttributes.fontSize || '16'}px;` }, HTMLAttributes.text || '']
             ];
         },
 
         addNodeView() {
             return ({ node, getPos, editor }) => {
                 const wrapper = document.createElement('div');
-                wrapper.className = 'tp-shape-wrapper';
-                
-                const updateShapeStyles = () => {
+                wrapper.className = 'tp-shape-box';
+
+                const svgBox = document.createElement('div');
+                svgBox.className = 'tp-shape-svg';
+
+                // Ô GÕ CHỮ TRỰC TIẾP BÊN TRONG HÌNH SHAPE
+                const textInput = document.createElement('div');
+                textInput.className = 'tp-shape-input-text';
+                textInput.contentEditable = 'true';
+                textInput.spellcheck = false;
+
+                const updateShape = () => {
                     const attrs = node.attrs;
                     wrapper.style.width = attrs.width;
                     wrapper.style.height = attrs.height;
-                    
+
                     const align = attrs.alignment || 'center';
                     wrapper.style.float = 'none';
                     wrapper.style.display = 'inline-block';
@@ -1692,7 +1700,6 @@
                     else if (align === 'float-left') wrapper.style.cssText += 'float: left; margin: 5px 20px 15px 0;';
                     else if (align === 'float-right') wrapper.style.cssText += 'float: right; margin: 5px 0 15px 20px;';
 
-                    // Vẽ SVG Shape
                     const fill = attrs.fillColor;
                     const stroke = attrs.strokeColor;
                     const sWidth = attrs.strokeWidth;
@@ -1709,47 +1716,74 @@
                     else svgPath = `<rect width="100%" height="100%" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
 
                     svgBox.innerHTML = `<svg width="100%" height="100%">${svgPath}</svg>`;
-                    
-                    textOverlay.style.color = attrs.textColor;
-                    textOverlay.style.fontSize = attrs.fontSize;
-                    textOverlay.innerText = attrs.text || '';
+
+                    textInput.style.color = attrs.textColor;
+                    textInput.style.fontSize = (attrs.fontSize || 16) + 'px';
+                    if (document.activeElement !== textInput) {
+                        textInput.innerText = attrs.text || '';
+                    }
                 };
 
-                const svgBox = document.createElement('div');
-                svgBox.className = 'tp-shape-svg-box';
+                // Lưu chữ khi người dùng gõ trực tiếp lên hình
+                textInput.addEventListener('input', () => {
+                    const pos = getPos();
+                    if (typeof pos === 'number') {
+                        editor.chain().focus().command(({ tr }) => {
+                            tr.setNodeMarkup(pos, undefined, { ...node.attrs, text: textInput.innerText });
+                            return true;
+                        }).run();
+                    }
+                });
 
-                const textOverlay = document.createElement('div');
-                textOverlay.className = 'tp-shape-text-overlay';
-
-                // THANH CÔNG CỤ NỔI KHI CLICK SHAPE
+                // THANH CÔNG CỤ NỔI CHUẨN WORD (01 HÀNG NGANG SIÊU ĐẸP)
                 const toolbar = document.createElement('div');
-                toolbar.className = 'tp-shape-toolbar';
+                toolbar.className = 'tp-sbar';
                 toolbar.innerHTML = `
-                    <button type="button" class="tp-shape-btn" data-act="text" title="Sửa chữ trong Shape"><i class="fas fa-edit" style="color:#38bdf8;"></i> Chữ</button>
-                    <span style="color:#475569">|</span>
-                    <label class="tp-shape-btn" title="Màu nền Shape" style="position:relative; cursor:pointer;">
-                        <i class="fas fa-fill-drip" style="color:#f59e0b;"></i> Nền
-                        <input type="color" data-act="fill" style="position:absolute; inset:0; opacity:0; cursor:pointer;">
-                    </label>
-                    <label class="tp-shape-btn" title="Màu viền Shape" style="position:relative; cursor:pointer;">
-                        <i class="fas fa-border-style" style="color:#10b981;"></i> Viền
-                        <input type="color" data-act="stroke" style="position:absolute; inset:0; opacity:0; cursor:pointer;">
-                    </label>
-                    <button type="button" class="tp-shape-btn" data-act="dash" title="Đổi kiểu viền (Thường/Nét đứt)"><i class="fas fa-ellipsis-h"></i> Viền</button>
-                    <span style="color:#475569">|</span>
-                    <button type="button" class="tp-shape-btn" data-align="float-left" title="Trôi trái"><i class="fas fa-indent"></i></button>
-                    <button type="button" class="tp-shape-btn" data-align="center" title="Căn giữa"><i class="fas fa-align-center"></i></button>
-                    <button type="button" class="tp-shape-btn" data-align="float-right" title="Trôi phải"><i class="fas fa-outdent"></i></button>
-                    <span style="color:#475569">|</span>
-                    <button type="button" class="tp-shape-btn tp-shape-btn-del" data-act="del" title="Xóa Shape"><i class="fas fa-trash"></i></button>
+                    <div class="tp-sbtn" title="Màu nền hình">
+                        <i class="fas fa-fill-drip" style="color:#38bdf8;"></i> Nền
+                        <span class="tp-scolor-dot" style="background:${node.attrs.fillColor}">
+                            <input type="color" data-act="fill" value="${node.attrs.fillColor}">
+                        </span>
+                    </div>
+
+                    <div class="tp-sbtn" title="Màu đường viền">
+                        <i class="fas fa-border-style" style="color:#34d399;"></i> Viền
+                        <span class="tp-scolor-dot" style="background:${node.attrs.strokeColor}">
+                            <input type="color" data-act="stroke" value="${node.attrs.strokeColor}">
+                        </span>
+                    </div>
+
+                    <button type="button" class="tp-sbtn" data-act="dash" title="Đổi kiểu viền (Liền / Nét đứt)"><i class="fas fa-ellipsis-h"></i></button>
+
+                    <div class="tp-ssep"></div>
+
+                    <div class="tp-sbtn" title="Màu chữ">
+                        <i class="fas fa-font" style="color:#f59e0b;"></i> Chữ
+                        <span class="tp-scolor-dot" style="background:${node.attrs.textColor}">
+                            <input type="color" data-act="tcolor" value="${node.attrs.textColor}">
+                        </span>
+                    </div>
+
+                    <button type="button" class="tp-sbtn" data-act="f-down" title="Giảm cỡ chữ"><i class="fas fa-minus"></i></button>
+                    <button type="button" class="tp-sbtn" data-act="f-up" title="Tăng cỡ chữ"><i class="fas fa-plus"></i></button>
+
+                    <div class="tp-ssep"></div>
+
+                    <button type="button" class="tp-sbtn" data-align="float-left" title="Trôi trái"><i class="fas fa-indent"></i></button>
+                    <button type="button" class="tp-sbtn" data-align="center" title="Căn giữa"><i class="fas fa-align-center"></i></button>
+                    <button type="button" class="tp-sbtn" data-align="float-right" title="Trôi phải"><i class="fas fa-outdent"></i></button>
+
+                    <div class="tp-ssep"></div>
+
+                    <button type="button" class="tp-sbtn tp-sbtn-danger" data-act="del" title="Xóa Shape"><i class="fas fa-trash"></i></button>
                 `;
 
-                // Bắt sự kiện trên thanh công cụ nổi
+                // Bắt sự kiện Click Nút bấm trên Toolbar
                 toolbar.addEventListener('click', (e) => {
                     const btn = e.target.closest('[data-act], [data-align]');
                     if (!btn) return;
                     e.preventDefault(); e.stopPropagation();
-                    
+
                     const pos = getPos();
                     if (typeof pos !== 'number') return;
 
@@ -1763,11 +1797,12 @@
 
                     let newAttrs = { ...node.attrs };
 
-                    if (act === 'text') {
-                        const newText = prompt('Nhập nội dung hiển thị trong Shape:', node.attrs.text || '');
-                        if (newText !== null) newAttrs.text = newText;
-                    } else if (act === 'dash') {
+                    if (act === 'dash') {
                         newAttrs.strokeStyle = node.attrs.strokeStyle === 'solid' ? 'dashed' : (node.attrs.strokeStyle === 'dashed' ? 'dotted' : 'solid');
+                    } else if (act === 'f-up') {
+                        newAttrs.fontSize = (parseInt(node.attrs.fontSize || 16) + 2).toString();
+                    } else if (act === 'f-down') {
+                        newAttrs.fontSize = Math.max(10, parseInt(node.attrs.fontSize || 16) - 2).toString();
                     } else if (align) {
                         newAttrs.alignment = align;
                     }
@@ -1778,7 +1813,7 @@
                     }).run();
                 });
 
-                // Bắt đổi màu nền & màu viền từ Input Color
+                // Bắt sự kiện Chọn màu
                 toolbar.addEventListener('change', (e) => {
                     const input = e.target;
                     const act = input.getAttribute('data-act');
@@ -1790,6 +1825,7 @@
                     let newAttrs = { ...node.attrs };
                     if (act === 'fill') newAttrs.fillColor = input.value;
                     if (act === 'stroke') newAttrs.strokeColor = input.value;
+                    if (act === 'tcolor') newAttrs.textColor = input.value;
 
                     editor.chain().focus().command(({ tr }) => {
                         tr.setNodeMarkup(pos, undefined, newAttrs);
@@ -1797,10 +1833,10 @@
                     }).run();
                 });
 
-                // NÚT TRÒN KÉO CO GIÃN SHAPE
+                // Nút tròn kéo co giãn kích thước Shape
                 const resizer = document.createElement('div');
-                resizer.className = 'tp-shape-resizer';
-                
+                resizer.className = 'tp-sresize-handle';
+
                 let startX, startY, startW, startH;
                 resizer.addEventListener('mousedown', (e) => {
                     e.preventDefault(); e.stopPropagation();
@@ -1810,8 +1846,8 @@
                     const onMouseMove = (moveEvt) => {
                         const diffX = moveEvt.clientX - startX;
                         const diffY = moveEvt.clientY - startY;
-                        wrapper.style.width = Math.max(60, startW + diffX) + 'px';
-                        wrapper.style.height = Math.max(40, startH + diffY) + 'px';
+                        wrapper.style.width = Math.max(80, startW + diffX) + 'px';
+                        wrapper.style.height = Math.max(50, startH + diffY) + 'px';
                     };
 
                     const onMouseUp = () => {
@@ -1835,18 +1871,18 @@
                 });
 
                 wrapper.appendChild(svgBox);
-                wrapper.appendChild(textOverlay);
+                wrapper.appendChild(textInput);
                 wrapper.appendChild(toolbar);
                 wrapper.appendChild(resizer);
 
-                updateShapeStyles();
+                updateShape();
 
                 return {
                     dom: wrapper,
                     update: (updatedNode) => {
                         if (updatedNode.type !== node.type) return false;
                         node = updatedNode;
-                        updateShapeStyles();
+                        updateShape();
                         return true;
                     }
                 };

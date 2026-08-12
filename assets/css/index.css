@@ -420,18 +420,19 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     /* Chatbot Mobile */
     .chat-window { width: 90%; right: 5%; bottom: 90px; height: 450px; }
 }
-/* --- TỐI ƯU THANH TÌM KIẾM CÓ NÚT BẤM --- */
+
 .search-box-container {
     background: white;
-    padding: 8px 10px 8px 20px;
+    padding: 5px 5px 5px 20px; 
     border-radius: 50px;
     display: flex;
-    gap: 15px;
+    gap: 10px;
     align-items: center;
     box-shadow: var(--shadow-sm);
     margin-bottom: 40px;
     border: 1px solid #e2e8f0;
     transition: var(--transition);
+    overflow: hidden;
 }
 
 .search-box-container:focus-within {
@@ -442,33 +443,34 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
 .search-box-container .search-icon {
     color: var(--text-gray);
     font-size: 1.1rem;
+    flex-shrink: 0;
 }
 
 .search-box-container input {
     flex: 1;
+    min-width: 0;
     border: none;
     outline: none;
-    font-size: 1rem;
+    font-size: 0.95rem;
     background: transparent;
     color: var(--text-dark);
 }
 
 .search-box-container .search-btn {
-    border-radius: 30px;
-    padding: 10px 24px;
+    border-radius: 40px; 
+    padding: 10px 22px;
     white-space: nowrap;
-    font-size: 0.95rem;
-    box-shadow: 0 4px 12px rgba(0, 98, 255, 0.2);
+    font-size: 0.9rem;
+    flex-shrink: 0; 
+    box-shadow: none; 
 }
 
-/* Responsive trên điện thoại */
 @media (max-width: 600px) {
     .search-box-container {
-        padding: 6px 6px 6px 15px;
-        gap: 8px;
+        padding: 4px 4px 4px 12px;
     }
     .search-box-container .search-btn {
-        padding: 8px 16px;
+        padding: 8px 14px;
         font-size: 0.85rem;
     }
 }

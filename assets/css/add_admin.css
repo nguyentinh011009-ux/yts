@@ -1351,3 +1351,145 @@
 .tp-shape-box.ProseMirror-selectednode .tp-sresize-handle {
     opacity: 1;
 }
+/* ==========================================================================
+   TÙY CHỈNH Ô CỠ CHỮ CHUẨN WORD & BẢNG MÀU HEX TÙY CHỌN
+   ========================================================================== */
+
+/* Khung bọc ô Cỡ chữ Custom */
+.tp-size-dropdown-container {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    padding: 0 4px 0 6px !important;
+    height: 30px !important;
+    box-sizing: border-box !important;
+}
+
+.tp-size-dropdown-container input[type="number"] {
+    width: 32px !important;
+    border: none !important;
+    outline: none !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    text-align: right !important;
+    background: transparent !important;
+    color: #1e293b !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    -moz-appearance: textfield !important;
+}
+
+/* Xóa bỏ mũi tên datalist mặc định của trình duyệt */
+.tp-size-dropdown-container input[type="number"]::-webkit-outer-spin-button,
+.tp-size-dropdown-container input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.tp-size-unit {
+    font-size: 0.75rem !important;
+    color: #64748b !important;
+    font-weight: 600 !important;
+    margin-left: 2px !important;
+    user-select: none !important;
+}
+
+.tp-size-arrow-btn {
+    background: transparent !important;
+    border: none !important;
+    color: #64748b !important;
+    padding: 0 3px !important;
+    cursor: pointer !important;
+    font-size: 0.65rem !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.tp-size-arrow-btn:hover {
+    color: #0284c7 !important;
+}
+
+/* Menu thả xuống chứa danh sách cỡ chữ */
+.tp-size-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    min-width: 80px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    padding: 4px 0;
+}
+
+.tp-size-menu.is-open {
+    display: block !important;
+}
+
+.tp-size-item {
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.15s;
+}
+
+.tp-size-item:hover {
+    background: #f1f5f9;
+    color: #0284c7;
+}
+
+/* KHUNG NHẬP MÃ MÀU HEX (#) TRONG BẢNG MÀU */
+.tp-hex-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.tp-hex-box span {
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: #64748b;
+}
+
+.tp-hex-input {
+    flex: 1;
+    height: 26px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 0 6px;
+    font-size: 0.78rem;
+    font-weight: bold;
+    color: #1e293b;
+    outline: none;
+    text-transform: uppercase;
+}
+
+.tp-hex-btn {
+    height: 26px;
+    background: #0284c7;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 0 8px;
+    font-size: 0.72rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.tp-hex-btn:hover {
+    background: #0369a1;
+}

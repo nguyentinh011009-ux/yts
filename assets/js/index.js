@@ -8,12 +8,8 @@ const CACHE_SLIDER_KEY = 'vts_slider_data';
 const CACHE_EXPIRE_TIME = 15 * 60 * 1000; // Lưu Cache 15 phút (Tính bằng miligiây)
 
 // --- 2. HÀM HỖ TRỢ XỬ LÝ ẢNH & CẮT CHỮ ---
-// Tối ưu ảnh Cloudinary: Tự động nén và thu nhỏ kích thước ảnh cho nhẹ trang
-function optimizeImage(url, width = 500) {
+function optimizeImage(url) {
     if (!url) return 'https://via.placeholder.com/500x300?text=No+Image';
-    if (url.includes('cloudinary.com') && url.includes('/upload/')) {
-        return url.replace('/upload/', `/upload/q_auto,f_auto,w_${width}/`);
-    }
     return url;
 }
 

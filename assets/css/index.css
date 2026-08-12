@@ -1,3 +1,46 @@
+/* Copy đoạn này dán vào ĐẦU FILE index.css nếu muốn XÓA style.css */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;800&family=Roboto:wght@300;400;500;700&display=swap');
+
+:root {
+    --primary-grad: linear-gradient(135deg, #0062ff 0%, #00d4ff 100%);
+    --admin-grad: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    --accent-grad: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+    --success-grad: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --bg-light: #f8fafc;
+    --white: #ffffff;
+    --text-dark: #1e293b;
+    --text-gray: #64748b;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+    --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.1);
+    --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1);
+    --radius-lg: 16px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: var(--bg-light);
+    color: var(--text-dark);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 700; }
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-primary { background: var(--primary-grad); color: white; }
+.btn-danger { background: #ef4444; color: white; }
+.btn-success { background: var(--success-grad); color: white; }
 /* --- 1. GLASSMORPHISM HEADER & NAVIGATION --- */
 .glass-header {
     background: rgba(255, 255, 255, 0.85);

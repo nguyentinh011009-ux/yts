@@ -454,7 +454,7 @@ window.initCKEditor = function(callback) {
                 const sizeInput = document.getElementById('tp-custom-size-input');
                 if (sizeInput) {
                     const currentSize = editor.getAttributes('textStyle').fontSize || '16px';
-                    sizeInput.value = currentSize;
+                    sizeInput.value = parseInt(currentSize) || 16;
                 }
                 
                 // 3. Đồng bộ Line Height
@@ -527,7 +527,10 @@ window.execTiptapCmd = function(cmd, param = null) {
             else tiptapEditor.chain().focus().unsetFontFamily().run();
             break;
         case 'fontSize': 
-            if (param) tiptapEditor.chain().focus().setMark('textStyle', { fontSize: isNaN(param) ? param : `${param}px` }).run(); 
+            if (param) {
+                const formattedSize = isNaN(param) ? param : `${param}px`;
+                tiptapEditor.chain().focus().setMark('textStyle', { fontSize: formattedSize }).run(); 
+            }
             break;
         case 'bold': tiptapEditor.chain().focus().toggleBold().run(); break;
         case 'italic': tiptapEditor.chain().focus().toggleItalic().run(); break;
@@ -557,6 +560,7 @@ window.execTiptapCmd = function(cmd, param = null) {
         case 'orderedList': tiptapEditor.chain().focus().toggleOrderedList().run(); break;
         case 'taskList': tiptapEditor.chain().focus().toggleTaskList().run(); break;
         case 'insertTable': {
+            closeTableDropdown();
             let r = prompt("Số hàng:", "3");
             let c = prompt("Số cột:", "3");
             r = parseInt(r); c = parseInt(c);
@@ -640,5 +644,28 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' || e.key === 'Esc') {
         const wrapper = document.querySelector('.tiptap-editor-wrapper');
         if (wrapper && wrapper.classList.contains('is-fullscreen')) window.toggleFullscreenEditor();
+    }
+});
+// XỬ LÝ MENU BẢNG BẤM MỚI MỞ / BẤM NGOÀI HOẶC CHỌN MỚI ĐÓNG
+function toggleTableDropdown(e) {
+    if (e) e.stopPropagation();
+    const dropdown = document.getElementById('tp-table-dropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('is-open');
+    }
+}
+
+function closeTableDropdown() {
+    const dropdown = document.getElementById('tp-table-dropdown');
+    if (dropdown) {
+        dropdown.classList.remove('is-open');
+    }
+}
+
+// Bấm ra ngoài vùng menu thì tự đóng
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('tp-table-dropdown');
+    if (dropdown && !dropdown.contains(e.target)) {
+        dropdown.classList.remove('is-open');
     }
 });

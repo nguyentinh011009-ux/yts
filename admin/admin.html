@@ -1610,8 +1610,8 @@
                 };
             },
         });
-// =========================================================================
-    // TIPTAP CUSTOM EXTENSION: SHAPE WORD CAO CẤP (GÕ CHỮ TRỰC TIẾP & CÔNG CỤ NỔI)
+    // =========================================================================
+    // TIPTAP CUSTOM EXTENSION: SHAPE WORD FIX HOÀN HẢO (SVG 100% & MÀU CHUẨN)
     // =========================================================================
     const CustomShape = Node.create({
         name: 'customShape',
@@ -1629,7 +1629,7 @@
                 width: { default: '240px' },
                 height: { default: '130px' },
                 alignment: { default: 'center' },
-                text: { default: 'Gõ chữ vào đây...' },
+                text: { default: 'Nội dung Shape' },
                 textColor: { default: '#ffffff' },
                 fontSize: { default: '16' }
             };
@@ -1654,19 +1654,19 @@
             const dash = HTMLAttributes.strokeStyle === 'dashed' ? '6,6' : (HTMLAttributes.strokeStyle === 'dotted' ? '2,4' : 'none');
 
             let svgContent = '';
-            if (type === 'rounded') svgContent = `<rect width="100%" height="100%" rx="18" ry="18" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
-            else if (type === 'circle') svgContent = `<ellipse cx="50%" cy="50%" rx="47%" ry="47%" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
-            else if (type === 'triangle') svgContent = `<polygon points="50,4 96,96 4,96" preserveAspectRatio="none" viewBox="0 0 100 100" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
-            else if (type === 'star') svgContent = `<polygon points="50,2 63,35 98,35 68,57 79,91 50,70 21,91 32,57 2,35 37,35" preserveAspectRatio="none" viewBox="0 0 100 100" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
-            else if (type === 'arrow') svgContent = `<polygon points="0,30 60,30 60,10 100,50 60,90 60,70 0,70" preserveAspectRatio="none" viewBox="0 0 100 100" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
-            else if (type === 'callout') svgContent = `<path d="M 5 5 H 95 A 5 5 0 0 1 100 10 V 65 A 5 5 0 0 1 95 70 H 40 L 20 95 V 70 H 5 A 5 5 0 0 1 0 65 V 10 A 5 5 0 0 1 5 5 Z" preserveAspectRatio="none" viewBox="0 0 100 100" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
-            else svgContent = `<rect width="100%" height="100%" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+            if (type === 'rounded') svgContent = `<rect x="2" y="2" width="96" height="96" rx="14" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+            else if (type === 'circle') svgContent = `<ellipse cx="50" cy="50" rx="46" ry="46" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+            else if (type === 'triangle') svgContent = `<polygon points="50,4 96,96 4,96" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+            else if (type === 'star') svgContent = `<polygon points="50,2 63,35 98,35 68,57 79,91 50,70 21,91 32,57 2,35 37,35" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+            else if (type === 'arrow') svgContent = `<polygon points="2,25 55,25 55,8 98,50 55,92 55,75 2,75" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+            else if (type === 'callout') svgContent = `<path d="M 4 4 H 96 A 4 4 0 0 1 100 8 V 65 A 4 4 0 0 1 96 69 H 35 L 15 96 V 69 H 4 A 4 4 0 0 1 0 65 V 8 A 4 4 0 0 1 4 4 Z" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+            else svgContent = `<rect x="2" y="2" width="96" height="96" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
 
             return ['div', {
                 'data-type': 'custom-shape',
                 style: `width: ${HTMLAttributes.width || '240px'}; height: ${HTMLAttributes.height || '130px'}; position: relative; ${alignStyle}`
             }, 
-            ['div', { class: 'tp-shape-svg', style: 'width:100%; height:100%;' }, ['svg', { width: '100%', height: '100%' }, [0]]],
+            ['div', { class: 'tp-shape-svg', style: 'width:100%; height:100%;' }, ['svg', { width: '100%', height: '100%', viewBox: '0 0 100 100', preserveAspectRatio: 'none' }, [0]]],
             ['div', { class: 'tp-shape-input-text', style: `color: ${HTMLAttributes.textColor || '#ffffff'}; font-size: ${HTMLAttributes.fontSize || '16'}px;` }, HTMLAttributes.text || '']
             ];
         },
@@ -1679,11 +1679,8 @@
                 const svgBox = document.createElement('div');
                 svgBox.className = 'tp-shape-svg';
 
-                // Ô GÕ CHỮ TRỰC TIẾP BÊN TRONG HÌNH SHAPE
-                const textInput = document.createElement('div');
-                textInput.className = 'tp-shape-input-text';
-                textInput.contentEditable = 'true';
-                textInput.spellcheck = false;
+                const textDisplay = document.createElement('div');
+                textDisplay.className = 'tp-shape-input-text';
 
                 const updateShape = () => {
                     const attrs = node.attrs;
@@ -1707,48 +1704,40 @@
                     const type = attrs.shapeType;
 
                     let svgPath = '';
-                    if (type === 'rounded') svgPath = `<rect width="100%" height="100%" rx="18" ry="18" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
-                    else if (type === 'circle') svgPath = `<ellipse cx="50%" cy="50%" rx="46%" ry="46%" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
-                    else if (type === 'triangle') svgPath = `<polygon points="50,4 96,96 4,96" preserveAspectRatio="none" viewBox="0 0 100 100" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
-                    else if (type === 'star') svgPath = `<polygon points="50,2 63,35 98,35 68,57 79,91 50,70 21,91 32,57 2,35 37,35" preserveAspectRatio="none" viewBox="0 0 100 100" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
-                    else if (type === 'arrow') svgPath = `<polygon points="0,30 60,30 60,10 100,50 60,90 60,70 0,70" preserveAspectRatio="none" viewBox="0 0 100 100" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
-                    else if (type === 'callout') svgPath = `<path d="M 5 5 H 95 A 5 5 0 0 1 100 10 V 65 A 5 5 0 0 1 95 70 H 40 L 20 95 V 70 H 5 A 5 5 0 0 1 0 65 V 10 A 5 5 0 0 1 5 5 Z" preserveAspectRatio="none" viewBox="0 0 100 100" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
-                    else svgPath = `<rect width="100%" height="100%" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+                    if (type === 'rounded') svgPath = `<rect x="2" y="2" width="96" height="96" rx="14" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+                    else if (type === 'circle') svgPath = `<ellipse cx="50" cy="50" rx="46" ry="46" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+                    else if (type === 'triangle') svgPath = `<polygon points="50,4 96,96 4,96" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+                    else if (type === 'star') svgPath = `<polygon points="50,2 63,35 98,35 68,57 79,91 50,70 21,91 32,57 2,35 37,35" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+                    else if (type === 'arrow') svgPath = `<polygon points="2,25 55,25 55,8 98,50 55,92 55,75 2,75" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+                    else if (type === 'callout') svgPath = `<path d="M 4 4 H 96 A 4 4 0 0 1 100 8 V 65 A 4 4 0 0 1 96 69 H 35 L 15 96 V 69 H 4 A 4 4 0 0 1 0 65 V 8 A 4 4 0 0 1 4 4 Z" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+                    else svgPath = `<rect x="2" y="2" width="96" height="96" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
 
-                    svgBox.innerHTML = `<svg width="100%" height="100%">${svgPath}</svg>`;
+                    // FIX VIEWBOX DÃN 100% CĂNG KHUNG
+                    svgBox.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">${svgPath}</svg>`;
 
-                    textInput.style.color = attrs.textColor;
-                    textInput.style.fontSize = (attrs.fontSize || 16) + 'px';
-                    if (document.activeElement !== textInput) {
-                        textInput.innerText = attrs.text || '';
-                    }
+                    textDisplay.style.color = attrs.textColor;
+                    textDisplay.style.fontSize = (attrs.fontSize || 16) + 'px';
+                    textDisplay.innerText = attrs.text || '';
                 };
 
-                // Lưu chữ khi người dùng gõ trực tiếp lên hình
-                textInput.addEventListener('input', () => {
-                    const pos = getPos();
-                    if (typeof pos === 'number') {
-                        editor.chain().focus().command(({ tr }) => {
-                            tr.setNodeMarkup(pos, undefined, { ...node.attrs, text: textInput.innerText });
-                            return true;
-                        }).run();
-                    }
-                });
-
-                // THANH CÔNG CỤ NỔI CHUẨN WORD (01 HÀNG NGANG SIÊU ĐẸP)
+                // THANH CÔNG CỤ NỔI ĐÃ FIX CHỌN MÀU & SỬA CHỮ 100%
                 const toolbar = document.createElement('div');
                 toolbar.className = 'tp-sbar';
                 toolbar.innerHTML = `
-                    <div class="tp-sbtn" title="Màu nền hình">
+                    <button type="button" class="tp-sbtn" data-act="text" title="Sửa nội dung chữ"><i class="fas fa-edit" style="color:#38bdf8;"></i> Sửa Chữ</button>
+                    
+                    <div class="tp-ssep"></div>
+
+                    <div class="tp-sbtn" data-trigger="fill" title="Màu nền">
                         <i class="fas fa-fill-drip" style="color:#38bdf8;"></i> Nền
-                        <span class="tp-scolor-dot" style="background:${node.attrs.fillColor}">
+                        <span class="tp-scolor-dot" id="dot-fill" style="background:${node.attrs.fillColor}">
                             <input type="color" data-act="fill" value="${node.attrs.fillColor}">
                         </span>
                     </div>
 
-                    <div class="tp-sbtn" title="Màu đường viền">
+                    <div class="tp-sbtn" data-trigger="stroke" title="Màu viền">
                         <i class="fas fa-border-style" style="color:#34d399;"></i> Viền
-                        <span class="tp-scolor-dot" style="background:${node.attrs.strokeColor}">
+                        <span class="tp-scolor-dot" id="dot-stroke" style="background:${node.attrs.strokeColor}">
                             <input type="color" data-act="stroke" value="${node.attrs.strokeColor}">
                         </span>
                     </div>
@@ -1757,9 +1746,9 @@
 
                     <div class="tp-ssep"></div>
 
-                    <div class="tp-sbtn" title="Màu chữ">
+                    <div class="tp-sbtn" data-trigger="tcolor" title="Màu chữ">
                         <i class="fas fa-font" style="color:#f59e0b;"></i> Chữ
-                        <span class="tp-scolor-dot" style="background:${node.attrs.textColor}">
+                        <span class="tp-scolor-dot" id="dot-tcolor" style="background:${node.attrs.textColor}">
                             <input type="color" data-act="tcolor" value="${node.attrs.textColor}">
                         </span>
                     </div>
@@ -1778,20 +1767,39 @@
                     <button type="button" class="tp-sbtn tp-sbtn-danger" data-act="del" title="Xóa Shape"><i class="fas fa-trash"></i></button>
                 `;
 
-                // Bắt sự kiện Click Nút bấm trên Toolbar
+                // CẢI TIẾN: SỬA CHỮ VÀ CÁC THAO TÁC NÚT BẤM
                 toolbar.addEventListener('click', (e) => {
-                    const btn = e.target.closest('[data-act], [data-align]');
+                    const btn = e.target.closest('[data-act], [data-align], [data-trigger]');
                     if (!btn) return;
-                    e.preventDefault(); e.stopPropagation();
-
+                    
                     const pos = getPos();
                     if (typeof pos !== 'number') return;
 
                     const act = btn.getAttribute('data-act');
                     const align = btn.getAttribute('data-align');
+                    const trigger = btn.getAttribute('data-trigger');
+
+                    // KÍCH HOẠT MỞ BẢNG CHỌN MÀU KHI BẤM NÚT
+                    if (trigger) {
+                        const input = toolbar.querySelector(`input[data-act="${trigger}"]`);
+                        if (input) input.click();
+                        return;
+                    }
 
                     if (act === 'del') {
                         editor.chain().focus().deleteRange({ from: pos, to: pos + 1 }).run();
+                        return;
+                    }
+
+                    if (act === 'text') {
+                        const currentText = node.attrs.text || '';
+                        const newText = prompt("Nhập nội dung chữ hiển thị trong Shape:", currentText);
+                        if (newText !== null) {
+                            editor.chain().focus().command(({ tr }) => {
+                                tr.setNodeMarkup(pos, undefined, { ...node.attrs, text: newText });
+                                return true;
+                            }).run();
+                        }
                         return;
                     }
 
@@ -1813,27 +1821,29 @@
                     }).run();
                 });
 
-                // Bắt sự kiện Chọn màu
-                toolbar.addEventListener('change', (e) => {
-                    const input = e.target;
-                    const act = input.getAttribute('data-act');
-                    if (!act) return;
+                // CẢI TIẾN: LẮNG NGHE SỰ KIỆN ĐỔI MÀU THỜI GIAN THỰC (LIVE)
+                toolbar.querySelectorAll('input[type="color"]').forEach(input => {
+                    const updateColor = (e) => {
+                        const pos = getPos();
+                        if (typeof pos !== 'number') return;
 
-                    const pos = getPos();
-                    if (typeof pos !== 'number') return;
+                        const act = input.getAttribute('data-act');
+                        let newAttrs = { ...node.attrs };
+                        if (act === 'fill') newAttrs.fillColor = input.value;
+                        if (act === 'stroke') newAttrs.strokeColor = input.value;
+                        if (act === 'tcolor') newAttrs.textColor = input.value;
 
-                    let newAttrs = { ...node.attrs };
-                    if (act === 'fill') newAttrs.fillColor = input.value;
-                    if (act === 'stroke') newAttrs.strokeColor = input.value;
-                    if (act === 'tcolor') newAttrs.textColor = input.value;
+                        editor.chain().focus().command(({ tr }) => {
+                            tr.setNodeMarkup(pos, undefined, newAttrs);
+                            return true;
+                        }).run();
+                    };
 
-                    editor.chain().focus().command(({ tr }) => {
-                        tr.setNodeMarkup(pos, undefined, newAttrs);
-                        return true;
-                    }).run();
+                    input.addEventListener('input', updateColor);
+                    input.addEventListener('change', updateColor);
                 });
 
-                // Nút tròn kéo co giãn kích thước Shape
+                // NÚT TRÒN KÉO CO GIÃN SHAPE (RESIZER)
                 const resizer = document.createElement('div');
                 resizer.className = 'tp-sresize-handle';
 
@@ -1871,7 +1881,7 @@
                 });
 
                 wrapper.appendChild(svgBox);
-                wrapper.appendChild(textInput);
+                wrapper.appendChild(textDisplay);
                 wrapper.appendChild(toolbar);
                 wrapper.appendChild(resizer);
 

@@ -285,13 +285,6 @@ function getDefaultArticleTemplate(themeColor = '#0062ff', title = 'TIÊU ĐỀ 
 <h2>1. Mục đầu tiên của bài viết</h2>
 <p>Nhập nội dung chi tiết bài viết ở đây...</p>
 
-<!-- 🌟 MẪU ẢNH CÓ LINK BẤM VÀO ĐỂ PHÓNG TO (MỞ TAB MỚI) -->
-<p style="text-align:center;">
-    <a href="https://res.cloudinary.com/dsnlbzjby/image/upload/v1783588902/ChatGPT_Image_16_16_04_9_thg_7_2026_yasl0f.png" target="_blank" rel="noopener noreferrer" class="vts-img-zoom-link" title="Bấm vào để xem ảnh phóng to">
-        <img src="https://res.cloudinary.com/dsnlbzjby/image/upload/v1783588902/ChatGPT_Image_16_16_04_9_thg_7_2026_yasl0f.png" alt="Poster chăm sóc sức khỏe" data-alignment="center" style="width: 100%; max-width: 100%; display: block; margin: 15px auto; border-radius: 10px; cursor: pointer;" />
-    </a>
-</p>
-
 <div class="important-box">
     ⚠️ <strong>Lưu ý quan trọng:</strong> Nội dung cảnh báo hoặc thông tin đặc biệt cần chú ý.
 </div>

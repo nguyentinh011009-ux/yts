@@ -466,8 +466,22 @@
 
         <div class="tp-divider"></div>
 
-        <!-- NHÓM 8: MEDIA & CODE -->
+        <!-- NHÓM 8: MEDIA, SHAPES & CODE -->
         <div class="tp-group">
+            <div class="tp-dropdown">
+                <button type="button" class="tp-btn" data-tooltip="Chèn Hình Khối (Shape Word)">
+                    <i class="fas fa-shapes" style="color:#8b5cf6;"></i> <i class="fas fa-caret-down" style="font-size:0.6rem; margin-left:2px;"></i>
+                </button>
+                <div class="tp-dropdown-content" style="min-width:160px;">
+                    <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('insertShape', 'rectangle')"><i class="far fa-square" style="color:#0284c7;"></i> Hình chữ nhật</button>
+                    <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('insertShape', 'rounded')"><i class="fas fa-vector-square" style="color:#0284c7;"></i> Hình bo góc</button>
+                    <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('insertShape', 'circle')"><i class="far fa-circle" style="color:#10b981;"></i> Hình tròn / Elip</button>
+                    <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('insertShape', 'triangle')"><i class="fas fa-caret-up" style="color:#f59e0b;"></i> Hình tam giác</button>
+                    <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('insertShape', 'star')"><i class="far fa-star" style="color:#eab308;"></i> Ngôi sao</button>
+                    <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('insertShape', 'arrow')"><i class="fas fa-long-arrow-alt-right" style="color:#ef4444;"></i> Mũi tên chỉ hướng</button>
+                    <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('insertShape', 'callout')"><i class="far fa-comment-dots" style="color:#8b5cf6;"></i> Khung thoại (Callout)</button>
+                </div>
+            </div>
             <button type="button" class="tp-btn" onclick="execTiptapCmd('blockquote')" data-tooltip="Trích dẫn"><i class="fas fa-quote-left"></i></button>
             <button type="button" class="tp-btn" onclick="execTiptapCmd('codeBlock')" data-tooltip="Khối Code"><i class="fas fa-code"></i></button>
             <button type="button" class="tp-btn" onclick="execTiptapCmd('math')" data-tooltip="Công thức Toán KaTeX"><i class="fas fa-square-root-variable" style="color:#0284c7;"></i></button>
@@ -1596,7 +1610,249 @@
                 };
             },
         });
-    
+    // =========================================================================
+    // TIPTAP CUSTOM EXTENSION: SHAPE WORD TÙY CHỈNH (SVG + INTERACTIVE NODE VIEW)
+    // =========================================================================
+    const CustomShape = Node.create({
+        name: 'customShape',
+        group: 'block',
+        atom: true,
+        draggable: true,
+
+        addAttributes() {
+            return {
+                shapeType: { default: 'rectangle' },
+                fillColor: { default: '#3b82f6' },
+                strokeColor: { default: '#1d4ed8' },
+                strokeWidth: { default: '2' },
+                strokeStyle: { default: 'solid' },
+                width: { default: '220px' },
+                height: { default: '120px' },
+                alignment: { default: 'center' },
+                text: { default: 'Chữ trong Shape' },
+                textColor: { default: '#ffffff' },
+                fontSize: { default: '15px' }
+            };
+        },
+
+        parseHTML() {
+            return [{ tag: 'div[data-type="custom-shape"]' }];
+        },
+
+        renderHTML({ HTMLAttributes }) {
+            const align = HTMLAttributes.alignment || 'center';
+            let alignStyle = 'display: block; margin: 15px auto;';
+            if (align === 'left') alignStyle = 'display: block; margin: 15px auto 15px 0;';
+            else if (align === 'right') alignStyle = 'display: block; margin: 15px 0 15px auto;';
+            else if (align === 'float-left') alignStyle = 'float: left; margin: 5px 20px 15px 0;';
+            else if (align === 'float-right') alignStyle = 'float: right; margin: 5px 0 15px 20px;';
+
+            // Tạo SVG xuất ra HTML chuẩn
+            const type = HTMLAttributes.shapeType || 'rectangle';
+            const fill = HTMLAttributes.fillColor || '#3b82f6';
+            const stroke = HTMLAttributes.strokeColor || '#1d4ed8';
+            const sWidth = HTMLAttributes.strokeWidth || '2';
+            const dash = HTMLAttributes.strokeStyle === 'dashed' ? '6,6' : (HTMLAttributes.strokeStyle === 'dotted' ? '2,4' : 'none');
+
+            let svgContent = '';
+            if (type === 'rounded') svgContent = `<rect width="100%" height="100%" rx="18" ry="18" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+            else if (type === 'circle') svgContent = `<ellipse cx="50%" cy="50%" rx="47%" ry="47%" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+            else if (type === 'triangle') svgContent = `<polygon points="50,4 96,96 4,96" preserveAspectRatio="none" viewBox="0 0 100 100" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+            else if (type === 'star') svgContent = `<polygon points="50,2 63,35 98,35 68,57 79,91 50,70 21,91 32,57 2,35 37,35" preserveAspectRatio="none" viewBox="0 0 100 100" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+            else if (type === 'arrow') svgContent = `<polygon points="0,30 60,30 60,10 100,50 60,90 60,70 0,70" preserveAspectRatio="none" viewBox="0 0 100 100" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+            else if (type === 'callout') svgContent = `<path d="M 5 5 H 95 A 5 5 0 0 1 100 10 V 65 A 5 5 0 0 1 95 70 H 40 L 20 95 V 70 H 5 A 5 5 0 0 1 0 65 V 10 A 5 5 0 0 1 5 5 Z" preserveAspectRatio="none" viewBox="0 0 100 100" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+            else svgContent = `<rect width="100%" height="100%" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+
+            return ['div', {
+                'data-type': 'custom-shape',
+                style: `width: ${HTMLAttributes.width || '220px'}; height: ${HTMLAttributes.height || '120px'}; position: relative; ${alignStyle}`
+            }, 
+            ['div', { class: 'tp-shape-svg-box', style: 'width:100%; height:100%;' }, ['svg', { width: '100%', height: '100%' }, [0]]],
+            ['div', { class: 'tp-shape-text-overlay', style: `color: ${HTMLAttributes.textColor || '#ffffff'}; font-size: ${HTMLAttributes.fontSize || '15px'};` }, HTMLAttributes.text || '']
+            ];
+        },
+
+        addNodeView() {
+            return ({ node, getPos, editor }) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'tp-shape-wrapper';
+                
+                const updateShapeStyles = () => {
+                    const attrs = node.attrs;
+                    wrapper.style.width = attrs.width;
+                    wrapper.style.height = attrs.height;
+                    
+                    const align = attrs.alignment || 'center';
+                    wrapper.style.float = 'none';
+                    wrapper.style.display = 'inline-block';
+                    wrapper.style.margin = '0';
+                    if (align === 'center') wrapper.style.cssText += 'display: block; margin: 15px auto; float: none;';
+                    else if (align === 'left') wrapper.style.cssText += 'display: block; margin: 15px auto 15px 0; float: none;';
+                    else if (align === 'right') wrapper.style.cssText += 'display: block; margin: 15px 0 15px auto; float: none;';
+                    else if (align === 'float-left') wrapper.style.cssText += 'float: left; margin: 5px 20px 15px 0;';
+                    else if (align === 'float-right') wrapper.style.cssText += 'float: right; margin: 5px 0 15px 20px;';
+
+                    // Vẽ SVG Shape
+                    const fill = attrs.fillColor;
+                    const stroke = attrs.strokeColor;
+                    const sWidth = attrs.strokeWidth;
+                    const dash = attrs.strokeStyle === 'dashed' ? '6,6' : (attrs.strokeStyle === 'dotted' ? '2,4' : 'none');
+                    const type = attrs.shapeType;
+
+                    let svgPath = '';
+                    if (type === 'rounded') svgPath = `<rect width="100%" height="100%" rx="18" ry="18" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+                    else if (type === 'circle') svgPath = `<ellipse cx="50%" cy="50%" rx="46%" ry="46%" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+                    else if (type === 'triangle') svgPath = `<polygon points="50,4 96,96 4,96" preserveAspectRatio="none" viewBox="0 0 100 100" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+                    else if (type === 'star') svgPath = `<polygon points="50,2 63,35 98,35 68,57 79,91 50,70 21,91 32,57 2,35 37,35" preserveAspectRatio="none" viewBox="0 0 100 100" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+                    else if (type === 'arrow') svgPath = `<polygon points="0,30 60,30 60,10 100,50 60,90 60,70 0,70" preserveAspectRatio="none" viewBox="0 0 100 100" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+                    else if (type === 'callout') svgPath = `<path d="M 5 5 H 95 A 5 5 0 0 1 100 10 V 65 A 5 5 0 0 1 95 70 H 40 L 20 95 V 70 H 5 A 5 5 0 0 1 0 65 V 10 A 5 5 0 0 1 5 5 Z" preserveAspectRatio="none" viewBox="0 0 100 100" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+                    else svgPath = `<rect width="100%" height="100%" fill="${fill}" stroke="${stroke}" stroke-width="${sWidth}" stroke-dasharray="${dash}" />`;
+
+                    svgBox.innerHTML = `<svg width="100%" height="100%">${svgPath}</svg>`;
+                    
+                    textOverlay.style.color = attrs.textColor;
+                    textOverlay.style.fontSize = attrs.fontSize;
+                    textOverlay.innerText = attrs.text || '';
+                };
+
+                const svgBox = document.createElement('div');
+                svgBox.className = 'tp-shape-svg-box';
+
+                const textOverlay = document.createElement('div');
+                textOverlay.className = 'tp-shape-text-overlay';
+
+                // THANH CÔNG CỤ NỔI KHI CLICK SHAPE
+                const toolbar = document.createElement('div');
+                toolbar.className = 'tp-shape-toolbar';
+                toolbar.innerHTML = `
+                    <button type="button" class="tp-shape-btn" data-act="text" title="Sửa chữ trong Shape"><i class="fas fa-edit" style="color:#38bdf8;"></i> Chữ</button>
+                    <span style="color:#475569">|</span>
+                    <label class="tp-shape-btn" title="Màu nền Shape" style="position:relative; cursor:pointer;">
+                        <i class="fas fa-fill-drip" style="color:#f59e0b;"></i> Nền
+                        <input type="color" data-act="fill" style="position:absolute; inset:0; opacity:0; cursor:pointer;">
+                    </label>
+                    <label class="tp-shape-btn" title="Màu viền Shape" style="position:relative; cursor:pointer;">
+                        <i class="fas fa-border-style" style="color:#10b981;"></i> Viền
+                        <input type="color" data-act="stroke" style="position:absolute; inset:0; opacity:0; cursor:pointer;">
+                    </label>
+                    <button type="button" class="tp-shape-btn" data-act="dash" title="Đổi kiểu viền (Thường/Nét đứt)"><i class="fas fa-ellipsis-h"></i> Viền</button>
+                    <span style="color:#475569">|</span>
+                    <button type="button" class="tp-shape-btn" data-align="float-left" title="Trôi trái"><i class="fas fa-indent"></i></button>
+                    <button type="button" class="tp-shape-btn" data-align="center" title="Căn giữa"><i class="fas fa-align-center"></i></button>
+                    <button type="button" class="tp-shape-btn" data-align="float-right" title="Trôi phải"><i class="fas fa-outdent"></i></button>
+                    <span style="color:#475569">|</span>
+                    <button type="button" class="tp-shape-btn tp-shape-btn-del" data-act="del" title="Xóa Shape"><i class="fas fa-trash"></i></button>
+                `;
+
+                // Bắt sự kiện trên thanh công cụ nổi
+                toolbar.addEventListener('click', (e) => {
+                    const btn = e.target.closest('[data-act], [data-align]');
+                    if (!btn) return;
+                    e.preventDefault(); e.stopPropagation();
+                    
+                    const pos = getPos();
+                    if (typeof pos !== 'number') return;
+
+                    const act = btn.getAttribute('data-act');
+                    const align = btn.getAttribute('data-align');
+
+                    if (act === 'del') {
+                        editor.chain().focus().deleteRange({ from: pos, to: pos + 1 }).run();
+                        return;
+                    }
+
+                    let newAttrs = { ...node.attrs };
+
+                    if (act === 'text') {
+                        const newText = prompt('Nhập nội dung hiển thị trong Shape:', node.attrs.text || '');
+                        if (newText !== null) newAttrs.text = newText;
+                    } else if (act === 'dash') {
+                        newAttrs.strokeStyle = node.attrs.strokeStyle === 'solid' ? 'dashed' : (node.attrs.strokeStyle === 'dashed' ? 'dotted' : 'solid');
+                    } else if (align) {
+                        newAttrs.alignment = align;
+                    }
+
+                    editor.chain().focus().command(({ tr }) => {
+                        tr.setNodeMarkup(pos, undefined, newAttrs);
+                        return true;
+                    }).run();
+                });
+
+                // Bắt đổi màu nền & màu viền từ Input Color
+                toolbar.addEventListener('change', (e) => {
+                    const input = e.target;
+                    const act = input.getAttribute('data-act');
+                    if (!act) return;
+
+                    const pos = getPos();
+                    if (typeof pos !== 'number') return;
+
+                    let newAttrs = { ...node.attrs };
+                    if (act === 'fill') newAttrs.fillColor = input.value;
+                    if (act === 'stroke') newAttrs.strokeColor = input.value;
+
+                    editor.chain().focus().command(({ tr }) => {
+                        tr.setNodeMarkup(pos, undefined, newAttrs);
+                        return true;
+                    }).run();
+                });
+
+                // NÚT TRÒN KÉO CO GIÃN SHAPE
+                const resizer = document.createElement('div');
+                resizer.className = 'tp-shape-resizer';
+                
+                let startX, startY, startW, startH;
+                resizer.addEventListener('mousedown', (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    startX = e.clientX; startY = e.clientY;
+                    startW = wrapper.offsetWidth; startH = wrapper.offsetHeight;
+
+                    const onMouseMove = (moveEvt) => {
+                        const diffX = moveEvt.clientX - startX;
+                        const diffY = moveEvt.clientY - startY;
+                        wrapper.style.width = Math.max(60, startW + diffX) + 'px';
+                        wrapper.style.height = Math.max(40, startH + diffY) + 'px';
+                    };
+
+                    const onMouseUp = () => {
+                        document.removeEventListener('mousemove', onMouseMove);
+                        document.removeEventListener('mouseup', onMouseUp);
+                        const pos = getPos();
+                        if (typeof pos === 'number') {
+                            editor.chain().focus().command(({ tr }) => {
+                                tr.setNodeMarkup(pos, undefined, {
+                                    ...node.attrs,
+                                    width: wrapper.style.width,
+                                    height: wrapper.style.height
+                                });
+                                return true;
+                            }).run();
+                        }
+                    };
+
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                });
+
+                wrapper.appendChild(svgBox);
+                wrapper.appendChild(textOverlay);
+                wrapper.appendChild(toolbar);
+                wrapper.appendChild(resizer);
+
+                updateShapeStyles();
+
+                return {
+                    dom: wrapper,
+                    update: (updatedNode) => {
+                        if (updatedNode.type !== node.type) return false;
+                        node = updatedNode;
+                        updateShapeStyles();
+                        return true;
+                    }
+                };
+            };
+        }
+    });
     // EXTENSION ẢNH CO GIÃN, ĐỐI CĂN & TỰ ĐỘNG BẬT LINK PHÓNG TO (ZOOM)
         const ResizableImage = Image.extend({
             addAttributes() {
@@ -1823,7 +2079,7 @@
         window.TiptapModules = { 
             Editor, StarterKit, Image: ResizableImage, Link, Underline, TextAlign, TextStyle, 
             Color, FontFamily, Highlight, Youtube, Table, TableRow, TableHeader, 
-            TableCell, TaskList, TaskItem, FontSize, CustomDiv, Subscript, Superscript, LineHeight
+            TableCell, TaskList, TaskItem, FontSize, CustomDiv, Subscript, Superscript, LineHeight, CustomShape
         };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>

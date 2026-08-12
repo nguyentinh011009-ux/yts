@@ -300,27 +300,32 @@
                     <option value="Roboto Mono">Roboto Mono</option>
                 </optgroup>
             </select>
-        
-            <!-- Ô NHẬP CỠ CHỮ ĐÃ RỘNG RÃI + CỐ ĐỊNH CHỮ PX -->
-            <div class="tp-size-box" data-tooltip="Cỡ chữ (Gõ số & Enter)">
-                <input type="number" id="tp-custom-size-input" list="tp-font-sizes" value="16" min="8" max="120"
+
+            <!-- Ô CỠ CHỮ: GÕ SỐ TRỰC TIẾP HOẶC CLICK MỞ DANH SÁCH -->
+            <div class="tp-size-dropdown-container" data-tooltip="Cỡ chữ (Gõ số hoặc chọn)">
+                <input type="number" id="tp-custom-size-input" value="16" min="8" max="120"
+                       onclick="toggleFontSizeMenu(event)"
                        onchange="execTiptapCmd('fontSize', this.value)" 
                        onkeydown="if(event.key==='Enter'){execTiptapCmd('fontSize', this.value); event.preventDefault();}">
                 <span class="tp-size-unit">px</span>
+                <button type="button" class="tp-size-arrow-btn" onclick="toggleFontSizeMenu(event)">
+                    <i class="fas fa-caret-down"></i>
+                </button>
+
+                <!-- Menu danh sách cỡ chữ chuẩn -->
+                <div class="tp-size-menu" id="tp-size-menu">
+                    <div class="tp-size-item" onclick="selectFontSize('12')">12 px</div>
+                    <div class="tp-size-item" onclick="selectFontSize('14')">14 px</div>
+                    <div class="tp-size-item" onclick="selectFontSize('16')">16 px</div>
+                    <div class="tp-size-item" onclick="selectFontSize('18')">18 px</div>
+                    <div class="tp-size-item" onclick="selectFontSize('20')">20 px</div>
+                    <div class="tp-size-item" onclick="selectFontSize('24')">24 px</div>
+                    <div class="tp-size-item" onclick="selectFontSize('28')">28 px</div>
+                    <div class="tp-size-item" onclick="selectFontSize('32')">32 px</div>
+                    <div class="tp-size-item" onclick="selectFontSize('36')">36 px</div>
+                    <div class="tp-size-item" onclick="selectFontSize('48')">48 px</div>
+                </div>
             </div>
-            
-            <datalist id="tp-font-sizes">
-                <option value="12">
-                <option value="14">
-                <option value="16">
-                <option value="18">
-                <option value="20">
-                <option value="24">
-                <option value="28">
-                <option value="32">
-                <option value="36">
-                <option value="48">
-            </datalist>
         </div>
 
         <div class="tp-divider"></div>
@@ -337,15 +342,16 @@
 
         <div class="tp-divider"></div>
 
-        <!-- NHÓM 4: MÀU CHỮ & HIGHLIGHT -->
+        <!-- NHÓM 4: MÀU CHỮ & HIGHLIGHT (CLICK MỞ CỐ ĐỊNH + NHẬP MÃ MÀU HEX #) -->
         <div class="tp-group tp-color-picker-group">
-            <div class="tp-dropdown tp-color-dropdown">
-                <button type="button" class="tp-btn" data-tooltip="Màu chữ văn bản">
+            <!-- Dropdown Màu Chữ -->
+            <div class="tp-dropdown tp-click-dropdown" id="tp-dropdown-textcolor">
+                <button type="button" class="tp-btn" onclick="toggleColorDropdown(event, 'tp-dropdown-textcolor')" data-tooltip="Màu chữ văn bản">
                     <i class="fas fa-font" style="font-size:0.85rem; color:#2563eb;"></i>
                 </button>
                 <div class="tp-dropdown-content tp-palette-grid">
                     <div class="tp-palette-title">Automatic</div>
-                    <div class="tp-swatches" onclick="execTiptapCmd('color', event.target.dataset.color)">
+                    <div class="tp-swatches" onclick="applyColorAndClose('color', event.target.dataset.color)">
                         <span data-color="#000000" style="background:#000000"></span>
                         <span data-color="#434343" style="background:#434343"></span>
                         <span data-color="#666666" style="background:#666666"></span>
@@ -354,7 +360,7 @@
                         <span data-color="#ffffff" style="background:#ffffff; border:1px solid #ccc"></span>
                     </div>
                     <div class="tp-palette-title">Theme Colours</div>
-                    <div class="tp-swatches" onclick="execTiptapCmd('color', event.target.dataset.color)">
+                    <div class="tp-swatches" onclick="applyColorAndClose('color', event.target.dataset.color)">
                         <span data-color="#1155cc" style="background:#1155cc"></span>
                         <span data-color="#3d85c6" style="background:#3d85c6"></span>
                         <span data-color="#6fa8dc" style="background:#6fa8dc"></span>
@@ -368,25 +374,25 @@
                         <span data-color="#6a8759" style="background:#6a8759"></span>
                         <span data-color="#93c47d" style="background:#93c47d"></span>
                     </div>
-                    <div class="tp-palette-title">Standard Colours</div>
-                    <div class="tp-swatches" onclick="execTiptapCmd('color', event.target.dataset.color)">
-                        <span data-color="#cc0000" style="background:#cc0000"></span>
-                        <span data-color="#e06666" style="background:#e06666"></span>
-                        <span data-color="#f9cb9c" style="background:#f9cb9c"></span>
-                        <span data-color="#ffe599" style="background:#ffe599"></span>
-                        <span data-color="#b6d7a8" style="background:#b6d7a8"></span>
-                        <span data-color="#a2c4c9" style="background:#a2c4c9"></span>
+                    
+                    <!-- Ô nhập mã màu Hex tùy chọn -->
+                    <div class="tp-hex-box">
+                        <span>#</span>
+                        <input type="text" class="tp-hex-input" placeholder="0062FF" maxlength="7" 
+                               onkeydown="if(event.key==='Enter'){applyHexColorAndClose('color', this.value); event.preventDefault();}">
+                        <button type="button" class="tp-hex-btn" onclick="applyHexColorAndClose('color', this.previousElementSibling.value)">Áp dụng</button>
                     </div>
                 </div>
             </div>
 
-            <div class="tp-dropdown tp-color-dropdown">
-                <button type="button" class="tp-btn" data-tooltip="Màu nền chữ (Highlight)">
+            <!-- Dropdown Highlight -->
+            <div class="tp-dropdown tp-click-dropdown" id="tp-dropdown-highlight">
+                <button type="button" class="tp-btn" onclick="toggleColorDropdown(event, 'tp-dropdown-highlight')" data-tooltip="Màu nền chữ (Highlight)">
                     <i class="fas fa-highlighter" style="font-size:0.85rem; color:#f59e0b;"></i>
                 </button>
                 <div class="tp-dropdown-content tp-palette-grid">
                     <div class="tp-palette-title">Highlight Colors</div>
-                    <div class="tp-swatches" onclick="execTiptapCmd('highlight', event.target.dataset.color)">
+                    <div class="tp-swatches" onclick="applyColorAndClose('highlight', event.target.dataset.color)">
                         <span data-color="#fef08a" style="background:#fef08a"></span>
                         <span data-color="#bbf7d0" style="background:#bbf7d0"></span>
                         <span data-color="#bae6fd" style="background:#bae6fd"></span>
@@ -394,6 +400,14 @@
                         <span data-color="#fed7aa" style="background:#fed7aa"></span>
                         <span data-color="#e2e8f0" style="background:#e2e8f0"></span>
                         <span data-color="transparent" style="background:#fff; border:1px dashed red" title="Xóa highlight">❌</span>
+                    </div>
+
+                    <!-- Ô nhập mã màu Hex tùy chọn -->
+                    <div class="tp-hex-box">
+                        <span>#</span>
+                        <input type="text" class="tp-hex-input" placeholder="FEF08A" maxlength="7" 
+                               onkeydown="if(event.key==='Enter'){applyHexColorAndClose('highlight', this.value); event.preventDefault();}">
+                        <button type="button" class="tp-hex-btn" onclick="applyHexColorAndClose('highlight', this.previousElementSibling.value)">Áp dụng</button>
                     </div>
                 </div>
             </div>

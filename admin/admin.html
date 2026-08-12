@@ -409,15 +409,11 @@
             <button type="button" class="tp-btn" onclick="execTiptapCmd('alignRight')" data-tooltip="Căn phải"><i class="fas fa-align-right"></i></button>
             <button type="button" class="tp-btn" onclick="execTiptapCmd('alignJustify')" data-tooltip="Căn đều 2 bên"><i class="fas fa-align-justify"></i></button>
 
-            <select class="tp-select" onchange="execTiptapCmd('lineHeight', this.value)" data-tooltip="Khoảng cách dòng">
+            <select id="tp-line-height-select" class="tp-select" onchange="execTiptapCmd('lineHeight', this.value)" data-tooltip="Khoảng cách dòng">
                 <option value="1.0">Dòng 1.0</option>
-
                 <option value="1.15" selected>Dòng 1.15</option>
-
                 <option value="1.5">Dòng 1.5</option>
-
                 <option value="2.0">Dòng 2.0</option>
-
             </select>
 
             <button type="button" class="tp-btn" onclick="execTiptapCmd('bulletList')" data-tooltip="Danh sách chấm"><i class="fas fa-list-ul"></i></button>

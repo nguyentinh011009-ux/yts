@@ -1469,289 +1469,320 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
     <script type="module">
-    import { Editor, Node } from 'https://esm.sh/@tiptap/core@2.1.13';
-    import StarterKit from 'https://esm.sh/@tiptap/starter-kit@2.1.13';
-    import Image from 'https://esm.sh/@tiptap/extension-image@2.1.13';
-    import Link from 'https://esm.sh/@tiptap/extension-link@2.1.13';
-    import Underline from 'https://esm.sh/@tiptap/extension-underline@2.1.13';
-    import TextAlign from 'https://esm.sh/@tiptap/extension-text-align@2.1.13';
-    import TextStyle from 'https://esm.sh/@tiptap/extension-text-style@2.1.13';
-    import Color from 'https://esm.sh/@tiptap/extension-color@2.1.13';
-    import FontFamily from 'https://esm.sh/@tiptap/extension-font-family@2.1.13';
-    import Highlight from 'https://esm.sh/@tiptap/extension-highlight@2.1.13';
-    import Youtube from 'https://esm.sh/@tiptap/extension-youtube@2.1.13';
-    import Table from 'https://esm.sh/@tiptap/extension-table@2.1.13';
-    import TableRow from 'https://esm.sh/@tiptap/extension-table-row@2.1.13';
-    import TableHeader from 'https://esm.sh/@tiptap/extension-table-header@2.1.13';
-    import TableCell from 'https://esm.sh/@tiptap/extension-table-cell@2.1.13';
-    import TaskList from 'https://esm.sh/@tiptap/extension-task-list@2.1.13';
-    import TaskItem from 'https://esm.sh/@tiptap/extension-task-item@2.1.13';
+        import { Editor, Node, Extension } from 'https://esm.sh/@tiptap/core@2.1.13';
+        import StarterKit from 'https://esm.sh/@tiptap/starter-kit@2.1.13';
+        import Image from 'https://esm.sh/@tiptap/extension-image@2.1.13';
+        import Link from 'https://esm.sh/@tiptap/extension-link@2.1.13';
+        import Underline from 'https://esm.sh/@tiptap/extension-underline@2.1.13';
+        import TextAlign from 'https://esm.sh/@tiptap/extension-text-align@2.1.13';
+        import TextStyle from 'https://esm.sh/@tiptap/extension-text-style@2.1.13';
+        import Color from 'https://esm.sh/@tiptap/extension-color@2.1.13';
+        import FontFamily from 'https://esm.sh/@tiptap/extension-font-family@2.1.13';
+        import Highlight from 'https://esm.sh/@tiptap/extension-highlight@2.1.13';
+        import Youtube from 'https://esm.sh/@tiptap/extension-youtube@2.1.13';
+        import Table from 'https://esm.sh/@tiptap/extension-table@2.1.13';
+        import TableRow from 'https://esm.sh/@tiptap/extension-table-row@2.1.13';
+        import TableHeader from 'https://esm.sh/@tiptap/extension-table-header@2.1.13';
+        import TableCell from 'https://esm.sh/@tiptap/extension-table-cell@2.1.13';
+        import TaskList from 'https://esm.sh/@tiptap/extension-task-list@2.1.13';
+        import TaskItem from 'https://esm.sh/@tiptap/extension-task-item@2.1.13';
+        import Subscript from 'https://esm.sh/@tiptap/extension-subscript@2.1.13';
+        import Superscript from 'https://esm.sh/@tiptap/extension-superscript@2.1.13';
 
-    // 🌟 KHỞI TẠO EXTENSION BẢO TỒN NGUYÊN VẸN THẺ DIV VÀ TOÀN BỘ CLASS/STYLE
-    const CustomDiv = Node.create({
-        name: 'customDiv',
-        group: 'block',
-        content: 'block*',
-        defining: true,
-        addAttributes() {
-            return {
-                class: { default: null },
-                style: { default: null },
-                id: { default: null }
-            };
-        },
-        parseHTML() {
-            return [{ tag: 'div' }];
-        },
-        renderHTML({ HTMLAttributes }) {
-            return ['div', HTMLAttributes, 0];
-        }
-    });
-
-    // Tạo Extension FontSize
-    const FontSize = TextStyle.extend({
-        addAttributes() {
-            return {
-                fontSize: {
-                    default: null,
-                    parseHTML: element => element.style.fontSize,
-                    renderHTML: attributes => {
-                        if (!attributes.fontSize) return {};
-                        return { style: `font-size: ${attributes.fontSize}` };
-                    },
-                },
-            };
-        },
-    });
-
-// EXTENSION ẢNH CO GIÃN, ĐỐI CĂN & TỰ ĐỘNG BẬT LINK PHÓNG TO (ZOOM)
-    const ResizableImage = Image.extend({
-        addAttributes() {
-            return {
-                ...this.parent?.(),
-                width: {
-                    default: '100%',
-                    parseHTML: el => el.style.width || el.getAttribute('width') || '100%',
-                    renderHTML: attrs => ({ style: `width: ${attrs.width}; max-width: 100%;` })
-                },
-                alignment: {
-                    default: 'center',
-                    parseHTML: el => el.getAttribute('data-alignment') || 'center',
-                    renderHTML: attrs => {
-                        let alignStyle = 'display: block; margin: 15px auto;';
-                        if (attrs.alignment === 'left') alignStyle = 'display: block; margin: 15px auto 15px 0; float: none;';
-                        else if (attrs.alignment === 'right') alignStyle = 'display: block; margin: 15px 0 15px auto; float: none;';
-                        else if (attrs.alignment === 'float-left') alignStyle = 'float: left; margin: 5px 20px 15px 0;';
-                        else if (attrs.alignment === 'float-right') alignStyle = 'float: right; margin: 5px 0 15px 20px;';
-                        
-                        return {
-                            'data-alignment': attrs.alignment,
-                            style: `width: ${attrs.width}; max-width: 100%; ${alignStyle}`
-                        };
-                    }
-                },
-                // THUỘC TÍNH LƯU TRỮ LINK PHÓNG TO CỦA ẢNH
-                href: {
-                    default: null,
-                    parseHTML: el => {
-                        const parentAnchor = el.closest('a');
-                        return parentAnchor ? parentAnchor.getAttribute('href') : el.getAttribute('data-href');
-                    },
-                    renderHTML: attrs => attrs.href ? { 'data-href': attrs.href } : {}
-                }
-            };
-        },
-        renderHTML({ HTMLAttributes }) {
-            // Lấy link phóng to từ 'data-href' do Tiptap đã chuyển đổi
-            const linkUrl = HTMLAttributes['data-href'];
-            
-            // Tạo bản sao các thuộc tính và xóa data-href đi để thẻ <img> hiển thị sạch sẽ
-            let imgAttrs = { ...HTMLAttributes };
-            delete imgAttrs['data-href'];
-
-            // Nếu có tick Zoom (có linkUrl) -> Bọc thẻ <a> ra ngoài thẻ <img>
-            if (linkUrl) {
-                return ['a', { 
-                    href: linkUrl, 
-                    target: '_blank', 
-                    rel: 'noopener noreferrer', 
-                    class: 'vts-img-zoom-link', 
-                    title: 'Bấm vào để xem ảnh phóng to' 
-                }, ['img', imgAttrs]];
-            }
-            
-            // Nếu không tick Zoom -> Chỉ xuất thẻ <img> bình thường
-            return ['img', imgAttrs];
-        },
-addNodeView() {
-            return ({ node, getPos, editor }) => {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'tp-image-node-view';
-                
-                const align = node.attrs.alignment || 'center';
-                const width = node.attrs.width || '100%';
-
-                wrapper.setAttribute('data-alignment', align);
-                wrapper.style.width = width;
-                
-                const applyStyle = (a) => {
-                    wrapper.style.float = 'none';
-                    wrapper.style.display = 'inline-block';
-                    wrapper.style.margin = '0';
-                    if (a === 'center') wrapper.style.cssText += 'display: block; margin: 15px auto; float: none;';
-                    else if (a === 'left') wrapper.style.cssText += 'display: block; margin: 15px auto 15px 0; float: none;';
-                    else if (a === 'right') wrapper.style.cssText += 'display: block; margin: 15px 0 15px auto; float: none;';
-                    else if (a === 'float-left') wrapper.style.cssText += 'float: left; margin: 5px 20px 15px 0;';
-                    else if (a === 'float-right') wrapper.style.cssText += 'float: right; margin: 5px 0 15px 20px;';
-                };
-                applyStyle(align);
-
-                const img = document.createElement('img');
-                img.src = node.attrs.src;
-                img.alt = node.attrs.alt || '';
-                img.className = 'tp-resizable-img';
-
-                // KHUNG CÔNG CỤ NỔI
-                const toolbar = document.createElement('div');
-                toolbar.className = 'tp-img-toolbar';
-                
-                // 🌟 HÀM CẬP NHẬT TRẠNG THÁI GIAO DIỆN NÚT BẤM (FIX LỖI KHÔNG ĐỔI TRẠNG THÁI)
-                const renderToolbarContent = (currentHref) => {
-                    const isZoomActive = !!currentHref;
-                    toolbar.innerHTML = `
-                        <button type="button" class="tp-img-btn ${isZoomActive ? 'is-active-zoom' : ''}" data-action="toggle-zoom" title="Bật/Tắt bấm vào ảnh để phóng to ở tab mới">
-                            <i class="${isZoomActive ? 'fas fa-check-square' : 'far fa-square'}" style="color: ${isZoomActive ? '#10b981' : '#cbd5e1'}; pointer-events: none; margin-right: 4px;"></i>
-                            <span style="color: ${isZoomActive ? '#10b981' : 'inherit'}; font-weight: ${isZoomActive ? 'bold' : 'normal'}; pointer-events: none;">Bấm Phóng To</span>
-                        </button>
-                        <span class="tp-img-sep">|</span>
-                        <button type="button" class="tp-img-btn" data-align="float-left" title="Chữ bao quanh bên phải"><i class="fas fa-indent" style="pointer-events: none;"></i> Trôi Trái</button>
-                        <button type="button" class="tp-img-btn" data-align="center" title="Căn giữa"><i class="fas fa-align-center" style="pointer-events: none;"></i> Giữa</button>
-                        <button type="button" class="tp-img-btn" data-align="float-right" title="Chữ bao quanh bên trái"><i class="fas fa-outdent" style="pointer-events: none;"></i> Trôi Phải</button>
-                        <span class="tp-img-sep">|</span>
-                        <button type="button" class="tp-img-btn" data-size="25%">25%</button>
-                        <button type="button" class="tp-img-btn" data-size="50%">50%</button>
-                        <button type="button" class="tp-img-btn" data-size="75%">75%</button>
-                        <button type="button" class="tp-img-btn" data-size="100%">100%</button>
-                        <span class="tp-img-sep">|</span>
-                        <button type="button" class="tp-img-btn tp-img-del" title="Xóa ảnh"><i class="fas fa-trash" style="pointer-events: none;"></i></button>
-                    `;
-                };
-
-                // Vẽ giao diện ban đầu
-                renderToolbarContent(node.attrs.href);
-                if (node.attrs.href) img.style.cursor = 'pointer';
-
-                // BẮT SỰ KIỆN CLICK NÚT BẤM (ĐÃ ĐƯỢC TỐI ƯU SỰ KIỆN)
-                toolbar.addEventListener('click', (e) => {
-                    const btn = e.target.closest('.tp-img-btn');
-                    if (!btn) return;
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    if (typeof getPos !== 'function') return;
-                    const pos = getPos();
-                    if (typeof pos !== 'number') return;
-
-                    if (btn.classList.contains('tp-img-del')) {
-                        editor.chain().focus().deleteRange({ from: pos, to: pos + 1 }).run();
-                        return;
-                    }
-
-                    const action = btn.getAttribute('data-action');
-                    const newAlign = btn.getAttribute('data-align');
-                    const newSize = btn.getAttribute('data-size');
-
-                    let attrs = { ...node.attrs };
-
-                    // Đảo ngược trạng thái Link Zoom
-                    if (action === 'toggle-zoom') {
-                        attrs.href = attrs.href ? null : (node.attrs.src || img.src);
-                    }
-                    if (newAlign) attrs.alignment = newAlign;
-                    if (newSize) attrs.width = newSize;
-
-                    // Thực thi cập nhật thuộc tính vào Tiptap Engine
-                    editor.chain().focus().command(({ tr }) => {
-                        tr.setNodeMarkup(pos, undefined, attrs);
-                        return true;
-                    }).run();
-                });
-
-                const resizer = document.createElement('div');
-                resizer.className = 'tp-img-resizer';
-                
-                let startX, startWidth;
-                resizer.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    startX = e.clientX;
-                    startWidth = wrapper.offsetWidth;
-
-                    const onMouseMove = (moveEvt) => {
-                        const currentX = moveEvt.clientX;
-                        const diffX = currentX - startX;
-                        const parentWidth = wrapper.parentElement ? wrapper.parentElement.offsetWidth : 800;
-                        let newWidthPx = Math.max(100, Math.min(parentWidth, startWidth + diffX));
-                        let newWidthPercent = Math.round((newWidthPx / parentWidth) * 100) + '%';
-                        wrapper.style.width = newWidthPercent;
-                    };
-
-                    const onMouseUp = () => {
-                        document.removeEventListener('mousemove', onMouseMove);
-                        document.removeEventListener('mouseup', onMouseUp);
-                        const finalWidth = wrapper.style.width;
-                        if (typeof getPos === 'function') {
-                            const pos = getPos();
-                            if (typeof pos === 'number') {
-                                editor.chain().focus().command(({ tr }) => {
-                                    tr.setNodeMarkup(pos, undefined, { ...node.attrs, width: finalWidth });
-                                    return true;
-                                }).run();
+        const LineHeight = Extension.create({
+            name: 'lineHeight',
+            addOptions() { return { types: ['paragraph', 'heading', 'list_item'] } },
+            addGlobalAttributes() {
+                return [{
+                    types: this.options.types,
+                    attributes: {
+                        lineHeight: {
+                            default: null,
+                            parseHTML: element => element.style.lineHeight || null,
+                            renderHTML: attributes => {
+                                if (!attributes.lineHeight) return {};
+                                return { style: `line-height: ${attributes.lineHeight}` };
                             }
                         }
-                    };
-
-                    document.addEventListener('mousemove', onMouseMove);
-                    document.addEventListener('mouseup', onMouseUp);
-                });
-
-                wrapper.appendChild(img);
-                wrapper.appendChild(toolbar);
-                wrapper.appendChild(resizer);
-
+                    }
+                }]
+            },
+            addCommands() {
                 return {
-                    dom: wrapper,
-                    update: (updatedNode) => {
-                        if (updatedNode.type !== node.type) return false;
-                        node = updatedNode;
-
-                        img.src = node.attrs.src;
-                        img.alt = node.attrs.alt || '';
-
-                        const newAlign = node.attrs.alignment || 'center';
-                        const newWidth = node.attrs.width || '100%';
-                        const newHref = node.attrs.href;
-
-                        img.style.cursor = newHref ? 'pointer' : 'default';
-                        wrapper.style.width = newWidth;
-                        wrapper.setAttribute('data-alignment', newAlign);
-                        applyStyle(newAlign);
-
-                        // 🌟 TỰ ĐỘNG CẬP NHẬT TÍCH XANH / Ô XÁM TỚI NÚT BẤM KHI TRẠNG THÁI THAY ĐỔI
-                        renderToolbarContent(newHref);
-
-                        return true;
+                    setLineHeight: (lineHeight) => ({ commands }) => {
+                        return this.options.types.every(type => commands.updateAttributes(type, { lineHeight }))
+                    },
+                    unsetLineHeight: () => ({ commands }) => {
+                        return this.options.types.every(type => commands.resetAttributes(type, 'lineHeight'))
+                    }
+                }
+            }
+        });
+        // 🌟 KHỞI TẠO EXTENSION BẢO TỒN NGUYÊN VẸN THẺ DIV VÀ TOÀN BỘ CLASS/STYLE
+        const CustomDiv = Node.create({
+            name: 'customDiv',
+            group: 'block',
+            content: 'block*',
+            defining: true,
+            addAttributes() {
+                return {
+                    class: { default: null },
+                    style: { default: null },
+                    id: { default: null }
+                };
+            },
+            parseHTML() {
+                return [{ tag: 'div' }];
+            },
+            renderHTML({ HTMLAttributes }) {
+                return ['div', HTMLAttributes, 0];
+            }
+        });
+    
+        // Tạo Extension FontSize
+        const FontSize = TextStyle.extend({
+            addAttributes() {
+                return {
+                    fontSize: {
+                        default: null,
+                        parseHTML: element => element.style.fontSize,
+                        renderHTML: attributes => {
+                            if (!attributes.fontSize) return {};
+                            return { style: `font-size: ${attributes.fontSize}` };
+                        },
+                    },
+                };
+            },
+        });
+    
+    // EXTENSION ẢNH CO GIÃN, ĐỐI CĂN & TỰ ĐỘNG BẬT LINK PHÓNG TO (ZOOM)
+        const ResizableImage = Image.extend({
+            addAttributes() {
+                return {
+                    ...this.parent?.(),
+                    width: {
+                        default: '100%',
+                        parseHTML: el => el.style.width || el.getAttribute('width') || '100%',
+                        renderHTML: attrs => ({ style: `width: ${attrs.width}; max-width: 100%;` })
+                    },
+                    alignment: {
+                        default: 'center',
+                        parseHTML: el => el.getAttribute('data-alignment') || 'center',
+                        renderHTML: attrs => {
+                            let alignStyle = 'display: block; margin: 15px auto;';
+                            if (attrs.alignment === 'left') alignStyle = 'display: block; margin: 15px auto 15px 0; float: none;';
+                            else if (attrs.alignment === 'right') alignStyle = 'display: block; margin: 15px 0 15px auto; float: none;';
+                            else if (attrs.alignment === 'float-left') alignStyle = 'float: left; margin: 5px 20px 15px 0;';
+                            else if (attrs.alignment === 'float-right') alignStyle = 'float: right; margin: 5px 0 15px 20px;';
+                            
+                            return {
+                                'data-alignment': attrs.alignment,
+                                style: `width: ${attrs.width}; max-width: 100%; ${alignStyle}`
+                            };
+                        }
+                    },
+                    // THUỘC TÍNH LƯU TRỮ LINK PHÓNG TO CỦA ẢNH
+                    href: {
+                        default: null,
+                        parseHTML: el => {
+                            const parentAnchor = el.closest('a');
+                            return parentAnchor ? parentAnchor.getAttribute('href') : el.getAttribute('data-href');
+                        },
+                        renderHTML: attrs => attrs.href ? { 'data-href': attrs.href } : {}
                     }
                 };
-            };
-        }
-    });
-
-    window.TiptapModules = { 
-        Editor, StarterKit, Image: ResizableImage, Link, Underline, TextAlign, TextStyle, 
-        Color, FontFamily, Highlight, Youtube, Table, TableRow, TableHeader, 
-        TableCell, TaskList, TaskItem, FontSize, CustomDiv // 👈 ĐÃ ĐƯỢC BỔ SUNG VÀO ĐÂY
-    };
+            },
+            renderHTML({ HTMLAttributes }) {
+                // Lấy link phóng to từ 'data-href' do Tiptap đã chuyển đổi
+                const linkUrl = HTMLAttributes['data-href'];
+                
+                // Tạo bản sao các thuộc tính và xóa data-href đi để thẻ <img> hiển thị sạch sẽ
+                let imgAttrs = { ...HTMLAttributes };
+                delete imgAttrs['data-href'];
+    
+                // Nếu có tick Zoom (có linkUrl) -> Bọc thẻ <a> ra ngoài thẻ <img>
+                if (linkUrl) {
+                    return ['a', { 
+                        href: linkUrl, 
+                        target: '_blank', 
+                        rel: 'noopener noreferrer', 
+                        class: 'vts-img-zoom-link', 
+                        title: 'Bấm vào để xem ảnh phóng to' 
+                    }, ['img', imgAttrs]];
+                }
+                
+                // Nếu không tick Zoom -> Chỉ xuất thẻ <img> bình thường
+                return ['img', imgAttrs];
+            },
+    addNodeView() {
+                return ({ node, getPos, editor }) => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'tp-image-node-view';
+                    
+                    const align = node.attrs.alignment || 'center';
+                    const width = node.attrs.width || '100%';
+    
+                    wrapper.setAttribute('data-alignment', align);
+                    wrapper.style.width = width;
+                    
+                    const applyStyle = (a) => {
+                        wrapper.style.float = 'none';
+                        wrapper.style.display = 'inline-block';
+                        wrapper.style.margin = '0';
+                        if (a === 'center') wrapper.style.cssText += 'display: block; margin: 15px auto; float: none;';
+                        else if (a === 'left') wrapper.style.cssText += 'display: block; margin: 15px auto 15px 0; float: none;';
+                        else if (a === 'right') wrapper.style.cssText += 'display: block; margin: 15px 0 15px auto; float: none;';
+                        else if (a === 'float-left') wrapper.style.cssText += 'float: left; margin: 5px 20px 15px 0;';
+                        else if (a === 'float-right') wrapper.style.cssText += 'float: right; margin: 5px 0 15px 20px;';
+                    };
+                    applyStyle(align);
+    
+                    const img = document.createElement('img');
+                    img.src = node.attrs.src;
+                    img.alt = node.attrs.alt || '';
+                    img.className = 'tp-resizable-img';
+    
+                    // KHUNG CÔNG CỤ NỔI
+                    const toolbar = document.createElement('div');
+                    toolbar.className = 'tp-img-toolbar';
+                    
+                    // 🌟 HÀM CẬP NHẬT TRẠNG THÁI GIAO DIỆN NÚT BẤM (FIX LỖI KHÔNG ĐỔI TRẠNG THÁI)
+                    const renderToolbarContent = (currentHref) => {
+                        const isZoomActive = !!currentHref;
+                        toolbar.innerHTML = `
+                            <button type="button" class="tp-img-btn ${isZoomActive ? 'is-active-zoom' : ''}" data-action="toggle-zoom" title="Bật/Tắt bấm vào ảnh để phóng to ở tab mới">
+                                <i class="${isZoomActive ? 'fas fa-check-square' : 'far fa-square'}" style="color: ${isZoomActive ? '#10b981' : '#cbd5e1'}; pointer-events: none; margin-right: 4px;"></i>
+                                <span style="color: ${isZoomActive ? '#10b981' : 'inherit'}; font-weight: ${isZoomActive ? 'bold' : 'normal'}; pointer-events: none;">Bấm Phóng To</span>
+                            </button>
+                            <span class="tp-img-sep">|</span>
+                            <button type="button" class="tp-img-btn" data-align="float-left" title="Chữ bao quanh bên phải"><i class="fas fa-indent" style="pointer-events: none;"></i> Trôi Trái</button>
+                            <button type="button" class="tp-img-btn" data-align="center" title="Căn giữa"><i class="fas fa-align-center" style="pointer-events: none;"></i> Giữa</button>
+                            <button type="button" class="tp-img-btn" data-align="float-right" title="Chữ bao quanh bên trái"><i class="fas fa-outdent" style="pointer-events: none;"></i> Trôi Phải</button>
+                            <span class="tp-img-sep">|</span>
+                            <button type="button" class="tp-img-btn" data-size="25%">25%</button>
+                            <button type="button" class="tp-img-btn" data-size="50%">50%</button>
+                            <button type="button" class="tp-img-btn" data-size="75%">75%</button>
+                            <button type="button" class="tp-img-btn" data-size="100%">100%</button>
+                            <span class="tp-img-sep">|</span>
+                            <button type="button" class="tp-img-btn tp-img-del" title="Xóa ảnh"><i class="fas fa-trash" style="pointer-events: none;"></i></button>
+                        `;
+                    };
+    
+                    // Vẽ giao diện ban đầu
+                    renderToolbarContent(node.attrs.href);
+                    if (node.attrs.href) img.style.cursor = 'pointer';
+    
+                    // BẮT SỰ KIỆN CLICK NÚT BẤM (ĐÃ ĐƯỢC TỐI ƯU SỰ KIỆN)
+                    toolbar.addEventListener('click', (e) => {
+                        const btn = e.target.closest('.tp-img-btn');
+                        if (!btn) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+    
+                        if (typeof getPos !== 'function') return;
+                        const pos = getPos();
+                        if (typeof pos !== 'number') return;
+    
+                        if (btn.classList.contains('tp-img-del')) {
+                            editor.chain().focus().deleteRange({ from: pos, to: pos + 1 }).run();
+                            return;
+                        }
+    
+                        const action = btn.getAttribute('data-action');
+                        const newAlign = btn.getAttribute('data-align');
+                        const newSize = btn.getAttribute('data-size');
+    
+                        let attrs = { ...node.attrs };
+    
+                        // Đảo ngược trạng thái Link Zoom
+                        if (action === 'toggle-zoom') {
+                            attrs.href = attrs.href ? null : (node.attrs.src || img.src);
+                        }
+                        if (newAlign) attrs.alignment = newAlign;
+                        if (newSize) attrs.width = newSize;
+    
+                        // Thực thi cập nhật thuộc tính vào Tiptap Engine
+                        editor.chain().focus().command(({ tr }) => {
+                            tr.setNodeMarkup(pos, undefined, attrs);
+                            return true;
+                        }).run();
+                    });
+    
+                    const resizer = document.createElement('div');
+                    resizer.className = 'tp-img-resizer';
+                    
+                    let startX, startWidth;
+                    resizer.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        startX = e.clientX;
+                        startWidth = wrapper.offsetWidth;
+    
+                        const onMouseMove = (moveEvt) => {
+                            const currentX = moveEvt.clientX;
+                            const diffX = currentX - startX;
+                            const parentWidth = wrapper.parentElement ? wrapper.parentElement.offsetWidth : 800;
+                            let newWidthPx = Math.max(100, Math.min(parentWidth, startWidth + diffX));
+                            let newWidthPercent = Math.round((newWidthPx / parentWidth) * 100) + '%';
+                            wrapper.style.width = newWidthPercent;
+                        };
+    
+                        const onMouseUp = () => {
+                            document.removeEventListener('mousemove', onMouseMove);
+                            document.removeEventListener('mouseup', onMouseUp);
+                            const finalWidth = wrapper.style.width;
+                            if (typeof getPos === 'function') {
+                                const pos = getPos();
+                                if (typeof pos === 'number') {
+                                    editor.chain().focus().command(({ tr }) => {
+                                        tr.setNodeMarkup(pos, undefined, { ...node.attrs, width: finalWidth });
+                                        return true;
+                                    }).run();
+                                }
+                            }
+                        };
+    
+                        document.addEventListener('mousemove', onMouseMove);
+                        document.addEventListener('mouseup', onMouseUp);
+                    });
+    
+                    wrapper.appendChild(img);
+                    wrapper.appendChild(toolbar);
+                    wrapper.appendChild(resizer);
+    
+                    return {
+                        dom: wrapper,
+                        update: (updatedNode) => {
+                            if (updatedNode.type !== node.type) return false;
+                            node = updatedNode;
+    
+                            img.src = node.attrs.src;
+                            img.alt = node.attrs.alt || '';
+    
+                            const newAlign = node.attrs.alignment || 'center';
+                            const newWidth = node.attrs.width || '100%';
+                            const newHref = node.attrs.href;
+    
+                            img.style.cursor = newHref ? 'pointer' : 'default';
+                            wrapper.style.width = newWidth;
+                            wrapper.setAttribute('data-alignment', newAlign);
+                            applyStyle(newAlign);
+    
+                            // 🌟 TỰ ĐỘNG CẬP NHẬT TÍCH XANH / Ô XÁM TỚI NÚT BẤM KHI TRẠNG THÁI THAY ĐỔI
+                            renderToolbarContent(newHref);
+    
+                            return true;
+                        }
+                    };
+                };
+            }
+        });
+    
+        window.TiptapModules = { 
+            Editor, StarterKit, Image: ResizableImage, Link, Underline, TextAlign, TextStyle, 
+            Color, FontFamily, Highlight, Youtube, Table, TableRow, TableHeader, 
+            TableCell, TaskList, TaskItem, FontSize, CustomDiv, Subscript, Superscript, LineHeight
+        };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
     <script src="../assets/js/admin.js"></script>

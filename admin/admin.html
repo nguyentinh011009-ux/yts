@@ -300,23 +300,26 @@
                     <option value="Roboto Mono">Roboto Mono</option>
                 </optgroup>
             </select>
-
-            <input type="text" class="tp-input-size" id="tp-custom-size-input" list="tp-font-sizes" value="16px" placeholder="16px" 
-                   onchange="execTiptapCmd('fontSize', this.value)" 
-                   onkeydown="if(event.key==='Enter'){execTiptapCmd('fontSize', this.value); event.preventDefault();}" 
-                   data-tooltip="Cỡ chữ">
+        
+            <!-- Ô NHẬP CỠ CHỮ ĐÃ RỘNG RÃI + CỐ ĐỊNH CHỮ PX -->
+            <div class="tp-size-box" data-tooltip="Cỡ chữ (Gõ số & Enter)">
+                <input type="number" id="tp-custom-size-input" list="tp-font-sizes" value="16" min="8" max="120"
+                       onchange="execTiptapCmd('fontSize', this.value)" 
+                       onkeydown="if(event.key==='Enter'){execTiptapCmd('fontSize', this.value); event.preventDefault();}">
+                <span class="tp-size-unit">px</span>
+            </div>
             
             <datalist id="tp-font-sizes">
-                <option value="12px">
-                <option value="14px">
-                <option value="16px">
-                <option value="18px">
-                <option value="20px">
-                <option value="24px">
-                <option value="28px">
-                <option value="32px">
-                <option value="36px">
-                <option value="48px">
+                <option value="12">
+                <option value="14">
+                <option value="16">
+                <option value="18">
+                <option value="20">
+                <option value="24">
+                <option value="28">
+                <option value="32">
+                <option value="36">
+                <option value="48">
             </datalist>
         </div>
 
@@ -431,9 +434,12 @@
 
         <!-- NHÓM 7: BẢNG BỂU -->
         <div class="tp-group">
-            <div class="tp-dropdown">
-                <button type="button" class="tp-btn" data-tooltip="Menu Quản lý Bảng"><i class="fas fa-table" style="color:#0284c7;"></i> <i class="fas fa-caret-down" style="font-size:0.6rem; margin-left:3px;"></i></button>
-                <div class="tp-dropdown-content">
+            <div class="tp-dropdown tp-click-dropdown" id="tp-table-dropdown">
+                <button type="button" class="tp-btn" onclick="toggleTableDropdown(event)" data-tooltip="Menu Quản lý Bảng">
+                    <i class="fas fa-table" style="color:#0284c7;"></i> 
+                    <i class="fas fa-caret-down" style="font-size:0.6rem; margin-left:3px;"></i>
+                </button>
+                <div class="tp-dropdown-content" id="tp-table-dropdown-content">
                     <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('insertTable')"><i class="fas fa-plus"></i> Tạo bảng mới</button>
                     <hr style="margin:4px 0; border:0; border-top:1px solid #e2e8f0;">
                     <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('addRowBefore')"><i class="fas fa-arrow-up"></i> Thêm hàng trên</button>
@@ -450,12 +456,13 @@
                     <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('deleteTable')" style="color:#ef4444; font-weight:bold;"><i class="fas fa-trash-alt"></i> Xóa Bảng</button>
                 </div>
             </div>
-
+        
             <div class="tp-color-wrapper" data-tooltip="Tô màu nền Ô Bảng">
                 <i class="fas fa-fill-drip" style="font-size:0.75rem; color:#059669;"></i>
                 <input type="color" value="#f1f5f9" onchange="execTiptapCmd('tableCellBg', this.value)">
             </div>
         </div>
+
 
         <div class="tp-divider"></div>
 

@@ -406,7 +406,7 @@ window.initCKEditor = function(callback) {
         Editor, StarterKit, Image, Link, Underline, TextAlign, TextStyle, 
         Color, FontFamily, Highlight, Youtube, Table, TableRow, TableHeader, 
         TableCell, TaskList, TaskItem, FontSize, CustomDiv,
-        Subscript, Superscript, CharacterCount, LineHeight // Đã bổ sung
+        Subscript, Superscript, CharacterCount, LineHeight 
     } = window.TiptapModules;
 
     const sourceArea = document.getElementById('p-content-source');
@@ -433,22 +433,33 @@ window.initCKEditor = function(callback) {
             content: extracted.body || '',
             onUpdate({ editor }) { updateWordCountStats(editor); },
             onSelectionUpdate({ editor }) {
-                // Tự động đồng bộ Font Name và Font Size khi click vào vùng chữ bất kỳ
+                // 1. Đồng bộ Font Family
                 const fontSelect = document.getElementById('tp-font-family-select');
                 if (fontSelect) {
                     const currentFont = editor.getAttributes('textStyle').fontFamily || '';
-                    fontSelect.value = currentFont.replace(/['"]/g, '');
+                    fontSelect.value = currentFont.replace(/['"]/g, '').trim();
                 }
+                // 2. Đồng bộ Font Size
                 const sizeInput = document.getElementById('tp-custom-size-input');
                 if (sizeInput) {
                     const currentSize = editor.getAttributes('textStyle').fontSize || '16px';
                     sizeInput.value = currentSize;
                 }
+                // 3. Đồng bộ Line Height từ block hiện tại
+                const lineSelect = document.getElementById('tp-line-height-select');
+                if (lineSelect) {
+                    let activeLH = '1.15';
+                    ['paragraph', 'heading'].forEach(type => {
+                        const attrs = editor.getAttributes(type);
+                        if (attrs && attrs.lineHeight) activeLH = attrs.lineHeight;
+                    });
+                    lineSelect.value = activeLH;
+                }
             }
         });
         updateWordCountStats(tiptapEditor);
         if (typeof callback === 'function') callback();
-    } catch (err) { console.error("Lỗi khi khởi tạo Tiptap Editor:", err); }
+    } catch (err) { console.error("Lỗi khởi tạo Tiptap:", err); }
 };
 
 function updateWordCountStats(editor) {

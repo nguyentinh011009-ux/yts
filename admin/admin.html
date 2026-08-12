@@ -280,22 +280,20 @@
 
         <div class="tp-divider"></div>
 
-        <!-- NHÓM 2: PHÔNG CHỮ & CỠ CHỮ LINH HOẠT -->
+<!-- NHÓM 2: PHÔNG CHỮ & CỠ CHỮ LINH HOẠT -->
         <div class="tp-group">
-            <select class="tp-select" onchange="execTiptapCmd('fontFamily', this.value)" data-tooltip="Font chữ (Tự động tải Google Fonts)" style="max-width:140px;">
+            <select id="tp-font-family-select" class="tp-select" onchange="execTiptapCmd('fontFamily', this.value)" data-tooltip="Font chữ (Tự động tải Google Fonts)" style="max-width:140px;">
+                <option value="">Font mặc định</option>
                 <optgroup label="System Fonts">
-                    <option value="">Font mặc định</option>
                     <option value="Arial">Arial</option>
                     <option value="Times New Roman">Times New Roman</option>
                     <option value="Georgia">Georgia</option>
-
                     <option value="Tahoma">Tahoma</option>
                     <option value="Verdana">Verdana</option>
                 </optgroup>
                 <optgroup label="Google Online Fonts">
                     <option value="Montserrat">Montserrat</option>
                     <option value="Playfair Display">Playfair Display</option>
-
                     <option value="Merriweather">Merriweather</option>
                     <option value="Dancing Script">Dancing Script</option>
                     <option value="Oswald">Oswald</option>
@@ -303,34 +301,23 @@
                 </optgroup>
             </select>
 
-            <!-- Cỡ chữ vừa chọn được vừa gõ được số pixel bất kỳ -->
-            <input type="text" class="tp-input-size" id="tp-custom-size-input" value="16px" placeholder="16px" 
+            <input type="text" class="tp-input-size" id="tp-custom-size-input" list="tp-font-sizes" value="16px" placeholder="16px" 
                    onchange="execTiptapCmd('fontSize', this.value)" 
                    onkeydown="if(event.key==='Enter'){execTiptapCmd('fontSize', this.value); event.preventDefault();}" 
                    data-tooltip="Cỡ chữ (Gõ số tùy chỉnh & Enter)">
-
-            <select class="tp-select" onchange="execTiptapCmd('fontSize', this.value); document.getElementById('tp-custom-size-input').value = this.value;" data-tooltip="Cỡ chữ mẫu" style="width:50px;">
-                <option value="12px">12</option>
-
-                <option value="14px">14</option>
-
-                <option value="16px" selected>16</option>
-
-                <option value="18px">18</option>
-
-                <option value="20px">20</option>
-
-                <option value="24px">24</option>
-
-                <option value="28px">28</option>
-
-                <option value="32px">32</option>
-
-                <option value="36px">36</option>
-
-                <option value="48px">48</option>
-
-            </select>
+            
+            <datalist id="tp-font-sizes">
+                <option value="12px">
+                <option value="14px">
+                <option value="16px">
+                <option value="18px">
+                <option value="20px">
+                <option value="24px">
+                <option value="28px">
+                <option value="32px">
+                <option value="36px">
+                <option value="48px">
+            </datalist>
         </div>
 
         <div class="tp-divider"></div>

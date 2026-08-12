@@ -1036,3 +1036,164 @@
 .tp-dropdown.is-open [data-tooltip]::after {
     display: none !important;
 }
+/* ==========================================================================
+   GIAO DIỆN SHAPE WORD CAO CẤP (GÕ CHỮ TRỰC TIẾP & TOOLBAR OFFICE)
+   ========================================================================== */
+
+/* Khung bọc Shape */
+.tp-shape-box {
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+    box-sizing: border-box;
+    margin: 15px 0;
+    user-select: none;
+}
+
+.tp-shape-box:hover,
+.tp-shape-box.ProseMirror-selectednode {
+    outline: 2px dashed #0284c7 !important;
+    outline-offset: 4px;
+    border-radius: 6px;
+}
+
+/* SVG Shape Container */
+.tp-shape-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.tp-shape-svg svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+/* KHUNG GÕ CHỮ TRỰC TIẾP TRÊN HÌNH SHAPE */
+.tp-shape-input-text {
+    position: absolute;
+    inset: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    word-break: break-word;
+    font-weight: 700;
+    line-height: 1.3;
+    outline: none;
+    border: none;
+    background: transparent;
+    cursor: text;
+    z-index: 5;
+    user-select: text;
+}
+
+/* THANH CÔNG CỤ NỔI HIỆN ĐẠI (01 HÀNG NGANG CHUẨN WORD) */
+.tp-sbar {
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0f172a !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid #334155 !important;
+    padding: 4px 8px !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35) !important;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, top 0.2s ease;
+    z-index: 100;
+    white-space: nowrap !important;
+}
+
+.tp-shape-box:hover .tp-sbar,
+.tp-shape-box.ProseMirror-selectednode .tp-sbar {
+    opacity: 1;
+    pointer-events: auto;
+    top: -56px;
+}
+
+/* Nút bấm trên thanh công cụ nổi */
+.tp-sbtn {
+    background: transparent !important;
+    border: none !important;
+    color: #cbd5e1 !important;
+    height: 28px !important;
+    padding: 0 8px !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    transition: all 0.15s ease !important;
+    line-height: 1 !important;
+}
+
+.tp-sbtn:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+}
+
+.tp-sbtn-danger:hover {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+}
+
+/* Chấm chọn màu hình tròn xinh xắn */
+.tp-scolor-dot {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    display: inline-block;
+}
+
+.tp-scolor-dot input[type="color"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.tp-ssep {
+    width: 1px;
+    height: 18px;
+    background: #334155;
+    margin: 0 3px;
+}
+
+/* Nút Tròn Nhấn Giữ Co Giãn */
+.tp-sresize-handle {
+    position: absolute;
+    right: -8px;
+    bottom: -8px;
+    width: 14px;
+    height: 14px;
+    background: #0284c7;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    cursor: nwse-resize;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.tp-shape-box:hover .tp-sresize-handle,
+.tp-shape-box.ProseMirror-selectednode .tp-sresize-handle {
+    opacity: 1;
+}

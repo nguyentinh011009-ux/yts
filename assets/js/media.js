@@ -683,3 +683,79 @@ document.addEventListener('click', function(e) {
         dropdown.classList.remove('is-open');
     }
 });
+// =========================================================================
+// XỬ LÝ DROPDOWN CỠ CHỮ & BẢNG MÀU CLICK CỐ ĐỊNH + MÃ MÀU HEX (#)
+// =========================================================================
+
+// 1. Mở/Đóng Menu Cỡ chữ
+function toggleFontSizeMenu(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('tp-size-menu');
+    if (menu) menu.classList.toggle('is-open');
+}
+
+// 2. Chọn cỡ chữ từ danh sách
+function selectFontSize(size) {
+    const input = document.getElementById('tp-custom-size-input');
+    if (input) input.value = size;
+    execTiptapCmd('fontSize', size);
+    const menu = document.getElementById('tp-size-menu');
+    if (menu) menu.classList.remove('is-open');
+}
+
+// 3. Mở/Đóng Bảng chọn màu (Cố định khi click)
+function toggleColorDropdown(e, dropdownId) {
+    if (e) e.stopPropagation();
+    
+    // Đóng các dropdown màu khác đang mở
+    ['tp-dropdown-textcolor', 'tp-dropdown-highlight'].forEach(id => {
+        if (id !== dropdownId) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('is-open');
+        }
+    });
+
+    const target = document.getElementById(dropdownId);
+    if (target) target.classList.toggle('is-open');
+}
+
+// 4. Áp dụng màu chọn từ ô vuông & Tự động đóng bảng màu
+function applyColorAndClose(cmdType, colorVal) {
+    if (!colorVal) return;
+    execTiptapCmd(cmdType, colorVal);
+    closeAllColorDropdowns();
+}
+
+// 5. Áp dụng mã màu Hex tùy chọn (#) & Tự động đóng bảng màu
+function applyHexColorAndClose(cmdType, hexVal) {
+    if (!hexVal || !hexVal.trim()) return;
+    let cleanHex = hexVal.trim();
+    if (!cleanHex.startsWith('#')) cleanHex = '#' + cleanHex;
+    
+    execTiptapCmd(cmdType, cleanHex);
+    closeAllColorDropdowns();
+}
+
+// Đóng toàn bộ bảng màu
+function closeAllColorDropdowns() {
+    ['tp-dropdown-textcolor', 'tp-dropdown-highlight'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('is-open');
+    });
+}
+
+// Lắng nghe Click ra ngoài màn hình để tự động đóng Menu cỡ chữ và Bảng màu
+document.addEventListener('click', function(e) {
+    // Đóng menu cỡ chữ
+    const sizeContainer = document.querySelector('.tp-size-dropdown-container');
+    if (sizeContainer && !sizeContainer.contains(e.target)) {
+        const menu = document.getElementById('tp-size-menu');
+        if (menu) menu.classList.remove('is-open');
+    }
+
+    // Đóng bảng màu
+    const colorGroup = document.querySelector('.tp-color-picker-group');
+    if (colorGroup && !colorGroup.contains(e.target)) {
+        closeAllColorDropdowns();
+    }
+});

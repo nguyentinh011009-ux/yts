@@ -245,27 +245,28 @@
 
 /* Thanh công cụ Word Toolbars Sticky */
 .tiptap-toolbar {
-    position: sticky;
-    top: 0;
-    z-index: 25;
-    background: #ffffff;
-    border-bottom: 1px solid #e2e8f0;
-    padding: 8px 12px;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 30 !important;
+    background: #ffffff !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    padding: 8px 12px !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 6px !important;
+    overflow: visible !important;
 }
 
 .tp-group {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    background: #f8fafc;
-    padding: 3px 6px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    display: flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    background: #f8fafc !important;
+    padding: 3px 6px !important;
+    border-radius: 8px !important;
+    border: 1px solid #e2e8f0 !important;
+    flex-shrink: 0 !important; /* Không cho bị bóp nghẹt */
 }
 .tp-btn {
     position: relative;
@@ -400,32 +401,31 @@
 
 /* Nút Chọn Dropdown trên Toolbar */
 .tp-select {
-    height: 30px;
-    padding: 0 8px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    font-size: 0.82rem;
-    color: #1e293b;
-    outline: none;
-    cursor: pointer;
-    transition: border 0.15s;
+    height: 30px !important;
+    padding: 0 6px !important;
+    border-radius: 6px !important;
+    border: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    font-size: 0.82rem !important;
+    color: #1e293b !important;
+    outline: none !important;
+    box-sizing: border-box !important;
 }
-
 .tp-select:focus {
     border-color: #2563eb;
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
 }
 .tp-input-size {
-    width: 65px;
-    height: 30px;
-    text-align: center;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    font-size: 0.82rem;
-    font-weight: 600;
-    outline: none;
-    background: #fff;
+    width: 62px !important;
+    height: 30px !important;
+    text-align: center !important;
+    border-radius: 6px !important;
+    border: 1px solid #cbd5e1 !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    outline: none !important;
+    background: #fff !important;
+    box-sizing: border-box !important;
 }
 .tp-input-size:focus {
     border-color: #2563eb;

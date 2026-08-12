@@ -331,16 +331,72 @@
             <button type="button" class="tp-btn" onclick="execTiptapCmd('subscript')" data-tooltip="Chỉ số dưới (X₂)">X<sub>2</sub></button>
             <button type="button" class="tp-btn" onclick="execTiptapCmd('superscript')" data-tooltip="Chỉ số trên (X²)">X<sup>2</sup></button>
 
-            <!-- Màu chữ -->
-            <div class="tp-color-wrapper" data-tooltip="Màu chữ văn bản">
-                <i class="fas fa-font" style="font-size:0.75rem; color:#2563eb;"></i>
-                <input type="color" value="#1e293b" onchange="execTiptapCmd('color', this.value)">
+<!-- MÀU CHỮ & HIGHLIGHT KIỂU OFFICE GRID -->
+        <div class="tp-group tp-color-picker-group">
+            <div class="tp-dropdown tp-color-dropdown">
+                <button type="button" class="tp-btn" data-tooltip="Màu chữ văn bản">
+                    <i class="fas fa-font" style="font-size:0.75rem; color:#2563eb;"></i>
+                </button>
+                <div class="tp-dropdown-content tp-palette-grid">
+                    <div class="tp-palette-title">Automatic</div>
+                    <div class="tp-swatches" onclick="execTiptapCmd('color', event.target.dataset.color)">
+                        <span data-color="#000000" style="background:#000000"></span>
+                        <span data-color="#434343" style="background:#434343"></span>
+                        <span data-color="#666666" style="background:#666666"></span>
+                        <span data-color="#b7b7b7" style="background:#b7b7b7"></span>
+                        <span data-color="#d9d9d9" style="background:#d9d9d9"></span>
+                        <span data-color="#ffffff" style="background:#ffffff; border:1px solid #ccc"></span>
+                    </div>
+                    <div class="tp-palette-title">Theme Colours</div>
+                    <div class="tp-swatches" onclick="execTiptapCmd('color', event.target.dataset.color)">
+                        <span data-color="#1155cc" style="background:#1155cc"></span>
+                        <span data-color="#3d85c6" style="background:#3d85c6"></span>
+                        <span data-color="#6fa8dc" style="background:#6fa8dc"></span>
+                        <span data-color="#9fc5e8" style="background:#9fc5e8"></span>
+                        <span data-color="#cfe2f3" style="background:#cfe2f3"></span>
+                        <span data-color="#e69138" style="background:#e69138"></span>
+                        <span data-color="#f6b26b" style="background:#f6b26b"></span>
+                        <span data-color="#f9cb9c" style="background:#f9cb9c"></span>
+                        <span data-color="#fce5cd" style="background:#fce5cd"></span>
+                        <span data-color="#fff2cc" style="background:#fff2cc"></span>
+                        <span data-color="#6a8759" style="background:#6a8759"></span>
+                        <span data-color="#93c47d" style="background:#93c47d"></span>
+                        <span data-color="#b6d7a8" style="background:#b6d7a8"></span>
+                        <span data-color="#d9ead3" style="background:#d9ead3"></span>
+                        <span data-color="#e2efda" style="background:#e2efda"></span>
+                    </div>
+                    <div class="tp-palette-title">Standard Colours</div>
+                    <div class="tp-swatches" onclick="execTiptapCmd('color', event.target.dataset.color)">
+                        <span data-color="#cc0000" style="background:#cc0000"></span>
+                        <span data-color="#e06666" style="background:#e06666"></span>
+                        <span data-color="#f9cb9c" style="background:#f9cb9c"></span>
+                        <span data-color="#ffe599" style="background:#ffe599"></span>
+                        <span data-color="#b6d7a8" style="background:#b6d7a8"></span>
+                        <span data-color="#a2c4c9" style="background:#a2c4c9"></span>
+                        <span data-color="#a4c2f4" style="background:#a4c2f4"></span>
+                        <span data-color="#b4a7d6" style="background:#b4a7d6"></span>
+                        <span data-color="#d5a6bd" style="background:#d5a6bd"></span>
+                    </div>
+                </div>
             </div>
 
-            <!-- Màu highlight nền chữ -->
-            <div class="tp-color-wrapper" data-tooltip="Màu nền chữ (Highlight)">
-                <i class="fas fa-highlighter" style="font-size:0.75rem; color:#f59e0b;"></i>
-                <input type="color" value="#fef08a" onchange="execTiptapCmd('highlight', this.value)">
+            <!-- Highlight Dropdown ô vuông -->
+            <div class="tp-dropdown tp-color-dropdown">
+                <button type="button" class="tp-btn" data-tooltip="Màu nền chữ (Highlight)">
+                    <i class="fas fa-highlighter" style="font-size:0.75rem; color:#f59e0b;"></i>
+                </button>
+                <div class="tp-dropdown-content tp-palette-grid">
+                    <div class="tp-palette-title">Highlight Colors</div>
+                    <div class="tp-swatches" onclick="execTiptapCmd('highlight', event.target.dataset.color)">
+                        <span data-color="#fef08a" style="background:#fef08a"></span>
+                        <span data-color="#bbf7d0" style="background:#bbf7d0"></span>
+                        <span data-color="#bae6fd" style="background:#bae6fd"></span>
+                        <span data-color="#fbcfe8" style="background:#fbcfe8"></span>
+                        <span data-color="#fed7aa" style="background:#fed7aa"></span>
+                        <span data-color="#e2e8f0" style="background:#e2e8f0"></span>
+                        <span data-color="#transparent" style="background:#fff; border:1px dashed red" title="Xóa highlight">❌</span>
+                    </div>
+                </div>
             </div>
         </div>
 

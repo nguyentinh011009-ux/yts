@@ -433,19 +433,31 @@ window.initCKEditor = function(callback) {
             content: extracted.body || '',
             onUpdate({ editor }) { updateWordCountStats(editor); },
             onSelectionUpdate({ editor }) {
-                // 1. Đồng bộ Font Family
+                // 1. Đồng bộ Font Family thông minh
                 const fontSelect = document.getElementById('tp-font-family-select');
                 if (fontSelect) {
                     const currentFont = editor.getAttributes('textStyle').fontFamily || '';
-                    fontSelect.value = currentFont.replace(/['"]/g, '').trim();
+                    const cleanFont = currentFont.replace(/['"]/g, '').trim().toLowerCase();
+                    
+                    let found = false;
+                    for (let i = 0; i < fontSelect.options.length; i++) {
+                        if (fontSelect.options[i].value.toLowerCase() === cleanFont) {
+                            fontSelect.value = fontSelect.options[i].value;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) fontSelect.value = ""; // Về Font mặc định nếu không khớp
                 }
+                
                 // 2. Đồng bộ Font Size
                 const sizeInput = document.getElementById('tp-custom-size-input');
                 if (sizeInput) {
                     const currentSize = editor.getAttributes('textStyle').fontSize || '16px';
                     sizeInput.value = currentSize;
                 }
-                // 3. Đồng bộ Line Height từ block hiện tại
+                
+                // 3. Đồng bộ Line Height
                 const lineSelect = document.getElementById('tp-line-height-select');
                 if (lineSelect) {
                     let activeLH = '1.15';

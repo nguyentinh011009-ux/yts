@@ -269,106 +269,198 @@
     </div>
     
 <div class="tiptap-editor-wrapper">
-    <!-- THANH CÔNG CỤ DẠNG WORD FULL TÍNH NĂNG -->
     <div id="tiptap-toolbar" class="tiptap-toolbar">
-        <!-- Font chữ & Cỡ chữ -->
-        <select class="tp-select" onchange="execTiptapCmd('fontFamily', this.value)" title="Font chữ">
-            <option value="">Font mặc định</option>
-            <option value="Arial">Arial</option>
-            <option value="Times New Roman">Times New Roman</option>
-            <option value="Courier New">Courier New</option>
-            <option value="Georgia">Georgia</option>
-            <option value="Tahoma">Tahoma</option>
-            <option value="Verdana">Verdana</option>
-        </select>
-
-        <select class="tp-select" onchange="execTiptapCmd('fontSize', this.value)" title="Cỡ chữ">
-            <option value="">Cỡ chữ</option>
-            <option value="12px">12px</option>
-            <option value="14px">14px</option>
-            <option value="16px">16px (Chuẩn)</option>
-            <option value="18px">18px</option>
-            <option value="20px">20px</option>
-            <option value="24px">24px</option>
-            <option value="28px">28px</option>
-            <option value="32px">32px</option>
-            <option value="36px">36px</option>
-        </select>
-
-        <div class="tp-divider"></div>
-
-        <!-- Định dạng văn bản -->
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('bold')" title="In đậm"><i class="fas fa-bold"></i></button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('italic')" title="In nghiêng"><i class="fas fa-italic"></i></button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('underline')" title="Gạch chân"><i class="fas fa-underline"></i></button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('strike')" title="Gạch ngang"><i class="fas fa-strikethrough"></i></button>
-
-        <!-- Màu chữ & Màu nền chữ (Highlight) -->
-        <div class="tp-color-wrapper" title="Màu chữ">
-            <i class="fas fa-font" style="font-size:0.75rem;"></i>
-            <input type="color" onchange="execTiptapCmd('color', this.value)">
-        </div>
-
-        <div class="tp-color-wrapper" title="Màu nền chữ (Highlight)">
-            <i class="fas fa-highlighter" style="font-size:0.75rem;"></i>
-            <input type="color" value="#fef08a" onchange="execTiptapCmd('highlight', this.value)">
+        
+        <!-- NHÓM 1: LỊCH SỬ & QUẢN LÝ -->
+        <div class="tp-group">
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('undo')" data-tooltip="Hoàn tác (Ctrl+Z)"><i class="fas fa-undo"></i></button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('redo')" data-tooltip="Làm lại (Ctrl+Y)"><i class="fas fa-redo"></i></button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('clearFormatting')" data-tooltip="Xóa sạch định dạng"><i class="fas fa-remove-format" style="color:#ef4444;"></i></button>
         </div>
 
         <div class="tp-divider"></div>
 
-        <!-- Căn chỉnh -->
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('alignLeft')" title="Căn trái"><i class="fas fa-align-left"></i></button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('alignCenter')" title="Căn giữa"><i class="fas fa-align-center"></i></button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('alignRight')" title="Căn phải"><i class="fas fa-align-right"></i></button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('alignJustify')" title="Căn đều"><i class="fas fa-align-justify"></i></button>
+        <!-- NHÓM 2: PHÔNG CHỮ & CỠ CHỮ LINH HOẠT -->
+        <div class="tp-group">
+            <select class="tp-select" onchange="execTiptapCmd('fontFamily', this.value)" data-tooltip="Font chữ (Tự động tải Google Fonts)" style="max-width:140px;">
+                <optgroup label="System Fonts">
+                    <option value="">Font mặc định</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Georgia">Georgia</option>
+
+                    <option value="Tahoma">Tahoma</option>
+                    <option value="Verdana">Verdana</option>
+                </optgroup>
+                <optgroup label="Google Online Fonts">
+                    <option value="Montserrat">Montserrat</option>
+                    <option value="Playfair Display">Playfair Display</option>
+
+                    <option value="Merriweather">Merriweather</option>
+                    <option value="Dancing Script">Dancing Script</option>
+                    <option value="Oswald">Oswald</option>
+                    <option value="Roboto Mono">Roboto Mono</option>
+                </optgroup>
+            </select>
+
+            <!-- Cỡ chữ vừa chọn được vừa gõ được số pixel bất kỳ -->
+            <input type="text" class="tp-input-size" id="tp-custom-size-input" value="16px" placeholder="16px" 
+                   onchange="execTiptapCmd('fontSize', this.value)" 
+                   onkeydown="if(event.key==='Enter'){execTiptapCmd('fontSize', this.value); event.preventDefault();}" 
+                   data-tooltip="Cỡ chữ (Gõ số tùy chỉnh & Enter)">
+
+            <select class="tp-select" onchange="execTiptapCmd('fontSize', this.value); document.getElementById('tp-custom-size-input').value = this.value;" data-tooltip="Cỡ chữ mẫu" style="width:50px;">
+                <option value="12px">12</option>
+
+                <option value="14px">14</option>
+
+                <option value="16px" selected>16</option>
+
+                <option value="18px">18</option>
+
+                <option value="20px">20</option>
+
+                <option value="24px">24</option>
+
+                <option value="28px">28</option>
+
+                <option value="32px">32</option>
+
+                <option value="36px">36</option>
+
+                <option value="48px">48</option>
+
+            </select>
+        </div>
 
         <div class="tp-divider"></div>
 
-        <!-- Heading & Danh sách -->
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('h1')" title="Tiêu đề 1">H1</button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('h2')" title="Tiêu đề 2">H2</button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('h3')" title="Tiêu đề 3">H3</button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('bulletList')" title="Danh sách chấm"><i class="fas fa-list-ul"></i></button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('orderedList')" title="Danh sách số"><i class="fas fa-list-ol"></i></button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('taskList')" title="Danh sách công việc (Checkbox)"><i class="fas fa-tasks"></i></button>
+        <!-- NHÓM 3: ĐỊNH DẠNG KIỂU CHỮ & MÀU SẮC -->
+        <div class="tp-group">
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('bold')" data-tooltip="In đậm (Ctrl+B)"><i class="fas fa-bold"></i></button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('italic')" data-tooltip="In nghiêng (Ctrl+I)"><i class="fas fa-italic"></i></button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('underline')" data-tooltip="Gạch chân (Ctrl+U)"><i class="fas fa-underline"></i></button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('strike')" data-tooltip="Gạch ngang"><i class="fas fa-strikethrough"></i></button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('subscript')" data-tooltip="Chỉ số dưới (X₂)">X<sub>2</sub></button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('superscript')" data-tooltip="Chỉ số trên (X²)">X<sup>2</sup></button>
+
+            <!-- Màu chữ -->
+            <div class="tp-color-wrapper" data-tooltip="Màu chữ văn bản">
+                <i class="fas fa-font" style="font-size:0.75rem; color:#2563eb;"></i>
+                <input type="color" value="#1e293b" onchange="execTiptapCmd('color', this.value)">
+            </div>
+
+            <!-- Màu highlight nền chữ -->
+            <div class="tp-color-wrapper" data-tooltip="Màu nền chữ (Highlight)">
+                <i class="fas fa-highlighter" style="font-size:0.75rem; color:#f59e0b;"></i>
+                <input type="color" value="#fef08a" onchange="execTiptapCmd('highlight', this.value)">
+            </div>
+        </div>
 
         <div class="tp-divider"></div>
 
-        <!-- Blocks & Embeds -->
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('blockquote')" title="Trích dẫn"><i class="fas fa-quote-left"></i></button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('codeBlock')" title="Khối Mã Code"><i class="fas fa-code"></i></button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('math')" title="Công thức Toán (LaTeX)"><i class="fas fa-square-root-variable"></i></button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('youtube')" title="Chèn Video YouTube"><i class="fab fa-youtube" style="color:#ef4444;"></i></button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('link')" title="Chèn / Sửa Link"><i class="fas fa-link"></i></button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('unsetLink')" title="Bỏ Link"><i class="fas fa-unlink"></i></button>
+        <!-- NHÓM 4: CĂN CHỈNH & DANH SÁCH -->
+        <div class="tp-group">
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('alignLeft')" data-tooltip="Căn trái"><i class="fas fa-align-left"></i></button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('alignCenter')" data-tooltip="Căn giữa"><i class="fas fa-align-center"></i></button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('alignRight')" data-tooltip="Căn phải"><i class="fas fa-align-right"></i></button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('alignJustify')" data-tooltip="Căn đều 2 bên"><i class="fas fa-align-justify"></i></button>
+
+            <select class="tp-select" onchange="execTiptapCmd('lineHeight', this.value)" data-tooltip="Khoảng cách dòng">
+                <option value="1.0">Dòng 1.0</option>
+
+                <option value="1.15" selected>Dòng 1.15</option>
+
+                <option value="1.5">Dòng 1.5</option>
+
+                <option value="2.0">Dòng 2.0</option>
+
+            </select>
+
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('bulletList')" data-tooltip="Danh sách chấm"><i class="fas fa-list-ul"></i></button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('orderedList')" data-tooltip="Danh sách số"><i class="fas fa-list-ol"></i></button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('taskList')" data-tooltip="Danh sách công việc (Checkbox)"><i class="fas fa-tasks"></i></button>
+        </div>
 
         <div class="tp-divider"></div>
 
-        <!-- Thao tác Bảng (Table) -->
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('insertTable')" title="Tạo Bảng 3x3"><i class="fas fa-table"></i></button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('addRowAfter')" title="Thêm Dòng"><i class="fas fa-plus-square"></i></button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('deleteRow')" title="Xóa Dòng"><i class="fas fa-minus-square"></i></button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('deleteTable')" title="Xóa Bảng"><i class="fas fa-trash-alt" style="color:#ef4444;"></i></button>
+        <!-- NHÓM 5: TIÊU ĐỀ HEADINGS -->
+        <div class="tp-group">
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('h1')" data-tooltip="Tiêu đề H1">H1</button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('h2')" data-tooltip="Tiêu đề H2">H2</button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('h3')" data-tooltip="Tiêu đề H3">H3</button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('paragraph')" data-tooltip="Đoạn văn thường"><i class="fas fa-paragraph"></i></button>
+        </div>
 
         <div class="tp-divider"></div>
 
-        <!-- Khác -->
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('horizontalRule')" title="Đường kẻ ngang"><i class="fas fa-minus"></i></button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('undo')" title="Undo"><i class="fas fa-undo"></i></button>
-        <button type="button" class="tp-btn" onclick="execTiptapCmd('redo')" title="Redo"><i class="fas fa-redo"></i></button>
-        <button type="button" class="tp-btn" onclick="toggleSourceView()" id="btn-tp-source" title="Xem / Sửa Code HTML">
-            <i class="fas fa-code"></i>
-        </button>
-        <button type="button" class="tp-btn tp-fullscreen-btn" id="btn-tp-fullscreen" onclick="toggleFullscreenEditor()" title="Phóng to toàn màn hình (Gõ tập trung)">
-            <i class="fas fa-expand" id="ic-tp-fullscreen"></i>
-            <span id="lbl-tp-fullscreen" style="display:none; margin-left:6px; font-weight:bold; font-size:0.85rem;">XONG</span>
-        </button>
+        <!-- NHÓM 6: QUẢN LÝ BẢNG TỰ ĐỘNG (TABLE WORD ADVANCED) -->
+        <div class="tp-group">
+            <div class="tp-dropdown">
+                <button type="button" class="tp-btn" data-tooltip="Menu Quản lý Bảng biểu (Table)"><i class="fas fa-table" style="color:#0284c7;"></i> <i class="fas fa-caret-down" style="font-size:0.6rem; margin-left:3px;"></i></button>
+                <div class="tp-dropdown-content">
+                    <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('insertTable')"><i class="fas fa-plus"></i> Tạo bảng mới (3x3)</button>
+                    <hr style="margin:4px 0; border:0; border-top:1px solid #e2e8f0;">
+                    <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('addRowBefore')"><i class="fas fa-arrow-up"></i> Thêm hàng phía trên</button>
+                    <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('addRowAfter')"><i class="fas fa-arrow-down"></i> Thêm hàng phía dưới</button>
+                    <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('deleteRow')" style="color:#ef4444;"><i class="fas fa-minus"></i> Xóa hàng hiện tại</button>
+                    <hr style="margin:4px 0; border:0; border-top:1px solid #e2e8f0;">
+                    <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('addColumnBefore')"><i class="fas fa-arrow-left"></i> Thêm cột bên trái</button>
+                    <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('addColumnAfter')"><i class="fas fa-arrow-right"></i> Thêm cột bên phải</button>
+                    <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('deleteColumn')" style="color:#ef4444;"><i class="fas fa-minus"></i> Xóa cột hiện tại</button>
+                    <hr style="margin:4px 0; border:0; border-top:1px solid #e2e8f0;">
+                    <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('mergeCells')"><i class="fas fa-object-group"></i> Gộp các ô đã chọn</button>
+                    <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('splitCell')"><i class="fas fa-object-ungroup"></i> Tách ô đã gộp</button>
+                    <hr style="margin:4px 0; border:0; border-top:1px solid #e2e8f0;">
+                    <button type="button" class="tp-dropdown-item" onclick="execTiptapCmd('deleteTable')" style="color:#ef4444; font-weight:bold;"><i class="fas fa-trash-alt"></i> Xóa toàn bộ Bảng</button>
+                </div>
+            </div>
+
+            <!-- Tô màu nền Ô Bảng -->
+            <div class="tp-color-wrapper" data-tooltip="Tô màu nền Ô trong Bảng">
+                <i class="fas fa-fill-drip" style="font-size:0.75rem; color:#059669;"></i>
+                <input type="color" value="#f1f5f9" onchange="execTiptapCmd('tableCellBg', this.value)">
+            </div>
+        </div>
+
+        <div class="tp-divider"></div>
+
+        <!-- NHÓM 7: CHÈN PHƯƠNG TIỆN MEDIA & CODE -->
+        <div class="tp-group">
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('blockquote')" data-tooltip="Khối trích dẫn (Blockquote)"><i class="fas fa-quote-left"></i></button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('codeBlock')" data-tooltip="Khối Mã Lập Trình (Code)"><i class="fas fa-code"></i></button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('math')" data-tooltip="Công thức Toán KaTeX"><i class="fas fa-square-root-variable" style="color:#0284c7;"></i></button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('youtube')" data-tooltip="Nhúng Video YouTube"><i class="fab fa-youtube" style="color:#ef4444;"></i></button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('link')" data-tooltip="Chèn Link/Liên kết"><i class="fas fa-link"></i></button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('unsetLink')" data-tooltip="Xóa Link"><i class="fas fa-unlink"></i></button>
+            <button type="button" class="tp-btn" onclick="execTiptapCmd('horizontalRule')" data-tooltip="Đường kẻ phân cách ngang"><i class="fas fa-minus"></i></button>
+        </div>
+
+        <!-- NHÓM 8: TÁC VỤ MÀN HÌNH -->
+        <div style="margin-left: auto; display: flex; gap: 4px;">
+            <button type="button" class="tp-btn" onclick="toggleSourceView()" id="btn-tp-source" data-tooltip="Xem / Sửa Mã Code HTML">
+                <i class="fas fa-code"></i>
+            </button>
+            <button type="button" class="tp-btn" id="btn-tp-fullscreen" onclick="toggleFullscreenEditor()" data-tooltip="Chế độ Soạn thảo Toàn màn hình">
+                <i class="fas fa-expand" id="ic-tp-fullscreen"></i>
+                <span id="lbl-tp-fullscreen" style="display:none; margin-left:6px; font-weight:bold; font-size:0.85rem;">XONG</span>
+            </button>
+        </div>
     </div>
 
-    <!-- KHUNG TRANG GIẤY WORD ĐỂ GÕ BÀI -->
+    <!-- KHUNG TRANG GIẤY A4 WORD ĐỂ GÕ BÀI -->
     <div class="tiptap-paper-container">
         <div id="tiptap-editor" class="tiptap-paper"></div>
-        <textarea id="p-content-source" class="tiptap-source-mode" style="display:none;" placeholder="Dán code HTML trực tiếp vào đây..."></textarea>
+        <textarea id="p-content-source" class="tiptap-source-mode" style="display:none;" placeholder="Dán mã HTML trực tiếp vào đây..."></textarea>
+    </div>
+
+    <!-- THANH TRẠNG THÁI & ĐẾM TỪ REALTIME CHUẨN WORD -->
+    <div class="tiptap-statusbar">
+        <div>Trang 1 / 1 &nbsp;|&nbsp; Ngôn ngữ: <strong>Tiếng Việt</strong></div>
+        <div>
+            Số từ: <strong id="tp-stat-words" style="color:#2563eb;">0</strong> &nbsp;|&nbsp; 
+            Số ký tự: <strong id="tp-stat-chars" style="color:#059669;">0</strong>
+        </div>
     </div>
 </div>
             </section>

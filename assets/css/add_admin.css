@@ -981,3 +981,58 @@
     box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     z-index: 2;
 }
+/* ===== TÙY CHỈNH Ô CỠ CHỮ ĐẸP & RỘNG RÃI ===== */
+.tp-size-box {
+    display: inline-flex !important;
+    align-items: center !important;
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    padding: 0 6px !important;
+    height: 30px !important;
+    box-sizing: border-box !important;
+}
+
+.tp-size-box input[type="number"] {
+    width: 44px !important;
+    border: none !important;
+    outline: none !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    text-align: right !important;
+    background: transparent !important;
+    color: #1e293b !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    -moz-appearance: textfield !important;
+}
+
+/* Mất nút mũi tên tăng giảm số mặc định của browser cho sạch */
+.tp-size-box input[type="number"]::-webkit-outer-spin-button,
+.tp-size-box input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.tp-size-unit {
+    font-size: 0.75rem !important;
+    color: #64748b !important;
+    font-weight: 600 !important;
+    margin-left: 3px !important;
+    user-select: none !important;
+}
+
+/* ===== TÙY CHỈNH MENU BẢNG (CLICK MỚI MỞ / KHÔNG BỊ TRÔI HOVER) ===== */
+.tp-dropdown:not(.tp-click-dropdown):hover .tp-dropdown-content {
+    display: block;
+}
+
+/* Chỉ hiện menu bảng khi có class .is-open */
+.tp-dropdown.tp-click-dropdown.is-open .tp-dropdown-content {
+    display: block !important;
+}
+
+/* Tắt tooltip khi menu bảng đang mở để không bị đè chữ */
+.tp-dropdown.is-open [data-tooltip]::after {
+    display: none !important;
+}

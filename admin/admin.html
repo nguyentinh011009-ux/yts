@@ -1122,33 +1122,84 @@
 <section id="tab-yte-thongke" class="tab-pane" style="display:none;">
     <h2>Thống kê & Phân tích Y tế</h2>
     <p style="color:var(--text-gray); margin-bottom:20px;">Phân tích các triệu chứng phổ biến và tần suất khám bệnh của học sinh.</p>
-<!-- ========================================== -->
-    <!-- PHẦN DỰ ĐOÁN NGUY CƠ DỊCH BỆNH BẰNG AI (MỚI) -->
-    <!-- ========================================== -->
-    <div class="form-card" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; margin-bottom: 30px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; margin-bottom: 20px;">
-            <div>
-                <h3 style="color: #38bdf8; margin: 0; font-size: 1.3rem; display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-robot" style="color: #38bdf8;"></i> AI Dự Đoán Nguy Cơ Dịch Bệnh Học Đường
-                </h3>
-                <p style="color: #94a3b8; font-size: 0.85rem; margin: 5px 0 0 0;">Phân tích các ca bệnh gần đây để cảnh báo nguy cơ: Sốt xuất huyết, Cúm, Đau mắt đỏ...</p>
-            </div>
-            <button onclick="runAIPrediction()" id="btn-run-ai-predict" class="btn" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; font-weight: bold; border-radius: 10px; padding: 10px 20px; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);">
-                <i class="fas fa-magic"></i> Phân tích & Dự đoán bằng AI
+<!-- ========================================================================= -->
+<!-- KHỐI AI DỰ BÁO NGUY CƠ DỊCH BỆNH HỌC ĐƯỜNG (GIAO DIỆN SÁNG CAO CẤP) -->
+<!-- ========================================================================= -->
+<div class="form-card" style="background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); padding: 25px; margin-bottom: 30px;">
+    
+    <!-- HEADER KHỐI AI -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 18px; margin-bottom: 20px;">
+        <div>
+            <h3 style="color: #0284c7; margin: 0; font-size: 1.35rem; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-brain" style="color: #0284c7;"></i> AI Trợ Lý Dịch Tễ Học Đường
+            </h3>
+            <p style="color: #64748b; font-size: 0.88rem; margin: 5px 0 0 0;">Phân tích đa chiều (Khám tại trường, Nghỉ bệnh, Mùa vụ thời tiết) để cảnh báo sớm nguy cơ bùng phát dịch.</p>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <!-- Nút bật/tắt Tự động chạy -->
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: bold; color: #334155; background: #f8fafc; padding: 8px 14px; border-radius: 10px; border: 1px solid #cbd5e1; cursor: pointer;">
+                <input type="checkbox" id="chk-auto-ai-predict" onchange="toggleAutoAIPredict(this.checked)" style="width:18px; height:18px; cursor:pointer;">
+                <span>Tự động phân tích (2 ngày/lần)</span>
+            </label>
+
+            <!-- Nút chạy thủ công -->
+            <button onclick="runAIPredictionManual()" id="btn-run-ai-predict" class="btn" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: white; font-weight: bold; border-radius: 10px; padding: 10px 22px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);">
+                <i class="fas fa-microscope"></i> Phân tích & Dự báo ngay
             </button>
         </div>
+    </div>
 
-        <!-- Vùng hiển thị kết quả dự đoán mới nhất hoặc đang tải -->
-        <div id="ai-predict-loading" style="display: none; text-align: center; padding: 30px; color: #38bdf8;">
-            <i class="fas fa-brain fa-spin fa-2x"></i>
-            <p style="margin-top: 15px; font-weight: 500;">AI đang tổng hợp chỉ số y tế và phân tích nguy cơ bùng phát dịch bệnh...</p>
+    <!-- CẤU HÌNH THỜI GIAN QUÉT DỮ LIỆU (7 ĐẾN 30 NGÀY) -->
+    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; background: #f8fafc; padding: 12px 18px; border-radius: 12px; border: 1px dashed #cbd5e1; flex-wrap: wrap;">
+        <span style="font-size: 0.88rem; font-weight: bold; color: #475569;"><i class="fas fa-sliders-h"></i> Phạm vi dữ liệu phân tích:</span>
+        <select id="ai-predict-range-days" class="pharma-input" style="padding: 6px 12px; font-weight: bold; border-radius: 8px; border: 1px solid #cbd5e1; outline: none;">
+            <option value="7">7 ngày gần nhất</option>
+            <option value="14" selected>14 ngày gần nhất (Khuyên dùng)</option>
+            <option value="21">21 ngày gần nhất</option>
+            <option value="30">30 ngày gần nhất (Tối đa)</option>
+        </select>
+        <span style="font-size: 0.8rem; color: #64748b; font-style: italic;">*Lưu ý: AI đưa ra dự báo tham khảo chuyên môn, không thay thế kết luận chẩn đoán lâm sàng của bác sĩ.</span>
+    </div>
+
+    <!-- VÙNG HIỂN THỊ TRẠNG THÁI LOADING -->
+    <div id="ai-predict-loading" style="display: none; text-align: center; padding: 35px; background: #f0f9ff; border-radius: 12px; border: 1px solid #bae6fd; margin-bottom: 20px;">
+        <i class="fas fa-cog fa-spin fa-2x" style="color: #0284c7;"></i>
+        <p style="margin-top: 12px; font-weight: bold; color: #0369a1; font-size: 0.95rem;" id="ai-loading-step-text">Đang tổng hợp dữ liệu khám tại trường và danh sách nghỉ bệnh...</p>
+    </div>
+
+    <!-- DANH SÁCH LỊCH SỬ DỰ BÁO (DẠNG HÀNG THÔNG MINH) -->
+    <h4 style="color: #334155; margin-bottom: 12px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">
+        <i class="fas fa-history"></i> Lịch Sử Dự Báo Dịch Bệnh
+    </h4>
+    
+    <div id="ai-predictions-history-container" style="display: flex; flex-direction: column; gap: 12px;">
+        <!-- Dữ liệu JS tự động đổ các hàng dự báo vào đây -->
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- POPUP CHI TIẾT BẢN DỰ BÁO AI (DRILL-DOWN MODAL) -->
+<!-- ========================================================================= -->
+<div id="ai-prediction-detail-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); z-index: 10020; align-items: center; justify-content: center; padding: 20px;">
+    <div class="form-card fade-in" style="width: 100%; max-width: 900px; max-height: 90vh; position: relative; padding: 30px; border-radius: 18px; border-top: 6px solid #0284c7; display: flex; flex-direction: column; background: #ffffff;">
+        <button onclick="closeAIPredictionDetailModal()" style="position:absolute; top:20px; right:20px; border:none; background:#f1f5f9; width:35px; height:35px; border-radius:50%; font-size:1.5rem; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;">&times;</button>
+        
+        <h3 style="color: #0284c7; margin-top: 0; margin-bottom: 15px; font-size: 1.35rem; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-file-medical-alt"></i> Báo Cáo Phân Tích Dịch Tễ Chi Tiết
+        </h3>
+
+        <!-- KHỐI THÔNG TIN THIẾT BỊ / NGƯỜI CHẠY (METADATA) -->
+        <div id="ai-modal-metadata-box" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 20px; font-size: 0.88rem; line-height: 1.6; color: #334155;">
+            <!-- JS đổ thông tin người vận hành, thiết bị, thời gian -->
         </div>
 
-        <!-- Khung chứa danh sách dự đoán đã lưu -->
-        <div id="ai-predictions-history-container">
-            <p style="color: #94a3b8; text-align: center; margin: 20px 0;">Bấm nút "Phân tích & Dự đoán bằng AI" để thực hiện dự đoán theo khoảng thời gian đã chọn ở trên.</p>
+        <!-- NỘI DUNG PHÂN TÍCH AI CHI TIẾT -->
+        <div id="ai-modal-report-content" style="flex: 1; overflow-y: auto; padding-right: 8px;">
+            <!-- JS đổ HTML bài phân tích AI -->
         </div>
     </div>
+</div>
     <!-- Bộ lọc thời gian -->
     <div class="form-card" style="display: flex; gap: 15px; align-items: flex-end; margin-bottom: 30px; flex-wrap: wrap;">
         <div class="input-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">

@@ -207,32 +207,35 @@ function initAdminDashboardView(user, roleTitle) {
 // Hàm hiển thị lại toàn bộ Menu cho Super Admin
 function showAllSidebarTabs() {
     document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.style.display = 'flex');
-    const navCollab = document.getElementById('nav-collaborators');
-    if (navCollab) navCollab.style.display = 'flex';
 }
 
 // Hàm ẩn hoàn toàn các Tab và Nút Sidebar mà Cộng tác viên không được cấp quyền
 function applyCollaboratorPermissions(allowedTabs) {
-    // Luôn ẩn nút Quản lý CTV đối với Cộng tác viên
-    const navCollab = document.getElementById('nav-collaborators');
-    if (navCollab) navCollab.style.display = 'none';
-
-    // Lặp qua tất cả các nút tab trong sidebar
+    // Lặp qua tất cả các nút/thẻ liên kết trong sidebar
     document.querySelectorAll('.admin-tab-btn').forEach(btn => {
         const onclickAttr = btn.getAttribute('onclick') || '';
-        let matchedTab = '';
+        const hrefAttr = btn.getAttribute('href') || '';
         
-        // Trích xuất tabId từ onclick="switchTab('tab-xxx', this)"
+        // Nếu là nút kích hoạt Tab
         const match = onclickAttr.match(/switchTab\('([^']+)'/);
         if (match) {
-            matchedTab = match[1];
-        }
-
-        if (matchedTab) {
-            if (allowedTabs.includes(matchedTab)) {
+            const matchedTab = match[1];
+            // Luôn ẩn tab Quản lý CTV và Cài đặt tài khoản khỏi CTV trừ khi được Admin cho phép
+            if (matchedTab === 'tab-collaborators') {
+                btn.style.display = 'none';
+            } else if (allowedTabs.includes(matchedTab)) {
                 btn.style.display = 'flex';
             } else {
                 btn.style.display = 'none';
+            }
+        } 
+        // Nếu là đường link chuyển trang độc lập (Kho dược, Điểm danh, Hệ thống...)
+        else if (hrefAttr && !hrefAttr.includes('javascript:')) {
+            // Khóa các trang hệ thống quan trọng đối với CTV
+            if (hrefAttr.includes('system.html') || hrefAttr.includes('ai_memory.html')) {
+                btn.style.display = 'none';
+            } else {
+                btn.style.display = 'flex';
             }
         }
     });
@@ -282,21 +285,13 @@ function handleGoogleLogin() {
         .then((result) => {
             btn.innerHTML = originalText;
             btn.disabled = false;
-            
-            const userEmail = result.user.email;
-            
-            // Nếu email không có trong danh sách -> Hiện thông báo lỗi
-            if (!ALLOWED_ADMIN_EMAILS.includes(userEmail)) {
-		writeAuditLog("LOGIN", "yt_auth", result.user.uid, `Tài khoản Admin ${userEmail} đăng nhập thành công qua Google.`);
-                alert(`⛔ BẢO MẬT HỆ THỐNG:\n\nTài khoản (${userEmail}) không có quyền truy cập trang Quản trị!\nVui lòng liên hệ Admin: Văn Tính để được cấp quyền.`);
-            } else {
-                alert(`✅ Đăng nhập thành công: ${userEmail}`);
-            }
+            // Để onAuthStateChanged tự động kiểm tra Admin / CTV và xử lý đăng nhập
+            writeAuditLog("LOGIN", "yt_auth", result.user.uid, `Đăng nhập Google thành công: ${result.user.email}`);
         })
         .catch((error) => {
             btn.innerHTML = originalText;
             btn.disabled = false;
-            alert("❌ Lỗi đăng nhập Google: " + error.message);
+            sysAlert("❌ Lỗi đăng nhập Google: " + error.message, "error");
         });
 }
 // --- Hàm 3: Đăng xuất ---
@@ -669,8 +664,18 @@ async function saveAnnouncement(slot) {
 
 // --- 5. HIỂN THỊ TRANG CHỦ & SLIDER (Đã chuyển sang index.js)
 
-// CẬP NHẬT HÀM CHUYỂN TAB TRONG APP.JS
 function switchTab(tabId, btn) {
+    // BẢO MẬT: Chống Cộng tác viên tự gọi hàm switchTab mở tab cấm
+    if (window.currentUserRole === 'collaborator' && window.userAllowedTabs.length > 0) {
+        // Cho phép tab soạn thảo bài viết nếu có quyền tab-posts
+        const isEditorAllowed = tabId === 'tab-post-editor' && window.userAllowedTabs.includes('tab-posts');
+        
+        if (!window.userAllowedTabs.includes(tabId) && !isEditorAllowed) {
+            sysAlert("⛔ Bạn không có quyền truy cập vào chức năng này!", "error");
+            return;
+        }
+    }
+
     // Ẩn tất cả các tab
     document.querySelectorAll('.tab-pane').forEach(tab => tab.style.display = 'none');
     // Bỏ trạng thái active của tất cả nút
@@ -683,17 +688,10 @@ function switchTab(tabId, btn) {
         if (btn) btn.classList.add('active');
     }
 
-    // ====================================================================
-    // 👉 THÊM KHỐI LỆNH NÀY: TỰ ĐỘNG CUỘN VỀ ĐỈNH ĐỂ HIỆN TIÊU ĐỀ & NÚT
-    // ====================================================================
-    window.scrollTo({ top: 0 }); // Cuộn toàn trang web về đầu
+    window.scrollTo({ top: 0 }); 
     const mainContent = document.querySelector('.admin-main');
-    if (mainContent) {
-        mainContent.scrollTop = 0; // Cuộn khung nội dung chính về đầu
-    }
-    // ====================================================================
+    if (mainContent) mainContent.scrollTop = 0;
 
-    // --- TỰ ĐỘNG DỌN DẸP BỘ NHỚ TRA CỨU ĐỂ TRÁNH ĐƠ TRANG ---
     if (tabId === 'tab-yte-tracuu-admin') {
         adminLookupCache = null; 
         const lookupInput = document.getElementById('admin-lookup-input');
@@ -710,7 +708,7 @@ function switchTab(tabId, btn) {
     if (tabId === 'tab-yte-yeucau') loadStudentTickets();
     if (tabId === 'tab-fusoftx') loadFusoftxTickets();
     if (tabId === 'tab-send-noti') loadAdminNotifications();
-	if (tabId === 'tab-collaborators') loadCollaborators();
+    if (tabId === 'tab-collaborators') loadCollaborators();
 }
 // --- 6. XỬ LÝ TRANG CHI TIẾT BÀI VIẾT LẺ ---
 async function loadSinglePost() {

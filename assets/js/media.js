@@ -78,22 +78,15 @@ function openCloudinaryWidgetForEditor() {
             saveMediaMetadata(result.info);
             const mediaUrl = result.info.secure_url;
             const resourceType = result.info.resource_type;
+            const fileName = result.info.original_filename;
             
-if (CKEDITOR.instances['p-content']) {
-    let mediaHtml = '';
-    if (resourceType === 'image') {
-        mediaHtml = `<p><img src="${mediaUrl}" style="width:100%; max-width:1000px; border-radius:8px; margin:15px 0;"></p>`;
-    } else if (resourceType === 'video') {
-        mediaHtml = `<p><video controls src="${mediaUrl}" style="width:100%; max-width:1000px; border-radius:8px; margin:15px 0;"></video></p>`;
-    } else {
-        mediaHtml = `<p><a href="${mediaUrl}" target="_blank" style="color:#0062ff; font-weight:bold;">📄 Tải về tài liệu: ${result.info.original_filename}</a></p>`;
-    }
-    CKEDITOR.instances['p-content'].insertHtml(mediaHtml);
-}
+            // Tự động chèn media vào TipTap Editor
+            if (typeof insertMediaToEditor === 'function') {
+                insertMediaToEditor(mediaUrl, resourceType, fileName);
+            }
         }
     });
 }
-
 // 3. TẢI VÀ HIỂN THỊ DANH SÁCH FILE MEDIA
 function loadCloudinaryMedia() {
     const grid = document.getElementById('cloudinary-media-grid');
@@ -340,21 +333,13 @@ function selectMediaForPost(url, resourceType, fileName) {
     if (mediaPickerTarget === 'cover') {
         document.getElementById('p-cover').value = url;
         sysAlert("Đã chọn ảnh bìa từ kho thành công!", "success");
-} else if (mediaPickerTarget === 'editor') {
-    let mediaHtml = '';
-    if (resourceType === 'image') {
-        mediaHtml = `<p><img src="${url}" style="width:100%; max-width:1000px; border-radius:8px; margin:15px 0;"></p>`;
-    } else if (resourceType === 'video') {
-        mediaHtml = `<p><video controls src="${url}" style="width:100%; max-width:1000px; border-radius:8px; margin:15px 0;"></video></p>`;
-    } else {
-        mediaHtml = `<p><a href="${url}" target="_blank" style="color:#0062ff; font-weight:bold;">📄 Tải về tài liệu: ${fileName}</a></p>`;
+    } else if (mediaPickerTarget === 'editor') {
+        if (typeof insertMediaToEditor === 'function') {
+            insertMediaToEditor(url, resourceType, fileName);
+        } else {
+            sysAlert("Chưa khởi tạo trình soạn thảo!", "error");
+        }
     }
-    
-    if (CKEDITOR.instances['p-content']) {
-        CKEDITOR.instances['p-content'].insertHtml(mediaHtml);
-        sysAlert("Đã chèn file vào nội dung bài viết!", "success");
-    }
-}
     
     closeMediaPickerModal();
 }

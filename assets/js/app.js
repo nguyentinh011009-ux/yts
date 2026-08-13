@@ -81,7 +81,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
 
                 if (loginOverlay) loginOverlay.style.display = 'none';
                 if (dashboard) {
-                    dashboard.style.display = 'grid'; 
+                    dashboard.style.display = 'flex'; 
                     
                     // Hiển thị đầy đủ tất cả các tab trên Sidebar
                     showAllSidebarTabs();

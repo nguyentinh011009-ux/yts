@@ -36,6 +36,9 @@ function removeVietnameseTones(str) {
 // ==========================================
 // PHẦN. HỆ THỐNG XÁC THỰC (FIREBASE AUTH)
 // ==========================================
+window.currentUserRole = 'none'; // Biến lưu vai trò hiện tại: 'admin' | 'collaborator' | 'none'
+window.userAllowedTabs = [];      // Danh sách các Tab được cấp quyền
+
 firebase.auth().onAuthStateChanged(async (user) => {
     
     // 1. LOGIC XỬ LÝ THANH HEADER (Áp dụng cho mọi trang có dùng chung Header)
@@ -57,55 +60,188 @@ firebase.auth().onAuthStateChanged(async (user) => {
         }
     }
 
-    // 2. LOGIC BẢO MẬT (Chỉ áp dụng khi đang ở trang admin.html)
+    // 2. LOGIC BẢO MẬT & PHÂN QUYỀN (Áp dụng khi ở trang Admin)
     const loginOverlay = document.getElementById('login-overlay');
     const dashboard = document.getElementById('admin-dashboard');
     
-    // Nếu trang hiện tại có thẻ loginOverlay (Nghĩa là đang ở trang Admin)
     if (loginOverlay || dashboard) {
         if (user) {
-            // KIỂM TRA BẢO MẬT ADMIN
-            if (ALLOWED_ADMIN_EMAILS.includes(user.email)) {
+            const userEmail = user.email.toLowerCase();
+
+            // LỚP 1: KIỂM TRA XEM CÓ PHẢI SUPER ADMIN KHÔNG
+            const isSuperAdmin = ALLOWED_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail);
+
+            if (isSuperAdmin) {
+                // --- TRƯỜNG HỢP A: SUPER ADMIN (TOÀN QUYỀN) ---
+                window.currentUserRole = 'admin';
+                window.userAllowedTabs = ['ALL'];
+
                 await loadMasterCryptoKey();
                 checkAndExecuteAutoBackup();
-                if(loginOverlay) loginOverlay.style.display = 'none';
-                if(dashboard) {
+
+                if (loginOverlay) loginOverlay.style.display = 'none';
+                if (dashboard) {
                     dashboard.style.display = 'grid'; 
+                    
+                    // Hiển thị đầy đủ tất cả các tab trên Sidebar
+                    showAllSidebarTabs();
+
                     loadAdminPosts();
                     loadPharmacyForReception();
                     loadAdminAnnouncements();
                     loadFusoftxNotis();
                     runDailyStatisticAggregation();
 
-                    const nameDisplay = document.getElementById('display-admin-name');
-                    const emailDisplay = document.getElementById('display-admin-email');
-                    const avatarDisplay = document.getElementById('display-admin-avatar');
-
-                    if (emailDisplay) emailDisplay.innerText = user.email;
-                    if (nameDisplay) nameDisplay.innerText = user.displayName || "Quản trị viên";
-                    
-                    // Cập nhật ảnh đại diện Google (độ phân giải cao hơn) hoặc fallback qua UI-Avatars
-                    if (avatarDisplay) {
-                        if (user.photoURL) {
-                            avatarDisplay.src = user.photoURL.replace("s96-c", "s120-c"); 
-                        } else {
-                            avatarDisplay.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'Admin')}&background=0062ff&color=fff&bold=true`;
-                        }
-                    }
+                    updateAdminDisplayInfo(user, "Admin Tối cao");
                 }
             } else {
-                // Rất quan trọng: Nếu không phải Admin thì đá ra khỏi trang Admin
-                firebase.auth().signOut();
-                if(loginOverlay) loginOverlay.style.display = 'flex';
-                if(dashboard) dashboard.style.display = 'none';
+                // --- TRƯỜNG HỢP B: KIỂM TRA QUYỀN CỘNG TÁC VIÊN ---
+                try {
+                    sysLoading(true, "Đang xác thực quyền Cộng tác viên...");
+                    
+                    const collabSnap = await db.collection("yt_collaborators")
+                        .where("email", "==", userEmail)
+                        .get();
+
+                    if (!collabSnap.empty) {
+                        const collabData = collabSnap.docs[0].data();
+                        const todayStr = new Date().toISOString().split('T')[0];
+
+                        // 1. Kiểm tra trạng thái Khóa tài khoản
+                        if (collabData.status !== 'active') {
+                            sysLoading(false);
+                            sysAlert("⛔ Tài khoản Cộng tác viên này đã bị TẠM KHÓA!", "error");
+                            firebase.auth().signOut();
+                            if (loginOverlay) loginOverlay.style.display = 'flex';
+                            if (dashboard) dashboard.style.display = 'none';
+                            return;
+                        }
+
+                        // 2. Kiểm tra Ngày hết hạn chứng chỉ / truy cập
+                        if (collabData.expiryDate && collabData.expiryDate < todayStr) {
+                            sysLoading(false);
+                            sysAlert(`⛔ Chứng chỉ/Quyền truy cập của bạn đã HẾT HẠN vào ngày ${collabData.expiryDate}!`, "error");
+                            firebase.auth().signOut();
+                            if (loginOverlay) loginOverlay.style.display = 'flex';
+                            if (dashboard) dashboard.style.display = 'none';
+                            return;
+                        }
+
+                        // 3. XÁC NHẬN CỘNG TÁC VIÊN HỢP LỆ
+                        window.currentUserRole = 'collaborator';
+                        window.userAllowedTabs = collabData.allowedTabs || [];
+
+                        await loadMasterCryptoKey();
+
+                        if (loginOverlay) loginOverlay.style.display = 'none';
+                        if (dashboard) {
+                            dashboard.style.display = 'grid';
+
+                            // Ẩn/hiện các tab trên Sidebar dựa theo mảng allowedTabs
+                            applyCollaboratorPermissions(window.userAllowedTabs);
+
+                            loadAdminPosts();
+                            loadPharmacyForReception();
+                            loadAdminAnnouncements();
+                            loadFusoftxNotis();
+                            runDailyStatisticAggregation();
+
+                            updateAdminDisplayInfo(user, `CTV: ${collabData.name}`);
+                        }
+                        sysLoading(false);
+                    } else {
+                        // Email không thuộc Admin lẫn Cộng tác viên -> Đá ra ngoài
+                        sysLoading(false);
+                        sysAlert(`⛔ BẢO MẬT HỆ THỐNG:\n\nTài khoản (${user.email}) không có quyền truy cập trang Quản trị!`, "error");
+                        firebase.auth().signOut();
+                        if (loginOverlay) loginOverlay.style.display = 'flex';
+                        if (dashboard) dashboard.style.display = 'none';
+                    }
+                } catch (err) {
+                    sysLoading(false);
+                    sysAlert("Lỗi kiểm tra quyền truy cập: " + err.message, "error");
+                    firebase.auth().signOut();
+                    if (loginOverlay) loginOverlay.style.display = 'flex';
+                    if (dashboard) dashboard.style.display = 'none';
+                }
             }
         } else {
-            // Chưa đăng nhập thì bắt đăng nhập
-            if(loginOverlay) loginOverlay.style.display = 'flex';
-            if(dashboard) dashboard.style.display = 'none';
+            // Chưa đăng nhập -> Hiện form Đăng nhập
+            if (loginOverlay) loginOverlay.style.display = 'flex';
+            if (dashboard) dashboard.style.display = 'none';
         }
     }
 });
+
+// Hàm phụ trợ cập nhật tên & avatar hiển thị góc trái Sidebar
+function updateAdminDisplayInfo(user, roleTitle) {
+    const nameDisplay = document.getElementById('display-admin-name');
+    const emailDisplay = document.getElementById('display-admin-email');
+    const avatarDisplay = document.getElementById('display-admin-avatar');
+
+    if (emailDisplay) emailDisplay.innerText = user.email;
+    if (nameDisplay) nameDisplay.innerText = `${user.displayName || user.email.split('@')[0]} (${roleTitle})`;
+    
+    if (avatarDisplay) {
+        if (user.photoURL) {
+            avatarDisplay.src = user.photoURL.replace("s96-c", "s120-c"); 
+        } else {
+            avatarDisplay.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || roleTitle)}&background=0062ff&color=fff&bold=true`;
+        }
+    }
+}
+// Hàm hỗ trợ nạp dữ liệu chung khi vào Dashboard thành công
+function initAdminDashboardView(user, roleTitle) {
+    loadAdminPosts();
+    loadPharmacyForReception();
+    loadAdminAnnouncements();
+    loadFusoftxNotis();
+    runDailyStatisticAggregation();
+
+    const nameDisplay = document.getElementById('display-admin-name');
+    const emailDisplay = document.getElementById('display-admin-email');
+    if (emailDisplay) emailDisplay.innerText = user.email;
+    if (nameDisplay) nameDisplay.innerText = `${user.displayName || user.email.split('@')[0]} (${roleTitle})`;
+}
+
+// Hàm hiển thị lại toàn bộ Menu cho Super Admin
+function showAllSidebarTabs() {
+    document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.style.display = 'flex');
+    const navCollab = document.getElementById('nav-collaborators');
+    if (navCollab) navCollab.style.display = 'flex';
+}
+
+// Hàm ẩn hoàn toàn các Tab và Nút Sidebar mà Cộng tác viên không được cấp quyền
+function applyCollaboratorPermissions(allowedTabs) {
+    // Luôn ẩn nút Quản lý CTV đối với Cộng tác viên
+    const navCollab = document.getElementById('nav-collaborators');
+    if (navCollab) navCollab.style.display = 'none';
+
+    // Lặp qua tất cả các nút tab trong sidebar
+    document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+        const onclickAttr = btn.getAttribute('onclick') || '';
+        let matchedTab = '';
+        
+        // Trích xuất tabId từ onclick="switchTab('tab-xxx', this)"
+        const match = onclickAttr.match(/switchTab\('([^']+)'/);
+        if (match) {
+            matchedTab = match[1];
+        }
+
+        if (matchedTab) {
+            if (allowedTabs.includes(matchedTab)) {
+                btn.style.display = 'flex';
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+    });
+
+    // Tự động mở Tab đầu tiên mà Cộng tác viên có quyền
+    if (allowedTabs.length > 0) {
+        switchTab(allowedTabs[0]);
+    }
+}
 // Hàm 1: handleEmailLogin
 function handleEmailLogin() {
     const email = document.getElementById('admin-email-input').value.trim();
@@ -574,6 +710,7 @@ function switchTab(tabId, btn) {
     if (tabId === 'tab-yte-yeucau') loadStudentTickets();
     if (tabId === 'tab-fusoftx') loadFusoftxTickets();
     if (tabId === 'tab-send-noti') loadAdminNotifications();
+	if (tabId === 'tab-collaborators') loadCollaborators();
 }
 // --- 6. XỬ LÝ TRANG CHI TIẾT BÀI VIẾT LẺ ---
 async function loadSinglePost() {
@@ -3939,4 +4076,187 @@ function applyPresetTemplate() {
     
     setEditorContent(templateHtml);
     sysAlert("Đã áp dụng Mẫu CSS mới với màu chủ đề: " + color, "success");
+}
+// ==========================================
+// HÀM XỬ LÝ CRUD CỘNG TÁC VIÊN
+// ==========================================
+
+let collaboratorsCache = [];
+
+// 1. Tải danh sách Cộng tác viên
+async function loadCollaborators() {
+    const tbody = document.getElementById('collaborators-list-tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...</td></tr>';
+
+    try {
+        const snap = await db.collection("yt_collaborators").orderBy("createdAt", "desc").get();
+        collaboratorsCache = [];
+
+        if (snap.empty) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 30px;">Chưa có cộng tác viên nào được thêm.</td></tr>';
+            return;
+        }
+
+        let html = '';
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        snap.forEach(doc => {
+            const data = { id: doc.id, ...doc.data() };
+            collaboratorsCache.push(data);
+
+            const isExpired = data.expiryDate && data.expiryDate < todayStr;
+            let statusBadge = '';
+
+            if (data.status === 'locked') {
+                statusBadge = '<span style="color:#ef4444; background:#fef2f2; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:0.8rem;">🔴 Đã khóa</span>';
+            } else if (isExpired) {
+                statusBadge = '<span style="color:#f59e0b; background:#fffbeb; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:0.8rem;">⚠️ Hết hạn</span>';
+            } else {
+                statusBadge = '<span style="color:#10b981; background:#ecfdf5; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:0.8rem;">🟢 Đang hoạt động</span>';
+            }
+
+            const tabCount = (data.allowedTabs || []).length;
+
+            html += `
+                <tr style="transition:0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+                    <td><strong>${data.name}</strong></td>
+                    <td style="color:#0284c7; font-weight:500;">${data.email}</td>
+                    <td>${data.phone || '--'}</td>
+                    <td style="font-weight:bold; color:${isExpired ? '#ef4444' : '#334155'};">${data.expiryDate || 'Vĩnh viễn'}</td>
+                    <td><span style="background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:6px; font-weight:bold; font-size:0.85rem;">${tabCount} Tabs</span></td>
+                    <td>${statusBadge}</td>
+                    <td style="text-align: right;">
+                        <button onclick="editCollaborator('${data.id}')" class="btn-sm" style="background:#e0e7ff; color:#4338ca; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:500;">
+                            <i class="fas fa-user-edit"></i> Sửa
+                        </button>
+                        <button onclick="deleteCollaborator('${data.id}', '${data.name}')" class="btn-sm" style="background:#fee2e2; color:#ef4444; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:500; margin-left:5px;">
+                            <i class="fas fa-trash-alt"></i> Xóa
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = html;
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" style="color:red; text-align:center;">Lỗi tải dữ liệu: ${err.message}</td></tr>`;
+    }
+}
+
+// 2. Mở Popup Modal thêm mới / sửa
+function openCollaboratorModal() {
+    document.getElementById('collab-id').value = '';
+    document.getElementById('collab-email').value = '';
+    document.getElementById('collab-email').disabled = false;
+    document.getElementById('collab-name').value = '';
+    document.getElementById('collab-phone').value = '';
+    document.getElementById('collab-expiry').value = '';
+    document.getElementById('collab-status').value = 'active';
+    document.getElementById('collab-modal-title').innerHTML = '<i class="fas fa-user-plus"></i> Thêm Cộng tác viên mới';
+
+    // Uncheck tất cả checkbox quyền
+    document.querySelectorAll('.collab-tab-cb').forEach(cb => cb.checked = false);
+
+    document.getElementById('collaborator-modal').style.display = 'flex';
+}
+
+function closeCollaboratorModal() {
+    document.getElementById('collaborator-modal').style.display = 'none';
+}
+
+// 3. Mở Modal ở chế độ chỉnh sửa
+function editCollaborator(id) {
+    const collab = collaboratorsCache.find(c => c.id === id);
+    if (!collab) return;
+
+    document.getElementById('collab-id').value = collab.id;
+    document.getElementById('collab-email').value = collab.email;
+    document.getElementById('collab-email').disabled = true; // Không cho sửa email gốc
+    document.getElementById('collab-name').value = collab.name;
+    document.getElementById('collab-phone').value = collab.phone || '';
+    document.getElementById('collab-expiry').value = collab.expiryDate || '';
+    document.getElementById('collab-status').value = collab.status || 'active';
+    document.getElementById('collab-modal-title').innerHTML = '<i class="fas fa-user-edit"></i> Cập nhật Cộng tác viên';
+
+    const allowed = collab.allowedTabs || [];
+    document.querySelectorAll('.collab-tab-cb').forEach(cb => {
+        cb.checked = allowed.includes(cb.value);
+    });
+
+    document.getElementById('collaborator-modal').style.display = 'flex';
+}
+
+// 4. Lưu Cộng tác viên vào Firestore
+async function saveCollaborator() {
+    const id = document.getElementById('collab-id').value;
+    const email = document.getElementById('collab-email').value.trim().toLowerCase();
+    const name = document.getElementById('collab-name').value.trim();
+    const phone = document.getElementById('collab-phone').value.trim();
+    const expiryDate = document.getElementById('collab-expiry').value;
+    const status = document.getElementById('collab-status').value;
+
+    if (!email || !name || !expiryDate) {
+        return sysAlert("Vui lòng điền đầy đủ: Email, Họ tên và Ngày hết hạn!", "warning");
+    }
+
+    // Lấy danh sách các tab được tick chọn
+    const allowedTabs = [];
+    document.querySelectorAll('.collab-tab-cb:checked').forEach(cb => {
+        allowedTabs.push(cb.value);
+    });
+
+    if (allowedTabs.length === 0) {
+        return sysAlert("Vui lòng tick chọn ít nhất 1 quyền truy cập (Tab) cho Cộng tác viên!", "warning");
+    }
+
+    sysLoading(true, "Đang lưu thông tin Cộng tác viên...");
+
+    const payload = {
+        email, name, phone, expiryDate, status, allowedTabs,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+        if (id) {
+            await db.collection("yt_collaborators").doc(id).update(payload);
+            sysAlert("Đã cập nhật thông tin Cộng tác viên thành công!", "success");
+        } else {
+            // Kiểm tra xem email đã tồn tại chưa
+            const checkExist = await db.collection("yt_collaborators").where("email", "==", email).get();
+            if (!checkExist.empty) {
+                sysLoading(false);
+                return sysAlert("Email này đã tồn tại trong danh sách Cộng tác viên!", "error");
+            }
+
+            payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            await db.collection("yt_collaborators").add(payload);
+            sysAlert("Đã thêm Cộng tác viên mới thành công!", "success");
+        }
+
+        closeCollaboratorModal();
+        loadCollaborators();
+    } catch (err) {
+        sysAlert("Lỗi khi lưu: " + err.message, "error");
+    } finally {
+        sysLoading(false);
+    }
+}
+
+// 5. Xóa Cộng tác viên
+async function deleteCollaborator(id, name) {
+    const isConfirm = await sysConfirm(`Xác nhận xóa quyền Cộng tác viên của [${name}]?`, "Xóa Cộng tác viên", true);
+    if (isConfirm) {
+        sysLoading(true, "Đang xóa...");
+        try {
+            await db.collection("yt_collaborators").doc(id).delete();
+            sysAlert("Đã xóa Cộng tác viên thành công!", "success");
+            loadCollaborators();
+        } catch (err) {
+            sysAlert("Lỗi khi xóa: " + err.message, "error");
+        } finally {
+            sysLoading(false);
+        }
+    }
 }

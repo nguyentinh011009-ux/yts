@@ -92,7 +92,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
                     loadFusoftxNotis();
                     runDailyStatisticAggregation();
 
-                    updateAdminDisplayInfo(user, "Admin Tối cao");
+                    updateAdminDisplayInfo(user, "Admin");
                 }
             } else {
                 // --- TRƯỜNG HỢP B: KIỂM TRA QUYỀN CỘNG TÁC VIÊN ---

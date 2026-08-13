@@ -133,6 +133,9 @@
     </button>
 
     <p style="font-size: 0.7rem; color: #94a3b8; margin: 20px 0 10px 10px; text-transform: uppercase;">Hệ thống</p>
+    <button class="admin-tab-btn" id="nav-collaborators" onclick="switchTab('tab-collaborators', this)">
+        <i class="fas fa-users-cog"></i> Quản lý Cộng tác viên
+    </button>
     <a href="ai_memory.html" class="admin-tab-btn" style="text-decoration: none;">
         <i class="fas fa-brain"></i> Bộ nhớ AI
     </a>
@@ -533,6 +536,39 @@
     </div>
 </div>
 </div>
+            <!-- ========================================================================= -->
+            <!-- TAB QUẢN LÝ CỘNG TÁC VIÊN -->
+            <!-- ========================================================================= -->
+            <section id="tab-collaborators" class="tab-pane" style="display:none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <div>
+                        <h2 style="margin: 0; color: #1e293b;"><i class="fas fa-users-cog" style="color:#0284c7;"></i> Quản lý Cộng tác viên</h2>
+                        <p style="color: #64748b; margin-top: 5px; font-size: 0.9rem;">Phân quyền sử dụng, quản lý thời hạn chứng chỉ truy cập hệ thống</p>
+                    </div>
+                    <button onclick="openCollaboratorModal()" class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); font-weight: bold;">
+                        <i class="fas fa-user-plus"></i> Thêm Cộng tác viên mới
+                    </button>
+                </div>
+            
+                <div class="form-card" style="padding: 0; overflow: hidden;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Họ và tên</th>
+                                <th>Email kết nối</th>
+                                <th>Số điện thoại</th>
+                                <th>Thời hạn chứng chỉ</th>
+                                <th>Quyền hạn (Tabs)</th>
+                                <th>Trạng thái</th>
+                                <th style="text-align: right;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="collaborators-list-tbody">
+                            <tr><td colspan="7" style="text-align: center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Đang tải danh sách cộng tác viên...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
             </section>
             <section id="tab-announce" class="tab-pane" style="display:none;">
                 <div style="margin-bottom:30px;">
@@ -1837,6 +1873,98 @@
 
 <!-- 3. Vùng chứa Thông báo nhanh (Toast Alert) -->
 <div id="yt-toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
+<!-- ===================================================================== -->
+<!-- POPUP: KHỞI TẠO / CHỈNH SỬA CỘNG TÁC VIÊN -->
+<!-- ===================================================================== -->
+<div id="collaborator-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 10015; align-items: center; justify-content: center; padding: 20px;">
+    <div class="form-card fade-in" style="width: 100%; max-width: 800px; max-height: 90vh; overflow-y: auto; position: relative; padding: 30px; border-radius: 16px; border-top: 6px solid #0284c7; background: #ffffff;">
+        <button onclick="closeCollaboratorModal()" style="position:absolute; top:20px; right:20px; border:none; background:#f1f5f9; width:35px; height:35px; border-radius:50%; font-size:1.5rem; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;">&times;</button>
+        
+        <h3 id="collab-modal-title" style="color: #0284c7; margin-top: 0; margin-bottom: 20px; font-size: 1.35rem;">
+            <i class="fas fa-user-shield"></i> Thêm Cộng tác viên mới
+        </h3>
+
+        <input type="hidden" id="collab-id">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            <div class="input-group">
+                <label style="font-weight: bold; color: #334155;">Email Đăng nhập (Google) <span style="color:red;">*</span></label>
+                <input type="email" id="collab-email" placeholder="VD: nguyenvana@gmail.com">
+            </div>
+            <div class="input-group">
+                <label style="font-weight: bold; color: #334155;">Họ và Tên Cộng tác viên <span style="color:red;">*</span></label>
+                <input type="text" id="collab-name" placeholder="VD: Nguyễn Văn A">
+            </div>
+            <div class="input-group">
+                <label style="font-weight: bold; color: #334155;">Số điện thoại liên hệ</label>
+                <input type="text" id="collab-phone" placeholder="VD: 0912345678">
+            </div>
+            <div class="input-group">
+                <label style="font-weight: bold; color: #d97706;"><i class="fas fa-calendar-alt"></i> Ngày hết hạn chứng chỉ/truy cập <span style="color:red;">*</span></label>
+                <input type="date" id="collab-expiry">
+            </div>
+            <div class="input-group" style="grid-column: span 2;">
+                <label style="font-weight: bold; color: #334155;">Trạng thái tài khoản</label>
+                <select id="collab-status" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                    <option value="active">🟢 Đang hoạt động</option>
+                    <option value="locked">🔴 Tạm khóa tài khoản</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
+            <label style="font-weight: bold; color: #0284c7; display: block; margin-bottom: 12px; font-size: 1rem;">
+                <i class="fas fa-key"></i> CHỌN BẢNG / CHỨC NĂNG CỘNG TÁC VIÊN ĐƯỢC PHÉP TRUY CẬP:
+            </label>
+            
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0;" id="collab-tabs-checkboxes">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <input type="checkbox" class="collab-tab-cb" value="tab-cloudinary-manager"> Kho Phương tiện
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <input type="checkbox" class="collab-tab-cb" value="tab-posts"> Quản lý bài viết
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <input type="checkbox" class="collab-tab-cb" value="tab-announce"> Quản lý Slider
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <input type="checkbox" class="collab-tab-cb" value="tab-yte-yeucau"> Hòm thư học sinh
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <input type="checkbox" class="collab-tab-cb" value="tab-send-noti"> Quản lý thông báo
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <input type="checkbox" class="collab-tab-cb" value="tab-yte-tiepnhan"> Tiếp nhận học sinh
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <input type="checkbox" class="collab-tab-cb" value="tab-yte-giuong"> Quản lý giường
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <input type="checkbox" class="collab-tab-cb" value="tab-yte-dulieu"> Hồ sơ học sinh
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <input type="checkbox" class="collab-tab-cb" value="tab-yte-xuat"> Xuất báo cáo
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <input type="checkbox" class="collab-tab-cb" value="tab-yte-thongke"> Thống kê y tế
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <input type="checkbox" class="collab-tab-cb" value="tab-physical-exam"> Khám sức khỏe
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <input type="checkbox" class="collab-tab-cb" value="tab-yte-tracuu-admin"> Tra cứu hồ sơ
+                </label>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 25px;">
+            <button onclick="closeCollaboratorModal()" class="btn" style="background: #e2e8f0; color: #475569;">Hủy bỏ</button>
+            <button onclick="saveCollaborator()" class="btn btn-primary" style="background: #0284c7; font-weight: bold;">
+                <i class="fas fa-save"></i> Lưu thông tin CTV
+            </button>
+        </div>
+    </div>
+</div>  
 </body>
 </html>
 

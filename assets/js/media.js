@@ -379,8 +379,25 @@ window.loadGoogleFontOnDemand = function(fontName) {
 function extractStyleBlock(html) {
     if (!html) return { style: '', body: '' };
     let styleMatches = [];
-    let body = html.replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, (match) => { styleMatches.push(match); return ''; });
-    return { style: styleMatches.join('\n'), body: body.trim() };
+    let body = html.replace(/<style[\s\S]*?>([\s\S]*?)<\/style>/gi, (match, cssContent) => {
+        styleMatches.push(match);
+        return '';
+    });
+    
+    const combinedStyle = styleMatches.join('\n');
+    
+    // Tự động gắn CSS vào DOM để Editor hiển thị giao diện ngay lập tức
+    let dynamicStyleEl = document.getElementById('tp-dynamic-injected-css');
+    if (!dynamicStyleEl) {
+        dynamicStyleEl = document.createElement('style');
+        dynamicStyleEl.id = 'tp-dynamic-injected-css';
+        document.head.appendChild(dynamicStyleEl);
+    }
+    // Trích xuất phần CSS thuần để đưa vào thẻ style
+    const pureCss = styleMatches.map(s => s.replace(/<\/?style[\s\S]*?>/gi, '')).join('\n');
+    dynamicStyleEl.innerHTML = pureCss;
+
+    return { style: combinedStyle, body: body.trim() };
 }
 
 window.initCKEditor = function(callback) {
@@ -401,7 +418,7 @@ window.initCKEditor = function(callback) {
     const activeExtensions = [
         StarterKit, CustomDiv, CustomShape, Underline, TextStyle, FontSize, Color, FontFamily,
         Subscript, Superscript, CharacterCount, LineHeight,
-        Highlight ? Highlight.configure({ multicolors: true }) : null,
+        Highlight ? Highlight.configure({ multicolor: true }) : null,
         Image,
         Link ? Link.configure({ openOnClick: false, autolink: true }) : null,
         TextAlign ? TextAlign.configure({ types: ['heading', 'paragraph'] }) : null,
@@ -475,6 +492,12 @@ window.getEditorContent = function() {
         return sourceVal;
     }
     const editorHtml = tiptapEditor ? tiptapEditor.getHTML() : '';
+    
+    // Nếu trong editorHtml đã tự chứa thẻ <style> thì không nối thêm currentStyleBlock nữa
+    if (/<style[\s\S]*?>/i.test(editorHtml)) {
+        return editorHtml;
+    }
+    
     return currentStyleBlock ? `${currentStyleBlock}\n${editorHtml}` : editorHtml;
 };
 

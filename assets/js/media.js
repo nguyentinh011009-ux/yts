@@ -379,21 +379,23 @@ window.loadGoogleFontOnDemand = function(fontName) {
 function extractStyleBlock(html) {
     if (!html) return { style: '', body: '' };
     let styleMatches = [];
-    let body = html.replace(/<style[\s\S]*?>([\s\S]*?)<\/style>/gi, (match, cssContent) => {
+    let body = html.replace(/<style[\s\S]*?>([\s\S]*?)<\/style>/gi, (match) => {
         styleMatches.push(match);
         return '';
     });
     
     const combinedStyle = styleMatches.join('\n');
     
-    // Tự động gắn CSS vào DOM để Editor hiển thị giao diện ngay lập tức
+    // Đưa CSS vào vị trí cuối cùng của <head> để đạt độ ưu tiên cao nhất
     let dynamicStyleEl = document.getElementById('tp-dynamic-injected-css');
     if (!dynamicStyleEl) {
         dynamicStyleEl = document.createElement('style');
         dynamicStyleEl.id = 'tp-dynamic-injected-css';
         document.head.appendChild(dynamicStyleEl);
+    } else {
+        document.head.appendChild(dynamicStyleEl); // Luôn chuyển xuống cuối thẻ head
     }
-    // Trích xuất phần CSS thuần để đưa vào thẻ style
+    
     const pureCss = styleMatches.map(s => s.replace(/<\/?style[\s\S]*?>/gi, '')).join('\n');
     dynamicStyleEl.innerHTML = pureCss;
 

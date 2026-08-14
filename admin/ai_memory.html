@@ -221,10 +221,9 @@
         // Khởi chạy khi load trang
 firebase.auth().onAuthStateChanged(user => {
     if (user) {
-        // Đã đăng nhập -> Cho phép tải dữ liệu
         loadAIMemoryNotes();
     } else {
-        // Chưa đăng nhập -> Chặn truy cập và đẩy về admin.html
+        alert("⚠️ TRUY CẬP BỊ TỪ CHỐI!\n\nBạn chưa đăng nhập hoặc phiên làm việc đã hết hạn.\nVui lòng đăng nhập tài khoản Quản trị viên để tiếp tục.");
         window.location.replace("admin.html");
     }
 });

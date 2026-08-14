@@ -326,7 +326,7 @@
     outline: none;
 }
 
-/* Định dạng kiểu chữ báo chí trong Tiptap */
+/* Định dạng kiểu chữ mặc định (Chỉ áp dụng khi KHÔNG CÓ class tùy biến) */
 .tiptap-paper .ProseMirror {
     outline: none;
     min-height: 480px;
@@ -336,25 +336,25 @@
     font-family: Arial, Helvetica, sans-serif;
 }
 
-.tiptap-paper .ProseMirror p {
+.tiptap-paper .ProseMirror p:not([class]) {
     margin: 10px 0;
 }
 
-.tiptap-paper .ProseMirror h1 {
+.tiptap-paper .ProseMirror h1:not([class]) {
     font-size: 1.8rem;
     color: #0f172a;
     margin-top: 20px;
     margin-bottom: 10px;
 }
 
-.tiptap-paper .ProseMirror h2 {
+.tiptap-paper .ProseMirror h2:not([class]) {
     font-size: 1.4rem;
     color: #1e293b;
     margin-top: 18px;
     margin-bottom: 8px;
 }
 
-.tiptap-paper .ProseMirror h3 {
+.tiptap-paper .ProseMirror h3:not([class]) {
     font-size: 1.2rem;
     color: #334155;
     margin-top: 15px;

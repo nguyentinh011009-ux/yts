@@ -219,9 +219,16 @@
         }
 
         // Khởi chạy khi load trang
-        document.addEventListener("DOMContentLoaded", () => {
-            loadAIMemoryNotes();
-        });
+        // Kiểm tra trạng thái đăng nhập bảo mật
+auth.onAuthStateChanged(user => {
+    if (user) {
+        // Đã đăng nhập -> Cho phép tải dữ liệu
+        loadAIMemoryNotes();
+    } else {
+        // Chưa đăng nhập -> Chặn truy cập và đẩy về trang đăng nhập admin.html
+        window.location.replace("admin.html");
+    }
+});
     </script>
 </body>
 </html>

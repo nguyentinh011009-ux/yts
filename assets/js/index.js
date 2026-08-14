@@ -3,10 +3,10 @@ let sliderInterval = null;
 let allPosts = [];
 
 const CACHE_POSTS_KEY = 'vts_posts_data';
-const CACHE_TIME_KEY = 'vts_posts_time';
+const CACHE_POSTS_TIME_KEY = 'vts_posts_time';
 const CACHE_SLIDER_KEY = 'vts_slider_data';
-const CACHE_EXPIRE_TIME = 15 * 60 * 1000; // Lưu Cache 15 phút (Tính bằng miligiây)
-
+const CACHE_SLIDER_TIME_KEY = 'vts_slider_time';
+const CACHE_EXPIRE_TIME = 15 * 60 * 1000; // 15 phút
 // --- 2. HÀM HỖ TRỢ XỬ LÝ ẢNH & CẮT CHỮ ---
 function optimizeImage(url) {
     if (!url) return 'https://via.placeholder.com/500x300?text=No+Image';
@@ -63,31 +63,31 @@ firebase.auth().onAuthStateChanged((user) => {
 async function renderHome() {
     const now = Date.now();
     const cachedPosts = localStorage.getItem(CACHE_POSTS_KEY);
-    const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
+    const cachedTime = localStorage.getItem(CACHE_POSTS_TIME_KEY);
 
-    // KỊCH BẢN 1: Dùng dữ liệu Cache nếu chưa quá 15 phút (0 TỐN FIREBASE READS, TẢI 0s)
-    if (cachedPosts && cachedTime && (now - parseInt(cachedTime) < CACHE_EXPIRE_TIME)) {
+    // 1. Nếu có Cache, hiển thị ngay lập tức (0s loading)
+    if (cachedPosts) {
         allPosts = JSON.parse(cachedPosts);
         renderPostsUI(allPosts);
-        loadSliderData(); // Tải slider
-        return;
     }
 
-    // KỊCH BẢN 2: Lấy dữ liệu mới từ Firestore bằng .get() thay vì .onSnapshot()
-    try {
-        const snap = await db.collection("posts").orderBy("createdAt", "desc").get();
-        allPosts = [];
-        snap.forEach(doc => {
-            allPosts.push({ id: doc.id, ...doc.data() });
-        });
+    // 2. Chỉ tải từ Firebase nếu chưa có Cache HOẶC Cache đã quá 15 phút
+    const isExpired = !cachedTime || (now - parseInt(cachedTime) >= CACHE_EXPIRE_TIME);
+    if (!cachedPosts || isExpired) {
+        try {
+            const snap = await db.collection("posts").orderBy("createdAt", "desc").get();
+            allPosts = [];
+            snap.forEach(doc => {
+                allPosts.push({ id: doc.id, ...doc.data() });
+            });
 
-        // Lưu vào LocalStorage
-        localStorage.setItem(CACHE_POSTS_KEY, JSON.stringify(allPosts));
-        localStorage.setItem(CACHE_TIME_KEY, now.toString());
+            localStorage.setItem(CACHE_POSTS_KEY, JSON.stringify(allPosts));
+            localStorage.setItem(CACHE_POSTS_TIME_KEY, now.toString());
 
-        renderPostsUI(allPosts);
-    } catch (error) {
-        console.error("Lỗi tải bài viết:", error);
+            renderPostsUI(allPosts);
+        } catch (error) {
+            console.error("Lỗi tải bài viết:", error);
+        }
     }
 
     loadSliderData();
@@ -125,27 +125,33 @@ function renderPostsUI(posts) {
 
 // --- 6. QUẢN LÝ SLIDER (CÓ CACHE) ---
 async function loadSliderData() {
-    const cachedSlider = localStorage.getItem(CACHE_SLIDER_KEY);
-    const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
     const now = Date.now();
+    const cachedSlider = localStorage.getItem(CACHE_SLIDER_KEY);
+    const cachedTime = localStorage.getItem(CACHE_SLIDER_TIME_KEY);
 
-    if (cachedSlider && cachedTime && (now - parseInt(cachedTime) < CACHE_EXPIRE_TIME)) {
+    // 1. Hiển thị cache slider ngay lập tức nếu có
+    if (cachedSlider) {
         renderSliderUI(JSON.parse(cachedSlider));
-        return;
     }
 
-    try {
-        const snap = await db.collection("announcements").get();
-        const sliderItems = [];
-        snap.forEach(doc => {
-            const d = doc.data();
-            if(d.image) sliderItems.push(d);
-        });
+    // 2. Kiểm tra nếu hết hạn 15 phút hoặc chưa có cache thì tải mới
+    const isExpired = !cachedTime || (now - parseInt(cachedTime) >= CACHE_EXPIRE_TIME);
+    if (!cachedSlider || isExpired) {
+        try {
+            const snap = await db.collection("announcements").get();
+            const sliderItems = [];
+            snap.forEach(doc => {
+                const d = doc.data();
+                if (d.image) sliderItems.push(d);
+            });
 
-        localStorage.setItem(CACHE_SLIDER_KEY, JSON.stringify(sliderItems));
-        renderSliderUI(sliderItems);
-    } catch (err) {
-        console.error("Lỗi tải slider:", err);
+            localStorage.setItem(CACHE_SLIDER_KEY, JSON.stringify(sliderItems));
+            localStorage.setItem(CACHE_SLIDER_TIME_KEY, now.toString());
+
+            renderSliderUI(sliderItems);
+        } catch (err) {
+            console.error("Lỗi tải slider:", err);
+        }
     }
 }
 

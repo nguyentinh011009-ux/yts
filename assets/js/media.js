@@ -410,7 +410,7 @@ window.initCKEditor = function(callback) {
         Editor, StarterKit, Image, Link, Underline, TextAlign, TextStyle, 
         Color, FontFamily, Highlight, Youtube, Table, TableRow, TableHeader, 
         TableCell, TaskList, TaskItem, FontSize, CustomDiv,
-        Subscript, Superscript, CharacterCount, LineHeight,CustomShape 
+        Subscript, Superscript, CharacterCount, LineHeight,CustomShape, PreserveAttributes
     } = window.TiptapModules;
 
     const sourceArea = document.getElementById('p-content-source');
@@ -418,7 +418,7 @@ window.initCKEditor = function(callback) {
     currentStyleBlock = extracted.style;
 
     const activeExtensions = [
-        StarterKit, CustomDiv, CustomShape, Underline, TextStyle, FontSize, Color, FontFamily,
+        StarterKit, PreserveAttributes, CustomDiv, CustomShape, Underline, TextStyle, FontSize, Color, FontFamily,
         Subscript, Superscript, CharacterCount, LineHeight,
         Highlight ? Highlight.configure({ multicolor: true }) : null,
         Image,

@@ -17,7 +17,34 @@
         import TaskItem from 'https://esm.sh/@tiptap/extension-task-item@2.1.13';
         import Subscript from 'https://esm.sh/@tiptap/extension-subscript@2.1.13';
         import Superscript from 'https://esm.sh/@tiptap/extension-superscript@2.1.13';
-
+// 🌟 EXTENSION BẢO LƯU 100% CLASS, STYLE, ID TRÊN MỌI THẺ HTML
+const PreserveAttributes = Extension.create({
+    name: 'preserveAttributes',
+    addGlobalAttributes() {
+        return [
+            {
+                types: ['heading', 'paragraph', 'textStyle', 'bulletList', 'orderedList', 'listItem', 'blockquote'],
+                attributes: {
+                    class: {
+                        default: null,
+                        parseHTML: el => el.getAttribute('class') || null,
+                        renderHTML: attrs => attrs.class ? { class: attrs.class } : {}
+                    },
+                    style: {
+                        default: null,
+                        parseHTML: el => el.getAttribute('style') || null,
+                        renderHTML: attrs => attrs.style ? { style: attrs.style } : {}
+                    },
+                    id: {
+                        default: null,
+                        parseHTML: el => el.getAttribute('id') || null,
+                        renderHTML: attrs => attrs.id ? { id: attrs.id } : {}
+                    }
+                }
+            }
+        ];
+    }
+});
         const LineHeight = Extension.create({
             name: 'lineHeight',
             addOptions() { return { types: ['paragraph', 'heading', 'list_item'] } },
@@ -54,20 +81,20 @@ const CustomDiv = Node.create({
     content: 'block*',
     defining: true,
     isolating: false,
-    priority: 1000,
+    selectable: true,
     addAttributes() {
         return {
-            class: { 
+            class: {
                 default: null,
                 parseHTML: el => el.getAttribute('class') || null,
                 renderHTML: attrs => attrs.class ? { class: attrs.class } : {}
             },
-            style: { 
+            style: {
                 default: null,
                 parseHTML: el => el.getAttribute('style') || null,
                 renderHTML: attrs => attrs.style ? { style: attrs.style } : {}
             },
-            id: { 
+            id: {
                 default: null,
                 parseHTML: el => el.getAttribute('id') || null,
                 renderHTML: attrs => attrs.id ? { id: attrs.id } : {}
@@ -75,7 +102,14 @@ const CustomDiv = Node.create({
         };
     },
     parseHTML() {
-        return [{ tag: 'div', priority: 1000 }];
+        return [
+            { tag: 'div' },
+            { tag: 'section' },
+            { tag: 'header' },
+            { tag: 'footer' },
+            { tag: 'article' },
+            { tag: 'aside' }
+        ];
     },
     renderHTML({ HTMLAttributes }) {
         return ['div', HTMLAttributes, 0];
@@ -612,5 +646,5 @@ const CustomDiv = Node.create({
         window.TiptapModules = { 
             Editor, StarterKit, Image: ResizableImage, Link, Underline, TextAlign, TextStyle, 
             Color, FontFamily, Highlight, Youtube, Table, TableRow, TableHeader, 
-            TableCell, TaskList, TaskItem, FontSize, CustomDiv, Subscript, Superscript, LineHeight, CustomShape
+            TableCell, TaskList, TaskItem, FontSize, CustomDiv, Subscript, Superscript, LineHeight, CustomShape, PreserveAttributes
         };

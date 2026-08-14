@@ -47,26 +47,38 @@
                 }
             }
         });
-        // 🌟 KHỞI TẠO EXTENSION BẢO TỒN NGUYÊN VẸN THẺ DIV VÀ TOÀN BỘ CLASS/STYLE
-        const CustomDiv = Node.create({
-            name: 'customDiv',
-            group: 'block',
-            content: 'block*',
-            defining: true,
-            addAttributes() {
-                return {
-                    class: { default: null },
-                    style: { default: null },
-                    id: { default: null }
-                };
+// 🌟 KHỞI TẠO EXTENSION BẢO TỒN NGUYÊN VẸN THẺ DIV VÀ TOÀN BỘ CLASS/STYLE
+const CustomDiv = Node.create({
+    name: 'customDiv',
+    group: 'block',
+    content: 'block*',
+    defining: true,
+    addAttributes() {
+        return {
+            class: { 
+                default: null,
+                parseHTML: el => el.getAttribute('class'),
+                renderHTML: attrs => attrs.class ? { class: attrs.class } : {}
             },
-            parseHTML() {
-                return [{ tag: 'div' }];
+            style: { 
+                default: null,
+                parseHTML: el => el.getAttribute('style'),
+                renderHTML: attrs => attrs.style ? { style: attrs.style } : {}
             },
-            renderHTML({ HTMLAttributes }) {
-                return ['div', HTMLAttributes, 0];
+            id: { 
+                default: null,
+                parseHTML: el => el.getAttribute('id'),
+                renderHTML: attrs => attrs.id ? { id: attrs.id } : {}
             }
-        });
+        };
+    },
+    parseHTML() {
+        return [{ tag: 'div' }];
+    },
+    renderHTML({ HTMLAttributes }) {
+        return ['div', HTMLAttributes, 0];
+    }
+});
     
         // Tạo Extension FontSize
         const FontSize = TextStyle.extend({

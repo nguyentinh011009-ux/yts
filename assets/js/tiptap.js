@@ -53,27 +53,29 @@ const CustomDiv = Node.create({
     group: 'block',
     content: 'block*',
     defining: true,
+    isolating: false,
+    priority: 1000,
     addAttributes() {
         return {
             class: { 
                 default: null,
-                parseHTML: el => el.getAttribute('class'),
+                parseHTML: el => el.getAttribute('class') || null,
                 renderHTML: attrs => attrs.class ? { class: attrs.class } : {}
             },
             style: { 
                 default: null,
-                parseHTML: el => el.getAttribute('style'),
+                parseHTML: el => el.getAttribute('style') || null,
                 renderHTML: attrs => attrs.style ? { style: attrs.style } : {}
             },
             id: { 
                 default: null,
-                parseHTML: el => el.getAttribute('id'),
+                parseHTML: el => el.getAttribute('id') || null,
                 renderHTML: attrs => attrs.id ? { id: attrs.id } : {}
             }
         };
     },
     parseHTML() {
-        return [{ tag: 'div' }];
+        return [{ tag: 'div', priority: 1000 }];
     },
     renderHTML({ HTMLAttributes }) {
         return ['div', HTMLAttributes, 0];

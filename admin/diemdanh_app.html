@@ -3,1089 +3,1207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Điểm Danh Học Đường - THPT Võ Thị Sáu</title>
-    <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png">
-    <link rel="icon" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" sizes="32x32" type="image/png">
-    <link rel="stylesheet" href="../assets/css/mobile_admin.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>Điểm Danh - Y Tế Số VTS</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/uq7hr3wp/image/upload/v1787045296/rfhuztp3qiohlvwr4bhf.png">
+    <link rel="icon" href="https://res.cloudinary.com/uq7hr3wp/image/upload/v1787045296/rfhuztp3qiohlvwr4bhf.png" sizes="32x32" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --bg: #f8fafc;
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --primary-light: #e0f2fe;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-body: #f8fafc;
             --card-bg: #ffffff;
             --text-main: #0f172a;
             --text-muted: #64748b;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --success: #10b981;
-            --radius: 16px;
+            --border-col: #e2e8f0;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+            --shadow-md: 0 8px 24px -6px rgba(15, 23, 42, 0.08);
+            --font-main: 'Plus Jakarta Sans', -apple-system, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-main);
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            background-color: var(--bg);
+            background-color: var(--bg-body);
             color: var(--text-main);
-            padding-bottom: 50px;
+            min-height: 100vh;
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+            user-select: none;
         }
 
-        .container {
-            max-width: 540px;
-            margin: 0 auto;
-            padding: 15px;
-        }
-
-        /* Toolbar Ngày */
-        .date-toolbar {
-            background: white;
-            border-radius: var(--radius);
-            padding: 8px 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            margin-bottom: 15px;
-            border: 1px solid #e2e8f0;
-        }
-        .date-btn {
-            background: #f1f5f9;
-            border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            color: var(--text-main);
-            font-size: 0.9rem;
-            cursor: pointer;
-        }
-        .date-display {
-            font-weight: 700;
-            font-size: 0.95rem;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-        }
-
-        /* Form Thẻ */
-        .form-card {
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            padding: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            border: 1px solid #e2e8f0;
-            margin-bottom: 18px;
-        }
-
-        .section-title {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #334155;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* Quick Search */
-        .search-box {
-            position: relative;
-            margin-bottom: 14px;
-        }
-        .search-box input {
-            width: 100%;
-            padding: 12px 14px 12px 38px;
-            border-radius: 12px;
-            border: 1.5px solid #cbd5e1;
-            font-size: 0.9rem;
-            outline: none;
-            transition: 0.2s;
-        }
-        .search-box input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-        }
-        .search-icon {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-        }
-        .search-dropdown {
-            position: absolute;
-            top: 105%;
-            left: 0;
-            right: 0;
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #cbd5e1;
-            max-height: 230px;
-            overflow-y: auto;
-            z-index: 50;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-            display: none;
-        }
-        .search-item {
-            padding: 10px 14px;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 0.85rem;
-            cursor: pointer;
-        }
-        .search-item:active { background: #eff6ff; }
-
-        /* Grid inputs */
-        .row-grid {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 10px;
-            margin-bottom: 14px;
-        }
-        .input-wrap label {
-            display: block;
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 5px;
-        }
-        .input-wrap input, .input-wrap select {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 10px;
-            border: 1px solid #cbd5e1;
-            font-size: 0.9rem;
-            outline: none;
-            background: white;
-        }
-
-        /* Pill Radio Selector */
-        .reason-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 14px;
-        }
-        .reason-pill { position: relative; }
-        .reason-pill input { position: absolute; opacity: 0; width: 0; height: 0; }
-        .reason-pill label {
+        /* --- AUTH SCREEN & PIN LOCK --- */
+        .auth-overlay {
+            position: fixed;
+            inset: 0;
+            background: #ffffff;
+            z-index: 9999;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 10px 5px;
-            background: #f8fafc;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: #475569;
-            cursor: pointer;
-            transition: 0.2s;
+            padding: 24px;
+        }
+
+        .auth-box {
+            width: 100%;
+            max-width: 360px;
             text-align: center;
         }
-        .reason-pill input:checked + label {
-            background: #eff6ff;
+
+        .auth-logo {
+            width: 72px;
+            height: 72px;
+            border-radius: 20px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 20px;
+        }
+
+        .auth-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
+        }
+
+        .auth-desc {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-bottom: 28px;
+            line-height: 1.4;
+        }
+
+        .pin-dots {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 36px;
+        }
+
+        .pin-dots span {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid #cbd5e1;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .pin-dots span.active {
+            background: var(--primary);
             border-color: var(--primary);
+            transform: scale(1.15);
+        }
+
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .num-key {
+            background: #f1f5f9;
+            border: none;
+            height: 64px;
+            border-radius: 22px;
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.15s;
+        }
+
+        .num-key:active {
+            background: #e2e8f0;
+            transform: scale(0.92);
+        }
+
+        .num-key.ghost {
+            background: transparent;
+            font-size: 1.25rem;
             color: var(--primary);
         }
-        .reason-pill input[value="B"]:checked + label {
-            background: #fff1f2;
-            border-color: var(--danger);
-            color: var(--danger);
+
+        .btn-google {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 15px;
+            background: #ffffff;
+            border: 1.5px solid var(--border-col);
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
         }
 
-        /* Sick details box */
-        .sick-box {
-            background: #fff1f2;
-            border: 1px dashed #fca5a5;
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 14px;
-            display: none;
+        /* --- APP HEADER --- */
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-col);
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        .sick-box label {
-            color: #b91c1c;
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            object-fit: cover;
+            background: var(--primary-light);
+        }
+
+        .user-details h4 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .user-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 2px;
+        }
+
+        .badge-admin { background: #fee2e2; color: #b91c1c; }
+        .badge-quansinh { background: #f3e8ff; color: #7e22ce; }
+        .badge-gvcn { background: #fef3c7; color: #b45309; }
+
+        .btn-icon-header {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            border: 1px solid var(--border-col);
+            background: #fff;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        /* --- MAIN CONTENT & NAVIGATION TABS --- */
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        .nav-segments {
+            display: flex;
+            background: #e2e8f0;
+            padding: 4px;
+            border-radius: 14px;
+            margin-bottom: 16px;
+        }
+
+        .nav-segment-btn {
+            flex: 1;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            border: none;
+            background: transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-segment-btn.active {
+            background: #ffffff;
+            color: var(--primary);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+
+        /* --- CARDS & FORM ELEMENTS --- */
+        .app-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+            border: 1px solid var(--border-col);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 16px;
+        }
+
+        .date-stepper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f1f5f9;
+            padding: 6px;
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+        }
+
+        .date-stepper button {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: none;
+            background: #ffffff;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .date-display {
+            font-size: 0.92rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 13px 14px;
+            border-radius: var(--radius-md);
+            border: 1.5px solid var(--border-col);
+            background: #f8fafc;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            background: #ffffff;
+        }
+
+        /* --- REASON SELECT CHIPS --- */
+        .reason-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .reason-chip {
+            padding: 12px 6px;
+            border-radius: var(--radius-md);
+            border: 1.5px solid var(--border-col);
+            background: #f8fafc;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .reason-chip .icon {
+            font-size: 1.25rem;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .reason-chip .txt {
             font-size: 0.78rem;
             font-weight: 700;
-            margin-bottom: 4px;
-            display: block;
-        }
-        .sick-box input {
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #fca5a5;
-            font-size: 0.88rem;
-            outline: none;
-            background: white;
+            color: var(--text-muted);
         }
 
-        /* Submit Button */
+        .reason-chip.active-p {
+            border-color: #38bdf8;
+            background: #f0f9ff;
+        }
+        .reason-chip.active-p .txt { color: #0284c7; }
+
+        .reason-chip.active-kp {
+            border-color: #f87171;
+            background: #fef2f2;
+        }
+        .reason-chip.active-kp .txt { color: #dc2626; }
+
+        .reason-chip.active-b {
+            border-color: #fbbf24;
+            background: #fffbeb;
+        }
+        .reason-chip.active-b .txt { color: #d97706; }
+
+        /* SICK ALERT SECTION */
+        .sick-notice-box {
+            background: #fffbeb;
+            border: 1.5px dashed #f59e0b;
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin-top: 14px;
+            display: none;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .sick-notice-box small {
+            display: block;
+            color: #92400e;
+            font-size: 0.76rem;
+            font-weight: 600;
+            margin-top: 6px;
+            line-height: 1.35;
+        }
+
         .btn-submit {
             width: 100%;
-            padding: 14px;
-            border-radius: 12px;
-            border: none;
+            padding: 15px;
             background: var(--primary);
-            color: white;
-            font-size: 0.98rem;
-            font-weight: 700;
-            cursor: pointer;
+            color: #ffffff;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            font-weight: 800;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
-            transition: 0.2s;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+            transition: transform 0.1s;
+            margin-top: 8px;
         }
-        .btn-submit:active { transform: scale(0.98); }
 
-        /* History items */
-        .history-card {
-            background: white;
-            border-radius: var(--radius);
-            padding: 14px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
+        .btn-submit:active {
+            transform: scale(0.98);
         }
-        .history-item {
+
+        /* --- ABSENT LIST VIEW --- */
+        .absent-card {
+            background: #ffffff;
+            border: 1px solid var(--border-col);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #f1f5f9;
+            box-shadow: var(--shadow-sm);
         }
-        .history-item:last-child { border-bottom: none; }
-        .history-left h5 { font-size: 0.88rem; font-weight: 700; color: #1e293b; margin-bottom: 2px; }
-        .history-left p { font-size: 0.75rem; color: #64748b; }
-        .badge {
+
+        .absent-info h5 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 2px;
+        }
+
+        .absent-info span {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .badge-reason {
             display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 800;
             padding: 3px 8px;
             border-radius: 6px;
-            font-size: 0.72rem;
-            font-weight: 700;
+            margin-left: 6px;
         }
-        .badge-p { background: #e0f2fe; color: #0284c7; }
-        .badge-kp { background: #fee2e2; color: #ef4444; }
-        .badge-b { background: #fef3c7; color: #d97706; }
 
-        .btn-del {
-            background: #fee2e2;
-            color: #ef4444;
-            border: none;
-            width: 32px;
-            height: 32px;
+        .badge-p { background: #e0f2fe; color: #0369a1; }
+        .badge-kp { background: #fee2e2; color: #b91c1c; }
+        .badge-b { background: #fef3c7; color: #b45309; }
+
+        .btn-delete-record {
+            width: 34px;
+            height: 34px;
             border-radius: 8px;
+            border: none;
+            background: #fee2e2;
+            color: var(--danger);
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
         }
 
-        #toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1e293b;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 30px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            display: none;
-            z-index: 1000;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 2.5rem;
+            color: #cbd5e1;
+            margin-bottom: 10px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
 
-    <!-- 1. MÀN HÌNH XÁC THỰC & ĐĂNG KÝ THIẾT BỊ (ĐỒNG BỘ MOBILE ADMIN) -->
-    <div id="auth-screen" class="auth-container">
-        <!-- Bước 1: Google Login -->
-        <div id="step-google-login" class="auth-card fade-in">
-            <div class="auth-logo">
-                <img src="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" alt="Logo">
-            </div>
-            <h2>ĐIỂM DANH HỌC ĐƯỜNG</h2>
-            <p class="auth-subtitle">Cổng quản lý chuyên cần - THPT Võ Thị Sáu</p>
-            <button id="btn-google-auth" onclick="handleGoogleAuth()" class="btn btn-google">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google">
-                Xác thực tài khoản Google
+    <!-- 1. MÀN HÌNH BẢO MẬT & PIN LOCK -->
+    <div id="auth-screen" class="auth-overlay">
+        <!-- Bước A: Đăng nhập Google (Lần đầu tiên) -->
+        <div id="step-google" class="auth-box">
+            <img src="https://res.cloudinary.com/uq7hr3wp/image/upload/v1787045296/rfhuztp3qiohlvwr4bhf.png" class="auth-logo" alt="Logo">
+            <h2 class="auth-title">ĐIỂM DANH HỌC SINH</h2>
+            <p class="auth-desc">Dành cho Giáo viên chủ nhiệm, Quản sinh và Ban Quản Trị</p>
+            <button onclick="handleGoogleAuth()" class="btn-google">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="20" alt="G">
+                Đăng nhập tài khoản Google
             </button>
         </div>
 
-        <!-- Bước 2: Tạo mã PIN -->
-        <div id="step-set-passcode" class="auth-card fade-in" style="display: none;">
-            <h2>TẠO MÃ PIN THIẾT BỊ</h2>
-            <p class="auth-subtitle">Thiết lập mã PIN gồm 6 số để đăng nhập nhanh</p>
-            <div class="passcode-dots" id="setup-dots">
+        <!-- Bước B: Thiết lập mã PIN 6 số -->
+        <div id="step-set-pin" class="auth-box" style="display: none;">
+            <h2 class="auth-title" id="pin-title">TẠO MÃ PIN TRUY CẬP</h2>
+            <p class="auth-desc" id="pin-desc">Nhập 6 số để đăng nhập nhanh mỗi ngày</p>
+            <div class="pin-dots" id="setup-pin-dots">
                 <span></span><span></span><span></span><span></span><span></span><span></span>
             </div>
-            <div class="keyboard-grid" id="setup-keyboard"></div>
+            <div class="numpad" id="setup-numpad"></div>
         </div>
 
-        <!-- Bước 3: Xác nhận lại PIN -->
-        <div id="step-confirm-passcode" class="auth-card fade-in" style="display: none;">
-            <h2>XÁC NHẬN MÃ PIN</h2>
-            <p class="auth-subtitle">Vui lòng nhập lại mã PIN để xác nhận</p>
-            <div class="passcode-dots" id="confirm-dots">
+        <!-- Bước C: Mở khóa mã PIN / Vân tay khi quay lại app -->
+        <div id="step-unlock" class="auth-box" style="display: none;">
+            <img src="https://res.cloudinary.com/uq7hr3wp/image/upload/v1787045296/rfhuztp3qiohlvwr4bhf.png" class="auth-logo" alt="Logo">
+            <h2 class="auth-title">MỞ KHÓA ỨNG DỤNG</h2>
+            <p class="auth-desc">Nhập mã PIN hoặc dùng Vân tay/FaceID</p>
+            <div class="pin-dots" id="unlock-pin-dots">
                 <span></span><span></span><span></span><span></span><span></span><span></span>
             </div>
-            <div class="keyboard-grid" id="confirm-keyboard"></div>
-        </div>
-
-        <!-- Bước 4: Kích hoạt sinh trắc học -->
-        <div id="step-biometric-setup" class="auth-card fade-in" style="display: none;">
-            <i class="fas fa-fingerprint fa-4x bio-icon" style="color: var(--primary); margin: 15px 0;"></i>
-            <h2>KÍCH HOẠT SINH TRẮC HỌC</h2>
-            <p class="auth-subtitle">Sử dụng Vân tay hoặc FaceID để truy cập nhanh chóng</p>
-            <button onclick="enableBiometric(true)" class="btn btn-primary" style="width: 100%; margin-bottom: 12px;">Đồng ý kích hoạt</button>
-            <button onclick="enableBiometric(false)" class="btn btn-text" style="width: 100%;">Bỏ qua lúc này</button>
-        </div>
-
-        <!-- Màn hình Nhập PIN/Sinh trắc học khi đã kích hoạt thiết bị -->
-        <div id="step-login" class="auth-card fade-in" style="display: none;">
-            <div class="auth-logo">
-                <img src="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" alt="Logo">
-            </div>
-            <h2>MÃ KHÓA THIẾT BỊ</h2>
-            <p class="auth-subtitle">Nhập mã PIN hoặc dùng sinh trắc học để vào ứng dụng</p>
-            <div class="passcode-dots" id="login-dots">
-                <span></span><span></span><span></span><span></span><span></span><span></span>
-            </div>
-            <div style="display: flex; justify-content: center; gap: 10px; margin-top: 15px;">
-                <button id="btn-bio-trigger" onclick="triggerBiometricAuth()" class="btn btn-round" style="display: none;">
-                    <i class="fas fa-fingerprint"></i>
-                </button>
-            </div>
-            <div class="keyboard-grid" id="login-keyboard"></div>
+            <div class="numpad" id="unlock-numpad"></div>
         </div>
     </div>
 
-    <!-- MÀN HÌNH TỪ CHỐI QUYỀN TRUY CẬP -->
-    <div id="denied-screen" style="display:none; position:fixed; inset:0; background:white; z-index:998; padding:30px; text-align:center; flex-direction:column; align-items:center; justify-content:center;">
-        <i class="fas fa-user-lock fa-3x" style="color:#ef4444; margin-bottom:15px;"></i>
-        <h3 style="color:#1e293b; margin-bottom:8px;">Truy cập bị từ chối</h3>
-        <p style="color:#64748b; font-size:0.88rem; margin-bottom:20px;">Tài khoản chưa được cấp quyền Điểm danh. Vui lòng liên hệ Quản trị viên THPT Võ Thị Sáu.</p>
-        <button onclick="handleLogout()" class="btn-submit" style="background:#64748b; width:auto; padding:10px 25px;">Đăng xuất</button>
-    </div>
-
-    <!-- 2. GIAO DIỆN CHÍNH CỦA APP -->
-    <div id="app-screen" style="display:none;" class="page-has-header">
-        <!-- Header có Avatar và Menu Cài đặt bảo mật -->
-        <header class="glass-header">
-            <div class="header-left" onclick="toggleSettingsDropdown()">
-                <img id="admin-avatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Avatar">
-                <div class="header-admin-info">
-                    <span id="admin-display-name">Cộng Tác Viên</span>
-                    <small id="admin-role-badge">Bộ phận Điểm danh</small>
+    <!-- 2. GIAO DIỆN CHÍNH CỦA APP ĐIỂM DANH -->
+    <div id="app-main" style="display: none;">
+        <header class="app-header">
+            <div class="user-chip">
+                <img id="user-avatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="user-avatar" alt="Avatar">
+                <div class="user-details">
+                    <h4 id="user-name">Đang tải...</h4>
+                    <span id="user-role-badge" class="user-badge badge-gvcn">GVCN</span>
                 </div>
             </div>
-            <div class="header-right" onclick="window.location.reload()">
-                <div class="header-logo-container">
-                    <img src="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" alt="Logo">
-                </div>
-            </div>
+            <button onclick="handleLogout()" class="btn-icon-header" title="Đăng xuất">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
         </header>
 
-        <!-- Dropdown cài đặt bảo mật -->
-        <div id="settings-dropdown" class="dropdown-menu">
-            <div class="dropdown-header">Thiết lập bảo mật</div>
-            <button onclick="toggleBiometricsSetting()" class="dropdown-item" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-fingerprint" style="font-size: 1.1rem;"></i>
-                    <span>Vân tay / FaceID</span>
-                </div>
-                <div class="switch-toggle" id="bio-toggle-switch">
-                    <span class="switch-handle"></span>
-                </div>
-            </button>
-            <button onclick="resetDevicePasscode()" class="dropdown-item">
-                <i class="fas fa-key"></i> Đổi mã PIN thiết bị
-            </button>
-            <hr>
-            <button onclick="handleLogout()" class="dropdown-item text-danger">
-                <i class="fas fa-sign-out-alt"></i> Đăng xuất tài khoản
-            </button>
-        </div>
-
-        <main class="main-content container">
-            <!-- Thanh chọn ngày -->
-            <div class="date-toolbar">
-                <button onclick="changeDateMobile(-1)" class="date-btn"><i class="fas fa-chevron-left"></i></button>
-                <div class="date-display" onclick="document.getElementById('m-dd-date').showPicker()">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span id="date-label">Hôm nay</span>
-                    <input type="date" id="m-dd-date" style="position:absolute; opacity:0; pointer-events:none;" onchange="onDateChanged()">
-                </div>
-                <button onclick="changeDateMobile(1)" class="date-btn"><i class="fas fa-chevron-right"></i></button>
-            </div>
-
-            <!-- Khung Ghi nhận vắng -->
-            <div class="form-card">
-                <div class="section-title"><i class="fas fa-user-edit" style="color:var(--primary);"></i> Ghi nhận vắng mặt</div>
-
-                <!-- Tìm kiếm nhanh -->
-                <div class="search-box">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="m-quick-search" placeholder="Gõ tên, Lớp, Mã HS..." oninput="handleQuickSearchMobile(this.value)">
-                    <div id="m-search-dropdown" class="search-dropdown"></div>
-                </div>
-
-                <!-- Lớp & Học sinh -->
-                <div class="row-grid">
-                    <div class="input-wrap">
-                        <label>Lớp</label>
-                        <input type="text" id="m-class" placeholder="VD: 12A1" onblur="fetchStudentsByClass()">
-                    </div>
-                    <div class="input-wrap">
-                        <label>Chọn Học Sinh</label>
-                        <select id="m-student">
-                            <option value="">-- Nhập lớp trước --</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Chọn lý do nghỉ -->
-                <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--text-muted); margin-bottom:6px;">Lý do vắng mặt</label>
-                <div class="reason-group">
-                    <div class="reason-pill">
-                        <input type="radio" name="m-reason" id="r-p" value="P" checked onchange="toggleSickInput(false)">
-                        <label for="r-p"><i class="fas fa-check-circle" style="margin-bottom:3px;"></i> Có phép</label>
-                    </div>
-                    <div class="reason-pill">
-                        <input type="radio" name="m-reason" id="r-kp" value="KP" onchange="toggleSickInput(false)">
-                        <label for="r-kp"><i class="fas fa-times-circle" style="margin-bottom:3px;"></i> Không phép</label>
-                    </div>
-                    <div class="reason-pill">
-                        <input type="radio" name="m-reason" id="r-b" value="B" onchange="toggleSickInput(true)">
-                        <label for="r-b"><i class="fas fa-head-side-cough" style="margin-bottom:3px;"></i> Bệnh</label>
-                    </div>
-                </div>
-
-                <!-- Triệu chứng (khi nghỉ bệnh) -->
-                <div id="sick-detail-box" class="sick-box">
-                    <label><i class="fas fa-stethoscope"></i> Triệu chứng học sinh gặp phải (*):</label>
-                    <input type="text" id="m-symptom" placeholder="VD: Sốt cao, nôn ói, đau bụng...">
-                    <small style="font-size:0.72rem; color:#b91c1c; display:block; margin-top:4px;">
-                        * Hệ thống tự động gửi cảnh báo đến <strong>Phòng Y Tế</strong> để cập nhật chẩn đoán.
-                    </small>
-                </div>
-
-                <button id="btn-save" onclick="saveMobileAttendance()" class="btn-submit">
-                    <i class="fas fa-save"></i> Lưu Điểm Danh
+        <main class="app-container">
+            <!-- THANH ĐIỀU HƯỚNG TAB -->
+            <div class="nav-segments">
+                <button class="nav-segment-btn active" onclick="switchTab('pane-attendance', this)">
+                    <i class="fas fa-edit"></i> Điểm danh
+                </button>
+                <button class="nav-segment-btn" onclick="switchTab('pane-history', this)">
+                    <i class="fas fa-clipboard-list"></i> Danh sách vắng (<span id="absent-today-count">0</span>)
                 </button>
             </div>
 
-            <!-- Danh sách đã ghi nhận trong ngày -->
-            <div class="history-card">
-                <div class="section-title" style="justify-content: space-between;">
-                    <span><i class="fas fa-list-check" style="color:var(--primary);"></i> Danh sách đã ghi nhận</span>
-                    <span id="count-badge" class="badge" style="background:#e2e8f0; color:#334155;">0 HS</span>
+            <!-- TAB 1: FORM ĐIỂM DANH -->
+            <section id="pane-attendance">
+                <div class="app-card">
+                    <!-- BỘ CHỌN NGÀY THÔNG MINH -->
+                    <div class="date-stepper">
+                        <button type="button" onclick="adjustDate(-1)"><i class="fas fa-chevron-left"></i></button>
+                        <div class="date-display" onclick="document.getElementById('att-date-input').showPicker()">
+                            <i class="far fa-calendar-alt"></i>
+                            <span id="date-text-display">Hôm nay</span>
+                            <input type="date" id="att-date-input" style="opacity: 0; width: 0; position: absolute;" onchange="onDateChanged()">
+                        </div>
+                        <button type="button" onclick="adjustDate(1)"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+
+                    <!-- CHỌN LỚP (TỰ ĐỘNG KHÓA / PHÂN QUYỀN) -->
+                    <div class="form-group">
+                        <label class="form-label">Lớp phụ trách</label>
+                        <select id="class-select" class="form-control" onchange="loadStudentsOfSelectedClass()">
+                            <option value="">-- Đang nạp danh sách lớp --</option>
+                        </select>
+                    </div>
+
+                    <!-- CHỌN HỌC SINH -->
+                    <div class="form-group">
+                        <label class="form-label">Học sinh vắng</label>
+                        <select id="student-select" class="form-control">
+                            <option value="">-- Chọn lớp trước --</option>
+                        </select>
+                    </div>
+
+                    <!-- LÝ DO VẮNG (CHIPS TRỰC QUAN) -->
+                    <div class="form-group">
+                        <label class="form-label">Lý do nghỉ</label>
+                        <div class="reason-grid">
+                            <div class="reason-chip active-p" onclick="selectReason('P', this)">
+                                <span class="icon">📝</span>
+                                <span class="txt">Có phép (P)</span>
+                            </div>
+                            <div class="reason-chip" onclick="selectReason('KP', this)">
+                                <span class="icon">⚠️</span>
+                                <span class="txt">Không phép (KP)</span>
+                            </div>
+                            <div class="reason-chip" onclick="selectReason('B', this)">
+                                <span class="icon">🩺</span>
+                                <span class="txt">Báo bệnh (B)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KHU VỰC NHẬP TRIỆU CHỨNG NGHỈ BỆNH -->
+                    <div id="sick-box" class="sick-notice-box">
+                        <label class="form-label" style="color: #92400e;"><i class="fas fa-notes-medical"></i> Triệu chứng học sinh báo</label>
+                        <input type="text" id="symptom-input" class="form-control" style="background:#fff;" placeholder="VD: Sốt cao, đau bụng, đau mắt đỏ...">
+                        <small>💡 Thông tin ca bệnh sẽ được gửi trực tiếp tới Chuông cảnh báo Y Tế để nhân viên Y tế xác minh và hoàn thiện chẩn đoán lâm sàng.</small>
+                    </div>
+
+                    <button type="button" onclick="submitAttendance()" id="btn-save" class="btn-submit">
+                        <i class="fas fa-check-circle"></i> Ghi nhận điểm danh
+                    </button>
                 </div>
-                <div id="attendance-list-container">
-                    <p style="text-align:center; color:#94a3b8; font-size:0.85rem; padding:15px 0;">Đang nạp dữ liệu...</p>
+            </section>
+
+            <!-- TAB 2: DANH SÁCH ĐÃ VẮNG TRONG NGÀY -->
+            <section id="pane-history" style="display: none;">
+                <div id="absent-list-container">
+                    <div class="empty-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Đang tải dữ liệu điểm danh...</p>
+                    </div>
                 </div>
-            </div>
+            </section>
         </main>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast">Thông báo</div>
-
-    <!-- FIREBASE & CRYPTO JS -->
+    <!-- FIREBASE & CORE LIBS -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="../assets/config.js"></script>
+    <script src="../assets/js/crypto.js"></script>
 
     <script>
-        /* =========================================================================
-           1. HỆ THỐNG GHI NHẬT KÝ HỆ THỐNG (TƯƠNG TỰ ADMIN.HTML)
-           ========================================================================= */
-        async function logActivity(action, details, target = "") {
-            try {
-                const user = firebase.auth().currentUser;
-                const logEntry = {
-                    action: action,                                           // Tên hành động: Điểm danh, Hủy điểm danh, Xác thực...
-                    details: details,                                         // Chi tiết mô tả
-                    target: target || "",                                     // Đối tượng (Mã HS, Tên Lớp, Thiết bị...)
-                    user: user ? (user.displayName || user.email) : "Hệ thống Mobile",
-                    userEmail: user ? user.email.toLowerCase() : "unknown",
-                    role: "Điểm Danh / CTV",
-                    platform: "Mobile Điểm Danh",
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    createdAt: new Date().toISOString()
-                };
-                await db.collection("yt_logs").add(logEntry);
-            } catch (err) {
-                console.error("Lỗi ghi nhật ký hệ thống:", err);
-            }
-        }
+        /* CORE ATTENDANCE APP ENGINE */
 
-        /* =========================================================================
-           2. BẢO MẬT: MÃ HÓA PIN, WEBAUTHN & QUẢN LÝ THIẾT BỊ
-           ========================================================================= */
-        const APP_STORAGE_KEY = "vts_dd_device_auth";
-        let enteredPasscode = "";
-        let tempPasscode = "";
-        let currentAuthUser = null;
-        let allStudentsMobileCache = [];
+        let currentUser = null;
+        let currentUserRole = 'none'; // 'admin' | 'quansinh' | 'gvcn'
+        let allowedClasses = [];      // Danh sách lớp được phép điểm danh
+        let allStudentsCache = [];    // Cache toàn bộ học sinh (đọc 1 lần, 0 cost)
+        let selectedReason = 'P';     // Mặc định 'P'
 
-        function hashPIN(pin) {
-            return CryptoJS.SHA256("VTS_SALT_2026_" + pin).toString();
-        }
+        // PIN States
+        let pinInput = [];
+        let pinConfirmInput = [];
+        let isConfirmingPIN = false;
+        let unlockPinInput = [];
 
-        function getStoredAuth() {
-            try {
-                return JSON.parse(localStorage.getItem(APP_STORAGE_KEY)) || null;
-            } catch (e) {
-                return null;
-            }
-        }
-
-        function saveStoredAuth(data) {
-            localStorage.setItem(APP_STORAGE_KEY, JSON.stringify(data));
-        }
-
-        // Kiểm tra Auth State khi nạp trang
-        window.addEventListener("DOMContentLoaded", () => {
-            renderKeyboards();
-            checkAppAuthState();
+        // 1. KHỞI CHẠY HỆ THỐNG
+        window.addEventListener('DOMContentLoaded', () => {
+            initNumpads();
+            initDate();
+            checkAppSession();
         });
 
-        function checkAppAuthState() {
-            const authData = getStoredAuth();
-            firebase.auth().onAuthStateChanged(async (user) => {
-                if (!user) {
-                    showStep("step-google-login");
-                    return;
+        // 2. KHỞI TẠO BÀN PHÍM PIN SỐ TỐI GIẢN
+        function initNumpads() {
+            const makePad = (containerId, onKey) => {
+                const c = document.getElementById(containerId);
+                c.innerHTML = '';
+                for (let i = 1; i <= 9; i++) {
+                    const btn = document.createElement('button');
+                    btn.className = 'num-key';
+                    btn.innerText = i;
+                    btn.onclick = () => onKey(i);
+                    c.appendChild(btn);
                 }
-                currentAuthUser = user;
+                // Biometric / Empty Key
+                const bioBtn = document.createElement('button');
+                bioBtn.className = 'num-key ghost';
+                bioBtn.innerHTML = '<i class="fas fa-fingerprint"></i>';
+                bioBtn.onclick = () => triggerBiometrics();
+                c.appendChild(bioBtn);
 
-                // Kiểm tra quyền: Admin hoặc có trong yt_collaborators
-                const isAllowed = await verifyUserRole(user.email);
-                if (!isAllowed) {
-                    document.getElementById("auth-screen").style.display = "none";
-                    document.getElementById("denied-screen").style.display = "flex";
-                    return;
-                }
+                // Zero
+                const zero = document.createElement('button');
+                zero.className = 'num-key';
+                zero.innerText = '0';
+                zero.onclick = () => onKey(0);
+                c.appendChild(zero);
 
-                // Nếu chưa tạo PIN thiết bị -> Bước tạo PIN
-                if (!authData || !authData.pinHash) {
-                    showStep("step-set-passcode");
+                // Backspace
+                const del = document.createElement('button');
+                del.className = 'num-key ghost';
+                del.innerHTML = '<i class="fas fa-backspace"></i>';
+                del.onclick = () => onKey('del');
+                c.appendChild(del);
+            };
+
+            makePad('setup-numpad', handleSetupPinKey);
+            makePad('unlock-numpad', handleUnlockPinKey);
+        }
+
+        // 3. KIỂM TRA PHIÊN & KHÓA ỨNG DỤNG KHI QUAY LẠI
+        function checkAppSession() {
+            const isRegistered = localStorage.getItem('vts_dd_registered') === 'true';
+            const isUnlocked = sessionStorage.getItem('vts_dd_unlocked') === 'true';
+
+            if (isRegistered) {
+                if (isUnlocked) {
+                    verifyUserPermission();
                 } else {
-                    // Đã đăng ký thiết bị -> Màn hình nhập PIN
-                    showStep("step-login");
-                    if (authData.biometricEnabled && window.PublicKeyCredential) {
-                        document.getElementById("btn-bio-trigger").style.display = "inline-flex";
-                        triggerBiometricAuth(); // Tự động gợi ý mở vân tay
+                    showAuthStep('step-unlock');
+                    setTimeout(triggerBiometrics, 300);
+                }
+            } else {
+                showAuthStep('step-google');
+            }
+        }
+
+        function showAuthStep(stepId) {
+            ['step-google', 'step-set-pin', 'step-unlock'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = (id === stepId) ? 'block' : 'none';
+            });
+        }
+
+        // 4. XÁC THỰC GOOGLE LOGIN
+        function handleGoogleAuth() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+                .then(() => firebase.auth().signInWithPopup(provider))
+                .then(async (res) => {
+                    const valid = await checkUserRole(res.user);
+                    if (valid) {
+                        showAuthStep('step-set-pin');
+                    } else {
+                        alert("⛔ Tài khoản của bạn không được phân quyền sử dụng App Điểm Danh!");
+                        firebase.auth().signOut();
+                    }
+                })
+                .catch(err => alert("Lỗi đăng nhập: " + err.message));
+        }
+
+        // XỬ LÝ NHẬP PIN KHI TẠO
+        function handleSetupPinKey(key) {
+            let targetArray = isConfirmingPIN ? pinConfirmInput : pinInput;
+            if (key === 'del') targetArray.pop();
+            else if (targetArray.length < 6) targetArray.push(key);
+
+            updateDots('setup-pin-dots', targetArray.length);
+
+            if (targetArray.length === 6) {
+                if (!isConfirmingPIN) {
+                    setTimeout(() => {
+                        isConfirmingPIN = true;
+                        document.getElementById('pin-title').innerText = "XÁC NHẬN MÃ PIN";
+                        document.getElementById('pin-desc').innerText = "Nhập lại mã PIN 6 số vừa tạo";
+                        updateDots('setup-pin-dots', 0);
+                    }, 200);
+                } else {
+                    if (pinInput.join('') === pinConfirmInput.join('')) {
+                        localStorage.setItem('vts_dd_pin', pinInput.join(''));
+                        localStorage.setItem('vts_dd_registered', 'true');
+                        trySetupBiometric();
+                    } else {
+                        alert("Mã PIN không trùng khớp. Vui lòng tạo lại!");
+                        pinInput = [];
+                        pinConfirmInput = [];
+                        isConfirmingPIN = false;
+                        document.getElementById('pin-title').innerText = "TẠO MÃ PIN TRUY CẬP";
+                        document.getElementById('pin-desc').innerText = "Nhập 6 số để đăng nhập nhanh mỗi ngày";
+                        updateDots('setup-pin-dots', 0);
                     }
                 }
+            }
+        }
+
+        // XỬ LÝ MỞ KHÓA PIN
+        function handleUnlockPinKey(key) {
+            if (key === 'del') unlockPinInput.pop();
+            else if (unlockPinInput.length < 6) unlockPinInput.push(key);
+
+            updateDots('unlock-pin-dots', unlockPinInput.length);
+
+            if (unlockPinInput.length === 6) {
+                const savedPIN = localStorage.getItem('vts_dd_pin');
+                if (unlockPinInput.join('') === savedPIN) {
+                    sessionStorage.setItem('vts_dd_unlocked', 'true');
+                    verifyUserPermission();
+                } else {
+                    alert("Sai mã PIN!");
+                    unlockPinInput = [];
+                    updateDots('unlock-pin-dots', 0);
+                }
+            }
+        }
+
+        function updateDots(containerId, len) {
+            const dots = document.querySelectorAll(`#${containerId} span`);
+            dots.forEach((d, idx) => {
+                if (idx < len) d.classList.add('active');
+                else d.classList.remove('active');
             });
         }
 
-        async function verifyUserRole(email) {
-            email = (email || "").toLowerCase();
-            if (typeof ALLOWED_ADMIN_EMAILS !== "undefined" && ALLOWED_ADMIN_EMAILS.includes(email)) {
+        // SINH TRẮC HỌC (BIOMETRIC WEBAUTHN)
+        async function trySetupBiometric() {
+            if (window.PublicKeyCredential) {
+                try {
+                    const opt = {
+                        publicKey: {
+                            challenge: new Uint8Array([1, 2, 3, 4, 5]),
+                            rp: { name: "VTS Attendance" },
+                            user: { id: new Uint8Array([1]), name: "user", displayName: "User" },
+                            pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+                            authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" }
+                        }
+                    };
+                    const cred = await navigator.credentials.create(opt);
+                    if (cred) {
+                        const rawId = new Uint8Array(cred.rawId);
+                        localStorage.setItem('vts_dd_bio_id', btoa(String.fromCharCode.apply(null, rawId)));
+                    }
+                } catch(e) {}
+            }
+            sessionStorage.setItem('vts_dd_unlocked', 'true');
+            verifyUserPermission();
+        }
+
+        async function triggerBiometrics() {
+            const bioId = localStorage.getItem('vts_dd_bio_id');
+            if (!bioId || !window.PublicKeyCredential) return;
+            try {
+                const rawId = Uint8Array.from(atob(bioId), c => c.charCodeAt(0));
+                const assertion = await navigator.credentials.get({
+                    publicKey: {
+                        challenge: new Uint8Array([1, 2, 3, 4, 5]),
+                        allowCredentials: [{ id: rawId, type: "public-key" }],
+                        userVerification: "required"
+                    }
+                });
+                if (assertion) {
+                    sessionStorage.setItem('vts_dd_unlocked', 'true');
+                    verifyUserPermission();
+                }
+            } catch(e) {}
+        }
+
+        // 5. KIỂM TRA PHÂN QUYỀN (GVCN / QUẢN SINH / ADMIN)
+        async function checkUserRole(user) {
+            if (!user) return false;
+            const email = user.email.toLowerCase();
+
+            // LỚP 1: Super Admin
+            if (ALLOWED_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email)) {
+                currentUserRole = 'admin';
+                currentUser = { displayName: user.displayName || 'Admin', email: user.email, photoURL: user.photoURL };
+                allowedClasses = ['ALL'];
                 return true;
             }
-            try {
-                const snap = await db.collection("yt_collaborators")
-                    .where("email", "==", email)
-                    .where("active", "==", true)
-                    .get();
-                return !snap.empty;
-            } catch (e) {
-                console.error("Lỗi xác minh quyền:", e);
-                return false;
+
+            // LỚP 2: Quản sinh hoặc GVCN từ yt_collaborators
+            const snap = await db.collection("yt_collaborators").where("email", "==", email).get();
+            if (!snap.empty) {
+                const data = snap.docs[0].data();
+                const todayStr = new Date().toISOString().split('T')[0];
+
+                if (data.status !== 'active') return false;
+                if (data.expiryDate && data.expiryDate < todayStr) return false;
+
+                currentUserRole = data.role || 'collaborator';
+                currentUser = { displayName: data.name || user.displayName, email: user.email, photoURL: user.photoURL };
+
+                if (currentUserRole === 'quansinh') {
+                    allowedClasses = ['ALL']; // Quản sinh truy cập toàn trường
+                } else if (currentUserRole === 'gvcn') {
+                    // GVCN: Lấy các lớp được phân công
+                    allowedClasses = data.assignedClasses || (data.class ? [data.class] : []);
+                }
+                return true;
             }
+            return false;
         }
 
-        function showStep(stepId) {
-            document.getElementById("auth-screen").style.display = "flex";
-            document.getElementById("app-screen").style.display = "none";
-            document.getElementById("denied-screen").style.display = "none";
-            document.querySelectorAll(".auth-card").forEach(el => el.style.display = "none");
-            
-            const target = document.getElementById(stepId);
-            if (target) target.style.display = "block";
-            enteredPasscode = "";
-            updateDots(stepId.replace("step-", "") + "-dots");
-        }
+        // 6. NẠP DỮ LIỆU APP CHÍNH
+        async function verifyUserPermission() {
+            firebase.auth().onAuthStateChanged(async (user) => {
+                if (user && await checkUserRole(user)) {
+                    document.getElementById('auth-screen').style.display = 'none';
+                    document.getElementById('app-main').style.display = 'block';
 
-        // Bàn phím số ảo
-        function renderKeyboards() {
-            const keys = [1, 2, 3, 4, 5, 6, 7, 8, 9, "C", 0, "⌫"];
-            ["setup", "confirm", "login"].forEach(type => {
-                const container = document.getElementById(`${type}-keyboard`);
-                if (!container) return;
-                container.innerHTML = keys.map(k => {
-                    if (k === "C") return `<button type="button" class="btn-key action" onclick="handleKeyPress('CLEAR', '${type}')">C</button>`;
-                    if (k === "⌫") return `<button type="button" class="btn-key action" onclick="handleKeyPress('BACK', '${type}')"><i class="fas fa-backspace"></i></button>`;
-                    return `<button type="button" class="btn-key" onclick="handleKeyPress('${k}', '${type}')">${k}</button>`;
-                }).join("");
+                    // Cập nhật Header
+                    document.getElementById('user-name').innerText = currentUser.displayName;
+                    if (currentUser.photoURL) document.getElementById('user-avatar').src = currentUser.photoURL;
+
+                    const roleBadge = document.getElementById('user-role-badge');
+                    if (currentUserRole === 'admin') {
+                        roleBadge.innerText = 'Admin';
+                        roleBadge.className = 'user-badge badge-admin';
+                    } else if (currentUserRole === 'quansinh') {
+                        roleBadge.innerText = 'Quản Sinh';
+                        roleBadge.className = 'user-badge badge-quansinh';
+                    } else {
+                        roleBadge.innerText = 'GVCN';
+                        roleBadge.className = 'user-badge badge-gvcn';
+                    }
+
+                    await loadMasterCryptoKey();
+                    await fetchAndCacheStudents();
+                    populateClassDropdown();
+                    loadDailyAbsentRecords();
+                } else {
+                    showAuthStep('step-google');
+                }
             });
         }
 
-        function handleKeyPress(val, type) {
-            if (val === "CLEAR") {
-                enteredPasscode = "";
-            } else if (val === "BACK") {
-                enteredPasscode = enteredPasscode.slice(0, -1);
-            } else if (enteredPasscode.length < 6) {
-                enteredPasscode += val;
+        // 7. CACHE DỮ LIỆU HỌC SINH (0 TỐN KÉM ĐỌC NHIỀU LẦN)
+        async function fetchAndCacheStudents() {
+            const cached = sessionStorage.getItem('vts_students_cache');
+            if (cached) {
+                allStudentsCache = JSON.parse(cached);
+                return;
             }
-
-            updateDots(`${type === "set-passcode" ? "setup" : type}-dots`);
-
-            if (enteredPasscode.length === 6) {
-                setTimeout(() => processPasscode(type), 150);
-            }
+            const snap = await db.collection('yt_students').get();
+            allStudentsCache = [];
+            snap.forEach(doc => allStudentsCache.push({ id: doc.id, ...doc.data() }));
+            sessionStorage.setItem('vts_students_cache', JSON.stringify(allStudentsCache));
         }
 
-        function updateDots(dotsId) {
-            const dotsEl = document.getElementById(dotsId);
-            if (!dotsEl) return;
-            const spans = dotsEl.querySelectorAll("span");
-            spans.forEach((span, i) => {
-                span.classList.toggle("filled", i < enteredPasscode.length);
-            });
-        }
+        // ĐỔ LỚP VÀO DROPDOWN PHÙ HỢP VỚI QUYỀN
+        function populateClassDropdown() {
+            const classSelect = document.getElementById('class-select');
+            classSelect.innerHTML = '';
 
-        async function processPasscode(type) {
-            if (type === "setup" || type === "set-passcode") {
-                tempPasscode = enteredPasscode;
-                showStep("step-confirm-passcode");
-            } else if (type === "confirm" || type === "confirm-passcode") {
-                if (enteredPasscode === tempPasscode) {
-                    const authData = getStoredAuth() || {};
-                    authData.pinHash = hashPIN(enteredPasscode);
-                    authData.userEmail = currentAuthUser.email;
-                    saveStoredAuth(authData);
-
-                    await logActivity("Thiết lập mã PIN", "Người dùng tạo mới mã PIN thiết bị", currentAuthUser.email);
-                    showStep("step-biometric-setup");
-                } else {
-                    alert("Mã PIN không khớp! Vui lòng tạo lại.");
-                    showStep("step-set-passcode");
-                }
-            } else if (type === "login") {
-                const authData = getStoredAuth();
-                if (authData && authData.pinHash === hashPIN(enteredPasscode)) {
-                    await logActivity("Đăng nhập PIN", "Đăng nhập thành công qua mã PIN thiết bị");
-                    enterApp();
-                } else {
-                    alert("Mã PIN không chính xác!");
-                    enteredPasscode = "";
-                    updateDots("login-dots");
-                }
-            }
-        }
-
-        /* --- XỬ LÝ SINH TRẮC HỌC (WEBAUTHN) --- */
-        async function enableBiometric(enable) {
-            const authData = getStoredAuth() || {};
-            authData.biometricEnabled = enable;
-            saveStoredAuth(authData);
-
-            if (enable) {
-                await logActivity("Kích hoạt Sinh trắc học", "Bật tính năng Vân tay/FaceID trên thiết bị");
-            }
-            enterApp();
-        }
-
-        async function triggerBiometricAuth() {
-            try {
-                if (!window.PublicKeyCredential) return;
-                // Tạo một challenge giả lập xác thực thiết bị cục bộ
-                const challenge = new Uint8Array(32);
-                window.crypto.getRandomValues(challenge);
-
-                await logActivity("Đăng nhập Sinh trắc học", "Xác thực Vân tay / FaceID thành công");
-                enterApp();
-            } catch (err) {
-                console.log("Hủy sinh trắc học hoặc không hỗ trợ:", err);
-            }
-        }
-
-        /* --- VÀO GIAO DIỆN CHÍNH SAU KHI MỞ KHÓA --- */
-        function enterApp() {
-            document.getElementById("auth-screen").style.display = "none";
-            document.getElementById("app-screen").style.display = "block";
-
-            // Cập nhật thông tin Header
-            document.getElementById("admin-display-name").innerText = currentAuthUser.displayName || "Cộng Tác Viên";
-            if (currentAuthUser.photoURL) {
-                document.getElementById("admin-avatar").src = currentAuthUser.photoURL;
-            }
-
-            // Đồng bộ trạng thái Switch Sinh trắc học trong menu
-            const authData = getStoredAuth() || {};
-            const switchEl = document.getElementById("bio-toggle-switch");
-            if (switchEl) {
-                switchEl.classList.toggle("active", !!authData.biometricEnabled);
-            }
-
-            // Thiết lập ngày mặc định
-            document.getElementById("m-dd-date").valueAsDate = new Date();
-            updateDateDisplay();
-
-            loadMobileStudentsCache();
-            loadDailyAttendanceMobile();
-        }
-
-        async function handleGoogleAuth() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            try {
-                const result = await firebase.auth().signInWithPopup(provider);
-                await logActivity("Xác thực Google", `Đăng nhập tài khoản Google: ${result.user.email}`);
-            } catch (err) {
-                alert("Lỗi xác thực Google: " + err.message);
-            }
-        }
-
-        async function handleLogout() {
-            if (confirm("Bạn có chắc chắn muốn đăng xuất?")) {
-                await logActivity("Đăng xuất", "Người dùng đăng xuất khỏi ứng dụng điểm danh");
-                firebase.auth().signOut().then(() => {
-                    localStorage.removeItem(APP_STORAGE_KEY);
-                    window.location.reload();
-                });
-            }
-        }
-
-        function resetDevicePasscode() {
-            if (confirm("Bạn muốn thiết lập lại mã PIN cho thiết bị này?")) {
-                toggleSettingsDropdown();
-                showStep("step-set-passcode");
-            }
-        }
-
-        function toggleSettingsDropdown() {
-            const menu = document.getElementById("settings-dropdown");
-            menu.classList.toggle("show");
-        }
-
-        async function toggleBiometricsSetting() {
-            const authData = getStoredAuth() || {};
-            authData.biometricEnabled = !authData.biometricEnabled;
-            saveStoredAuth(authData);
-
-            const switchEl = document.getElementById("bio-toggle-switch");
-            if (switchEl) switchEl.classList.toggle("active", authData.biometricEnabled);
-
-            await logActivity(
-                authData.biometricEnabled ? "Bật Sinh trắc học" : "Tắt Sinh trắc học",
-                "Thay đổi cài đặt sinh trắc học trong menu bảo mật"
-            );
-            showToast(authData.biometricEnabled ? "Đã bật Vân tay / FaceID" : "Đã tắt Vân tay / FaceID");
-        }
-
-        /* =========================================================================
-           3. NGHIỆP VỤ ĐIỂM DANH & TÌM KIẾM HỌC SINH
-           ========================================================================= */
-        function updateDateDisplay() {
-            const val = document.getElementById("m-dd-date").value;
-            if (!val) return;
-            const d = new Date(val);
-            const today = new Date();
-            
-            if (d.toDateString() === today.toDateString()) {
-                document.getElementById("date-label").innerText = `Hôm nay (${d.toLocaleDateString("vi-VN")})`;
+            let classList = [];
+            if (allowedClasses.includes('ALL')) {
+                // Lấy toàn bộ danh sách lớp duy nhất từ danh sách học sinh
+                const set = new Set(allStudentsCache.map(s => (s.class || '').trim().toUpperCase()).filter(Boolean));
+                classList = Array.from(set).sort((a, b) => a.localeCompare(b, 'vi', { numeric: true }));
             } else {
-                document.getElementById("date-label").innerText = d.toLocaleDateString("vi-VN");
+                classList = allowedClasses.map(c => c.trim().toUpperCase());
             }
-        }
 
-        function changeDateMobile(days) {
-            const input = document.getElementById("m-dd-date");
-            let d = new Date(input.value || new Date());
-            d.setDate(d.getDate() + days);
-            
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, "0");
-            const dd = String(d.getDate()).padStart(2, "0");
-            input.value = `${yyyy}-${mm}-${dd}`;
-            
-            updateDateDisplay();
-            loadDailyAttendanceMobile();
-        }
-
-        function onDateChanged() {
-            updateDateDisplay();
-            loadDailyAttendanceMobile();
-        }
-
-        function toggleSickInput(isSick) {
-            document.getElementById("sick-detail-box").style.display = isSick ? "block" : "none";
-        }
-
-        async function loadMobileStudentsCache() {
-            try {
-                const snap = await db.collection("yt_students").get();
-                allStudentsMobileCache = [];
-                snap.forEach(doc => {
-                    allStudentsMobileCache.push({ id: doc.id, ...doc.data() });
-                });
-            } catch (e) {
-                console.error("Lỗi tải cache học sinh:", e);
-            }
-        }
-
-        function removeTone(str) {
-            if (!str) return "";
-            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
-        }
-
-        function handleQuickSearchMobile(query) {
-            const dropdown = document.getElementById("m-search-dropdown");
-            if (!query || query.trim().length < 2) {
-                dropdown.style.display = "none";
+            if (classList.length === 0) {
+                classSelect.innerHTML = '<option value="">(Chưa được phân công lớp)</option>';
                 return;
             }
 
-            const q = removeTone(query.trim());
-            const matched = allStudentsMobileCache.filter(s => {
-                const name = removeTone(s.name || "");
-                const cls = removeTone(s.class || "");
-                const maHS = removeTone(s.studentCode || "");
-                return name.includes(q) || cls.includes(q) || maHS.includes(q);
-            }).slice(0, 10);
+            classSelect.innerHTML = '<option value="">-- Chọn Lớp --</option>';
+            classList.forEach(c => {
+                classSelect.innerHTML += `<option value="${c}">Lớp ${c}</option>`;
+            });
 
-            if (matched.length === 0) {
-                dropdown.innerHTML = '<div style="padding:12px; color:#ef4444; text-align:center; font-size:0.85rem;">Không tìm thấy!</div>';
-            } else {
-                dropdown.innerHTML = matched.map(s => `
-                    <div class="search-item" onclick="selectQuickStudent('${s.id}', '${s.class}')">
-                        <strong>${s.name}</strong> - Lớp: <span style="color:#2563eb; font-weight:bold;">${s.class}</span>
-                        <div style="font-size:0.72rem; color:#64748b;">Mã HS: ${s.studentCode || "N/A"} | Mã YT: ${s.id}</div>
-                    </div>
-                `).join("");
-            }
-            dropdown.style.display = "block";
-        }
-
-        async function selectQuickStudent(studentId, studentClass) {
-            document.getElementById("m-search-dropdown").style.display = "none";
-            document.getElementById("m-quick-search").value = "";
-            document.getElementById("m-class").value = studentClass;
-
-            await fetchStudentsByClass();
-            document.getElementById("m-student").value = studentId;
-            showToast("Đã chọn học sinh!");
-        }
-
-        async function fetchStudentsByClass() {
-            const cls = document.getElementById("m-class").value.trim().toUpperCase();
-            const sel = document.getElementById("m-student");
-            if (!cls) return;
-
-            sel.innerHTML = "<option>Đang tải...</option>";
-            try {
-                const snap = await db.collection("yt_students").where("class", "==", cls).get();
-                if (snap.empty) {
-                    sel.innerHTML = "<option value=''>(Không có học sinh trong lớp)</option>";
-                    return;
-                }
-                let list = [];
-                snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-                list.sort((a, b) => (a.name || "").localeCompare(b.name || "", "vi"));
-
-                sel.innerHTML = "<option value=''>-- Chọn Học Sinh --</option>" + 
-                    list.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
-            } catch (e) {
-                sel.innerHTML = "<option value=''>(Lỗi tải danh sách)</option>";
+            // Nếu chỉ có 1 lớp được phân công, tự động chọn luôn
+            if (classList.length === 1) {
+                classSelect.value = classList[0];
+                loadStudentsOfSelectedClass();
             }
         }
 
-        /* --- LƯU ĐIỂM DANH & GHI LOG CHI TIẾT --- */
-        async function saveMobileAttendance() {
-            const date = document.getElementById("m-dd-date").value;
-            const studentSel = document.getElementById("m-student");
-            const sid = studentSel.value;
-            const sname = studentSel.options[studentSel.selectedIndex]?.text;
-            const cls = document.getElementById("m-class").value.trim().toUpperCase();
-            const reason = document.querySelector('input[name="m-reason"]:checked')?.value;
-            const btn = document.getElementById("btn-save");
-
-            if (!date || !sid || !cls || !reason) {
-                return alert("Vui lòng điền đầy đủ Lớp, Học sinh và Lý do nghỉ!");
+        // KHI CHỌN LỚP -> NẠP HỌC SINH TỪ RAM (0MS)
+        function loadStudentsOfSelectedClass() {
+            const selectedClass = document.getElementById('class-select').value;
+            const studentSelect = document.getElementById('student-select');
+            
+            if (!selectedClass) {
+                studentSelect.innerHTML = '<option value="">-- Chọn lớp trước --</option>';
+                return;
             }
 
-            let symptom = "";
-            if (reason === "B") {
-                symptom = document.getElementById("m-symptom").value.trim();
-                if (!symptom) return alert("Vui lòng nhập triệu chứng khi học sinh nghỉ vì lý do Bệnh!");
+            const inClass = allStudentsCache.filter(s => (s.class || '').trim().toUpperCase() === selectedClass);
+            inClass.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi'));
+
+            studentSelect.innerHTML = '<option value="">-- Chọn Học Sinh --</option>';
+            inClass.forEach(s => {
+                studentSelect.innerHTML += `<option value="${s.id}">${s.name} (${s.id})</option>`;
+            });
+        }
+
+        // 8. CHỌN LÝ DO & BẬT TẮT FORM BỆNH
+        function selectReason(reason, el) {
+            selectedReason = reason;
+            document.querySelectorAll('.reason-chip').forEach(c => c.className = 'reason-chip');
+            
+            if (reason === 'P') el.classList.add('active-p');
+            else if (reason === 'KP') el.classList.add('active-kp');
+            else if (reason === 'B') el.classList.add('active-b');
+
+            document.getElementById('sick-box').style.display = (reason === 'B') ? 'block' : 'none';
+        }
+
+        // 9. LƯU ĐIỂM DANH (XỬ LÝ ĐÚNG LOGIC YÊU CẦU)
+        async function submitAttendance() {
+            const date = document.getElementById('att-date-input').value;
+            const classVal = document.getElementById('class-select').value;
+            const studentId = document.getElementById('student-select').value;
+            const studentName = document.getElementById('student-select').options[document.getElementById('student-select').selectedIndex]?.text.split(' (')[0];
+            const symptom = document.getElementById('symptom-input').value.trim();
+
+            if (!date || !classVal || !studentId) {
+                return alert("Vui lòng chọn đầy đủ Ngày, Lớp và Học sinh!");
             }
 
-            btn.disabled = true;
+            if (selectedReason === 'B' && !symptom) {
+                return alert("Học sinh nghỉ bệnh: Vui lòng nhập triệu chứng!");
+            }
+
+            const btn = document.getElementById('btn-save');
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+            btn.disabled = true;
 
             try {
-                const data = {
-                    studentId: sid,
-                    name: sname,
-                    class: cls,
-                    date: date,
-                    reason: reason,
-                    creatorEmail: currentAuthUser.email,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    notificationId: null
+                const batch = db.batch();
+                const attRef = db.collection('yt_attendance').doc();
+
+                const attData = {
+                    studentId,
+                    name: studentName,
+                    class: classVal,
+                    date,
+                    reason: selectedReason,
+                    recordedBy: currentUser.displayName,
+                    recorderRole: currentUserRole,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
-                if (reason === "B") {
-                    data.symptom = symptom;
-                    data.diagnosis = "Chờ NV Y tế chẩn đoán"; 
-                }
+                // TRƯỜNG HỢP 1: NGHỈ BỆNH (B) -> GỬI CẢNH BÁO TỚI CHUÔNG ADMIN ĐỂ ADMIN BỔ SUNG CHẨN ĐOÁN
+                if (selectedReason === 'B') {
+                    attData.symptom = symptom;
+                    attData.diagnosis = "Chờ Phòng Y Tế xác minh";
+                    attData.isPendingAdmin = true;
 
-                // 1. Gửi thông báo đến Tài khoản Học sinh
-                const reasonText = reason === "P" ? "Có phép" : (reason === "KP" ? "Không phép" : "Nghỉ bệnh");
-                const notiDoc = await db.collection("yt_notifications").add({
-                    title: "Thông báo Vắng học",
-                    content: `Học sinh được ghi nhận vắng mặt ngày ${new Date(date).toLocaleDateString("vi-VN")}. Lý do: ${reasonText}.`,
-                    targetType: "student",
-                    targetValue: sid,
-                    sender: currentAuthUser.displayName || currentAuthUser.email,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                data.notificationId = notiDoc.id;
-
-                // 2. Bắn cảnh báo đến Phòng Y Tế nếu là Ca Bệnh
-                if (reason === "B") {
-                    await db.collection("yt_notifications").add({
-                        title: `🚨 Ca Bệnh Mới: ${sname} (${cls})`,
-                        content: `CTV/GVCN báo HS ${sname} (Lớp ${cls}) nghỉ ốm ngày ${new Date(date).toLocaleDateString("vi-VN")}.\nTriệu chứng: "${symptom}".\n👉 Yêu cầu Y Tế liên hệ xác minh chẩn đoán.`,
+                    // Bắn thông báo chuông tới Admin (type: sick_alert để Admin nghe chuông 5s và nhấp nháy tab)
+                    const notiAdminRef = db.collection('yt_notifications').doc();
+                    batch.set(notiAdminRef, {
+                        title: `🚨 BÁO CA BỆNH: ${studentName} - Lớp ${classVal}`,
+                        content: `${currentUser.displayName} (${currentUserRole.toUpperCase()}) báo ca nghỉ bệnh.\n- Học sinh: ${studentName} (Lớp ${classVal})\n- Triệu chứng: ${symptom}\n- Ngày nghỉ: ${new Date(date).toLocaleDateString('vi-VN')}`,
                         targetType: "admin",
                         type: "sick_alert",
-                        studentId: sid,
-                        studentName: sname,
-                        class: cls,
-                        isRead: false,
-                        sender: currentAuthUser.displayName || currentAuthUser.email,
+                        sender: currentUser.displayName,
+                        relatedAttendanceId: attRef.id,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
+                } else {
+                    // TRƯỜNG HỢP 2: CÓ PHÉP (P) HOẶC KHÔNG PHÉP (KP) -> LƯU LUÔN & GỬI THÔNG BÁO CHO HỌC SINH
+                    const notiStudentRef = db.collection('yt_notifications').doc();
+                    const reasonText = selectedReason === 'P' ? 'Có phép' : 'Không phép';
+                    
+                    batch.set(notiStudentRef, {
+                        title: "Thông báo Vắng mặt Điểm danh",
+                        content: `Bạn được ghi nhận vắng mặt vào ngày ${new Date(date).toLocaleDateString('vi-VN')} (${reasonText}).\nNgười ghi nhận: ${currentUser.displayName}.`,
+                        targetType: "student",
+                        targetValue: studentId,
+                        sender: "Giám thị / GVCN",
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    attData.notificationId = notiStudentRef.id;
                 }
 
-                // 3. Ghi vào cơ sở dữ liệu Điểm danh
-                await db.collection("yt_attendance").add(data);
+                batch.set(attRef, attData);
+                await batch.commit();
 
-                // 4. GHI NHẬT KÝ HỆ THỐNG
-                await logActivity(
-                    "Điểm danh vắng",
-                    `Ghi nhận HS ${sname} (Lớp ${cls}) vắng ngày ${date} [${reasonText}${symptom ? " - TC: " + symptom : ""}]`,
-                    sid
-                );
+                alert(selectedReason === 'B' ? "✅ Đã ghi nhận & gửi thông báo ca bệnh tới Phòng Y Tế!" : "✅ Đã ghi nhận điểm danh thành công!");
 
-                showToast("✅ Đã lưu điểm danh thành công!");
-                
-                document.getElementById("m-symptom").value = "";
-                document.getElementById("r-p").checked = true;
-                toggleSickInput(false);
-                loadDailyAttendanceMobile();
+                // Reset Form
+                document.getElementById('symptom-input').value = '';
+                document.getElementById('student-select').value = '';
+                selectReason('P', document.querySelector('.reason-chip'));
+                loadDailyAbsentRecords();
 
-            } catch (e) {
-                console.error("Lỗi lưu điểm danh:", e);
-                alert("Lỗi: " + e.message);
+            } catch (err) {
+                alert("Lỗi lưu điểm danh: " + err.message);
             } finally {
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Ghi nhận điểm danh';
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-save"></i> Lưu Điểm Danh';
             }
         }
 
-        async function loadDailyAttendanceMobile() {
-            const dateStr = document.getElementById("m-dd-date").value;
-            const container = document.getElementById("attendance-list-container");
-            const countBadge = document.getElementById("count-badge");
-            if (!dateStr) return;
-
-            container.innerHTML = '<p style="text-align:center; color:#94a3b8; font-size:0.85rem; padding:15px 0;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</p>';
+        // 10. TẢI DANH SÁCH VẮNG HÔM NAY (ĐÃ LỌC THEO QUYỀN LỚP)
+        async function loadDailyAbsentRecords() {
+            const date = document.getElementById('att-date-input').value;
+            const container = document.getElementById('absent-list-container');
+            if (!date || !container) return;
 
             try {
-                const snap = await db.collection("yt_attendance").where("date", "==", dateStr).get();
-                if (snap.empty) {
-                    container.innerHTML = '<p style="text-align:center; color:#94a3b8; font-size:0.85rem; padding:15px 0;">Không có học sinh vắng trong ngày.</p>';
-                    countBadge.innerText = "0 HS";
+                let snap = await db.collection('yt_attendance').where('date', '==', date).get();
+                let records = [];
+                snap.forEach(d => records.push({ id: d.id, ...d.data() }));
+
+                // Lọc theo lớp được phân quyền
+                if (!allowedClasses.includes('ALL')) {
+                    records = records.filter(r => allowedClasses.includes((r.class || '').toUpperCase()));
+                }
+
+                document.getElementById('absent-today-count').innerText = records.length;
+
+                if (records.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-user-check"></i>
+                            <p>Không có học sinh nào vắng trong ngày này.</p>
+                        </div>`;
                     return;
                 }
 
-                let list = [];
-                snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-                list.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                let html = '';
+                records.forEach(r => {
+                    const badgeMap = {
+                        'P': '<span class="badge-reason badge-p">Có phép</span>',
+                        'KP': '<span class="badge-reason badge-kp">Không phép</span>',
+                        'B': '<span class="badge-reason badge-b">Bệnh</span>'
+                    };
+                    const badge = badgeMap[r.reason] || '';
 
-                countBadge.innerText = `${list.length} HS`;
-
-                container.innerHTML = list.map(item => {
-                    let badgeClass = "badge-p";
-                    let reasonText = "Có phép";
-                    let extraInfo = "";
-
-                    if (item.reason === "KP") {
-                        badgeClass = "badge-kp";
-                        reasonText = "Không phép";
-                    } else if (item.reason === "B") {
-                        badgeClass = "badge-b";
-                        reasonText = "Bệnh";
-                        extraInfo = `<div style="font-size:0.75rem; color:#b91c1c; margin-top:2px;"><i class="fas fa-virus"></i> ${item.symptom || "Không rõ triệu chứng"} <span style="color:#64748b;">(${item.diagnosis || "Chưa chẩn đoán"})</span></div>`;
-                    }
-
-                    return `
-                        <div class="history-item">
-                            <div class="history-left">
-                                <h5>${item.name} <span style="color:var(--primary); font-weight:bold;">(${item.class})</span></h5>
-                                <p><span class="badge ${badgeClass}">${reasonText}</span></p>
-                                ${extraInfo}
+                    html += `
+                        <div class="absent-card">
+                            <div class="absent-info">
+                                <h5>${r.name} ${badge}</h5>
+                                <span>Lớp: <strong>${r.class}</strong> | Ghi bởi: ${r.recordedBy || 'Hệ thống'}</span>
+                                ${r.reason === 'B' ? `<div style="font-size:0.75rem; color:#d97706; margin-top:3px;">🩺 ${r.symptom || 'Bệnh'}</div>` : ''}
                             </div>
-                            <button onclick="deleteAttendanceMobile('${item.id}', '${item.name}', '${item.notificationId}', '${item.studentId}')" class="btn-del" title="Hủy điểm danh">
+                            <button onclick="deleteAbsentRecord('${r.id}', '${r.name}')" class="btn-delete-record" title="Hủy điểm danh">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
-                        </div>
-                    `;
-                }).join("");
+                        </div>`;
+                });
+                container.innerHTML = html;
 
             } catch (e) {
-                container.innerHTML = `<p style="color:red; font-size:0.85rem;">Lỗi: ${e.message}</p>`;
+                container.innerHTML = `<div style="color:red; text-align:center; padding:20px;">Lỗi: ${e.message}</div>`;
             }
         }
 
-        async function deleteAttendanceMobile(docId, studentName, notificationId, studentId) {
-            if (confirm(`Hủy ghi nhận vắng mặt của học sinh: ${studentName}?`)) {
+        async function deleteAbsentRecord(docId, name) {
+            if (confirm(`Hủy ghi nhận vắng mặt của học sinh ${name}?`)) {
                 try {
-                    await db.collection("yt_attendance").doc(docId).delete();
-                    if (notificationId && notificationId !== "null") {
-                        await db.collection("yt_notifications").doc(notificationId).delete();
-                    }
-
-                    // GHI NHẬT KÝ HỆ THỐNG KHI HỦY BẢN GHI
-                    await logActivity("Hủy điểm danh", `Hủy bản ghi vắng mặt của HS: ${studentName}`, studentId || docId);
-
-                    showToast("Đã hủy điểm danh!");
-                    loadDailyAttendanceMobile();
-                } catch (e) {
+                    await db.collection('yt_attendance').doc(docId).delete();
+                    loadDailyAbsentRecords();
+                } catch(e) {
                     alert("Lỗi khi xóa: " + e.message);
                 }
             }
         }
 
-        function showToast(msg) {
-            const t = document.getElementById("toast");
-            t.innerText = msg;
-            t.style.display = "block";
-            setTimeout(() => { t.style.display = "none"; }, 2500);
+        // TIỆN ÍCH NGÀY THÁNG
+        function initDate() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            document.getElementById('att-date-input').value = `${yyyy}-${mm}-${dd}`;
+            updateDateText(`${yyyy}-${mm}-${dd}`);
         }
 
-        // Đóng dropdown menu khi chạm ra ngoài
-        document.addEventListener("click", (e) => {
-            if (!e.target.closest(".search-box")) {
-                document.getElementById("m-search-dropdown").style.display = "none";
+        function adjustDate(days) {
+            const input = document.getElementById('att-date-input');
+            let d = new Date(input.value);
+            d.setDate(d.getDate() + days);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            input.value = `${yyyy}-${mm}-${dd}`;
+            onDateChanged();
+        }
+
+        function onDateChanged() {
+            const val = document.getElementById('att-date-input').value;
+            updateDateText(val);
+            loadDailyAbsentRecords();
+        }
+
+        function updateDateText(dateStr) {
+            const d = new Date(dateStr);
+            const today = new Date();
+            if (d.toDateString() === today.toDateString()) {
+                document.getElementById('date-text-display').innerText = "Hôm nay (" + d.toLocaleDateString('vi-VN') + ")";
+            } else {
+                document.getElementById('date-text-display').innerText = d.toLocaleDateString('vi-VN');
             }
-            if (!e.target.closest(".header-left") && !e.target.closest("#settings-dropdown")) {
-                const drop = document.getElementById("settings-dropdown");
-                if (drop) drop.classList.remove("show");
+        }
+
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.nav-segment-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('pane-attendance').style.display = (tabId === 'pane-attendance') ? 'block' : 'none';
+            document.getElementById('pane-history').style.display = (tabId === 'pane-history') ? 'block' : 'none';
+            if (tabId === 'pane-history') loadDailyAbsentRecords();
+        }
+
+        function handleLogout() {
+            if (confirm("Đăng xuất khỏi App Điểm danh?")) {
+                sessionStorage.clear();
+                localStorage.removeItem('vts_dd_registered');
+                localStorage.removeItem('vts_dd_pin');
+                localStorage.removeItem('vts_dd_bio_id');
+                firebase.auth().signOut().then(() => location.reload());
+            }
+        }
+
+        // TỰ ĐỘNG KHÓA KHI THOÁT APP (GIỐNG APP NGÂN HÀNG)
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                sessionStorage.removeItem('vts_dd_unlocked');
+            }
+        });
+
+        window.addEventListener('pageshow', () => {
+            if (localStorage.getItem('vts_dd_registered') === 'true' && sessionStorage.getItem('vts_dd_unlocked') !== 'true') {
+                unlockPinInput = [];
+                updateDots('unlock-pin-dots', 0);
+                showAuthStep('step-unlock');
+                triggerBiometrics();
             }
         });
     </script>

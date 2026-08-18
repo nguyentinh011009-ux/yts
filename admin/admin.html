@@ -1910,6 +1910,17 @@
                     <option value="locked">🔴 Tạm khóa tài khoản</option>
                 </select>
             </div>
+            <div class="input-group">
+    <label>Loại Đối Tượng</label>
+    <select id="collab-role" onchange="handleCollabRoleChange()" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: bold;">
+        <option value="collaborator">🛡️ Cộng tác viên (Quản trị Admin theo Tab)</option>
+        <option value="gvcn">👨‍🏫 Giáo viên chủ nhiệm (Chỉ dùng App Điểm Danh)</option>
+        <option value="quansinh">📋 Quản Sinh / Giám Thị (Chỉ dùng App Điểm Danh)</option>
+    </select>
+</div>
+
+<!-- Khung ghi chú khi chọn GVCN / Quản sinh -->
+<div id="collab-role-note" style="display:none; background:#eff6ff; color:#1e40af; padding:10px 12px; border-radius:8px; font-size:0.82rem; margin-bottom:12px; border:1px dashed #93c5fd;"></div>
         </div>
 
         <div style="margin-top: 20px; border-top: 1px dashed #cbd5e1; padding-top: 15px;">

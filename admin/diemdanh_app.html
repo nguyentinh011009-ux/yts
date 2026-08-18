@@ -1079,9 +1079,11 @@
             const date = document.getElementById('att-date-input').value;
             const classVal = document.getElementById('class-select').value;
             const studentId = document.getElementById('student-select').value;
-            const studentName = document.getElementById('student-select').options[document.getElementById('student-select').selectedIndex]?.text.split(' (')[0];
+            const studentSelect = document.getElementById('student-select');
+            const studentName = studentSelect.options[studentSelect.selectedIndex]?.text.split(' (')[0];
             const symptom = document.getElementById('symptom-input').value.trim();
 
+            // 1. Kiểm tra rỗng
             if (!date || !classVal || !studentId) {
                 return alert("Vui lòng chọn đầy đủ Ngày, Lớp và Học sinh!");
             }
@@ -1091,10 +1093,34 @@
             }
 
             const btn = document.getElementById('btn-save');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang kiểm tra...';
             btn.disabled = true;
 
             try {
+                // 2. 👉 BỘ CHỐNG ĐIỂM DANH TRÙNG LẶP TRONG NGÀY
+                const dupCheck = await db.collection('yt_attendance')
+                    .where('date', '==', date)
+                    .where('studentId', '==', studentId)
+                    .get();
+
+                if (!dupCheck.empty) {
+                    const oldRec = dupCheck.docs[0].data();
+                    const reasonMap = { 
+                        'P': 'Có phép (P)', 
+                        'KP': 'Không phép (KP)', 
+                        'B': `Nghỉ bệnh (${oldRec.diagnosis || oldRec.symptom || 'B'})` 
+                    };
+
+                    alert(`⚠️ CẢNH BÁO TRÙNG LẶP:\n\nHọc sinh [${studentName}] đã được điểm danh trong ngày ${new Date(date).toLocaleDateString('vi-VN')}!\n\n- Trạng thái: ${reasonMap[oldRec.reason] || oldRec.reason}\n- Người ghi nhận: ${oldRec.recordedBy || 'Hệ thống'}\n\n👉 Nếu điểm danh sai, vui lòng qua tab 'Danh sách vắng' để Xóa và thực hiện lại.`);
+                    
+                    btn.innerHTML = '<i class="fas fa-check-circle"></i> Ghi nhận điểm danh';
+                    btn.disabled = false;
+                    return; // Chặn lại, không lưu tiếp
+                }
+
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+
+                // 3. Chuẩn bị lưu dữ liệu
                 const batch = db.batch();
                 const attRef = db.collection('yt_attendance').doc();
 
@@ -1109,13 +1135,12 @@
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
-                // TRƯỜNG HỢP 1: NGHỈ BỆNH (B) -> GỬI CẢNH BÁO TỚI CHUÔNG ADMIN ĐỂ ADMIN BỔ SUNG CHẨN ĐOÁN
+                // TRƯỜNG HỢP A: NGHỈ BỆNH (B) -> Gửi cảnh báo trực tiếp đến chuông Admin để hoàn tất chẩn đoán
                 if (selectedReason === 'B') {
                     attData.symptom = symptom;
                     attData.diagnosis = "Chờ Phòng Y Tế xác minh";
                     attData.isPendingAdmin = true;
 
-                    // Bắn thông báo chuông tới Admin (type: sick_alert để Admin nghe chuông 5s và nhấp nháy tab)
                     const notiAdminRef = db.collection('yt_notifications').doc();
                     batch.set(notiAdminRef, {
                         title: `🚨 BÁO CA BỆNH: ${studentName} - Lớp ${classVal}`,
@@ -1127,7 +1152,7 @@
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 } else {
-                    // TRƯỜNG HỢP 2: CÓ PHÉP (P) HOẶC KHÔNG PHÉP (KP) -> LƯU LUÔN & GỬI THÔNG BÁO CHO HỌC SINH
+                    // TRƯỜNG HỢP B: CÓ PHÉP (P) / KHÔNG PHÉP (KP) -> Lưu luôn & gửi thông báo cho học sinh
                     const notiStudentRef = db.collection('yt_notifications').doc();
                     const reasonText = selectedReason === 'P' ? 'Có phép' : 'Không phép';
                     
@@ -1147,7 +1172,7 @@
 
                 alert(selectedReason === 'B' ? "✅ Đã ghi nhận & gửi thông báo ca bệnh tới Phòng Y Tế!" : "✅ Đã ghi nhận điểm danh thành công!");
 
-                // Reset Form
+                // 4. Reset Form & Tải lại danh sách vắng
                 document.getElementById('symptom-input').value = '';
                 document.getElementById('student-select').value = '';
                 selectReason('P', document.querySelector('.reason-chip'));

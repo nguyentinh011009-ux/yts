@@ -4274,7 +4274,12 @@ function openCollaboratorModal() {
     handleCollabRoleChange();
     document.getElementById('collaborator-modal').style.display = 'flex';
 }
-
+function closeCollaboratorModal() {
+    const modal = document.getElementById('collaborator-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
 // 4. Mở Modal Sửa
 function editCollaborator(id) {
     const collab = collaboratorsCache.find(c => c.id === id);

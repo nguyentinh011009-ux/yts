@@ -1296,6 +1296,7 @@ async function populateClassDropdown() {
 }
 
         // 2. KHI ĐỔI LỚP ➔ TẢI DỮ LIỆU THÔNG MINH
+// 2. KHI ĐỔI LỚP ➔ TẢI DỮ LIỆU THÔNG MINH
 async function onClassFilterChanged() {
     const selectedClass = document.getElementById('class-filter').value;
     document.getElementById('search-student-input').value = ''; // Clear search
@@ -1304,7 +1305,9 @@ async function onClassFilterChanged() {
     if (selectedClass !== 'ALL') {
         localStorage.setItem('vts_last_class', selectedClass);
         await fetchRosterForClass(selectedClass);
-        renderStudentList(classRosterCache[selectedClass]);
+        
+        // CHỐT CHẶN: Thêm || [] để nếu cache rỗng thì lấy mảng rỗng
+        renderStudentList(classRosterCache[selectedClass] || []); 
     } else {
         // Trường hợp ALL -> Không tải toàn trường, yêu cầu tìm kiếm
         currentDisplayedStudents = [];
@@ -1396,17 +1399,21 @@ function clearSearch() {
 }
 
 // 5. RENDER UI HỌC SINH TỐI ƯU
+// 5. RENDER UI HỌC SINH TỐI ƯU (ĐÃ FIX LỖI UNDEFINED)
 function renderStudentList(studentsData, forceShowClass = false) {
-    currentDisplayedStudents = studentsData;
+    // CHỐT CHẶN BẢO VỆ: Đảm bảo dữ liệu luôn là một mảng, ngăn lỗi sập App
+    const safeData = Array.isArray(studentsData) ? studentsData : [];
+    currentDisplayedStudents = safeData; 
+    
     const container = document.getElementById('student-list-container');
     
-    if (studentsData.length === 0) {
+    if (safeData.length === 0) {
         container.innerHTML = `<div class="empty-state"><p>Không tìm thấy học sinh.</p></div>`;
         return;
     }
 
     let html = '';
-    studentsData.forEach(s => {
+    safeData.forEach(s => {
         const isSelected = selectedStudentIds.has(s.id);
         const classBadge = forceShowClass ? `<span class="s-class-badge">${s.class}</span>` : '';
         

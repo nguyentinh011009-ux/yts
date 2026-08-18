@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Điểm Danh Học Đường - THPT Võ Thị Sáu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png">
+    <link rel="icon" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" sizes="32x32" type="image/png">
+    
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding-bottom: 50px;
+        }
+
+        /* Top App Bar */
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #e2e8f0;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #dbeafe;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        .user-info h4 { font-size: 0.9rem; font-weight: 700; color: #1e293b; }
+        .user-info p { font-size: 0.75rem; color: #64748b; }
+
+        .btn-logout {
+            background: #f1f5f9;
+            color: var(--danger);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        /* Date Navigation Bar */
+        .date-toolbar {
+            background: white;
+            border-radius: var(--radius);
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+        }
+        .date-btn {
+            background: #f1f5f9;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .date-display {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        /* Form Cards */
+        .form-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 18px;
+        }
+
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Quick Search */
+        .search-box {
+            position: relative;
+            margin-bottom: 14px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 12px 14px 12px 38px;
+            border-radius: 12px;
+            border: 1.5px solid #cbd5e1;
+            font-size: 0.9rem;
+            outline: none;
+            transition: 0.2s;
+        }
+        .search-box input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+        .search-dropdown {
+            position: absolute;
+            top: 105%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            max-height: 230px;
+            overflow-y: auto;
+            z-index: 50;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .search-item {
+            padding: 10px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .search-item:active { background: #eff6ff; }
+
+        /* Grid inputs */
+        .row-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .input-wrap label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+        .input-wrap input, .input-wrap select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            font-size: 0.9rem;
+            outline: none;
+            background: white;
+        }
+
+        /* Pill Radio Selector */
+        .reason-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .reason-pill {
+            position: relative;
+        }
+        .reason-pill input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .reason-pill label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 5px;
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+        }
+        .reason-pill input:checked + label {
+            background: #eff6ff;
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .reason-pill input[value="B"]:checked + label {
+            background: #fff1f2;
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        /* Sick details box */
+        .sick-box {
+            background: #fff1f2;
+            border: 1px dashed #fca5a5;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 14px;
+            display: none;
+        }
+        .sick-box label {
+            color: #b91c1c;
+            font-size: 0.78rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            display: block;
+        }
+        .sick-box input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #fca5a5;
+            font-size: 0.88rem;
+            outline: none;
+            background: white;
+        }
+
+        /* Buttons */
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-size: 0.98rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+            transition: 0.2s;
+        }
+        .btn-submit:active { transform: scale(0.98); }
+
+        /* Marked List */
+        .history-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .history-item:last-child { border-bottom: none; }
+        .history-left h5 { font-size: 0.88rem; font-weight: 700; color: #1e293b; margin-bottom: 2px; }
+        .history-left p { font-size: 0.75rem; color: #64748b; }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+        .badge-p { background: #e0f2fe; color: #0284c7; }
+        .badge-kp { background: #fee2e2; color: #ef4444; }
+        .badge-b { background: #fef3c7; color: #d97706; }
+
+        .btn-del {
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        /* Toast Popup */
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- MÀN HÌNH CHỜ KIỂM TRA QUYỀN -->
+    <div id="loading-screen" style="position:fixed; inset:0; background:white; z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+        <i class="fas fa-circle-notch fa-spin fa-2x" style="color:var(--primary); margin-bottom:12px;"></i>
+        <p style="color:#64748b; font-size:0.9rem; font-weight:600;">Đang xác thực quyền Cộng tác viên...</p>
+    </div>
+
+    <!-- MÀN HÌNH TỪ CHỐI TRUY CẬP -->
+    <div id="denied-screen" style="display:none; position:fixed; inset:0; background:white; z-index:998; padding:30px; text-align:center; flex-direction:column; align-items:center; justify-content:center;">
+        <i class="fas fa-user-lock fa-3x" style="color:#ef4444; margin-bottom:15px;"></i>
+        <h3 style="color:#1e293b; margin-bottom:8px;">Truy cập bị từ chối</h3>
+        <p style="color:#64748b; font-size:0.88rem; margin-bottom:20px;">Tài khoản của bạn chưa được cấp quyền Điểm danh. Vui lòng liên hệ Quản trị viên Y tế THPT Võ Thị Sáu.</p>
+        <button onclick="firebase.auth().signOut().then(() => window.location.href='../index.html')" class="btn-submit" style="background:#64748b; width:auto; padding:10px 25px;">Đăng xuất</button>
+    </div>
+
+    <!-- GIAO DIỆN CHÍNH -->
+    <div id="app-container" style="display:none;">
+        
+        <!-- App Header -->
+        <header class="app-header">
+            <div class="header-user">
+                <div class="user-avatar" id="user-initial">GV</div>
+                <div class="user-info">
+                    <h4 id="user-display-name">GVCN / Quản Sinh</h4>
+                    <p id="user-email">email@thptvothisau.edu.vn</p>
+                </div>
+            </div>
+            <button onclick="logoutApp()" class="btn-logout" title="Đăng xuất"><i class="fas fa-sign-out-alt"></i></button>
+        </header>
+
+        <div class="container">
+
+            <!-- Thanh chọn ngày -->
+            <div class="date-toolbar">
+                <button onclick="changeDateMobile(-1)" class="date-btn"><i class="fas fa-chevron-left"></i></button>
+                <div class="date-display" onclick="document.getElementById('m-dd-date').showPicker()">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span id="date-label">Hôm nay</span>
+                    <input type="date" id="m-dd-date" style="position:absolute; opacity:0; pointer-events:none;" onchange="onDateChanged()">
+                </div>
+                <button onclick="changeDateMobile(1)" class="date-btn"><i class="fas fa-chevron-right"></i></button>
+            </div>
+
+            <!-- Form Điểm danh -->
+            <div class="form-card">
+                <div class="section-title"><i class="fas fa-user-edit" style="color:var(--primary);"></i> Ghi nhận vắng mặt</div>
+
+                <!-- Tìm kiếm nhanh -->
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="m-quick-search" placeholder="Gõ tên, Lớp, Mã HS..." oninput="handleQuickSearchMobile(this.value)">
+                    <div id="m-search-dropdown" class="search-dropdown"></div>
+                </div>
+
+                <!-- Lớp & Học sinh -->
+                <div class="row-grid">
+                    <div class="input-wrap">
+                        <label>Lớp</label>
+                        <input type="text" id="m-class" placeholder="VD: 12A1" onblur="fetchStudentsByClass()">
+                    </div>
+                    <div class="input-wrap">
+                        <label>Chọn Học Sinh</label>
+                        <select id="m-student">
+                            <option value="">-- Nhập lớp trước --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Chọn lý do nghỉ -->
+                <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--text-muted); margin-bottom:6px;">Lý do vắng mặt</label>
+                <div class="reason-group">
+                    <div class="reason-pill">
+                        <input type="radio" name="m-reason" id="r-p" value="P" checked onchange="toggleSickInput(false)">
+                        <label for="r-p"><i class="fas fa-check-circle" style="margin-bottom:3px;"></i> Có phép</label>
+                    </div>
+                    <div class="reason-pill">
+                        <input type="radio" name="m-reason" id="r-kp" value="KP" onchange="toggleSickInput(false)">
+                        <label for="r-kp"><i class="fas fa-times-circle" style="margin-bottom:3px;"></i> Không phép</label>
+                    </div>
+                    <div class="reason-pill">
+                        <input type="radio" name="m-reason" id="r-b" value="B" onchange="toggleSickInput(true)">
+                        <label for="r-b"><i class="fas fa-head-side-cough" style="margin-bottom:3px;"></i> Bệnh</label>
+                    </div>
+                </div>
+
+                <!-- Nhập triệu chứng (Chỉ hiện khi chọn Bệnh) -->
+                <div id="sick-detail-box" class="sick-box">
+                    <label><i class="fas fa-stethoscope"></i> Triệu chứng học sinh gặp phải (*):</label>
+                    <input type="text" id="m-symptom" placeholder="VD: Sốt cao, nôn ói, nổi ban đỏ...">
+                    <small style="font-size:0.72rem; color:#b91c1c; display:block; margin-top:4px;">
+                        * Hệ thống sẽ tự động gửi cảnh báo đến <strong>Phòng Y Tế</strong> để nhân viên Y tế liên hệ chẩn đoán bệnh.
+                    </small>
+                </div>
+
+                <button id="btn-save" onclick="saveMobileAttendance()" class="btn-submit">
+                    <i class="fas fa-save"></i> Lưu Điểm Danh
+                </button>
+            </div>
+
+            <!-- Danh sách đã điểm danh trong ngày -->
+            <div class="history-card">
+                <div class="section-title" style="justify-content: space-between;">
+                    <span><i class="fas fa-list-check" style="color:var(--primary);"></i> Danh sách đã ghi nhận</span>
+                    <span id="count-badge" class="badge" style="background:#e2e8f0; color:#334155;">0 HS</span>
+                </div>
+                <div id="attendance-list-container">
+                    <p style="text-align:center; color:#94a3b8; font-size:0.85rem; padding:15px 0;">Đang nạp dữ liệu...</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast">Thông báo</div>
+
+    <!-- SDK FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="../assets/config.js"></script>
+
+    <script>
+        let currentAuthUser = null;
+        let allStudentsMobileCache = [];
+
+        // 1. KIỂM TRA QUYỀN TRUY CẬP (Admin hoặc Cộng tác viên)
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = "../index.html"; // Chưa đăng nhập -> Về trang chủ
+                return;
+            }
+
+            currentAuthUser = user;
+            const email = user.email.toLowerCase();
+
+            try {
+                // Kiểm tra 1: Là Admin chính
+                let isAllowed = typeof ALLOWED_ADMIN_EMAILS !== 'undefined' && ALLOWED_ADMIN_EMAILS.includes(email);
+
+                // Kiểm tra 2: Kiểm tra danh sách Cộng tác viên trong Firestore (yt_collaborators)
+                if (!isAllowed) {
+                    const collabSnap = await db.collection('yt_collaborators')
+                        .where('email', '==', email)
+                        .where('active', '==', true)
+                        .get();
+                    if (!collabSnap.empty) isAllowed = true;
+                }
+
+                if (isAllowed) {
+                    document.getElementById('loading-screen').style.display = 'none';
+                    document.getElementById('app-container').style.display = 'block';
+
+                    // Điền thông tin User lên Header
+                    document.getElementById('user-display-name').innerText = user.displayName || "Cộng tác viên / GVCN";
+                    document.getElementById('user-email').innerText = user.email;
+                    document.getElementById('user-initial').innerText = (user.displayName || user.email).charAt(0).toUpperCase();
+
+                    // Khởi tạo ngày hiện tại
+                    document.getElementById('m-dd-date').valueAsDate = new Date();
+                    updateDateDisplay();
+
+                    loadMobileStudentsCache();
+                    loadDailyAttendanceMobile();
+                } else {
+                    document.getElementById('loading-screen').style.display = 'none';
+                    document.getElementById('denied-screen').style.display = 'flex';
+                }
+            } catch (err) {
+                console.error("Lỗi xác thực:", err);
+                alert("Lỗi kiểm tra bảo mật: " + err.message);
+            }
+        });
+
+        // 2. HÀM ĐIỀU HƯỚNG NGÀY
+        function updateDateDisplay() {
+            const val = document.getElementById('m-dd-date').value;
+            if(!val) return;
+            const d = new Date(val);
+            const today = new Date();
+            
+            if (d.toDateString() === today.toDateString()) {
+                document.getElementById('date-label').innerText = `Hôm nay (${d.toLocaleDateString('vi-VN')})`;
+            } else {
+                document.getElementById('date-label').innerText = d.toLocaleDateString('vi-VN');
+            }
+        }
+
+        function changeDateMobile(days) {
+            const input = document.getElementById('m-dd-date');
+            let d = new Date(input.value || new Date());
+            d.setDate(d.getDate() + days);
+            
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            input.value = `${yyyy}-${mm}-${dd}`;
+            
+            updateDateDisplay();
+            loadDailyAttendanceMobile();
+        }
+
+        function onDateChanged() {
+            updateDateDisplay();
+            loadDailyAttendanceMobile();
+        }
+
+        function toggleSickInput(isSick) {
+            document.getElementById('sick-detail-box').style.display = isSick ? 'block' : 'none';
+        }
+
+        // 3. TẢI TOÀN BỘ HỌC SINH ĐỂ TÌM KIẾM NHANH
+        async function loadMobileStudentsCache() {
+            try {
+                const snap = await db.collection('yt_students').get();
+                allStudentsMobileCache = [];
+                snap.forEach(doc => {
+                    allStudentsMobileCache.push({ id: doc.id, ...doc.data() });
+                });
+            } catch (e) {
+                console.error("Lỗi cache HS:", e);
+            }
+        }
+
+        function removeTone(str) {
+            if (!str) return "";
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
+        }
+
+        function handleQuickSearchMobile(query) {
+            const dropdown = document.getElementById('m-search-dropdown');
+            if (!query || query.trim().length < 2) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            const q = removeTone(query.trim());
+            const matched = allStudentsMobileCache.filter(s => {
+                const name = removeTone(s.name || "");
+                const cls = removeTone(s.class || "");
+                const maHS = removeTone(s.studentCode || "");
+                return name.includes(q) || cls.includes(q) || maHS.includes(q);
+            }).slice(0, 10);
+
+            if (matched.length === 0) {
+                dropdown.innerHTML = '<div style="padding:12px; color:#ef4444; text-align:center; font-size:0.85rem;">Không tìm thấy!</div>';
+            } else {
+                dropdown.innerHTML = matched.map(s => `
+                    <div class="search-item" onclick="selectQuickStudent('${s.id}', '${s.class}')">
+                        <strong>${s.name}</strong> - Lớp: <span style="color:#2563eb; font-weight:bold;">${s.class}</span>
+                        <div style="font-size:0.72rem; color:#64748b;">Mã HS: ${s.studentCode || 'N/A'} | Mã YT: ${s.id}</div>
+                    </div>
+                `).join('');
+            }
+            dropdown.style.display = 'block';
+        }
+
+        async function selectQuickStudent(studentId, studentClass) {
+            document.getElementById('m-search-dropdown').style.display = 'none';
+            document.getElementById('m-quick-search').value = '';
+            document.getElementById('m-class').value = studentClass;
+
+            await fetchStudentsByClass();
+            document.getElementById('m-student').value = studentId;
+            showToast("Đã chọn học sinh!");
+        }
+
+        async function fetchStudentsByClass() {
+            const cls = document.getElementById('m-class').value.trim().toUpperCase();
+            const sel = document.getElementById('m-student');
+            if(!cls) return;
+
+            sel.innerHTML = '<option>Đang tải...</option>';
+            try {
+                const snap = await db.collection('yt_students').where('class', '==', cls).get();
+                if (snap.empty) {
+                    sel.innerHTML = '<option value="">(Không có học sinh trong lớp)</option>';
+                    return;
+                }
+                let list = [];
+                snap.forEach(doc => list.push({id: doc.id, ...doc.data()}));
+                list.sort((a,b) => (a.name || "").localeCompare(b.name || "", 'vi'));
+
+                sel.innerHTML = '<option value="">-- Chọn Học Sinh --</option>' + 
+                    list.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            } catch(e) {
+                sel.innerHTML = '<option value="">(Lỗi tải)</option>';
+            }
+        }
+
+        // 4. LƯU ĐIỂM DANH & PHÁT THÔNG BÁO CHO Y TẾ NẾU NGHỈ BỆNH
+        async function saveMobileAttendance() {
+            const date = document.getElementById('m-dd-date').value;
+            const studentSel = document.getElementById('m-student');
+            const sid = studentSel.value;
+            const sname = studentSel.options[studentSel.selectedIndex]?.text;
+            const cls = document.getElementById('m-class').value.trim().toUpperCase();
+            const reason = document.querySelector('input[name="m-reason"]:checked')?.value;
+            const btn = document.getElementById('btn-save');
+
+            if (!date || !sid || !cls || !reason) {
+                return alert("Vui lòng điền đầy đủ Lớp, Học sinh và Lý do nghỉ!");
+            }
+
+            let symptom = "";
+            if (reason === 'B') {
+                symptom = document.getElementById('m-symptom').value.trim();
+                if (!symptom) return alert("Vui lòng nhập triệu chứng của học sinh khi nghỉ bệnh!");
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+
+            try {
+                const data = {
+                    studentId: sid,
+                    name: sname,
+                    class: cls,
+                    date: date,
+                    reason: reason,
+                    creatorEmail: currentAuthUser.email,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    notificationId: null
+                };
+
+                // Nếu nghỉ Bệnh: Chưa có chẩn đoán ngay, để trống/chờ Y tế cập nhật
+                if (reason === 'B') {
+                    data.symptom = symptom;
+                    data.diagnosis = "Chờ NV Y tế chẩn đoán"; 
+                }
+
+                // A. Gửi thông báo đến tài khoản Học sinh/Phụ huynh
+                let studentNotiContent = `Học sinh được ghi nhận vắng mặt ngày ${new Date(date).toLocaleDateString('vi-VN')}. Lý do: ${reason === 'P' ? 'Có phép' : (reason === 'KP' ? 'Không phép' : 'Nghỉ bệnh')}.`;
+                const notiDoc = await db.collection('yt_notifications').add({
+                    title: "Thông báo Vắng học",
+                    content: studentNotiContent,
+                    targetType: "student",
+                    targetValue: sid,
+                    sender: currentAuthUser.displayName || currentAuthUser.email,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                data.notificationId = notiDoc.id;
+
+                // B. NẾU NGHỈ BỆNH: BẮN THÊM 1 THÔNG BÁO CHO CHUÔNG ADMIN / NHÂN VIÊN Y TẾ
+                if (reason === 'B') {
+                    await db.collection('yt_notifications').add({
+                        title: `🚨 Ca Bệnh Mới: ${sname} (${cls})`,
+                        content: `Cộng tác viên/GVCN vừa báo HS ${sname} (Lớp ${cls}) nghỉ vì bệnh vào ngày ${new Date(date).toLocaleDateString('vi-VN')}.\nTriệu chứng: "${symptom}".\n👉 Yêu cầu NV Y Tế liên hệ phụ huynh để cập nhật Chẩn đoán chính thức.`,
+                        targetType: "admin", // Bắn vào chuông thông báo Admin
+                        type: "sick_alert",
+                        studentId: sid,
+                        studentName: sname,
+                        class: cls,
+                        isRead: false,
+                        sender: currentAuthUser.displayName || currentAuthUser.email,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+
+                // C. Ghi dữ liệu vào Bảng Điểm danh yt_attendance
+                await db.collection('yt_attendance').add(data);
+
+                showToast("✅ Đã lưu điểm danh thành công!");
+                
+                // Dọn dẹp form
+                document.getElementById('m-symptom').value = '';
+                document.getElementById('r-p').checked = true;
+                toggleSickInput(false);
+                loadDailyAttendanceMobile();
+
+            } catch (e) {
+                console.error("Lỗi lưu điểm danh:", e);
+                alert("Lỗi: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> Lưu Điểm Danh';
+            }
+        }
+
+        // 5. TẢI DANH SÁCH ĐÃ ĐIỂM DANH TRONG NGÀY
+        async function loadDailyAttendanceMobile() {
+            const dateStr = document.getElementById('m-dd-date').value;
+            const container = document.getElementById('attendance-list-container');
+            const countBadge = document.getElementById('count-badge');
+            if(!dateStr) return;
+
+            container.innerHTML = '<p style="text-align:center; color:#94a3b8; font-size:0.85rem; padding:15px 0;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</p>';
+
+            try {
+                const snap = await db.collection('yt_attendance').where('date', '==', dateStr).get();
+                if (snap.empty) {
+                    container.innerHTML = '<p style="text-align:center; color:#94a3b8; font-size:0.85rem; padding:15px 0;">Không có học sinh vắng trong ngày.</p>';
+                    countBadge.innerText = '0 HS';
+                    return;
+                }
+
+                let list = [];
+                snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+                list.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+                countBadge.innerText = `${list.length} HS`;
+
+                container.innerHTML = list.map(item => {
+                    let badgeClass = "badge-p";
+                    let reasonText = "Có phép";
+                    let extraInfo = "";
+
+                    if (item.reason === 'KP') {
+                        badgeClass = "badge-kp";
+                        reasonText = "Không phép";
+                    } else if (item.reason === 'B') {
+                        badgeClass = "badge-b";
+                        reasonText = "Bệnh";
+                        extraInfo = `<div style="font-size:0.75rem; color:#b91c1c; margin-top:2px;"><i class="fas fa-virus"></i> ${item.symptom || 'Không có triệu chứng'} <span style="color:#64748b;">(${item.diagnosis || 'Chưa chẩn đoán'})</span></div>`;
+                    }
+
+                    return `
+                        <div class="history-item">
+                            <div class="history-left">
+                                <h5>${item.name} <span style="color:var(--primary); font-weight:bold;">(${item.class})</span></h5>
+                                <p><span class="badge ${badgeClass}">${reasonText}</span></p>
+                                ${extraInfo}
+                            </div>
+                            <button onclick="deleteAttendanceMobile('${item.id}', '${item.name}', '${item.notificationId}')" class="btn-del" title="Hủy điểm danh">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (e) {
+                container.innerHTML = `<p style="color:red; font-size:0.85rem;">Lỗi: ${e.message}</p>`;
+            }
+        }
+
+        // 6. XÓA BẢN GHI ĐIỂM DANH
+        async function deleteAttendanceMobile(docId, studentName, notificationId) {
+            if (confirm(`Hủy ghi nhận vắng mặt của học sinh: ${studentName}?`)) {
+                try {
+                    await db.collection('yt_attendance').doc(docId).delete();
+                    if (notificationId && notificationId !== 'null') {
+                        await db.collection('yt_notifications').doc(notificationId).delete();
+                    }
+                    showToast("Đã hủy điểm danh!");
+                    loadDailyAttendanceMobile();
+                } catch(e) {
+                    alert("Lỗi khi xóa: " + e.message);
+                }
+            }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.display = 'block';
+            setTimeout(() => { t.style.display = 'none'; }, 2500);
+        }
+
+        function logoutApp() {
+            if(confirm("Đăng xuất khỏi tài khoản điểm danh?")) {
+                firebase.auth().signOut().then(() => window.location.href = '../index.html');
+            }
+        }
+
+        // Đóng dropdown khi bấm ra ngoài
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-box')) {
+                document.getElementById('m-search-dropdown').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

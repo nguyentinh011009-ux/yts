@@ -849,14 +849,13 @@ input:checked + .slider:before { transform: translateX(20px); }
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="../assets/config.js"></script>
     <script src="../assets/js/crypto.js"></script>
-
+    <script src="../assets/auth-check.js"></script>
     <script>
-        /* CORE ATTENDANCE APP ENGINE */
+        /* CORE ATTENDANCE APP ENGINE (OPTIMIZED) */
 
         let currentUser = null;
         let currentUserRole = 'none'; // 'admin' | 'quansinh' | 'gvcn'
         let allowedClasses = [];      // Danh sách lớp được phép điểm danh
-        let allStudentsCache = [];    // Cache toàn bộ học sinh (đọc 1 lần, 0 cost)
         let selectedReason = 'P';     // Mặc định 'P'
 
         // PIN States
@@ -864,78 +863,75 @@ input:checked + .slider:before { transform: translateX(20px); }
         let pinConfirmInput = [];
         let isConfirmingPIN = false;
         let unlockPinInput = [];
-let allStudentsCache = [];
-let selectedStudentIds = new Set();
-let isMultiSelectMode = false;
 
-// 1. TẢI DỮ LIỆU TỐI ƯU (CHỈ ĐỌC KHI MÁY CHƯA CÓ LƯU TRỮ TRONG LOCALSTORAGE)
-async function fetchAndCacheStudents(forceRefresh = false) {
-    const CACHE_KEY = 'vts_cached_students_v1';
-    const localData = localStorage.getItem(CACHE_KEY);
+        // App States
+        let allStudentsCache = [];
+        let selectedStudentIds = new Set();
+        let isMultiSelectMode = false;
 
-    if (!forceRefresh && localData) {
-        try {
-            allStudentsCache = JSON.parse(localData);
-            return; // Tiết kiệm 100% tài nguyên đọc của Firestore
-        } catch (e) {
-            localStorage.removeItem(CACHE_KEY);
-        }
-    }
-
-    // Nếu chưa lưu hoặc ép tải lại: Mới truy vấn từ Firebase
-    const snap = await db.collection('yt_students').get();
-    allStudentsCache = [];
-    snap.forEach(doc => {
-        const d = doc.data();
-        allStudentsCache.push({
-            id: doc.id,
-            name: d.name || '',
-            class: (d.class || '').trim().toUpperCase(),
-            phone: d.phone || ''
-        });
-    });
-
-    // Sắp xếp học sinh theo TÊN (Từ cuối cùng trong họ tên)
-    allStudentsCache.sort(compareVietnameseNames);
-
-    // Lưu vào bộ nhớ máy người dùng vĩnh viễn
-    localStorage.setItem(CACHE_KEY, JSON.stringify(allStudentsCache));
-}
-
-// 2. THUẬT TOÁN SẮP XẾP TÊN THEO TỪ CUỐI CÙNG TIẾNG VIỆT
-function compareVietnameseNames(a, b) {
-    const getLastNameWord = (fullName) => {
-        const parts = fullName.trim().split(/\s+/);
-        return parts[parts.length - 1] || '';
-    };
-    const nameA = getLastNameWord(a.name);
-    const nameB = getLastNameWord(b.name);
-
-    const cmp = nameA.localeCompare(nameB, 'vi', { sensitivity: 'base' });
-    if (cmp !== 0) return cmp;
-    return a.name.localeCompare(b.name, 'vi');
-}
         // 1. KHỞI CHẠY HỆ THỐNG VỚI HIỆU ỨNG SPLASH
         window.addEventListener('DOMContentLoaded', () => {
             initNumpads();
             initDate();
-            
-            // Giữ hiệu ứng splash khoảng 1.1 giây tạo cảm giác mượt mà trước khi vào app
             setTimeout(() => {
                 checkAppSession();
             }, 1100);
         });
 
-        // Hàm làm mờ dần và ẩn Splash Screen
         function hideSplashScreen() {
             const splash = document.getElementById('splash-screen');
             if (splash) {
                 splash.classList.add('splash-fade-out');
-                setTimeout(() => splash.remove(), 500); // Xóa khỏi DOM để tiết kiệm RAM
+                setTimeout(() => splash.remove(), 500); 
             }
         }
 
-        // 2. KHỞI TẠO BÀN PHÍM PIN SỐ TỐI GIẢN
+        // 2. TẢI DỮ LIỆU TỐI ƯU (CHỈ ĐỌC KHI MÁY CHƯA CÓ LƯU TRỮ HOẶC ÉP TẢI LẠI)
+        async function fetchAndCacheStudents(forceRefresh = false) {
+            const CACHE_KEY = 'vts_cached_students_v1';
+            const localData = localStorage.getItem(CACHE_KEY);
+
+            if (!forceRefresh && localData) {
+                try {
+                    allStudentsCache = JSON.parse(localData);
+                    return; // Tiết kiệm 100% tài nguyên đọc của Firestore
+                } catch (e) {
+                    localStorage.removeItem(CACHE_KEY);
+                }
+            }
+
+            // Truy vấn Firebase
+            const snap = await db.collection('yt_students').get();
+            allStudentsCache = [];
+            snap.forEach(doc => {
+                const d = doc.data();
+                allStudentsCache.push({
+                    id: doc.id,
+                    name: d.name || '',
+                    class: (d.class || '').trim().toUpperCase(),
+                    phone: d.phone || ''
+                });
+            });
+
+            // Sắp xếp học sinh theo TÊN (Từ cuối cùng trong họ tên)
+            allStudentsCache.sort(compareVietnameseNames);
+            localStorage.setItem(CACHE_KEY, JSON.stringify(allStudentsCache));
+        }
+
+        function compareVietnameseNames(a, b) {
+            const getLastNameWord = (fullName) => {
+                const parts = fullName.trim().split(/\s+/);
+                return parts[parts.length - 1] || '';
+            };
+            const nameA = getLastNameWord(a.name);
+            const nameB = getLastNameWord(b.name);
+
+            const cmp = nameA.localeCompare(nameB, 'vi', { sensitivity: 'base' });
+            if (cmp !== 0) return cmp;
+            return a.name.localeCompare(b.name, 'vi');
+        }
+
+        // 3. KHỞI TẠO BÀN PHÍM PIN SỐ TỐI GIẢN
         function initNumpads() {
             const makePad = (containerId, onKey) => {
                 const c = document.getElementById(containerId);
@@ -947,33 +943,29 @@ function compareVietnameseNames(a, b) {
                     btn.onclick = () => onKey(i);
                     c.appendChild(btn);
                 }
-                // Biometric / Empty Key
                 const bioBtn = document.createElement('button');
                 bioBtn.className = 'num-key ghost';
                 bioBtn.innerHTML = '<i class="fas fa-fingerprint"></i>';
                 bioBtn.onclick = () => triggerBiometrics();
                 c.appendChild(bioBtn);
 
-                // Zero
                 const zero = document.createElement('button');
                 zero.className = 'num-key';
                 zero.innerText = '0';
                 zero.onclick = () => onKey(0);
                 c.appendChild(zero);
 
-                // Backspace
                 const del = document.createElement('button');
                 del.className = 'num-key ghost';
                 del.innerHTML = '<i class="fas fa-backspace"></i>';
                 del.onclick = () => onKey('del');
                 c.appendChild(del);
             };
-
             makePad('setup-numpad', handleSetupPinKey);
             makePad('unlock-numpad', handleUnlockPinKey);
         }
 
-        // 3. KIỂM TRA PHIÊN & MỞ GIAO DIỆN
+        // 4. KIỂM TRA PHIÊN & MỞ GIAO DIỆN
         function checkAppSession() {
             const isRegistered = localStorage.getItem('vts_dd_registered') === 'true';
             const isUnlocked = sessionStorage.getItem('vts_dd_unlocked') === 'true';
@@ -991,6 +983,7 @@ function compareVietnameseNames(a, b) {
                 hideSplashScreen();
             }
         }
+
         function showAuthStep(stepId) {
             ['step-google', 'step-set-pin', 'step-unlock'].forEach(id => {
                 const el = document.getElementById(id);
@@ -998,7 +991,7 @@ function compareVietnameseNames(a, b) {
             });
         }
 
-        // 4. XÁC THỰC GOOGLE LOGIN
+        // 5. XÁC THỰC GOOGLE LOGIN
         function handleGoogleAuth() {
             const provider = new firebase.auth.GoogleAuthProvider();
             firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
@@ -1015,7 +1008,6 @@ function compareVietnameseNames(a, b) {
                 .catch(err => alert("Lỗi đăng nhập: " + err.message));
         }
 
-        // XỬ LÝ NHẬP PIN KHI TẠO
         function handleSetupPinKey(key) {
             let targetArray = isConfirmingPIN ? pinConfirmInput : pinInput;
             if (key === 'del') targetArray.pop();
@@ -1049,7 +1041,6 @@ function compareVietnameseNames(a, b) {
             }
         }
 
-        // XỬ LÝ MỞ KHÓA PIN
         function handleUnlockPinKey(key) {
             if (key === 'del') unlockPinInput.pop();
             else if (unlockPinInput.length < 6) unlockPinInput.push(key);
@@ -1077,7 +1068,6 @@ function compareVietnameseNames(a, b) {
             });
         }
 
-        // SINH TRẮC HỌC (BIOMETRIC WEBAUTHN)
         async function trySetupBiometric() {
             if (window.PublicKeyCredential) {
                 try {
@@ -1120,20 +1110,18 @@ function compareVietnameseNames(a, b) {
             } catch(e) {}
         }
 
-        // 5. KIỂM TRA PHÂN QUYỀN (GVCN / QUẢN SINH / ADMIN)
+        // 6. KIỂM TRA PHÂN QUYỀN
         async function checkUserRole(user) {
             if (!user) return false;
             const email = user.email.toLowerCase();
 
-            // LỚP 1: Super Admin
-            if (ALLOWED_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email)) {
+            if (typeof ALLOWED_ADMIN_EMAILS !== 'undefined' && ALLOWED_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email)) {
                 currentUserRole = 'admin';
                 currentUser = { displayName: user.displayName || 'Admin', email: user.email, photoURL: user.photoURL };
                 allowedClasses = ['ALL'];
                 return true;
             }
 
-            // LỚP 2: Quản sinh hoặc GVCN từ yt_collaborators
             const snap = await db.collection("yt_collaborators").where("email", "==", email).get();
             if (!snap.empty) {
                 const data = snap.docs[0].data();
@@ -1146,9 +1134,8 @@ function compareVietnameseNames(a, b) {
                 currentUser = { displayName: data.name || user.displayName, email: user.email, photoURL: user.photoURL };
 
                 if (currentUserRole === 'quansinh') {
-                    allowedClasses = ['ALL']; // Quản sinh truy cập toàn trường
+                    allowedClasses = ['ALL'];
                 } else if (currentUserRole === 'gvcn') {
-                    // GVCN: Lấy các lớp được phân công
                     allowedClasses = data.assignedClasses || (data.class ? [data.class] : []);
                 }
                 return true;
@@ -1156,14 +1143,14 @@ function compareVietnameseNames(a, b) {
             return false;
         }
 
-        // 6. NẠP DỮ LIỆU APP CHÍNH
+        // 7. NẠP DỮ LIỆU APP CHÍNH
         async function verifyUserPermission() {
             firebase.auth().onAuthStateChanged(async (user) => {
                 if (user && await checkUserRole(user)) {
                     document.getElementById('auth-screen').style.display = 'none';
                     document.getElementById('app-main').style.display = 'block';
                     hideSplashScreen();
-                    // Cập nhật Header
+                    
                     document.getElementById('user-name').innerText = currentUser.displayName;
                     if (currentUser.photoURL) document.getElementById('user-avatar').src = currentUser.photoURL;
 
@@ -1179,7 +1166,7 @@ function compareVietnameseNames(a, b) {
                         roleBadge.className = 'user-badge badge-gvcn';
                     }
 
-                    await loadMasterCryptoKey();
+                    if(typeof loadMasterCryptoKey === "function") await loadMasterCryptoKey();
                     await fetchAndCacheStudents();
                     populateClassDropdown();
                     loadDailyAbsentRecords();
@@ -1189,140 +1176,105 @@ function compareVietnameseNames(a, b) {
             });
         }
 
-        // 7. CACHE DỮ LIỆU HỌC SINH (0 TỐN KÉM ĐỌC NHIỀU LẦN)
-        async function fetchAndCacheStudents() {
-            const cached = sessionStorage.getItem('vts_students_cache');
-            if (cached) {
-                allStudentsCache = JSON.parse(cached);
-                return;
-            }
-            const snap = await db.collection('yt_students').get();
-            allStudentsCache = [];
-            snap.forEach(doc => allStudentsCache.push({ id: doc.id, ...doc.data() }));
-            sessionStorage.setItem('vts_students_cache', JSON.stringify(allStudentsCache));
-        }
+        // 8. ĐỔ LỚP VÀO DROPDOWN PHÙ HỢP VỚI QUYỀN
+        function populateClassDropdown() {
+            const filterSelect = document.getElementById('class-filter');
+            filterSelect.innerHTML = '';
 
-        // ĐỔ LỚP VÀO DROPDOWN PHÙ HỢP VỚI QUYỀN
-function populateClassDropdown() {
-    const filterSelect = document.getElementById('class-filter');
-    filterSelect.innerHTML = '';
-
-    let classList = [];
-    if (allowedClasses.includes('ALL')) {
-        const set = new Set(allStudentsCache.map(s => s.class).filter(Boolean));
-        classList = Array.from(set).sort((a, b) => a.localeCompare(b, 'vi', { numeric: true }));
-        filterSelect.innerHTML = '<option value="ALL">Tất cả lớp</option>';
-    } else {
-        classList = allowedClasses.map(c => c.trim().toUpperCase());
-    }
-
-    classList.forEach(c => {
-        filterSelect.innerHTML += `<option value="${c}">Lớp ${c}</option>`;
-    });
-
-    if (classList.length === 1) {
-        filterSelect.value = classList[0];
-    }
-    renderStudentList();
-}
-// 4. HIỂN THỊ DANH SÁCH HỌC SINH ĐÃ LỌC & TÌM KIẾM
-function renderStudentList() {
-    const filterClass = document.getElementById('class-filter').value;
-    const query = (document.getElementById('search-student-input').value || '').trim().toLowerCase();
-    const container = document.getElementById('student-list-container');
-
-    // Lọc theo lớp được phân quyền
-    let list = allStudentsCache.filter(s => {
-        if (!allowedClasses.includes('ALL') && !allowedClasses.includes(s.class)) return false;
-        if (filterClass !== 'ALL' && s.class !== filterClass) return false;
-        if (query) {
-            const matchName = s.name.toLowerCase().includes(query);
-            const matchId = s.id.toLowerCase().includes(query);
-            return matchName || matchId;
-        }
-        return true;
-    });
-
-    if (list.length === 0) {
-        container.innerHTML = `<div class="empty-state" style="padding:15px;"><p>Không tìm thấy học sinh phù hợp</p></div>`;
-        return;
-    }
-
-    let html = '';
-    list.forEach(s => {
-        const isSelected = selectedStudentIds.has(s.id);
-        html += `
-            <div class="student-item ${isSelected ? 'selected' : ''}" onclick="toggleStudentSelection('${s.id}')">
-                <div class="info">
-                    <span class="s-name">${s.name}</span>
-                    <span class="s-sub">Lớp: <strong>${s.class}</strong> | Mã: ${s.id}</span>
-                </div>
-                <div class="check-icon">
-                    <i class="fas ${isSelected ? 'fa-check-circle' : 'fa-circle'}"></i>
-                </div>
-            </div>
-        `;
-    });
-    container.innerHTML = html;
-    updateSelectedSummary();
-}
-function onFilterOrSearchChanged() {
-    renderStudentList();
-}
-
-function clearSearch() {
-    document.getElementById('search-student-input').value = '';
-    renderStudentList();
-}
-// 5. CHỌN / BỎ CHỌN HỌC SINH (HỖ TRỢ CHỌN 1 HOẶC NHIỀU)
-function toggleStudentSelection(studentId) {
-    if (isMultiSelectMode) {
-        if (selectedStudentIds.has(studentId)) selectedStudentIds.delete(studentId);
-        else selectedStudentIds.add(studentId);
-    } else {
-        if (selectedStudentIds.has(studentId)) {
-            selectedStudentIds.clear();
-        } else {
-            selectedStudentIds.clear();
-            selectedStudentIds.add(studentId);
-        }
-    }
-    renderStudentList();
-}
-
-function onToggleMultiMode() {
-    isMultiSelectMode = document.getElementById('toggle-multi-select').checked;
-    if (!isMultiSelectMode && selectedStudentIds.size > 1) {
-        selectedStudentIds.clear();
-        renderStudentList();
-    }
-}
-
-function updateSelectedSummary() {
-    const count = selectedStudentIds.size;
-    document.getElementById('selected-summary').innerText = `Đã chọn: ${count} học sinh`;
-    document.getElementById('submit-count-badge').innerText = count;
-}
-        // KHI CHỌN LỚP -> NẠP HỌC SINH TỪ RAM (0MS)
-        function loadStudentsOfSelectedClass() {
-            const selectedClass = document.getElementById('class-select').value;
-            const studentSelect = document.getElementById('student-select');
-            
-            if (!selectedClass) {
-                studentSelect.innerHTML = '<option value="">-- Chọn lớp trước --</option>';
-                return;
+            let classList = [];
+            if (allowedClasses.includes('ALL')) {
+                const set = new Set(allStudentsCache.map(s => s.class).filter(Boolean));
+                classList = Array.from(set).sort((a, b) => a.localeCompare(b, 'vi', { numeric: true }));
+                filterSelect.innerHTML = '<option value="ALL">Tất cả lớp</option>';
+            } else {
+                classList = allowedClasses.map(c => c.trim().toUpperCase());
             }
 
-            const inClass = allStudentsCache.filter(s => (s.class || '').trim().toUpperCase() === selectedClass);
-            inClass.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi'));
-
-            studentSelect.innerHTML = '<option value="">-- Chọn Học Sinh --</option>';
-            inClass.forEach(s => {
-                studentSelect.innerHTML += `<option value="${s.id}">${s.name} (${s.id})</option>`;
+            classList.forEach(c => {
+                filterSelect.innerHTML += `<option value="${c}">Lớp ${c}</option>`;
             });
+
+            if (classList.length === 1) {
+                filterSelect.value = classList[0];
+            }
+            renderStudentList();
         }
 
-        // 8. CHỌN LÝ DO & BẬT TẮT FORM BỆNH
+        // 9. HIỂN THỊ DANH SÁCH HỌC SINH ĐÃ LỌC & TÌM KIẾM
+        function renderStudentList() {
+            const filterClass = document.getElementById('class-filter').value;
+            const query = (document.getElementById('search-student-input').value || '').trim().toLowerCase();
+            const container = document.getElementById('student-list-container');
+
+            let list = allStudentsCache.filter(s => {
+                if (!allowedClasses.includes('ALL') && !allowedClasses.includes(s.class)) return false;
+                if (filterClass !== 'ALL' && s.class !== filterClass) return false;
+                if (query) {
+                    return s.name.toLowerCase().includes(query) || s.id.toLowerCase().includes(query);
+                }
+                return true;
+            });
+
+            if (list.length === 0) {
+                container.innerHTML = `<div class="empty-state" style="padding:15px;"><p>Không tìm thấy học sinh phù hợp</p></div>`;
+                return;
+            }
+
+            let html = '';
+            list.forEach(s => {
+                const isSelected = selectedStudentIds.has(s.id);
+                html += `
+                    <div class="student-item ${isSelected ? 'selected' : ''}" onclick="toggleStudentSelection('${s.id}')">
+                        <div class="info">
+                            <span class="s-name">${s.name}</span>
+                            <span class="s-sub">Lớp: <strong>${s.class}</strong> | Mã: ${s.id}</span>
+                        </div>
+                        <div class="check-icon">
+                            <i class="fas ${isSelected ? 'fa-check-circle' : 'fa-circle'}"></i>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+            updateSelectedSummary();
+        }
+
+        function onFilterOrSearchChanged() { renderStudentList(); }
+
+        function clearSearch() {
+            document.getElementById('search-student-input').value = '';
+            renderStudentList();
+        }
+
+        function toggleStudentSelection(studentId) {
+            if (isMultiSelectMode) {
+                if (selectedStudentIds.has(studentId)) selectedStudentIds.delete(studentId);
+                else selectedStudentIds.add(studentId);
+            } else {
+                if (selectedStudentIds.has(studentId)) {
+                    selectedStudentIds.clear();
+                } else {
+                    selectedStudentIds.clear();
+                    selectedStudentIds.add(studentId);
+                }
+            }
+            renderStudentList();
+        }
+
+        function onToggleMultiMode() {
+            isMultiSelectMode = document.getElementById('toggle-multi-select').checked;
+            if (!isMultiSelectMode && selectedStudentIds.size > 1) {
+                selectedStudentIds.clear();
+                renderStudentList();
+            }
+        }
+
+        function updateSelectedSummary() {
+            const count = selectedStudentIds.size;
+            document.getElementById('selected-summary').innerText = `Đã chọn: ${count} học sinh`;
+            document.getElementById('submit-count-badge').innerText = count;
+        }
+
         function selectReason(reason, el) {
             selectedReason = reason;
             document.querySelectorAll('.reason-chip').forEach(c => c.className = 'reason-chip');
@@ -1334,125 +1286,126 @@ function updateSelectedSummary() {
             document.getElementById('sick-box').style.display = (reason === 'B') ? 'block' : 'none';
         }
 
-        // 9. LƯU ĐIỂM DANH (XỬ LÝ ĐÚNG LOGIC YÊU CẦU)
-// 6. GỬI ĐIỂM DANH HÀNG LOẠT TRONG 1 LẦN GHI
-async function submitAttendance() {
-    const date = document.getElementById('att-date-input').value;
-    const symptom = document.getElementById('symptom-input').value.trim();
+        // 10. GỬI ĐIỂM DANH HÀNG LOẠT (Đã fix lỗi giới hạn 'in' và chặn trùng lặp triệt để)
+        async function submitAttendance() {
+            const date = document.getElementById('att-date-input').value;
+            const symptom = document.getElementById('symptom-input').value.trim();
 
-    if (selectedStudentIds.size === 0) {
-        return alert("Vui lòng chạm chọn ít nhất 1 học sinh cần điểm danh!");
-    }
-    if (selectedReason === 'B' && !symptom) {
-        return alert("Vui lòng nhập triệu chứng báo bệnh cho học sinh!");
-    }
-
-    const btn = document.getElementById('btn-save');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang ghi nhận...';
-
-    try {
-        const studentIdArray = Array.from(selectedStudentIds);
-        
-        // Kiểm tra trùng lặp trên bộ nhớ đệm hoặc Firebase
-        const existingSnap = await db.collection('yt_attendance')
-            .where('date', '==', date)
-            .where('studentId', 'in', studentIdArray.slice(0, 10)) // Firestore hỗ trợ kiểm tra in tối đa
-            .get();
-
-        const alreadyMarked = [];
-        existingSnap.forEach(d => alreadyMarked.push(d.data().name));
-
-        if (alreadyMarked.length > 0) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-check-circle"></i> Ghi nhận vắng';
-            return alert(`⚠️ Học sinh [${alreadyMarked.join(', ')}] đã được điểm danh trong ngày hôm nay rồi!`);
-        }
-
-        const batch = db.batch();
-
-        studentIdArray.forEach(stId => {
-            const studentObj = allStudentsCache.find(s => s.id === stId);
-            if (!studentObj) return;
-
-            const attRef = db.collection('yt_attendance').doc();
-            const attData = {
-                studentId: studentObj.id,
-                name: studentObj.name,
-                class: studentObj.class,
-                date: date,
-                reason: selectedReason,
-                recordedBy: currentUser.displayName,
-                recorderRole: currentUserRole,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            if (selectedReason === 'B') {
-                attData.symptom = symptom;
-                attData.diagnosis = "Chờ Phòng Y Tế xác minh";
-                attData.isPendingAdmin = true;
-
-                const notiRef = db.collection('yt_notifications').doc();
-                batch.set(notiRef, {
-                    title: `🚨 BÁO CA BỆNH: ${studentObj.name} - Lớp ${studentObj.class}`,
-                    content: `${currentUser.displayName} (${currentUserRole.toUpperCase()}) báo ca bệnh: ${studentObj.name} (Lớp ${studentObj.class}). Triệu chứng: ${symptom}`,
-                    targetType: "admin",
-                    type: "sick_alert",
-                    sender: currentUser.displayName,
-                    relatedAttendanceId: attRef.id,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            } else {
-                const notiStudentRef = db.collection('yt_notifications').doc();
-                const reasonText = selectedReason === 'P' ? 'Có phép' : 'Không phép';
-                batch.set(notiStudentRef, {
-                    title: "Thông báo Vắng mặt Điểm danh",
-                    content: `Bạn được ghi nhận vắng mặt ngày ${new Date(date).toLocaleDateString('vi-VN')} (${reasonText}). Người ghi nhận: ${currentUser.displayName}.`,
-                    targetType: "student",
-                    targetValue: studentObj.id,
-                    sender: "Giám thị / GVCN",
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                attData.notificationId = notiStudentRef.id;
+            if (selectedStudentIds.size === 0) {
+                return alert("Vui lòng chạm chọn ít nhất 1 học sinh cần điểm danh!");
+            }
+            if (selectedReason === 'B' && !symptom) {
+                return alert("Vui lòng nhập triệu chứng báo bệnh cho học sinh!");
             }
 
-            batch.set(attRef, attData);
-        });
+            const btn = document.getElementById('btn-save');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang ghi nhận...';
 
-        await batch.commit();
+            try {
+                // Tối ưu: Chỉ lấy dữ liệu điểm danh của ngày đó để check trùng lặp trên JS (Không bị kẹt giới hạn 30 của 'in')
+                const existingSnap = await db.collection('yt_attendance').where('date', '==', date).get();
+                const alreadyMarked = [];
+                
+                existingSnap.forEach(doc => {
+                    const data = doc.data();
+                    if(selectedStudentIds.has(data.studentId)) {
+                        alreadyMarked.push(data.name);
+                    }
+                });
 
-        alert(`✅ Đã ghi nhận điểm danh thành công cho ${selectedStudentIds.size} học sinh!`);
-        
-        // Reset sau khi gửi thành công
-        selectedStudentIds.clear();
-        document.getElementById('symptom-input').value = '';
-        renderStudentList();
-        loadDailyAbsentRecords();
+                if (alreadyMarked.length > 0) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fas fa-check-circle"></i> Ghi nhận vắng (<span id="submit-count-badge">${selectedStudentIds.size}</span>)`;
+                    return alert(`⚠️ Học sinh [${alreadyMarked.join(', ')}] đã được điểm danh trong ngày hôm nay rồi!`);
+                }
 
-    } catch (err) {
-        alert("Lỗi khi lưu: " + err.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<i class="fas fa-check-circle"></i> Ghi nhận vắng (<span id="submit-count-badge">0</span>)`;
-        updateSelectedSummary();
-    }
-}
+                const batch = db.batch();
+                const studentIdArray = Array.from(selectedStudentIds);
 
-        // 10. TẢI DANH SÁCH VẮNG HÔM NAY (ĐÃ LỌC THEO QUYỀN LỚP)
+                studentIdArray.forEach(stId => {
+                    const studentObj = allStudentsCache.find(s => s.id === stId);
+                    if (!studentObj) return;
+
+                    const attRef = db.collection('yt_attendance').doc();
+                    const attData = {
+                        studentId: studentObj.id,
+                        name: studentObj.name,
+                        class: studentObj.class,
+                        date: date,
+                        reason: selectedReason,
+                        recordedBy: currentUser.displayName,
+                        recorderRole: currentUserRole,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+
+                    if (selectedReason === 'B') {
+                        attData.symptom = symptom;
+                        attData.diagnosis = "Chờ Phòng Y Tế xác minh";
+                        attData.isPendingAdmin = true;
+
+                        const notiRef = db.collection('yt_notifications').doc();
+                        batch.set(notiRef, {
+                            title: `🚨 BÁO CA BỆNH: ${studentObj.name} - Lớp ${studentObj.class}`,
+                            content: `${currentUser.displayName} (${currentUserRole.toUpperCase()}) báo ca bệnh: ${studentObj.name} (Lớp ${studentObj.class}). Triệu chứng: ${symptom}`,
+                            targetType: "admin",
+                            type: "sick_alert",
+                            sender: currentUser.displayName,
+                            relatedAttendanceId: attRef.id,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    } else {
+                        const notiStudentRef = db.collection('yt_notifications').doc();
+                        const reasonText = selectedReason === 'P' ? 'Có phép' : 'Không phép';
+                        batch.set(notiStudentRef, {
+                            title: "Thông báo Vắng mặt Điểm danh",
+                            content: `Bạn được ghi nhận vắng mặt ngày ${new Date(date).toLocaleDateString('vi-VN')} (${reasonText}). Người ghi nhận: ${currentUser.displayName}.`,
+                            targetType: "student",
+                            targetValue: studentObj.id,
+                            sender: "Giám thị / GVCN",
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        attData.notificationId = notiStudentRef.id;
+                    }
+
+                    batch.set(attRef, attData);
+                });
+
+                await batch.commit();
+                alert(`✅ Đã ghi nhận điểm danh thành công cho ${selectedStudentIds.size} học sinh!`);
+                
+                selectedStudentIds.clear();
+                document.getElementById('symptom-input').value = '';
+                renderStudentList();
+                loadDailyAbsentRecords();
+
+            } catch (err) {
+                alert("Lỗi khi lưu: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-check-circle"></i> Ghi nhận vắng (<span id="submit-count-badge">0</span>)`;
+                updateSelectedSummary();
+            }
+        }
+
+        // 11. TẢI DANH SÁCH VẮNG HÔM NAY (Đã tối ưu query Firestore tránh rò rỉ và đọc thừa)
         async function loadDailyAbsentRecords() {
             const date = document.getElementById('att-date-input').value;
             const container = document.getElementById('absent-list-container');
             if (!date || !container) return;
 
             try {
-                let snap = await db.collection('yt_attendance').where('date', '==', date).get();
+                let query = db.collection('yt_attendance').where('date', '==', date);
+                
+                // Tối ưu: Nếu là GVCN (không phải ALL), chỉ lấy danh sách lớp của họ. Giảm hàng trăm chi phí reads.
+                if (!allowedClasses.includes('ALL') && allowedClasses.length > 0) {
+                    // Firebase 'in' hỗ trợ tối đa 30, hoàn toàn an toàn cho số lượng lớp của 1 GVCN
+                    query = query.where('class', 'in', allowedClasses);
+                }
+
+                let snap = await query.get();
                 let records = [];
                 snap.forEach(d => records.push({ id: d.id, ...d.data() }));
-
-                // Lọc theo lớp được phân quyền
-                if (!allowedClasses.includes('ALL')) {
-                    records = records.filter(r => allowedClasses.includes((r.class || '').toUpperCase()));
-                }
 
                 document.getElementById('absent-today-count').innerText = records.length;
 
@@ -1493,29 +1446,22 @@ async function submitAttendance() {
             }
         }
 
-// HÀM XÓA ĐIỂM DANH & TỰ ĐỘNG THU HỒI THÔNG BÁO ADMIN / HỌC SINH
+        // HÀM XÓA ĐIỂM DANH & TỰ ĐỘNG THU HỒI THÔNG BÁO ADMIN / HỌC SINH
         async function deleteAbsentRecord(docId, name) {
             if (confirm(`Hủy ghi nhận vắng mặt của học sinh ${name}?\n(Thông báo cảnh báo ca bệnh gửi tới Admin cũng sẽ được tự động xóa).`)) {
                 try {
                     const batch = db.batch();
-
-                    // 1. Xóa bản ghi điểm danh
                     const attRef = db.collection('yt_attendance').doc(docId);
                     batch.delete(attRef);
 
-                    // 2. Tìm và xóa thông báo cảnh báo ca bệnh gửi tới Admin (nếu có)
                     const notiAdminSnap = await db.collection('yt_notifications')
-                        .where('relatedAttendanceId', '==', docId)
-                        .get();
+                        .where('relatedAttendanceId', '==', docId).get();
                     notiAdminSnap.forEach(doc => batch.delete(doc.ref));
 
-                    // 3. Tìm và xóa thông báo gửi cho học sinh (nếu có trường hợp P/KP)
                     const notiStudentSnap = await db.collection('yt_notifications')
-                        .where('notificationId', '==', docId)
-                        .get();
+                        .where('notificationId', '==', docId).get();
                     notiStudentSnap.forEach(doc => batch.delete(doc.ref));
 
-                    // Thực thi xóa đồng thời
                     await batch.commit();
 
                     alert("✅ Đã hủy điểm danh và thu hồi thông báo thành công!");
@@ -1526,7 +1472,7 @@ async function submitAttendance() {
             }
         }
 
-        // TIỆN ÍCH NGÀY THÁNG
+        // TIỆN ÍCH NGÀY THÁNG & ĐIỀU HƯỚNG
         function initDate() {
             const today = new Date();
             const yyyy = today.getFullYear();
@@ -1581,7 +1527,6 @@ async function submitAttendance() {
             }
         }
 
-        // TỰ ĐỘNG KHÓA KHI THOÁT APP (GIỐNG APP NGÂN HÀNG)
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
                 sessionStorage.removeItem('vts_dd_unlocked');
@@ -1597,6 +1542,5 @@ async function submitAttendance() {
             }
         });
     </script>
-    <script src="../assets/auth-check.js"></script>
 </body>
 </html>

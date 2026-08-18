@@ -1241,10 +1241,32 @@
             }
         }
 
+// HÀM XÓA ĐIỂM DANH & TỰ ĐỘNG THU HỒI THÔNG BÁO ADMIN / HỌC SINH
         async function deleteAbsentRecord(docId, name) {
-            if (confirm(`Hủy ghi nhận vắng mặt của học sinh ${name}?`)) {
+            if (confirm(`Hủy ghi nhận vắng mặt của học sinh ${name}?\n(Thông báo cảnh báo ca bệnh gửi tới Admin cũng sẽ được tự động xóa).`)) {
                 try {
-                    await db.collection('yt_attendance').doc(docId).delete();
+                    const batch = db.batch();
+
+                    // 1. Xóa bản ghi điểm danh
+                    const attRef = db.collection('yt_attendance').doc(docId);
+                    batch.delete(attRef);
+
+                    // 2. Tìm và xóa thông báo cảnh báo ca bệnh gửi tới Admin (nếu có)
+                    const notiAdminSnap = await db.collection('yt_notifications')
+                        .where('relatedAttendanceId', '==', docId)
+                        .get();
+                    notiAdminSnap.forEach(doc => batch.delete(doc.ref));
+
+                    // 3. Tìm và xóa thông báo gửi cho học sinh (nếu có trường hợp P/KP)
+                    const notiStudentSnap = await db.collection('yt_notifications')
+                        .where('notificationId', '==', docId)
+                        .get();
+                    notiStudentSnap.forEach(doc => batch.delete(doc.ref));
+
+                    // Thực thi xóa đồng thời
+                    await batch.commit();
+
+                    alert("✅ Đã hủy điểm danh và thu hồi thông báo thành công!");
                     loadDailyAbsentRecords();
                 } catch(e) {
                     alert("Lỗi khi xóa: " + e.message);

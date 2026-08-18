@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Điểm Danh Thông Minh - Y Tế Số VTS</title>
+    <title>Điểm Danh - Y Tế Số VTS</title>
     <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/uq7hr3wp/image/upload/v1787045296/rfhuztp3qiohlvwr4bhf.png">
     <link rel="icon" href="https://res.cloudinary.com/uq7hr3wp/image/upload/v1787045296/rfhuztp3qiohlvwr4bhf.png" sizes="32x32" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -22,7 +22,6 @@
             --text-main: #0f172a;
             --text-muted: #64748b;
             --border-col: #e2e8f0;
-            --radius-sm: 10px;
             --radius-md: 14px;
             --radius-lg: 20px;
             --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
@@ -42,11 +41,11 @@
             background-color: var(--bg-body);
             color: var(--text-main);
             min-height: 100vh;
-            padding-bottom: 90px;
+            padding-bottom: env(safe-area-inset-bottom, 20px);
             user-select: none;
         }
 
-        /* --- AUTH & LOCK SCREEN --- */
+        /* --- AUTH SCREEN & PIN LOCK --- */
         .auth-overlay {
             position: fixed;
             inset: 0;
@@ -58,232 +57,540 @@
             justify-content: center;
             padding: 24px;
         }
-        .auth-box { width: 100%; max-width: 360px; text-align: center; }
-        .auth-logo { width: 72px; height: 72px; border-radius: 20px; box-shadow: var(--shadow-md); margin-bottom: 20px; }
-        .auth-title { font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px; }
-        .auth-desc { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 28px; line-height: 1.4; }
-        
-        .pin-dots { display: flex; justify-content: center; gap: 16px; margin-bottom: 36px; }
-        .pin-dots span { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #cbd5e1; transition: all 0.2s; }
-        .pin-dots span.active { background: var(--primary); border-color: var(--primary); transform: scale(1.15); }
 
-        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; max-width: 300px; margin: 0 auto; }
-        .num-key { background: #f1f5f9; border: none; height: 62px; border-radius: 20px; font-size: 1.45rem; font-weight: 700; color: var(--text-main); cursor: pointer; }
-        .num-key:active { background: #e2e8f0; transform: scale(0.92); }
-        .num-key.ghost { background: transparent; font-size: 1.25rem; color: var(--primary); }
+        .auth-box {
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+        }
+
+        .auth-logo {
+            width: 72px;
+            height: 72px;
+            border-radius: 20px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 20px;
+        }
+
+        .auth-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
+        }
+
+        .auth-desc {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-bottom: 28px;
+            line-height: 1.4;
+        }
+
+        .pin-dots {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 36px;
+        }
+
+        .pin-dots span {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid #cbd5e1;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .pin-dots span.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            transform: scale(1.15);
+        }
+
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .num-key {
+            background: #f1f5f9;
+            border: none;
+            height: 64px;
+            border-radius: 22px;
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.15s;
+        }
+
+        .num-key:active {
+            background: #e2e8f0;
+            transform: scale(0.92);
+        }
+
+        .num-key.ghost {
+            background: transparent;
+            font-size: 1.25rem;
+            color: var(--primary);
+        }
 
         .btn-google {
-            display: flex; align-items: center; justify-content: center; gap: 12px;
-            width: 100%; padding: 15px; background: #ffffff; border: 1.5px solid var(--border-col);
-            border-radius: var(--radius-md); font-size: 0.95rem; font-weight: 700; color: var(--text-main);
-            box-shadow: var(--shadow-sm); cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 15px;
+            background: #ffffff;
+            border: 1.5px solid var(--border-col);
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
         }
 
         /* --- APP HEADER --- */
         .app-header {
-            position: sticky; top: 0; z-index: 100;
-            background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(16px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid var(--border-col);
-            padding: 12px 18px; display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        .user-chip { display: flex; align-items: center; gap: 10px; }
-        .user-avatar { width: 38px; height: 38px; border-radius: 12px; object-fit: cover; background: var(--primary-light); }
-        .user-details h4 { font-size: 0.9rem; font-weight: 700; line-height: 1.2; }
-        .user-badge { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; display: inline-block; margin-top: 2px; }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            object-fit: cover;
+            background: var(--primary-light);
+        }
+
+        .user-details h4 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .user-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 2px;
+        }
+
         .badge-admin { background: #fee2e2; color: #b91c1c; }
         .badge-quansinh { background: #f3e8ff; color: #7e22ce; }
         .badge-gvcn { background: #fef3c7; color: #b45309; }
 
-        .header-actions { display: flex; gap: 8px; }
         .btn-icon-header {
-            width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border-col);
-            background: #fff; color: var(--text-muted); display: flex; align-items: center; justify-content: center;
-            font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            border: 1px solid var(--border-col);
+            background: #fff;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            cursor: pointer;
         }
-        .btn-icon-header:active { transform: scale(0.92); }
 
-        /* --- MAIN LAYOUT --- */
-        .app-container { max-width: 540px; margin: 0 auto; padding: 14px; }
+        /* --- MAIN CONTENT & NAVIGATION TABS --- */
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 16px;
+        }
 
         .nav-segments {
-            display: flex; background: #e2e8f0; padding: 4px; border-radius: 14px; margin-bottom: 14px;
+            display: flex;
+            background: #e2e8f0;
+            padding: 4px;
+            border-radius: 14px;
+            margin-bottom: 16px;
         }
-        .nav-segment-btn {
-            flex: 1; padding: 9px 0; text-align: center; font-size: 0.85rem; font-weight: 700;
-            color: var(--text-muted); border: none; background: transparent; border-radius: 10px; cursor: pointer;
-        }
-        .nav-segment-btn.active { background: #ffffff; color: var(--primary); box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
 
-        /* --- CARD & CONTROLS --- */
+        .nav-segment-btn {
+            flex: 1;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            border: none;
+            background: transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-segment-btn.active {
+            background: #ffffff;
+            color: var(--primary);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+
+        /* --- CARDS & FORM ELEMENTS --- */
         .app-card {
-            background: var(--card-bg); border-radius: var(--radius-lg); padding: 16px;
-            border: 1px solid var(--border-col); box-shadow: var(--shadow-sm); margin-bottom: 14px;
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+            border: 1px solid var(--border-col);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 16px;
         }
 
         .date-stepper {
-            display: flex; align-items: center; justify-content: space-between;
-            background: #f1f5f9; padding: 6px 10px; border-radius: var(--radius-md); margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f1f5f9;
+            padding: 6px;
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
         }
+
         .date-stepper button {
-            width: 34px; height: 34px; border-radius: 8px; border: none; background: #fff;
-            color: var(--text-main); font-size: 0.85rem; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .date-display { font-size: 0.9rem; font-weight: 800; color: var(--primary-dark); cursor: pointer; }
-
-        /* --- TOP FILTER & SEARCH BAR --- */
-        .filter-search-box {
-            display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;
-        }
-        .filter-row {
-            display: grid; grid-template-columns: 140px 1fr; gap: 8px;
-        }
-        .form-select, .form-input-search {
-            width: 100%; padding: 11px 12px; border-radius: var(--radius-md); border: 1.5px solid var(--border-col);
-            background: #f8fafc; font-size: 0.9rem; font-weight: 600; color: var(--text-main); outline: none;
-        }
-        .form-select:focus, .form-input-search:focus {
-            border-color: var(--primary); background: #ffffff;
-        }
-        .search-wrap { position: relative; }
-        .search-wrap i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
-
-        /* --- STUDENT SELECTION LIST --- */
-        .list-header-bar {
-            display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 0 4px;
-        }
-        .list-header-bar span { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
-        .btn-select-all {
-            background: none; border: none; font-size: 0.8rem; font-weight: 700; color: var(--primary); cursor: pointer;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: none;
+            background: #ffffff;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        .student-list-container {
-            max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
-            padding-right: 4px; margin-bottom: 14px;
+        .date-display {
+            font-size: 0.92rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-        .student-list-container::-webkit-scrollbar { width: 5px; }
-        .student-list-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
-        .student-item-card {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 10px 12px; border-radius: var(--radius-md); border: 1.5px solid var(--border-col);
-            background: #f8fafc; cursor: pointer; transition: all 0.15s ease;
+        .form-group {
+            margin-bottom: 16px;
         }
-        .student-item-card:hover { border-color: #cbd5e1; }
-        .student-item-card.selected {
-            background: #f0f9ff; border-color: var(--primary);
-        }
-        .student-item-left { display: flex; align-items: center; gap: 10px; }
-        .student-check {
-            width: 22px; height: 22px; border-radius: 6px; border: 2px solid #94a3b8;
-            display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.75rem;
-            background: #fff; transition: all 0.15s;
-        }
-        .student-item-card.selected .student-check {
-            background: var(--primary); border-color: var(--primary);
-        }
-        .student-name-box h5 { font-size: 0.88rem; font-weight: 700; color: var(--text-main); }
-        .student-name-box span { font-size: 0.76rem; color: var(--text-muted); }
 
-        /* --- REASON SELECTION --- */
-        .reason-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 13px 14px;
+            border-radius: var(--radius-md);
+            border: 1.5px solid var(--border-col);
+            background: #f8fafc;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            background: #ffffff;
+        }
+
+        /* --- REASON SELECT CHIPS --- */
+        .reason-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
         .reason-chip {
-            padding: 10px 6px; border-radius: var(--radius-md); border: 1.5px solid var(--border-col);
-            background: #f8fafc; text-align: center; cursor: pointer; transition: all 0.15s ease;
+            padding: 12px 6px;
+            border-radius: var(--radius-md);
+            border: 1.5px solid var(--border-col);
+            background: #f8fafc;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
-        .reason-chip .icon { font-size: 1.15rem; display: block; margin-bottom: 3px; }
-        .reason-chip .txt { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); }
 
-        .reason-chip.active-p { border-color: #38bdf8; background: #f0f9ff; }
+        .reason-chip .icon {
+            font-size: 1.25rem;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .reason-chip .txt {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .reason-chip.active-p {
+            border-color: #38bdf8;
+            background: #f0f9ff;
+        }
         .reason-chip.active-p .txt { color: #0284c7; }
-        .reason-chip.active-kp { border-color: #f87171; background: #fef2f2; }
+
+        .reason-chip.active-kp {
+            border-color: #f87171;
+            background: #fef2f2;
+        }
         .reason-chip.active-kp .txt { color: #dc2626; }
-        .reason-chip.active-b { border-color: #fbbf24; background: #fffbeb; }
+
+        .reason-chip.active-b {
+            border-color: #fbbf24;
+            background: #fffbeb;
+        }
         .reason-chip.active-b .txt { color: #d97706; }
 
+        /* SICK ALERT SECTION */
         .sick-notice-box {
-            background: #fffbeb; border: 1.5px dashed #f59e0b; border-radius: var(--radius-md);
-            padding: 12px; margin-bottom: 12px; display: none;
+            background: #fffbeb;
+            border: 1.5px dashed #f59e0b;
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin-top: 14px;
+            display: none;
+            animation: fadeIn 0.2s ease;
         }
-        .sick-notice-box input {
-            width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #fcd34d; outline: none;
-            margin-top: 6px; font-size: 0.88rem;
+
+        .sick-notice-box small {
+            display: block;
+            color: #92400e;
+            font-size: 0.76rem;
+            font-weight: 600;
+            margin-top: 6px;
+            line-height: 1.35;
         }
 
         .btn-submit {
-            width: 100%; padding: 14px; background: var(--primary); color: #ffffff; border: none;
-            border-radius: var(--radius-md); font-size: 0.95rem; font-weight: 800; display: flex;
-            align-items: center; justify-content: center; gap: 8px; cursor: pointer;
-            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3); transition: transform 0.1s;
+            width: 100%;
+            padding: 15px;
+            background: var(--primary);
+            color: #ffffff;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+            transition: transform 0.1s;
+            margin-top: 8px;
         }
-        .btn-submit:disabled { background: #94a3b8; box-shadow: none; cursor: not-allowed; }
-        .btn-submit:active:not(:disabled) { transform: scale(0.98); }
 
-        /* --- ABSENT LIST (TAB 2) --- */
+        .btn-submit:active {
+            transform: scale(0.98);
+        }
+
+        /* --- ABSENT LIST VIEW --- */
         .absent-card {
-            background: #ffffff; border: 1px solid var(--border-col); border-radius: var(--radius-md);
-            padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;
+            background: #ffffff;
+            border: 1px solid var(--border-col);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             box-shadow: var(--shadow-sm);
         }
-        .absent-info h5 { font-size: 0.9rem; font-weight: 700; color: var(--text-main); }
-        .absent-info span { font-size: 0.78rem; color: var(--text-muted); }
-        .badge-reason { font-size: 0.7rem; font-weight: 800; padding: 2px 7px; border-radius: 6px; margin-left: 4px; }
+
+        .absent-info h5 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 2px;
+        }
+
+        .absent-info span {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .badge-reason {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 6px;
+            margin-left: 6px;
+        }
+
         .badge-p { background: #e0f2fe; color: #0369a1; }
         .badge-kp { background: #fee2e2; color: #b91c1c; }
         .badge-b { background: #fef3c7; color: #b45309; }
 
         .btn-delete-record {
-            width: 32px; height: 32px; border-radius: 8px; border: none; background: #fee2e2;
-            color: var(--danger); display: flex; align-items: center; justify-content: center; cursor: pointer;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            border: none;
+            background: #fee2e2;
+            color: var(--danger);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
         }
 
-        .empty-state { text-align: center; padding: 30px 10px; color: var(--text-muted); }
-        .empty-state i { font-size: 2.2rem; color: #cbd5e1; margin-bottom: 8px; }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
 
-        /* --- SPLASH SCREEN --- */
+        .empty-state i {
+            font-size: 2.5rem;
+            color: #cbd5e1;
+            margin-bottom: 10px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* --- SPLASH SCREEN HIỆU ỨNG KHỞI ĐỘNG --- */
         #splash-screen {
-            position: fixed; inset: 0; background: #ffffff; z-index: 99999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.4s ease, visibility 0.4s;
+            position: fixed;
+            inset: 0;
+            background: #ffffff;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.5s;
         }
-        .splash-logo { width: 80px; height: 80px; border-radius: 22px; box-shadow: 0 10px 25px rgba(2, 132, 199, 0.2); }
-        .splash-title { font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin-top: 16px; }
-        .splash-sub { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; font-weight: 600; }
-        .splash-fade-out { opacity: 0 !important; visibility: hidden !important; pointer-events: none; }
+
+        .splash-logo {
+            width: 84px;
+            height: 84px;
+            border-radius: 24px;
+            box-shadow: 0 12px 30px rgba(2, 132, 199, 0.25);
+            animation: splashPulse 1.3s ease-in-out infinite alternate;
+        }
+
+        .splash-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-top: 18px;
+            letter-spacing: -0.3px;
+        }
+
+        .splash-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        .splash-bar {
+            width: 110px;
+            height: 3.5px;
+            background: #e2e8f0;
+            border-radius: 99px;
+            overflow: hidden;
+            margin-top: 24px;
+            position: relative;
+        }
+
+        .splash-bar::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; bottom: 0;
+            width: 45%;
+            background: var(--primary);
+            border-radius: 99px;
+            animation: splashProgress 1.1s infinite ease-in-out;
+        }
+
+        @keyframes splashPulse {
+            0% { transform: scale(0.94); opacity: 0.85; }
+            100% { transform: scale(1.05); opacity: 1; }
+        }
+
+        @keyframes splashProgress {
+            0% { left: -45%; }
+            100% { left: 100%; }
+        }
+
+        .splash-fade-out {
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
-
-    <!-- SPLASH SCREEN KHỞI ĐỘNG -->
+    <!-- 0. SPLASH SCREEN KHỞI ĐỘNG -->
     <div id="splash-screen">
         <img src="https://res.cloudinary.com/uq7hr3wp/image/upload/v1787045296/rfhuztp3qiohlvwr4bhf.png" class="splash-logo" alt="Logo">
-        <div class="splash-title">ĐIỂM DANH THÔNG MINH</div>
+        <div class="splash-title">ĐIỂM DANH HỌC SINH</div>
         <div class="splash-sub">Y Tế Số - THPT Võ Thị Sáu</div>
+        <div class="splash-bar"></div>
     </div>
-
-    <!-- MÀN HÌNH XÁC THỰC VÀ MÃ PIN -->
+    <!-- 1. MÀN HÌNH BẢO MẬT & PIN LOCK -->
     <div id="auth-screen" class="auth-overlay">
-        <!-- Đăng nhập Google -->
+        <!-- Bước A: Đăng nhập Google (Lần đầu tiên) -->
         <div id="step-google" class="auth-box">
             <img src="https://res.cloudinary.com/uq7hr3wp/image/upload/v1787045296/rfhuztp3qiohlvwr4bhf.png" class="auth-logo" alt="Logo">
             <h2 class="auth-title">ĐIỂM DANH HỌC SINH</h2>
-            <p class="auth-desc">Phân hệ dành cho Giáo viên, Quản sinh và Quản Trị Viên</p>
+            <p class="auth-desc">Dành cho Giáo viên chủ nhiệm, Quản sinh và Ban Quản Trị</p>
             <button onclick="handleGoogleAuth()" class="btn-google">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="20" alt="G">
                 Đăng nhập tài khoản Google
             </button>
         </div>
 
-        <!-- Tạo PIN 6 số -->
+        <!-- Bước B: Thiết lập mã PIN 6 số -->
         <div id="step-set-pin" class="auth-box" style="display: none;">
             <h2 class="auth-title" id="pin-title">TẠO MÃ PIN TRUY CẬP</h2>
-            <p class="auth-desc" id="pin-desc">Nhập 6 số để mở khóa nhanh hàng ngày</p>
+            <p class="auth-desc" id="pin-desc">Nhập 6 số để đăng nhập nhanh mỗi ngày</p>
             <div class="pin-dots" id="setup-pin-dots">
                 <span></span><span></span><span></span><span></span><span></span><span></span>
             </div>
             <div class="numpad" id="setup-numpad"></div>
         </div>
 
-        <!-- Mở khóa PIN -->
+        <!-- Bước C: Mở khóa mã PIN / Vân tay khi quay lại app -->
         <div id="step-unlock" class="auth-box" style="display: none;">
             <img src="https://res.cloudinary.com/uq7hr3wp/image/upload/v1787045296/rfhuztp3qiohlvwr4bhf.png" class="auth-logo" alt="Logo">
             <h2 class="auth-title">MỞ KHÓA ỨNG DỤNG</h2>
@@ -295,41 +602,36 @@
         </div>
     </div>
 
-    <!-- GIAO DIỆN CHÍNH APP ĐIỂM DANH -->
+    <!-- 2. GIAO DIỆN CHÍNH CỦA APP ĐIỂM DANH -->
     <div id="app-main" style="display: none;">
         <header class="app-header">
             <div class="user-chip">
                 <img id="user-avatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="user-avatar" alt="Avatar">
                 <div class="user-details">
-                    <h4 id="user-name">Đang nạp...</h4>
+                    <h4 id="user-name">Đang tải...</h4>
                     <span id="user-role-badge" class="user-badge badge-gvcn">GVCN</span>
                 </div>
             </div>
-            <div class="header-actions">
-                <button onclick="syncFreshData()" class="btn-icon-header" title="Đồng bộ danh sách học sinh mới">
-                    <i class="fas fa-sync-alt" id="sync-icon"></i>
-                </button>
-                <button onclick="handleLogout()" class="btn-icon-header" title="Đăng xuất">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
-            </div>
+            <button onclick="handleLogout()" class="btn-icon-header" title="Đăng xuất">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
         </header>
 
         <main class="app-container">
-            <!-- TABS -->
+            <!-- THANH ĐIỀU HƯỚNG TAB -->
             <div class="nav-segments">
                 <button class="nav-segment-btn active" onclick="switchTab('pane-attendance', this)">
-                    <i class="fas fa-user-check"></i> Điểm danh
+                    <i class="fas fa-edit"></i> Điểm danh
                 </button>
                 <button class="nav-segment-btn" onclick="switchTab('pane-history', this)">
-                    <i class="fas fa-clipboard-list"></i> Đã vắng hôm nay (<span id="absent-today-count">0</span>)
+                    <i class="fas fa-clipboard-list"></i> Danh sách vắng (<span id="absent-today-count">0</span>)
                 </button>
             </div>
 
-            <!-- TAB 1: FORM ĐIỂM DANH CẢI TIẾN -->
+            <!-- TAB 1: FORM ĐIỂM DANH -->
             <section id="pane-attendance">
                 <div class="app-card">
-                    <!-- NGÀY ĐIỂM DANH -->
+                    <!-- BỘ CHỌN NGÀY THÔNG MINH -->
                     <div class="date-stepper">
                         <button type="button" onclick="adjustDate(-1)"><i class="fas fa-chevron-left"></i></button>
                         <div class="date-display" onclick="document.getElementById('att-date-input').showPicker()">
@@ -340,55 +642,50 @@
                         <button type="button" onclick="adjustDate(1)"><i class="fas fa-chevron-right"></i></button>
                     </div>
 
-                    <!-- BỘ LỌC LỚP & THANH TÌM KIẾM HỌC SINH -->
-                    <div class="filter-search-box">
-                        <div class="filter-row">
-                            <select id="filter-class" class="form-select" onchange="applyFilterAndSearch()">
-                                <option value="">Tất cả lớp</option>
-                            </select>
-                            <div class="search-wrap">
-                                <input type="text" id="search-box" class="form-input-search" placeholder="🔍 Tìm tên hoặc mã số..." oninput="applyFilterAndSearch()">
+                    <!-- CHỌN LỚP (TỰ ĐỘNG KHÓA / PHÂN QUYỀN) -->
+                    <div class="form-group">
+                        <label class="form-label">Lớp phụ trách</label>
+                        <select id="class-select" class="form-control" onchange="loadStudentsOfSelectedClass()">
+                            <option value="">-- Đang nạp danh sách lớp --</option>
+                        </select>
+                    </div>
+
+                    <!-- CHỌN HỌC SINH -->
+                    <div class="form-group">
+                        <label class="form-label">Học sinh vắng</label>
+                        <select id="student-select" class="form-control">
+                            <option value="">-- Chọn lớp trước --</option>
+                        </select>
+                    </div>
+
+                    <!-- LÝ DO VẮNG (CHIPS TRỰC QUAN) -->
+                    <div class="form-group">
+                        <label class="form-label">Lý do nghỉ</label>
+                        <div class="reason-grid">
+                            <div class="reason-chip active-p" onclick="selectReason('P', this)">
+                                <span class="icon">📝</span>
+                                <span class="txt">Có phép (P)</span>
+                            </div>
+                            <div class="reason-chip" onclick="selectReason('KP', this)">
+                                <span class="icon">⚠️</span>
+                                <span class="txt">Không phép (KP)</span>
+                            </div>
+                            <div class="reason-chip" onclick="selectReason('B', this)">
+                                <span class="icon">🩺</span>
+                                <span class="txt">Báo bệnh (B)</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- DANH SÁCH HỌC SINH (SẮP XẾP THEO TÊN TIẾNG VIỆT + CHỌN NHIỀU) -->
-                    <div class="list-header-bar">
-                        <span>Danh sách (<span id="student-count-display">0</span>)</span>
-                        <button type="button" class="btn-select-all" onclick="toggleSelectAll()">Chọn/Bỏ tất cả</button>
-                    </div>
-
-                    <div id="student-list" class="student-list-container">
-                        <!-- Danh sách render bằng JS -->
-                    </div>
-
-                    <!-- CHỌN LÝ DO VẮNG -->
-                    <div class="reason-grid">
-                        <div class="reason-chip active-p" onclick="selectReason('P', this)">
-                            <span class="icon">📝</span>
-                            <span class="txt">Có phép (P)</span>
-                        </div>
-                        <div class="reason-chip" onclick="selectReason('KP', this)">
-                            <span class="icon">⚠️</span>
-                            <span class="txt">Không phép (KP)</span>
-                        </div>
-                        <div class="reason-chip" onclick="selectReason('B', this)">
-                            <span class="icon">🩺</span>
-                            <span class="txt">Báo bệnh (B)</span>
-                        </div>
-                    </div>
-
-                    <!-- TRIỆU CHỨNG BỆNH -->
+                    <!-- KHU VỰC NHẬP TRIỆU CHỨNG NGHỈ BỆNH -->
                     <div id="sick-box" class="sick-notice-box">
-                        <label style="font-size: 0.78rem; font-weight: 700; color: #92400e;">
-                            <i class="fas fa-notes-medical"></i> Triệu chứng học sinh báo:
-                        </label>
-                        <input type="text" id="symptom-input" placeholder="VD: Sốt cao, đau bụng, xuất huyết...">
+                        <label class="form-label" style="color: #92400e;"><i class="fas fa-notes-medical"></i> Triệu chứng học sinh báo</label>
+                        <input type="text" id="symptom-input" class="form-control" style="background:#fff;" placeholder="VD: Sốt cao, đau bụng, đau mắt đỏ...">
+                        <small>💡 Thông tin ca bệnh sẽ được gửi trực tiếp tới Chuông cảnh báo Y Tế để nhân viên Y tế xác minh và hoàn thiện chẩn đoán lâm sàng.</small>
                     </div>
 
-                    <!-- NÚT GỬI ĐIỂM DANH -->
-                    <button type="button" onclick="submitAttendanceBatch()" id="btn-save" class="btn-submit">
-                        <i class="fas fa-check-circle"></i> Ghi nhận vắng (<span id="selected-count-btn">0</span>)
+                    <button type="button" onclick="submitAttendance()" id="btn-save" class="btn-submit">
+                        <i class="fas fa-check-circle"></i> Ghi nhận điểm danh
                     </button>
                 </div>
             </section>
@@ -405,207 +702,371 @@
         </main>
     </div>
 
-    <!-- SCRIPTS -->
+    <!-- FIREBASE & CORE LIBS -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="../assets/config.js"></script>
     <script src="../assets/js/crypto.js"></script>
-    <script src="../assets/auth-check.js"></script>
 
     <script>
-        /* CORE ENGINE & ULTRA-OPTIMIZED ATTENDANCE WORKFLOW */
+        /* CORE ATTENDANCE APP ENGINE */
+
         let currentUser = null;
-        let currentUserRole = 'none';
-        let allowedClasses = [];
-        let allStudentsCache = [];     // Master Student Array
-        let filteredStudents = [];     // Filtered View
-        let selectedStudentIds = new Set();
-        let selectedReason = 'P';
+        let currentUserRole = 'none'; // 'admin' | 'quansinh' | 'gvcn'
+        let allowedClasses = [];      // Danh sách lớp được phép điểm danh
+        let allStudentsCache = [];    // Cache toàn bộ học sinh (đọc 1 lần, 0 cost)
+        let selectedReason = 'P';     // Mặc định 'P'
 
         // PIN States
-        let pinInput = [], pinConfirmInput = [], unlockPinInput = [];
+        let pinInput = [];
+        let pinConfirmInput = [];
         let isConfirmingPIN = false;
+        let unlockPinInput = [];
 
+        // 1. KHỞI CHẠY HỆ THỐNG VỚI HIỆU ỨNG SPLASH
         window.addEventListener('DOMContentLoaded', () => {
             initNumpads();
             initDate();
-            setTimeout(checkAppSession, 900);
+            
+            // Giữ hiệu ứng splash khoảng 1.1 giây tạo cảm giác mượt mà trước khi vào app
+            setTimeout(() => {
+                checkAppSession();
+            }, 1100);
         });
 
+        // Hàm làm mờ dần và ẩn Splash Screen
         function hideSplashScreen() {
             const splash = document.getElementById('splash-screen');
             if (splash) {
                 splash.classList.add('splash-fade-out');
-                setTimeout(() => splash.remove(), 400);
+                setTimeout(() => splash.remove(), 500); // Xóa khỏi DOM để tiết kiệm RAM
             }
         }
 
-        /* --- 1. THUẬT TOÁN SẮP XẾP TÊN TIẾNG VIỆT THEO TỪ CUỐI CÙNG --- */
-        function getLastNamePart(fullName) {
-            if (!fullName) return '';
-            const parts = fullName.trim().split(/\s+/);
-            return parts[parts.length - 1]; // Lấy chữ cuối cùng (Tên)
+        // 2. KHỞI TẠO BÀN PHÍM PIN SỐ TỐI GIẢN
+        function initNumpads() {
+            const makePad = (containerId, onKey) => {
+                const c = document.getElementById(containerId);
+                c.innerHTML = '';
+                for (let i = 1; i <= 9; i++) {
+                    const btn = document.createElement('button');
+                    btn.className = 'num-key';
+                    btn.innerText = i;
+                    btn.onclick = () => onKey(i);
+                    c.appendChild(btn);
+                }
+                // Biometric / Empty Key
+                const bioBtn = document.createElement('button');
+                bioBtn.className = 'num-key ghost';
+                bioBtn.innerHTML = '<i class="fas fa-fingerprint"></i>';
+                bioBtn.onclick = () => triggerBiometrics();
+                c.appendChild(bioBtn);
+
+                // Zero
+                const zero = document.createElement('button');
+                zero.className = 'num-key';
+                zero.innerText = '0';
+                zero.onclick = () => onKey(0);
+                c.appendChild(zero);
+
+                // Backspace
+                const del = document.createElement('button');
+                del.className = 'num-key ghost';
+                del.innerHTML = '<i class="fas fa-backspace"></i>';
+                del.onclick = () => onKey('del');
+                c.appendChild(del);
+            };
+
+            makePad('setup-numpad', handleSetupPinKey);
+            makePad('unlock-numpad', handleUnlockPinKey);
         }
 
-        function sortVietnameseStudents(list) {
-            return list.sort((a, b) => {
-                const nameA = getLastNamePart(a.name || '');
-                const nameB = getLastNamePart(b.name || '');
-                const comp = nameA.localeCompare(nameB, 'vi', { sensitivity: 'base' });
-                if (comp !== 0) return comp;
-                return (a.name || '').localeCompare(b.name || '', 'vi'); // Nếu trùng tên thì so cả họ
+        // 3. KIỂM TRA PHIÊN & MỞ GIAO DIỆN
+        function checkAppSession() {
+            const isRegistered = localStorage.getItem('vts_dd_registered') === 'true';
+            const isUnlocked = sessionStorage.getItem('vts_dd_unlocked') === 'true';
+
+            if (isRegistered) {
+                if (isUnlocked) {
+                    verifyUserPermission();
+                } else {
+                    showAuthStep('step-unlock');
+                    hideSplashScreen();
+                    setTimeout(triggerBiometrics, 300);
+                }
+            } else {
+                showAuthStep('step-google');
+                hideSplashScreen();
+            }
+        }
+        function showAuthStep(stepId) {
+            ['step-google', 'step-set-pin', 'step-unlock'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = (id === stepId) ? 'block' : 'none';
             });
         }
 
-        /* --- 2. LOCAL-FIRST CACHING STRATEGY (TIẾT KIỆM 99% FIRESTORE READS) --- */
-        async function getLocalOrFetchStudents(forceRefresh = false) {
-            const CACHE_KEY = 'vts_students_master_db';
-            if (!forceRefresh) {
-                const localData = localStorage.getItem(CACHE_KEY);
-                if (localData) {
-                    try {
-                        allStudentsCache = JSON.parse(localData);
-                        return allStudentsCache;
-                    } catch (e) {
-                        console.warn("Lỗi đọc cache local:", e);
+        // 4. XÁC THỰC GOOGLE LOGIN
+        function handleGoogleAuth() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+                .then(() => firebase.auth().signInWithPopup(provider))
+                .then(async (res) => {
+                    const valid = await checkUserRole(res.user);
+                    if (valid) {
+                        showAuthStep('step-set-pin');
+                    } else {
+                        alert("⛔ Tài khoản của bạn không được phân quyền sử dụng App Điểm Danh!");
+                        firebase.auth().signOut();
+                    }
+                })
+                .catch(err => alert("Lỗi đăng nhập: " + err.message));
+        }
+
+        // XỬ LÝ NHẬP PIN KHI TẠO
+        function handleSetupPinKey(key) {
+            let targetArray = isConfirmingPIN ? pinConfirmInput : pinInput;
+            if (key === 'del') targetArray.pop();
+            else if (targetArray.length < 6) targetArray.push(key);
+
+            updateDots('setup-pin-dots', targetArray.length);
+
+            if (targetArray.length === 6) {
+                if (!isConfirmingPIN) {
+                    setTimeout(() => {
+                        isConfirmingPIN = true;
+                        document.getElementById('pin-title').innerText = "XÁC NHẬN MÃ PIN";
+                        document.getElementById('pin-desc').innerText = "Nhập lại mã PIN 6 số vừa tạo";
+                        updateDots('setup-pin-dots', 0);
+                    }, 200);
+                } else {
+                    if (pinInput.join('') === pinConfirmInput.join('')) {
+                        localStorage.setItem('vts_dd_pin', pinInput.join(''));
+                        localStorage.setItem('vts_dd_registered', 'true');
+                        trySetupBiometric();
+                    } else {
+                        alert("Mã PIN không trùng khớp. Vui lòng tạo lại!");
+                        pinInput = [];
+                        pinConfirmInput = [];
+                        isConfirmingPIN = false;
+                        document.getElementById('pin-title').innerText = "TẠO MÃ PIN TRUY CẬP";
+                        document.getElementById('pin-desc').innerText = "Nhập 6 số để đăng nhập nhanh mỗi ngày";
+                        updateDots('setup-pin-dots', 0);
                     }
                 }
             }
-
-            // Chỉ nạp Firestore khi chưa có cache hoặc người dùng ấn nút Làm mới
-            const snap = await db.collection('yt_students').get();
-            allStudentsCache = [];
-            snap.forEach(doc => allStudentsCache.push({ id: doc.id, ...doc.data() }));
-
-            // Sắp xếp chuẩn tiếng Việt ngay khi nạp
-            allStudentsCache = sortVietnameseStudents(allStudentsCache);
-            localStorage.setItem(CACHE_KEY, JSON.stringify(allStudentsCache));
-            return allStudentsCache;
         }
 
-        // Nút đồng bộ thủ công khi có học sinh mới chuyển đến
-        async function syncFreshData() {
-            const icon = document.getElementById('sync-icon');
-            icon.classList.add('fa-spin');
-            try {
-                await getLocalOrFetchStudents(true);
-                populateClassFilter();
-                applyFilterAndSearch();
-                alert("✅ Đã làm mới danh sách học sinh từ máy chủ!");
-            } catch(e) {
-                alert("Lỗi tải: " + e.message);
-            } finally {
-                icon.classList.remove('fa-spin');
+        // XỬ LÝ MỞ KHÓA PIN
+        function handleUnlockPinKey(key) {
+            if (key === 'del') unlockPinInput.pop();
+            else if (unlockPinInput.length < 6) unlockPinInput.push(key);
+
+            updateDots('unlock-pin-dots', unlockPinInput.length);
+
+            if (unlockPinInput.length === 6) {
+                const savedPIN = localStorage.getItem('vts_dd_pin');
+                if (unlockPinInput.join('') === savedPIN) {
+                    sessionStorage.setItem('vts_dd_unlocked', 'true');
+                    verifyUserPermission();
+                } else {
+                    alert("Sai mã PIN!");
+                    unlockPinInput = [];
+                    updateDots('unlock-pin-dots', 0);
+                }
             }
         }
 
-        /* --- 3. BỘ LỌC LỚP & TÌM KIẾM THÔNG MINH --- */
-        function populateClassFilter() {
-            const classSelect = document.getElementById('filter-class');
+        function updateDots(containerId, len) {
+            const dots = document.querySelectorAll(`#${containerId} span`);
+            dots.forEach((d, idx) => {
+                if (idx < len) d.classList.add('active');
+                else d.classList.remove('active');
+            });
+        }
+
+        // SINH TRẮC HỌC (BIOMETRIC WEBAUTHN)
+        async function trySetupBiometric() {
+            if (window.PublicKeyCredential) {
+                try {
+                    const opt = {
+                        publicKey: {
+                            challenge: new Uint8Array([1, 2, 3, 4, 5]),
+                            rp: { name: "VTS Attendance" },
+                            user: { id: new Uint8Array([1]), name: "user", displayName: "User" },
+                            pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+                            authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" }
+                        }
+                    };
+                    const cred = await navigator.credentials.create(opt);
+                    if (cred) {
+                        const rawId = new Uint8Array(cred.rawId);
+                        localStorage.setItem('vts_dd_bio_id', btoa(String.fromCharCode.apply(null, rawId)));
+                    }
+                } catch(e) {}
+            }
+            sessionStorage.setItem('vts_dd_unlocked', 'true');
+            verifyUserPermission();
+        }
+
+        async function triggerBiometrics() {
+            const bioId = localStorage.getItem('vts_dd_bio_id');
+            if (!bioId || !window.PublicKeyCredential) return;
+            try {
+                const rawId = Uint8Array.from(atob(bioId), c => c.charCodeAt(0));
+                const assertion = await navigator.credentials.get({
+                    publicKey: {
+                        challenge: new Uint8Array([1, 2, 3, 4, 5]),
+                        allowCredentials: [{ id: rawId, type: "public-key" }],
+                        userVerification: "required"
+                    }
+                });
+                if (assertion) {
+                    sessionStorage.setItem('vts_dd_unlocked', 'true');
+                    verifyUserPermission();
+                }
+            } catch(e) {}
+        }
+
+        // 5. KIỂM TRA PHÂN QUYỀN (GVCN / QUẢN SINH / ADMIN)
+        async function checkUserRole(user) {
+            if (!user) return false;
+            const email = user.email.toLowerCase();
+
+            // LỚP 1: Super Admin
+            if (ALLOWED_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email)) {
+                currentUserRole = 'admin';
+                currentUser = { displayName: user.displayName || 'Admin', email: user.email, photoURL: user.photoURL };
+                allowedClasses = ['ALL'];
+                return true;
+            }
+
+            // LỚP 2: Quản sinh hoặc GVCN từ yt_collaborators
+            const snap = await db.collection("yt_collaborators").where("email", "==", email).get();
+            if (!snap.empty) {
+                const data = snap.docs[0].data();
+                const todayStr = new Date().toISOString().split('T')[0];
+
+                if (data.status !== 'active') return false;
+                if (data.expiryDate && data.expiryDate < todayStr) return false;
+
+                currentUserRole = data.role || 'collaborator';
+                currentUser = { displayName: data.name || user.displayName, email: user.email, photoURL: user.photoURL };
+
+                if (currentUserRole === 'quansinh') {
+                    allowedClasses = ['ALL']; // Quản sinh truy cập toàn trường
+                } else if (currentUserRole === 'gvcn') {
+                    // GVCN: Lấy các lớp được phân công
+                    allowedClasses = data.assignedClasses || (data.class ? [data.class] : []);
+                }
+                return true;
+            }
+            return false;
+        }
+
+        // 6. NẠP DỮ LIỆU APP CHÍNH
+        async function verifyUserPermission() {
+            firebase.auth().onAuthStateChanged(async (user) => {
+                if (user && await checkUserRole(user)) {
+                    document.getElementById('auth-screen').style.display = 'none';
+                    document.getElementById('app-main').style.display = 'block';
+                    hideSplashScreen();
+                    // Cập nhật Header
+                    document.getElementById('user-name').innerText = currentUser.displayName;
+                    if (currentUser.photoURL) document.getElementById('user-avatar').src = currentUser.photoURL;
+
+                    const roleBadge = document.getElementById('user-role-badge');
+                    if (currentUserRole === 'admin') {
+                        roleBadge.innerText = 'Admin';
+                        roleBadge.className = 'user-badge badge-admin';
+                    } else if (currentUserRole === 'quansinh') {
+                        roleBadge.innerText = 'Quản Sinh';
+                        roleBadge.className = 'user-badge badge-quansinh';
+                    } else {
+                        roleBadge.innerText = 'GVCN';
+                        roleBadge.className = 'user-badge badge-gvcn';
+                    }
+
+                    await loadMasterCryptoKey();
+                    await fetchAndCacheStudents();
+                    populateClassDropdown();
+                    loadDailyAbsentRecords();
+                } else {
+                    showAuthStep('step-google');
+                }
+            });
+        }
+
+        // 7. CACHE DỮ LIỆU HỌC SINH (0 TỐN KÉM ĐỌC NHIỀU LẦN)
+        async function fetchAndCacheStudents() {
+            const cached = sessionStorage.getItem('vts_students_cache');
+            if (cached) {
+                allStudentsCache = JSON.parse(cached);
+                return;
+            }
+            const snap = await db.collection('yt_students').get();
+            allStudentsCache = [];
+            snap.forEach(doc => allStudentsCache.push({ id: doc.id, ...doc.data() }));
+            sessionStorage.setItem('vts_students_cache', JSON.stringify(allStudentsCache));
+        }
+
+        // ĐỔ LỚP VÀO DROPDOWN PHÙ HỢP VỚI QUYỀN
+        function populateClassDropdown() {
+            const classSelect = document.getElementById('class-select');
             classSelect.innerHTML = '';
 
             let classList = [];
             if (allowedClasses.includes('ALL')) {
+                // Lấy toàn bộ danh sách lớp duy nhất từ danh sách học sinh
                 const set = new Set(allStudentsCache.map(s => (s.class || '').trim().toUpperCase()).filter(Boolean));
                 classList = Array.from(set).sort((a, b) => a.localeCompare(b, 'vi', { numeric: true }));
-                classSelect.innerHTML = '<option value="">-- Tất cả lớp --</option>';
             } else {
                 classList = allowedClasses.map(c => c.trim().toUpperCase());
             }
 
+            if (classList.length === 0) {
+                classSelect.innerHTML = '<option value="">(Chưa được phân công lớp)</option>';
+                return;
+            }
+
+            classSelect.innerHTML = '<option value="">-- Chọn Lớp --</option>';
             classList.forEach(c => {
                 classSelect.innerHTML += `<option value="${c}">Lớp ${c}</option>`;
             });
 
+            // Nếu chỉ có 1 lớp được phân công, tự động chọn luôn
             if (classList.length === 1) {
                 classSelect.value = classList[0];
+                loadStudentsOfSelectedClass();
             }
         }
 
-        function applyFilterAndSearch() {
-            const selectedClass = document.getElementById('filter-class').value.trim().toUpperCase();
-            const keyword = document.getElementById('search-box').value.trim().toLowerCase();
-
-            filteredStudents = allStudentsCache.filter(s => {
-                const sClass = (s.class || '').trim().toUpperCase();
-                // 1. Phân quyền lớp
-                if (!allowedClasses.includes('ALL') && !allowedClasses.includes(sClass)) {
-                    return false;
-                }
-                // 2. Lọc lớp đã chọn
-                if (selectedClass && sClass !== selectedClass) {
-                    return false;
-                }
-                // 3. Tìm theo tên hoặc mã HS
-                if (keyword) {
-                    const matchName = (s.name || '').toLowerCase().includes(keyword);
-                    const matchId = (s.id || '').toLowerCase().includes(keyword);
-                    return matchName || matchId;
-                }
-                return true;
-            });
-
-            renderStudentList();
-        }
-
-        function renderStudentList() {
-            const container = document.getElementById('student-list');
-            document.getElementById('student-count-display').innerText = filteredStudents.length;
-
-            if (filteredStudents.length === 0) {
-                container.innerHTML = `<div class="empty-state"><p>Không tìm thấy học sinh nào.</p></div>`;
+        // KHI CHỌN LỚP -> NẠP HỌC SINH TỪ RAM (0MS)
+        function loadStudentsOfSelectedClass() {
+            const selectedClass = document.getElementById('class-select').value;
+            const studentSelect = document.getElementById('student-select');
+            
+            if (!selectedClass) {
+                studentSelect.innerHTML = '<option value="">-- Chọn lớp trước --</option>';
                 return;
             }
 
-            let html = '';
-            filteredStudents.forEach(s => {
-                const isSelected = selectedStudentIds.has(s.id);
-                html += `
-                    <div class="student-item-card ${isSelected ? 'selected' : ''}" onclick="toggleStudentSelection('${s.id}')">
-                        <div class="student-item-left">
-                            <div class="student-check">
-                                ${isSelected ? '<i class="fas fa-check"></i>' : ''}
-                            </div>
-                            <div class="student-name-box">
-                                <h5>${s.name}</h5>
-                                <span>Lớp: <strong>${s.class || 'N/A'}</strong> | Mã: ${s.id}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
+            const inClass = allStudentsCache.filter(s => (s.class || '').trim().toUpperCase() === selectedClass);
+            inClass.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi'));
+
+            studentSelect.innerHTML = '<option value="">-- Chọn Học Sinh --</option>';
+            inClass.forEach(s => {
+                studentSelect.innerHTML += `<option value="${s.id}">${s.name} (${s.id})</option>`;
             });
-            container.innerHTML = html;
-            updateSelectedButtonCount();
         }
 
-        function toggleStudentSelection(studentId) {
-            if (selectedStudentIds.has(studentId)) {
-                selectedStudentIds.delete(studentId);
-            } else {
-                selectedStudentIds.add(studentId);
-            }
-            renderStudentList();
-        }
-
-        function toggleSelectAll() {
-            const allFilteredSelected = filteredStudents.every(s => selectedStudentIds.has(s.id));
-            if (allFilteredSelected) {
-                filteredStudents.forEach(s => selectedStudentIds.delete(s.id));
-            } else {
-                filteredStudents.forEach(s => selectedStudentIds.add(s.id));
-            }
-            renderStudentList();
-        }
-
-        function updateSelectedButtonCount() {
-            document.getElementById('selected-count-btn').innerText = selectedStudentIds.size;
-            document.getElementById('btn-save').disabled = (selectedStudentIds.size === 0);
-        }
-
+        // 8. CHỌN LÝ DO & BẬT TẮT FORM BỆNH
         function selectReason(reason, el) {
             selectedReason = reason;
             document.querySelectorAll('.reason-chip').forEach(c => c.className = 'reason-chip');
+            
             if (reason === 'P') el.classList.add('active-p');
             else if (reason === 'KP') el.classList.add('active-kp');
             else if (reason === 'B') el.classList.add('active-b');
@@ -613,101 +1074,119 @@
             document.getElementById('sick-box').style.display = (reason === 'B') ? 'block' : 'none';
         }
 
-        /* --- 4. GỬI ĐIỂM DANH HÀNG LOẠT (BATCH COMMIT SIÊU TỐI ƯU) --- */
-        async function submitAttendanceBatch() {
-            if (selectedStudentIds.size === 0) {
-                return alert("Vui lòng chọn ít nhất một học sinh để ghi nhận vắng!");
-            }
-
+        // 9. LƯU ĐIỂM DANH (XỬ LÝ ĐÚNG LOGIC YÊU CẦU)
+        async function submitAttendance() {
             const date = document.getElementById('att-date-input').value;
+            const classVal = document.getElementById('class-select').value;
+            const studentId = document.getElementById('student-select').value;
+            const studentSelect = document.getElementById('student-select');
+            const studentName = studentSelect.options[studentSelect.selectedIndex]?.text.split(' (')[0];
             const symptom = document.getElementById('symptom-input').value.trim();
+
+            // 1. Kiểm tra rỗng
+            if (!date || !classVal || !studentId) {
+                return alert("Vui lòng chọn đầy đủ Ngày, Lớp và Học sinh!");
+            }
 
             if (selectedReason === 'B' && !symptom) {
                 return alert("Học sinh nghỉ bệnh: Vui lòng nhập triệu chứng!");
             }
 
             const btn = document.getElementById('btn-save');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang kiểm tra...';
             btn.disabled = true;
 
             try {
-                // Kiểm tra trùng lặp trong ngày (Đọc Firestore 1 lần duy nhất cho toàn bộ ngày)
-                const snapToday = await db.collection('yt_attendance').where('date', '==', date).get();
-                const existingMap = new Map();
-                snapToday.forEach(doc => existingMap.set(doc.data().studentId, doc.data()));
+                // 2. 👉 BỘ CHỐNG ĐIỂM DANH TRÙNG LẶP TRONG NGÀY
+                const dupCheck = await db.collection('yt_attendance')
+                    .where('date', '==', date)
+                    .where('studentId', '==', studentId)
+                    .get();
 
-                const batch = db.batch();
-                let addedCount = 0;
-                let skippedNames = [];
-
-                selectedStudentIds.forEach(id => {
-                    const student = allStudentsCache.find(s => s.id === id);
-                    if (!student) return;
-
-                    if (existingMap.has(id)) {
-                        skippedNames.push(student.name);
-                        return; // Bỏ qua em đã điểm danh
-                    }
-
-                    const attRef = db.collection('yt_attendance').doc();
-                    const attData = {
-                        studentId: student.id,
-                        name: student.name,
-                        class: student.class || '',
-                        date: date,
-                        reason: selectedReason,
-                        recordedBy: currentUser.displayName,
-                        recorderRole: currentUserRole,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                if (!dupCheck.empty) {
+                    const oldRec = dupCheck.docs[0].data();
+                    const reasonMap = { 
+                        'P': 'Có phép (P)', 
+                        'KP': 'Không phép (KP)', 
+                        'B': `Nghỉ bệnh (${oldRec.diagnosis || oldRec.symptom || 'B'})` 
                     };
 
-                    if (selectedReason === 'B') {
-                        attData.symptom = symptom;
-                        attData.diagnosis = "Chờ Phòng Y Tế xác minh";
-                        attData.isPendingAdmin = true;
-
-                        const notiAdminRef = db.collection('yt_notifications').doc();
-                        batch.set(notiAdminRef, {
-                            title: `🚨 BÁO CA BỆNH: ${student.name} - Lớp ${student.class}`,
-                            content: `${currentUser.displayName} (${currentUserRole.toUpperCase()}) báo ca nghỉ bệnh.\n- Học sinh: ${student.name} (Lớp ${student.class})\n- Triệu chứng: ${symptom}\n- Ngày: ${date}`,
-                            targetType: "admin",
-                            type: "sick_alert",
-                            sender: currentUser.displayName,
-                            relatedAttendanceId: attRef.id,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    }
-
-                    batch.set(attRef, attData);
-                    addedCount++;
-                });
-
-                if (addedCount > 0) {
-                    await batch.commit();
+                    alert(`⚠️ CẢNH BÁO TRÙNG LẶP:\n\nHọc sinh [${studentName}] đã được điểm danh trong ngày ${new Date(date).toLocaleDateString('vi-VN')}!\n\n- Trạng thái: ${reasonMap[oldRec.reason] || oldRec.reason}\n- Người ghi nhận: ${oldRec.recordedBy || 'Hệ thống'}\n\n👉 Nếu điểm danh sai, vui lòng qua tab 'Danh sách vắng' để Xóa và thực hiện lại.`);
+                    
+                    btn.innerHTML = '<i class="fas fa-check-circle"></i> Ghi nhận điểm danh';
+                    btn.disabled = false;
+                    return; // Chặn lại, không lưu tiếp
                 }
 
-                let msg = `✅ Đã ghi nhận thành công ${addedCount} học sinh vắng!`;
-                if (skippedNames.length > 0) {
-                    msg += `\n\n⚠️ Bỏ qua ${skippedNames.length} em đã điểm danh trước đó:\n- ${skippedNames.join('\n- ')}`;
-                }
-                alert(msg);
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
 
-                // Reset form
-                selectedStudentIds.clear();
+                // 3. Chuẩn bị lưu dữ liệu
+                const batch = db.batch();
+                const attRef = db.collection('yt_attendance').doc();
+
+                const attData = {
+                    studentId,
+                    name: studentName,
+                    class: classVal,
+                    date,
+                    reason: selectedReason,
+                    recordedBy: currentUser.displayName,
+                    recorderRole: currentUserRole,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                // TRƯỜNG HỢP A: NGHỈ BỆNH (B) -> Gửi cảnh báo trực tiếp đến chuông Admin để hoàn tất chẩn đoán
+                if (selectedReason === 'B') {
+                    attData.symptom = symptom;
+                    attData.diagnosis = "Chờ Phòng Y Tế xác minh";
+                    attData.isPendingAdmin = true;
+
+                    const notiAdminRef = db.collection('yt_notifications').doc();
+                    batch.set(notiAdminRef, {
+                        title: `🚨 BÁO CA BỆNH: ${studentName} - Lớp ${classVal}`,
+                        content: `${currentUser.displayName} (${currentUserRole.toUpperCase()}) báo ca nghỉ bệnh.\n- Học sinh: ${studentName} (Lớp ${classVal})\n- Triệu chứng: ${symptom}\n- Ngày nghỉ: ${new Date(date).toLocaleDateString('vi-VN')}`,
+                        targetType: "admin",
+                        type: "sick_alert",
+                        sender: currentUser.displayName,
+                        relatedAttendanceId: attRef.id,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } else {
+                    // TRƯỜNG HỢP B: CÓ PHÉP (P) / KHÔNG PHÉP (KP) -> Lưu luôn & gửi thông báo cho học sinh
+                    const notiStudentRef = db.collection('yt_notifications').doc();
+                    const reasonText = selectedReason === 'P' ? 'Có phép' : 'Không phép';
+                    
+                    batch.set(notiStudentRef, {
+                        title: "Thông báo Vắng mặt Điểm danh",
+                        content: `Bạn được ghi nhận vắng mặt vào ngày ${new Date(date).toLocaleDateString('vi-VN')} (${reasonText}).\nNgười ghi nhận: ${currentUser.displayName}.`,
+                        targetType: "student",
+                        targetValue: studentId,
+                        sender: "Giám thị / GVCN",
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    attData.notificationId = notiStudentRef.id;
+                }
+
+                batch.set(attRef, attData);
+                await batch.commit();
+
+                alert(selectedReason === 'B' ? "✅ Đã ghi nhận & gửi thông báo ca bệnh tới Phòng Y Tế!" : "✅ Đã ghi nhận điểm danh thành công!");
+
+                // 4. Reset Form & Tải lại danh sách vắng
                 document.getElementById('symptom-input').value = '';
+                document.getElementById('student-select').value = '';
                 selectReason('P', document.querySelector('.reason-chip'));
-                renderStudentList();
                 loadDailyAbsentRecords();
 
             } catch (err) {
                 alert("Lỗi lưu điểm danh: " + err.message);
             } finally {
-                btn.innerHTML = `<i class="fas fa-check-circle"></i> Ghi nhận vắng (<span id="selected-count-btn">0</span>)`;
-                updateSelectedButtonCount();
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Ghi nhận điểm danh';
+                btn.disabled = false;
             }
         }
 
-        /* --- 5. QUẢN LÝ DANH SÁCH ĐÃ VẮNG (TAB 2) --- */
+        // 10. TẢI DANH SÁCH VẮNG HÔM NAY (ĐÃ LỌC THEO QUYỀN LỚP)
         async function loadDailyAbsentRecords() {
             const date = document.getElementById('att-date-input').value;
             const container = document.getElementById('absent-list-container');
@@ -718,6 +1197,7 @@
                 let records = [];
                 snap.forEach(d => records.push({ id: d.id, ...d.data() }));
 
+                // Lọc theo lớp được phân quyền
                 if (!allowedClasses.includes('ALL')) {
                     records = records.filter(r => allowedClasses.includes((r.class || '').toUpperCase()));
                 }
@@ -740,12 +1220,14 @@
                         'KP': '<span class="badge-reason badge-kp">Không phép</span>',
                         'B': '<span class="badge-reason badge-b">Bệnh</span>'
                     };
+                    const badge = badgeMap[r.reason] || '';
+
                     html += `
                         <div class="absent-card">
                             <div class="absent-info">
-                                <h5>${r.name} ${badgeMap[r.reason] || ''}</h5>
+                                <h5>${r.name} ${badge}</h5>
                                 <span>Lớp: <strong>${r.class}</strong> | Ghi bởi: ${r.recordedBy || 'Hệ thống'}</span>
-                                ${r.reason === 'B' ? `<div style="font-size:0.75rem; color:#d97706; margin-top:2px;">🩺 ${r.symptom || 'Báo bệnh'}</div>` : ''}
+                                ${r.reason === 'B' ? `<div style="font-size:0.75rem; color:#d97706; margin-top:3px;">🩺 ${r.symptom || 'Bệnh'}</div>` : ''}
                             </div>
                             <button onclick="deleteAbsentRecord('${r.id}', '${r.name}')" class="btn-delete-record" title="Hủy điểm danh">
                                 <i class="fas fa-trash-alt"></i>
@@ -753,233 +1235,51 @@
                         </div>`;
                 });
                 container.innerHTML = html;
+
             } catch (e) {
                 container.innerHTML = `<div style="color:red; text-align:center; padding:20px;">Lỗi: ${e.message}</div>`;
             }
         }
 
+// HÀM XÓA ĐIỂM DANH & TỰ ĐỘNG THU HỒI THÔNG BÁO ADMIN / HỌC SINH
         async function deleteAbsentRecord(docId, name) {
-            if (confirm(`Hủy ghi nhận vắng của học sinh ${name}?`)) {
+            if (confirm(`Hủy ghi nhận vắng mặt của học sinh ${name}?\n(Thông báo cảnh báo ca bệnh gửi tới Admin cũng sẽ được tự động xóa).`)) {
                 try {
                     const batch = db.batch();
-                    batch.delete(db.collection('yt_attendance').doc(docId));
 
-                    const notiAdminSnap = await db.collection('yt_notifications').where('relatedAttendanceId', '==', docId).get();
+                    // 1. Xóa bản ghi điểm danh
+                    const attRef = db.collection('yt_attendance').doc(docId);
+                    batch.delete(attRef);
+
+                    // 2. Tìm và xóa thông báo cảnh báo ca bệnh gửi tới Admin (nếu có)
+                    const notiAdminSnap = await db.collection('yt_notifications')
+                        .where('relatedAttendanceId', '==', docId)
+                        .get();
                     notiAdminSnap.forEach(doc => batch.delete(doc.ref));
 
+                    // 3. Tìm và xóa thông báo gửi cho học sinh (nếu có trường hợp P/KP)
+                    const notiStudentSnap = await db.collection('yt_notifications')
+                        .where('notificationId', '==', docId)
+                        .get();
+                    notiStudentSnap.forEach(doc => batch.delete(doc.ref));
+
+                    // Thực thi xóa đồng thời
                     await batch.commit();
-                    alert("✅ Đã hủy thành công!");
+
+                    alert("✅ Đã hủy điểm danh và thu hồi thông báo thành công!");
                     loadDailyAbsentRecords();
                 } catch(e) {
-                    alert("Lỗi: " + e.message);
+                    alert("Lỗi khi xóa: " + e.message);
                 }
             }
         }
 
-        /* --- 6. AUTH & PERMISSIONS --- */
-        function checkAppSession() {
-            const isRegistered = localStorage.getItem('vts_dd_registered') === 'true';
-            const isUnlocked = sessionStorage.getItem('vts_dd_unlocked') === 'true';
-
-            if (isRegistered) {
-                if (isUnlocked) {
-                    verifyUserPermission();
-                } else {
-                    showAuthStep('step-unlock');
-                    hideSplashScreen();
-                    setTimeout(triggerBiometrics, 300);
-                }
-            } else {
-                showAuthStep('step-google');
-                hideSplashScreen();
-            }
-        }
-
-        function showAuthStep(stepId) {
-            ['step-google', 'step-set-pin', 'step-unlock'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.style.display = (id === stepId) ? 'block' : 'none';
-            });
-        }
-
-        function handleGoogleAuth() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-                .then(() => firebase.auth().signInWithPopup(provider))
-                .then(async (res) => {
-                    const valid = await checkUserRole(res.user);
-                    if (valid) showAuthStep('step-set-pin');
-                    else {
-                        alert("⛔ Bạn không có quyền truy cập App Điểm Danh!");
-                        firebase.auth().signOut();
-                    }
-                })
-                .catch(err => alert("Lỗi: " + err.message));
-        }
-
-        async function checkUserRole(user) {
-            if (!user) return false;
-            const email = user.email.toLowerCase();
-
-            if (ALLOWED_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email)) {
-                currentUserRole = 'admin';
-                currentUser = { displayName: user.displayName || 'Admin', email: user.email, photoURL: user.photoURL };
-                allowedClasses = ['ALL'];
-                return true;
-            }
-
-            const snap = await db.collection("yt_collaborators").where("email", "==", email).get();
-            if (!snap.empty) {
-                const data = snap.docs[0].data();
-                if (data.status !== 'active') return false;
-
-                currentUserRole = data.role || 'collaborator';
-                currentUser = { displayName: data.name || user.displayName, email: user.email, photoURL: user.photoURL };
-
-                if (currentUserRole === 'quansinh') {
-                    allowedClasses = ['ALL'];
-                } else {
-                    allowedClasses = data.assignedClasses || (data.class ? [data.class] : []);
-                }
-                return true;
-            }
-            return false;
-        }
-
-        async function verifyUserPermission() {
-            firebase.auth().onAuthStateChanged(async (user) => {
-                if (user && await checkUserRole(user)) {
-                    document.getElementById('auth-screen').style.display = 'none';
-                    document.getElementById('app-main').style.display = 'block';
-                    hideSplashScreen();
-
-                    document.getElementById('user-name').innerText = currentUser.displayName;
-                    if (currentUser.photoURL) document.getElementById('user-avatar').src = currentUser.photoURL;
-
-                    const roleBadge = document.getElementById('user-role-badge');
-                    roleBadge.innerText = currentUserRole === 'admin' ? 'Admin' : (currentUserRole === 'quansinh' ? 'Quản Sinh' : 'GVCN');
-                    roleBadge.className = `user-badge badge-${currentUserRole}`;
-
-                    await getLocalOrFetchStudents();
-                    populateClassFilter();
-                    applyFilterAndSearch();
-                    loadDailyAbsentRecords();
-                } else {
-                    showAuthStep('step-google');
-                }
-            });
-        }
-
-        /* --- 7. PIN & BIOMETRICS --- */
-        function initNumpads() {
-            const makePad = (containerId, onKey) => {
-                const c = document.getElementById(containerId);
-                c.innerHTML = '';
-                for (let i = 1; i <= 9; i++) {
-                    const btn = document.createElement('button');
-                    btn.className = 'num-key';
-                    btn.innerText = i;
-                    btn.onclick = () => onKey(i);
-                    c.appendChild(btn);
-                }
-                const bioBtn = document.createElement('button');
-                bioBtn.className = 'num-key ghost';
-                bioBtn.innerHTML = '<i class="fas fa-fingerprint"></i>';
-                bioBtn.onclick = triggerBiometrics;
-                c.appendChild(bioBtn);
-
-                const zero = document.createElement('button');
-                zero.className = 'num-key';
-                zero.innerText = '0';
-                zero.onclick = () => onKey(0);
-                c.appendChild(zero);
-
-                const del = document.createElement('button');
-                del.className = 'num-key ghost';
-                del.innerHTML = '<i class="fas fa-backspace"></i>';
-                del.onclick = () => onKey('del');
-                c.appendChild(del);
-            };
-            makePad('setup-numpad', handleSetupPinKey);
-            makePad('unlock-numpad', handleUnlockPinKey);
-        }
-
-        function handleSetupPinKey(key) {
-            let target = isConfirmingPIN ? pinConfirmInput : pinInput;
-            if (key === 'del') target.pop();
-            else if (target.length < 6) target.push(key);
-
-            updateDots('setup-pin-dots', target.length);
-
-            if (target.length === 6) {
-                if (!isConfirmingPIN) {
-                    setTimeout(() => {
-                        isConfirmingPIN = true;
-                        document.getElementById('pin-title').innerText = "XÁC NHẬN MÃ PIN";
-                        document.getElementById('pin-desc').innerText = "Nhập lại mã PIN 6 số vừa tạo";
-                        updateDots('setup-pin-dots', 0);
-                    }, 200);
-                } else {
-                    if (pinInput.join('') === pinConfirmInput.join('')) {
-                        localStorage.setItem('vts_dd_pin', pinInput.join(''));
-                        localStorage.setItem('vts_dd_registered', 'true');
-                        sessionStorage.setItem('vts_dd_unlocked', 'true');
-                        verifyUserPermission();
-                    } else {
-                        alert("Mã PIN không khớp. Vui lòng tạo lại!");
-                        pinInput = []; pinConfirmInput = []; isConfirmingPIN = false;
-                        updateDots('setup-pin-dots', 0);
-                    }
-                }
-            }
-        }
-
-        function handleUnlockPinKey(key) {
-            if (key === 'del') unlockPinInput.pop();
-            else if (unlockPinInput.length < 6) unlockPinInput.push(key);
-
-            updateDots('unlock-pin-dots', unlockPinInput.length);
-
-            if (unlockPinInput.length === 6) {
-                if (unlockPinInput.join('') === localStorage.getItem('vts_dd_pin')) {
-                    sessionStorage.setItem('vts_dd_unlocked', 'true');
-                    verifyUserPermission();
-                } else {
-                    alert("Sai mã PIN!");
-                    unlockPinInput = [];
-                    updateDots('unlock-pin-dots', 0);
-                }
-            }
-        }
-
-        function updateDots(containerId, len) {
-            document.querySelectorAll(`#${containerId} span`).forEach((d, idx) => {
-                if (idx < len) d.classList.add('active');
-                else d.classList.remove('active');
-            });
-        }
-
-        async function triggerBiometrics() {
-            const bioId = localStorage.getItem('vts_dd_bio_id');
-            if (!bioId || !window.PublicKeyCredential) return;
-            try {
-                const rawId = Uint8Array.from(atob(bioId), c => c.charCodeAt(0));
-                const assertion = await navigator.credentials.get({
-                    publicKey: { challenge: new Uint8Array([1, 2, 3, 4, 5]), allowCredentials: [{ id: rawId, type: "public-key" }] }
-                });
-                if (assertion) {
-                    sessionStorage.setItem('vts_dd_unlocked', 'true');
-                    verifyUserPermission();
-                }
-            } catch(e) {}
-        }
-
-        /* --- 8. NGÀY THÁNG & ĐIỀU HƯỚNG --- */
+        // TIỆN ÍCH NGÀY THÁNG
         function initDate() {
-            const d = new Date();
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const dd = String(d.getDate()).padStart(2, '0');
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
             document.getElementById('att-date-input').value = `${yyyy}-${mm}-${dd}`;
             updateDateText(`${yyyy}-${mm}-${dd}`);
         }
@@ -1005,7 +1305,7 @@
             const d = new Date(dateStr);
             const today = new Date();
             if (d.toDateString() === today.toDateString()) {
-                document.getElementById('date-text-display').innerText = `Hôm nay (${d.toLocaleDateString('vi-VN')})`;
+                document.getElementById('date-text-display').innerText = "Hôm nay (" + d.toLocaleDateString('vi-VN') + ")";
             } else {
                 document.getElementById('date-text-display').innerText = d.toLocaleDateString('vi-VN');
             }
@@ -1020,17 +1320,31 @@
         }
 
         function handleLogout() {
-            if (confirm("Đăng xuất khỏi tài khoản?")) {
+            if (confirm("Đăng xuất khỏi App Điểm danh?")) {
                 sessionStorage.clear();
                 localStorage.removeItem('vts_dd_registered');
                 localStorage.removeItem('vts_dd_pin');
+                localStorage.removeItem('vts_dd_bio_id');
                 firebase.auth().signOut().then(() => location.reload());
             }
         }
 
+        // TỰ ĐỘNG KHÓA KHI THOÁT APP (GIỐNG APP NGÂN HÀNG)
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden') sessionStorage.removeItem('vts_dd_unlocked');
+            if (document.visibilityState === 'hidden') {
+                sessionStorage.removeItem('vts_dd_unlocked');
+            }
+        });
+
+        window.addEventListener('pageshow', () => {
+            if (localStorage.getItem('vts_dd_registered') === 'true' && sessionStorage.getItem('vts_dd_unlocked') !== 'true') {
+                unlockPinInput = [];
+                updateDots('unlock-pin-dots', 0);
+                showAuthStep('step-unlock');
+                triggerBiometrics();
+            }
         });
     </script>
+    <script src="../assets/auth-check.js"></script>
 </body>
 </html>

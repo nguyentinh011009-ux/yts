@@ -95,78 +95,79 @@ firebase.auth().onAuthStateChanged(async (user) => {
                     updateAdminDisplayInfo(user, "Admin");
                 }
             } else {
-// --- TRƯỜNG HỢP B: KIỂM TRA QUYỀN CỘNG TÁC VIÊN ---
-try {
-    sysLoading(true, "Đang xác thực quyền...");
-    
-    const collabSnap = await db.collection("yt_collaborators")
-        .where("email", "==", userEmail)
-        .get();
-
-    if (!collabSnap.empty) {
-        const collabData = collabSnap.docs[0].data();
-        const todayStr = new Date().toISOString().split('T')[0];
-
-        // 1. Kiểm tra trạng thái Khóa tài khoản
-        if (collabData.status !== 'active') {
-            sysLoading(false);
-            sysAlert("⛔ Tài khoản của bạn đã bị TẠM KHÓA!", "error");
-            firebase.auth().signOut();
-            return;
-        }
-
-        // 2. Kiểm tra Hạn sử dụng
-        if (collabData.expiryDate && collabData.expiryDate < todayStr) {
-            sysLoading(false);
-            sysAlert(`⛔ Tài khoản đã HẾT HẠN vào ngày ${collabData.expiryDate}!`, "error");
-            firebase.auth().signOut();
-            return;
-        }
-
-        // 3. NẾU LÀ GVCN HOẶC QUẢN SINH: TỪ CHỐI TRUY CẬP TRANG ADMIN (VÌ ĐÃ CÓ APP RIÊNG)
-        const role = collabData.role || 'collaborator';
-        if (role === 'quansinh' || role === 'gvcn') {
-            sysLoading(false);
-            sysAlert("⛔ Tài khoản này dành cho GVCN/Quản sinh trên App Điểm danh (Không có quyền vào trang Admin)!", "error");
-            firebase.auth().signOut();
-            if (loginOverlay) loginOverlay.style.display = 'flex';
-            if (dashboard) dashboard.style.display = 'none';
-            return;
-        }
-
-        // 4. NẾU LÀ CỘNG TÁC VIÊN QUẢN TRỊ ADMIN (Thao tác trên trang Admin)
-        window.currentUserRole = 'collaborator';
-        window.userAllowedTabs = collabData.allowedTabs || [];
-
-        await loadMasterCryptoKey();
-
-        if (loginOverlay) loginOverlay.style.display = 'none';
-        if (dashboard) {
-            dashboard.style.display = 'grid';
-            applyCollaboratorPermissions(window.userAllowedTabs);
-            loadAdminPosts();
-            loadPharmacyForReception();
-            loadAdminAnnouncements();
-            loadFusoftxNotis();
-            runDailyStatisticAggregation();
-            updateAdminDisplayInfo(user, `CTV: ${collabData.name}`);
-        }
-        sysLoading(false);
-    } else {
-        // Email không thuộc Admin lẫn Cộng tác viên -> Đăng xuất và báo lỗi
-        sysLoading(false);
-        sysAlert(`⛔ BẢO MẬT HỆ THỐNG:\n\nTài khoản (${user.email}) không có quyền truy cập trang Quản trị!`, "error");
-        firebase.auth().signOut();
-        if (loginOverlay) loginOverlay.style.display = 'flex';
-        if (dashboard) dashboard.style.display = 'none';
-    }
-} catch (err) {
-    sysLoading(false);
-    sysAlert("Lỗi kiểm tra quyền truy cập: " + err.message, "error");
-    firebase.auth().signOut();
-    if (loginOverlay) loginOverlay.style.display = 'flex';
-    if (dashboard) dashboard.style.display = 'none';
-}
+					// --- TRƯỜNG HỢP B: KIỂM TRA QUYỀN CỘNG TÁC VIÊN ---
+					try {
+					    sysLoading(true, "Đang xác thực quyền...");
+					    
+					    const collabSnap = await db.collection("yt_collaborators")
+					        .where("email", "==", userEmail)
+					        .get();
+					
+					    if (!collabSnap.empty) {
+					        const collabData = collabSnap.docs[0].data();
+					        const todayStr = new Date().toISOString().split('T')[0];
+					
+					        // 1. Kiểm tra trạng thái Khóa tài khoản
+					        if (collabData.status !== 'active') {
+					            sysLoading(false);
+					            sysAlert("⛔ Tài khoản của bạn đã bị TẠM KHÓA!", "error");
+					            firebase.auth().signOut();
+					            return;
+					        }
+					
+					        // 2. Kiểm tra Hạn sử dụng
+					        if (collabData.expiryDate && collabData.expiryDate < todayStr) {
+					            sysLoading(false);
+					            sysAlert(`⛔ Tài khoản đã HẾT HẠN vào ngày ${collabData.expiryDate}!`, "error");
+					            firebase.auth().signOut();
+					            return;
+					        }
+					
+					        // 3. NẾU LÀ GVCN HOẶC QUẢN SINH: TỪ CHỐI TRUY CẬP TRANG ADMIN (VÌ ĐÃ CÓ APP RIÊNG)
+					        const role = collabData.role || 'collaborator';
+					        if (role === 'quansinh' || role === 'gvcn') {
+					            sysLoading(false);
+					            sysAlert("⛔ Tài khoản này dành cho GVCN/Quản sinh trên App Điểm danh (Không có quyền vào trang Admin)!", "error");
+					            firebase.auth().signOut();
+					            if (loginOverlay) loginOverlay.style.display = 'flex';
+					            if (dashboard) dashboard.style.display = 'none';
+					            return;
+					        }
+					
+					        // 4. NẾU LÀ CỘNG TÁC VIÊN QUẢN TRỊ ADMIN (Thao tác trên trang Admin)
+					        window.currentUserRole = 'collaborator';
+					        window.userAllowedTabs = collabData.allowedTabs || [];
+					
+					        await loadMasterCryptoKey();
+					
+					        if (loginOverlay) loginOverlay.style.display = 'none';
+					        if (dashboard) {
+					            dashboard.style.display = 'grid';
+					            applyCollaboratorPermissions(window.userAllowedTabs);
+					            loadAdminPosts();
+					            loadPharmacyForReception();
+					            loadAdminAnnouncements();
+					            loadFusoftxNotis();
+					            runDailyStatisticAggregation();
+					            updateAdminDisplayInfo(user, `CTV: ${collabData.name}`);
+					        }
+					        sysLoading(false);
+					    } else {
+					        // Email không thuộc Admin lẫn Cộng tác viên -> Đăng xuất và báo lỗi
+					        sysLoading(false);
+					        sysAlert(`⛔ BẢO MẬT HỆ THỐNG:\n\nTài khoản (${user.email}) không có quyền truy cập trang Quản trị!`, "error");
+					        firebase.auth().signOut();
+					        if (loginOverlay) loginOverlay.style.display = 'flex';
+					        if (dashboard) dashboard.style.display = 'none';
+					    }
+					} catch (err) {
+					    sysLoading(false);
+					    sysAlert("Lỗi kiểm tra quyền truy cập: " + err.message, "error");
+					    firebase.auth().signOut();
+					    if (loginOverlay) loginOverlay.style.display = 'flex';
+					    if (dashboard) dashboard.style.display = 'none';
+					}
+			}
         } else {
             // Chưa đăng nhập -> Hiện form Đăng nhập
             if (loginOverlay) loginOverlay.style.display = 'flex';

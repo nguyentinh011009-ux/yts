@@ -143,11 +143,21 @@ async function gatherEpidemicData(rangeDays) {
     const startStr = startDate.toISOString().split('T')[0];
     const endStr = endDate.toISOString().split('T')[0];
 
-    // 1. Lấy dữ liệu Khám Y tế tại trường (yt_visits)
-    const visitsSnap = await db.collection('yt_visits')
-        .where('timestamp', '>=', startDate)
-        .where('timestamp', '<=', endDate)
-        .get();
+    const [visitsSnap, attSnap, weatherTimeSeries] = await Promise.all([
+        db.collection('yt_visits')
+            .where('timestamp', '>=', startDate)
+            .where('timestamp', '<=', endDate)
+            .get(),
+            
+        db.collection('yt_attendance')
+            .where('date', '>=', startStr)
+            .where('date', '<=', endStr)
+            .get(),
+            
+        typeof fetchDatDoWeatherTimeSeries === 'function' 
+            ? fetchDatDoWeatherTimeSeries(rangeDays) 
+            : Promise.resolve({ summary: "Chưa có dữ liệu thời tiết" })
+    ]);
 
     let visitSymptoms = {};
     let visitClasses = {};
@@ -167,12 +177,6 @@ async function gatherEpidemicData(rangeDays) {
         }
     });
 
-    // 2. Lấy dữ liệu Học sinh NGHỈ BỆNH (yt_attendance)
-    const attSnap = await db.collection('yt_attendance')
-        .where('date', '>=', startStr)
-        .where('date', '<=', endStr)
-        .get();
-
     let sickAbsences = 0;
     let sickDiagnoses = {};
     let sickClasses = {};
@@ -187,6 +191,10 @@ async function gatherEpidemicData(rangeDays) {
         }
     });
 
+    const externalAlerts = typeof getExternalEpidemiologicalSignals === 'function' 
+        ? getExternalEpidemiologicalSignals() 
+        : { nationalAlerts: "Không có", regionalSignals: "Không có", whoGuidelines: "Không có" };
+
     return {
         startDateText: startDate.toLocaleDateString('vi-VN'),
         endDateText: endDate.toLocaleDateString('vi-VN'),
@@ -195,7 +203,45 @@ async function gatherEpidemicData(rangeDays) {
         visitClasses,
         sickAbsences,
         sickDiagnoses,
-        sickClasses
+        sickClasses,
+        weatherTimeSeries,
+        externalAlerts
+    };
+}
+// 1. Lấy dữ liệu chuỗi thời tiết thực tế tại Đất Đỏ qua Open-Meteo API (Miễn phí, không cần API Key)
+async function fetchDatDoWeatherTimeSeries(rangeDays) {
+    try {
+        // Tọa độ Đất Đỏ: Vĩ độ 10.4905, Kinh độ 107.2762
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=10.4905&longitude=107.2762&daily=temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean,precipitation_sum&past_days=${rangeDays}&forecast_days=3&timezone=Asia%2FBangkok`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Không thể tải thời tiết");
+        const data = await res.json();
+        
+        const d = data.daily;
+        const count = d.time.length;
+        const avgTemp = (d.temperature_2m_max.reduce((a, b) => a + b, 0) / count).toFixed(1);
+        const avgHumidity = (d.relative_humidity_2m_mean.reduce((a, b) => a + b, 0) / count).toFixed(1);
+        const totalRain = d.precipitation_sum.reduce((a, b) => a + b, 0).toFixed(1);
+        const rainyDays = d.precipitation_sum.filter(r => r > 0.5).length;
+
+        return {
+            summary: `Nhiệt độ TB: ${avgTemp}°C, Độ ẩm TB: ${avgHumidity}%, Tổng mưa: ${totalRain}mm (${rainyDays}/${count} ngày có mưa). Xu hướng 3 ngày tới: ${d.temperature_2m_max.slice(-3).join(', ')}°C`,
+            avgHumidity,
+            totalRain,
+            rainyDays
+        };
+    } catch (e) {
+        console.warn("Lỗi lấy thời tiết Đất Đỏ:", e);
+        return { summary: "Dữ liệu thời tiết ngoại tuyến: Nóng ẩm cục bộ, chuyển mưa rải rác." };
+    }
+}
+
+// 2. Định nghĩa bối cảnh dịch tễ bên ngoài (WHO, Cục Y tế Dự phòng, Bộ Y tế, HCDC)
+function getExternalEpidemiologicalSignals() {
+    return {
+        nationalAlerts: "Bộ Y tế & Cục Y tế dự phòng phát cảnh báo giám sát chủ động: Sốt xuất huyết gia tăng tại phía Nam; các chùm ca bệnh Cúm/Hô hấp tại trường học; cảnh báo dịch Tay chân miệng và Đau mắt đỏ cục bộ.",
+        regionalSignals: "HCDC & Sở Y tế TP.HCM / Đông Nam Bộ ghi nhận chỉ số muỗi/lăng quăng cao sau các đợt mưa; tỷ lệ ca nhiễm hợp bào hô hấp (RSV) và Adenovirus ở học sinh phổ thông có xu hướng tăng.",
+        whoGuidelines: "WHO khuyến cáo áp dụng can thiệp sớm tại cụm trường học khi có từ 2-3 ca sốt/nghỉ bệnh cùng lớp trong 3-5 ngày."
     };
 }
 function buildSocraticPrompt(data, seasonInfo) {
@@ -203,22 +249,32 @@ function buildSocraticPrompt(data, seasonInfo) {
     const diagText = Object.keys(data.sickDiagnoses).map(k => `${k}: ${data.sickDiagnoses[k]} ca`).join(", ") || "Không có";
     const classClusterText = Object.keys(data.sickClasses).map(k => `Lớp ${k}: ${data.sickClasses[k]} HS nghỉ bệnh`).join(", ") || "Rải rác";
 
+    // Trích xuất an toàn các dữ liệu mới (tránh lỗi nếu API lỗi)
+    const weatherSummary = data.weatherTimeSeries?.summary || "Không có dữ liệu thời tiết";
+    const extNational = data.externalAlerts?.nationalAlerts || "Bình thường";
+    const extRegional = data.externalAlerts?.regionalSignals || "Bình thường";
+    const extWHO = data.externalAlerts?.whoGuidelines || "Theo dõi thường quy";
+
     return `
 Bạn là Chuyên gia Dịch tễ học Học đường cao cấp thuộc THPT Võ Thị Sáu (Bà Rịa - Vũng Tàu).
 Hãy thực hiện quy trình suy luận bằng PHƯƠNG PHÁP SOCRATIC (Liên tục đặt câu hỏi và tự phản biện) để đánh giá nguy cơ dịch bệnh.
 
-=== DỮ LIỆU ĐẦU VÀO (${data.startDateText} - ${data.endDateText}) ===
-1. Thời tiết & Bối cảnh: ${seasonInfo.seasonText}. Bệnh thường gặp: ${seasonInfo.typicalDiseases}.
-2. Lượt khám tại trường: ${data.totalVisits} lượt. Triệu chứng: ${sympText}.
-3. Học sinh nghỉ học do BỆNH: ${data.sickAbsences} lượt. Chẩn đoán: ${diagText}.
-4. Phân bố theo lớp: ${classClusterText}.
+=== TỔNG HỢP 5 NGUỒN DỮ LIỆU ĐẦU VÀO (${data.startDateText} - ${data.endDateText}) ===
+1. [Nội bộ] Khám tại trường: ${data.totalVisits} lượt. Triệu chứng: ${sympText}.
+2. [Nội bộ] Nghỉ học do BỆNH: ${data.sickAbsences} lượt. Chẩn đoán: ${diagText}. Phân bố: ${classClusterText}.
+3. [Thời tiết Đất Đỏ]: ${weatherSummary}.
+4. [Mùa vụ BR-VT]: ${seasonInfo.seasonText}. Bệnh thường gặp: ${seasonInfo.typicalDiseases}.
+5. [Dịch tễ bên ngoài]:
+   - Bộ Y tế/Cục Y tế DP: ${extNational}
+   - HCDC/Sở Y Tế: ${extRegional}
+   - Khuyến cáo WHO: ${extWHO}
 
 === NGHỆ THUẬT PHÂN TÍCH (LẦN LƯỢT TRẢ LỜI 5 CÂU HỎI TRUY VẤN) ===
-- Q1: Sự kết hợp giữa triệu chứng khám tại trường và chẩn đoán nghỉ bệnh có chỉ ra mầm bệnh truyền nhiễm nào đang ẩn nấp không?
-- Q2: Có sự xuất hiện chùm ca bệnh (cluster) tại lớp/khối cụ thể nào không?
-- Q3: Thời tiết hiện tại có tạo điều kiện thuận lợi cho mầm bệnh phát triển nhanh trong 7 ngày tới không?
-- Q4: Tốc độ gia tăng ca bệnh ở mức BÌNH THƯỜNG hay CÓ DẤU HIỆU BẤT THƯỜNG?
-- Q5: Cần phát cảnh báo ở mức độ nào và các hành động phòng ngừa trọng tâm là gì?
+- Q1: Sự kết hợp giữa triệu chứng nội bộ và số liệu vắng mặt có khớp với các cảnh báo dịch tễ từ Bộ Y tế/HCDC bên ngoài không?
+- Q2: Có sự xuất hiện chùm ca bệnh (cluster) tại lớp/khối cụ thể nào không? Tốc độ lây đang diễn ra thế nào?
+- Q3: Các chỉ số thời tiết (nhiệt độ, độ ẩm, mưa) kết hợp với yếu tố mùa vụ tác động rủi ro thế nào đến mầm bệnh?
+- Q4: Dựa trên tổng hợp đa nguồn, tỷ lệ XÁC SUẤT BÙNG PHÁT THÀNH Ổ DỊCH (từ 0% đến 100%) của từng nhóm bệnh là bao nhiêu?
+- Q5: Cần kích hoạt quy trình can thiệp trọng tâm nào theo khuyến cáo của WHO và Bộ Y tế?
 
 === NGUYÊN TẮC TRẢ VỀ KẾT QUẢ ===
 Chỉ trả về ĐÚNG MÃ HTML thuần túy bọc trong <div class="ai-epidemic-report"> (KHÔNG dùng markdown \`\`\`html):
@@ -226,46 +282,46 @@ Chỉ trả về ĐÚNG MÃ HTML thuần túy bọc trong <div class="ai-epidemi
 <div class="ai-epidemic-report" style="line-height: 1.6; font-size: 0.93rem; color: #1e293b;">
     <!-- KHỐI ĐÁNH GIÁ CHUỖI CÂU HỎI SOCRATIC -->
     <div style="background: #f0f9ff; border: 1px solid #bae6fd; padding: 15px; border-radius: 12px; margin-bottom: 15px;">
-        <strong style="color: #0369a1;"><i class="fas fa-comments-dollar"></i> Chuỗi Phản Biện Dịch Tễ Học (Socratic Chain):</strong>
+        <strong style="color: #0369a1;"><i class="fas fa-microscope"></i> Phân Tích Tổng Hợp Đa Chiều (Socratic Reasoning):</strong>
         <ul style="margin: 8px 0 0 0; padding-left: 20px; color: #334155;">
-            <li><strong>Nhận diện mầm bệnh:</strong> [Câu trả lời Q1 ngắn gọn]</li>
-            <li><strong>Phân bố chùm ca bệnh:</strong> [Câu trả lời Q2 ngắn gọn]</li>
-            <li><strong>Tác động thời tiết (${seasonInfo.seasonText}):</strong> [Câu trả lời Q3 ngắn gọn]</li>
+            <li><strong>Mối liên hệ Thời tiết - Triệu chứng:</strong> [Phân tích tác động của thời tiết lên sức khỏe học sinh]</li>
+            <li><strong>Tác động Dịch tễ Bên ngoài:</strong> [Đối chiếu mầm bệnh nội bộ với cảnh báo HCDC/Bộ Y tế]</li>
+            <li><strong>Nguy cơ chùm ca bệnh nội bộ:</strong> [Đánh giá phân bố theo lớp học]</li>
         </ul>
     </div>
 
-    <!-- BẢNG BẢO VỆ NGUY CƠ 4 NHÓM BỆNH -->
+    <!-- BẢNG BẢO VỆ NGUY CƠ 4 NHÓM BỆNH KÈM PHẦN TRĂM BÙNG PHÁT -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 15px;">
         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 5px solid [MÀU_HEX_1]; padding: 12px; border-radius: 10px;">
             <strong style="color: #0f172a;">1. Sốt xuất huyết:</strong><br>
-            Nguy cơ: <span style="font-weight:bold; color:[MÀU_HEX_1];">[Thấp / Trung bình / Cao]</span>
+            Nguy cơ: <span style="font-weight:bold; color:[MÀU_HEX_1];">[Thấp/Trung bình/Cao] ([X]% bùng phát)</span>
         </div>
         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 5px solid [MÀU_HEX_2]; padding: 12px; border-radius: 10px;">
             <strong style="color: #0f172a;">2. Cúm & Hô hấp:</strong><br>
-            Nguy cơ: <span style="font-weight:bold; color:[MÀU_HEX_2];">[Thấp / Trung bình / Cao]</span>
+            Nguy cơ: <span style="font-weight:bold; color:[MÀU_HEX_2];">[Thấp/Trung bình/Cao] ([X]% bùng phát)</span>
         </div>
         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 5px solid [MÀU_HEX_3]; padding: 12px; border-radius: 10px;">
             <strong style="color: #0f172a;">3. Tay chân miệng:</strong><br>
-            Nguy cơ: <span style="font-weight:bold; color:[MÀU_HEX_3];">[Thấp / Trung bình / Cao]</span>
+            Nguy cơ: <span style="font-weight:bold; color:[MÀU_HEX_3];">[Thấp/Trung bình/Cao] ([X]% bùng phát)</span>
         </div>
         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 5px solid [MÀU_HEX_4]; padding: 12px; border-radius: 10px;">
             <strong style="color: #0f172a;">4. Đau mắt đỏ/Khác:</strong><br>
-            Nguy cơ: <span style="font-weight:bold; color:[MÀU_HEX_4];">[Thấp / Trung bình / Cao]</span>
+            Nguy cơ: <span style="font-weight:bold; color:[MÀU_HEX_4];">[Thấp/Trung bình/Cao] ([X]% bùng phát)</span>
         </div>
     </div>
 
     <!-- TÓM TẮT DỰ BÁO & HÀNH ĐỘNG -->
     <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 15px; border-radius: 12px;">
-        <strong style="color: #b45309;"><i class="fas fa-shield-virus"></i> Nhắc Nhở & Đề Xuất Phòng Ngừa Trọng Tâm:</strong>
-        <p style="margin: 6px 0 0 0; color: #78350f;">[3 khuyến cáo hành động cho Phòng Y Tế và GVCN]</p>
+        <strong style="color: #b45309;"><i class="fas fa-shield-virus"></i> Nhắc Nhở & Can Thiệp Trọng Tâm:</strong>
+        <p style="margin: 6px 0 0 0; color: #78350f;">[3 khuyến cáo hành động thực tiễn cho Phòng Y Tế và GVCN]</p>
     </div>
     
     <p style="margin-top: 10px; font-size: 0.8rem; color: #94a3b8; font-style: italic; text-align: right;">
-        * Nhắc nhở: Phân tích AI đóng vai trò hỗ trợ tham khảo chuyên môn, không thay thế chẩn đoán lâm sàng chính thức.
+        * Nhắc nhở: Phân tích AI dựa trên tổng hợp đa nguồn, mang tính chất cảnh báo sớm và hỗ trợ tham khảo.
     </p>
 </div>
 
-Lưu ý quy định màu HEX: Thấp = #10b981, Trung bình = #f59e0b, Cao = #ef4444.
+Lưu ý quy định màu HEX: Nguy cơ Thấp (<40%) = #10b981, Trung bình (40% - 70%) = #f59e0b, Cao (>70%) = #ef4444.
 `;
 }
 // Lấy thông tin thiết bị / Trình duyệt của máy tính

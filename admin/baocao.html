@@ -927,17 +927,26 @@ async function loadAttendanceList() {
 
 // 3. Hàm Xóa (Hủy điểm danh) & TỰ ĐỘNG THU HỒI THÔNG BÁO
 async function deleteAttendance(docId, studentName, notificationId) {
-    if(confirm(`Hủy bỏ trạng thái nghỉ học của học sinh: ${studentName}?`)) {
+    if(confirm(`Hủy bỏ trạng thái nghỉ học của học sinh: ${studentName}?\n(Thông báo gửi tới Admin và Học sinh sẽ được tự động thu hồi).`)) {
         try {
-            // Xóa bản ghi điểm danh
-            await db.collection('yt_attendance').doc(docId).delete();
+            const batch = db.batch();
+
+            // 1. Xóa bản ghi điểm danh
+            batch.delete(db.collection('yt_attendance').doc(docId));
             
-            // Nếu có ID thông báo đi kèm, tiến hành xóa luôn thông báo đó
-            if (notificationId && notificationId !== 'null') {
-                await db.collection('yt_notifications').doc(notificationId).delete();
-                console.log(`Đã thu hồi thông báo ${notificationId}`);
+            // 2. Xóa thông báo gửi cho học sinh (nếu có lưu notificationId)
+            if (notificationId && notificationId !== 'null' && notificationId !== 'undefined') {
+                batch.delete(db.collection('yt_notifications').doc(notificationId));
             }
+
+            // 3. Quét và xóa thông báo cảnh báo ca bệnh gửi tới Admin (liên kết qua relatedAttendanceId)
+            const notiAdminSnap = await db.collection('yt_notifications')
+                .where('relatedAttendanceId', '==', docId)
+                .get();
+            notiAdminSnap.forEach(doc => batch.delete(doc.ref));
             
+            await batch.commit();
+            alert("✅ Đã hủy điểm danh và thu hồi thông báo liên quan!");
             loadAttendanceList(); // Load lại danh sách ngay lập tức
         } catch (err) {
             alert("Lỗi khi xóa: " + err.message);

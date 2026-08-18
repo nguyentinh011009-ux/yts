@@ -37,12 +37,15 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        body {
+        html, body {
             background-color: var(--bg-body);
             color: var(--text-main);
             min-height: 100vh;
             padding-bottom: env(safe-area-inset-bottom, 20px);
             user-select: none;
+            touch-action: pan-x pan-y;
+            -webkit-text-size-adjust: 100%;
+            overscroll-behavior-y: none;
         }
 
         /* --- AUTH SCREEN & PIN LOCK --- */
@@ -168,7 +171,7 @@
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid var(--border-col);
-            padding: 14px 18px;
+            padding: 12px 18px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -181,11 +184,12 @@
         }
 
         .user-avatar {
-            width: 38px;
-            height: 38px;
+            width: 40px;
+            height: 40px;
             border-radius: 12px;
             object-fit: cover;
             background: var(--primary-light);
+            border: 1px solid var(--border-col);
         }
 
         .user-details h4 {
@@ -223,7 +227,7 @@
 
         /* --- MAIN CONTENT & NAVIGATION TABS --- */
         .app-container {
-            max-width: 480px;
+            max-width: 500px;
             margin: 0 auto;
             padding: 16px;
         }
@@ -260,7 +264,7 @@
         .app-card {
             background: var(--card-bg);
             border-radius: var(--radius-lg);
-            padding: 18px;
+            padding: 16px;
             border: 1px solid var(--border-col);
             box-shadow: var(--shadow-sm);
             margin-bottom: 16px;
@@ -273,7 +277,7 @@
             background: #f1f5f9;
             padding: 6px;
             border-radius: var(--radius-md);
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
 
         .date-stepper button {
@@ -295,29 +299,52 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            cursor: pointer;
+            position: relative;
         }
 
-        .form-group {
-            margin-bottom: 16px;
+        .filter-search-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
         }
 
-        .form-label {
-            display: block;
-            font-size: 0.8rem;
+        .class-filter-select {
+            flex: 0 0 120px;
             font-weight: 700;
+        }
+
+        .search-box-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+        }
+
+        .search-box-wrapper input {
+            width: 100%;
+            padding-right: 32px;
+        }
+
+        .btn-clear-search {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
             color: var(--text-muted);
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            padding: 4px;
         }
 
         .form-control {
             width: 100%;
-            padding: 13px 14px;
+            padding: 12px 14px;
             border-radius: var(--radius-md);
             border: 1.5px solid var(--border-col);
             background: #f8fafc;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             font-weight: 600;
             color: var(--text-main);
             outline: none;
@@ -329,7 +356,128 @@
             background: #ffffff;
         }
 
-        /* --- REASON SELECT CHIPS --- */
+        /* --- TOOLBAR SELECT ALL --- */
+        .list-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 2px 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .btn-link-action {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        /* --- STUDENT LIST ITEMS --- */
+        .student-grid-scroll {
+            max-height: 380px;
+            overflow-y: auto;
+            border: 1.5px solid var(--border-col);
+            border-radius: var(--radius-md);
+            padding: 8px;
+            background: #f8fafc;
+        }
+
+        .student-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: #ffffff;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            border: 1px solid var(--border-col);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .student-item:active { transform: scale(0.98); }
+        .student-item.selected {
+            border-color: var(--primary);
+            background: #f0f9ff;
+        }
+
+        .student-item .info {
+            flex: 1;
+        }
+
+        .student-item .s-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+
+        .student-item .s-id {
+            font-family: monospace;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-right: 6px;
+        }
+
+        .student-item .s-class-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            background: var(--primary-light);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .student-item .check-icon {
+            font-size: 1.25rem;
+            color: #cbd5e1;
+            margin-left: 8px;
+        }
+
+        .student-item.selected .check-icon {
+            color: var(--primary);
+        }
+
+        /* --- BOTTOM ACTION BAR --- */
+        .action-bottom-bar {
+            position: fixed;
+            bottom: env(safe-area-inset-bottom, 16px);
+            left: 50%;
+            transform: translateX(-50%) translateY(140%);
+            width: calc(100% - 24px);
+            max-width: 476px;
+            background: #ffffff;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+            padding: 16px;
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--border-col);
+        }
+
+        .action-bottom-bar.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .action-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .action-title {
+            font-size: 0.92rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+        }
+
         .reason-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -337,7 +485,7 @@
         }
 
         .reason-chip {
-            padding: 12px 6px;
+            padding: 10px 4px;
             border-radius: var(--radius-md);
             border: 1.5px solid var(--border-col);
             background: #f8fafc;
@@ -346,14 +494,8 @@
             transition: all 0.2s ease;
         }
 
-        .reason-chip .icon {
-            font-size: 1.25rem;
-            display: block;
-            margin-bottom: 4px;
-        }
-
         .reason-chip .txt {
-            font-size: 0.78rem;
+            font-size: 0.8rem;
             font-weight: 700;
             color: var(--text-muted);
         }
@@ -376,29 +518,19 @@
         }
         .reason-chip.active-b .txt { color: #d97706; }
 
-        /* SICK ALERT SECTION */
         .sick-notice-box {
             background: #fffbeb;
             border: 1.5px dashed #f59e0b;
             border-radius: var(--radius-md);
-            padding: 14px;
-            margin-top: 14px;
+            padding: 10px;
+            margin-top: 10px;
             display: none;
             animation: fadeIn 0.2s ease;
         }
 
-        .sick-notice-box small {
-            display: block;
-            color: #92400e;
-            font-size: 0.76rem;
-            font-weight: 600;
-            margin-top: 6px;
-            line-height: 1.35;
-        }
-
         .btn-submit {
             width: 100%;
-            padding: 15px;
+            padding: 14px;
             background: var(--primary);
             color: #ffffff;
             border: none;
@@ -412,11 +544,12 @@
             cursor: pointer;
             box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
             transition: transform 0.1s;
-            margin-top: 8px;
+            margin-top: 10px;
         }
 
-        .btn-submit:active {
-            transform: scale(0.98);
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         /* --- ABSENT LIST VIEW --- */
@@ -440,7 +573,7 @@
         }
 
         .absent-info span {
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             color: var(--text-muted);
         }
 
@@ -448,7 +581,7 @@
             display: inline-block;
             font-size: 0.72rem;
             font-weight: 800;
-            padding: 3px 8px;
+            padding: 2px 7px;
             border-radius: 6px;
             margin-left: 6px;
         }
@@ -458,9 +591,9 @@
         .badge-b { background: #fef3c7; color: #b45309; }
 
         .btn-delete-record {
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
             border: none;
             background: #fee2e2;
             color: var(--danger);
@@ -468,25 +601,24 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            transition: opacity 0.15s;
         }
+
+        .btn-delete-record:active { opacity: 0.7; }
 
         .empty-state {
             text-align: center;
-            padding: 40px 20px;
+            padding: 36px 16px;
             color: var(--text-muted);
         }
 
         .empty-state i {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             color: #cbd5e1;
             margin-bottom: 10px;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        /* --- SPLASH SCREEN HIỆU ỨNG KHỞI ĐỘNG --- */
+        /* --- SPLASH SCREEN --- */
         #splash-screen {
             position: fixed;
             inset: 0;
@@ -496,7 +628,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.5s;
+            transition: opacity 0.4s ease, visibility 0.4s;
         }
 
         .splash-logo {
@@ -504,7 +636,7 @@
             height: 84px;
             border-radius: 24px;
             box-shadow: 0 12px 30px rgba(2, 132, 199, 0.25);
-            animation: splashPulse 1.3s ease-in-out infinite alternate;
+            animation: splashPulse 1.2s ease-in-out infinite alternate;
         }
 
         .splash-title {
@@ -512,7 +644,6 @@
             font-weight: 800;
             color: var(--text-main);
             margin-top: 18px;
-            letter-spacing: -0.3px;
         }
 
         .splash-sub {
@@ -544,7 +675,7 @@
 
         @keyframes splashPulse {
             0% { transform: scale(0.94); opacity: 0.85; }
-            100% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1.04); opacity: 1; }
         }
 
         @keyframes splashProgress {
@@ -557,197 +688,11 @@
             visibility: hidden !important;
             pointer-events: none;
         }
-        /* Khóa thao tác thu phóng, cuộn nảy của Mobile Safari/Android */
-html, body {
-    touch-action: pan-x pan-y;
-    -webkit-text-size-adjust: 100%;
-    overscroll-behavior-y: none;
-}
 
-/* Thanh công cụ tìm kiếm và lọc */
-.filter-search-container {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-}
-.class-filter-select {
-    flex: 0 0 110px;
-    font-weight: 700;
-}
-.search-box-wrapper {
-    flex: 1;
-    position: relative;
-    display: flex;
-}
-.search-box-wrapper input {
-    width: 100%;
-    padding-right: 36px;
-}
-.btn-clear-search {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    cursor: pointer;
-}
-
-/* Chế độ chọn nhiều */
-.mode-toggle-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 12px;
-    background: #f1f5f9;
-    border-radius: var(--radius-md);
-    margin-bottom: 12px;
-}
-.mode-toggle-bar span {
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: var(--text-muted);
-}
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 44px;
-    height: 24px;
-}
-.switch input { opacity: 0; width: 0; height: 0; }
-.slider {
-    position: absolute; cursor: pointer; inset: 0;
-    background-color: #cbd5e1;
-    transition: .3s;
-    border-radius: 34px;
-}
-.slider:before {
-    position: absolute; content: "";
-    height: 18px; width: 18px; left: 3px; bottom: 3px;
-    background-color: white;
-    transition: .3s;
-    border-radius: 50%;
-}
-input:checked + .slider { background-color: var(--primary); }
-input:checked + .slider:before { transform: translateX(20px); }
-
-/* Danh sách học sinh hiển thị trực quan (Grid/Card) */
-.student-grid-scroll {
-    max-height: 240px;
-    overflow-y: auto;
-    border: 1.5px solid var(--border-col);
-    border-radius: var(--radius-md);
-    padding: 8px;
-    background: #f8fafc;
-    margin-bottom: 14px;
-}
-.student-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 12px;
-    background: #ffffff;
-    border-radius: 10px;
-    margin-bottom: 6px;
-    border: 1px solid var(--border-col);
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-.student-item:active { transform: scale(0.98); }
-.student-item.selected {
-    border-color: var(--primary);
-    background: #f0f9ff;
-}
-.student-item .info {
-    display: flex;
-    flex-direction: column;
-}
-.student-item .s-name {
-    font-weight: 700;
-    font-size: 0.9rem;
-    color: var(--text-main);
-}
-.student-item .s-sub {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-}
-.student-item .check-icon {
-    font-size: 1.1rem;
-    color: #cbd5e1;
-}
-.student-item.selected .check-icon {
-    color: var(--primary);
-}
-
-/* Danh sách học sinh đang chọn (Chips) */
-.selected-summary-bar {
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--primary-dark);
-    margin-bottom: 10px;
-}
-        /* --- TỐI ƯU UI ĐIỂM DANH --- */
-.student-item .info {
-    flex: 1;
-}
-.student-item .s-id {
-    font-family: monospace;
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    background: #f1f5f9;
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-right: 6px;
-}
-.student-item .s-class-badge {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: var(--primary-dark);
-    background: var(--primary-light);
-    padding: 2px 6px;
-    border-radius: 4px;
-}
-
-/* Thanh hành động trượt từ dưới lên */
-.action-bottom-bar {
-    position: fixed;
-    bottom: env(safe-area-inset-bottom, 20px);
-    left: 50%;
-    transform: translateX(-50%) translateY(120%);
-    width: calc(100% - 32px);
-    max-width: 448px;
-    background: #ffffff;
-    border-radius: var(--radius-lg);
-    box-shadow: 0 -4px 24px rgba(0,0,0,0.12);
-    padding: 16px;
-    z-index: 1000;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid var(--border-col);
-}
-
-.action-bottom-bar.show {
-    transform: translateX(-50%) translateY(0);
-}
-
-.action-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-}
-
-.action-title {
-    font-size: 0.9rem;
-    font-weight: 800;
-    color: var(--primary);
-}
-
-/* Ẩn phần thừa cũ */
-.mode-toggle-bar, #selected-summary, .form-group-reason-old {
-    display: none !important;
-}
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -758,9 +703,10 @@ input:checked + .slider:before { transform: translateX(20px); }
         <div class="splash-sub">Y Tế Số - THPT Võ Thị Sáu</div>
         <div class="splash-bar"></div>
     </div>
+
     <!-- 1. MÀN HÌNH BẢO MẬT & PIN LOCK -->
     <div id="auth-screen" class="auth-overlay">
-        <!-- Bước A: Đăng nhập Google (Lần đầu tiên) -->
+        <!-- Bước A: Đăng nhập Google -->
         <div id="step-google" class="auth-box">
             <img src="https://res.cloudinary.com/uq7hr3wp/image/upload/v1787045296/rfhuztp3qiohlvwr4bhf.png" class="auth-logo" alt="Logo">
             <h2 class="auth-title">ĐIỂM DANH HỌC SINH</h2>
@@ -781,7 +727,7 @@ input:checked + .slider:before { transform: translateX(20px); }
             <div class="numpad" id="setup-numpad"></div>
         </div>
 
-        <!-- Bước C: Mở khóa mã PIN / Vân tay khi quay lại app -->
+        <!-- Bước C: Mở khóa mã PIN -->
         <div id="step-unlock" class="auth-box" style="display: none;">
             <img src="https://res.cloudinary.com/uq7hr3wp/image/upload/v1787045296/rfhuztp3qiohlvwr4bhf.png" class="auth-logo" alt="Logo">
             <h2 class="auth-title">MỞ KHÓA ỨNG DỤNG</h2>
@@ -819,77 +765,87 @@ input:checked + .slider:before { transform: translateX(20px); }
                 </button>
             </div>
 
-<!-- TAB 1: FORM ĐIỂM DANH TỐI ƯU -->
-<section id="pane-attendance">
-    <div class="app-card" style="margin-bottom: 120px;"> <!-- Margin chừa chỗ cho action bar -->
-        <!-- BỘ CHỌN NGÀY -->
-        <div class="date-stepper">
-            <button type="button" onclick="adjustDate(-1)"><i class="fas fa-chevron-left"></i></button>
-            <div class="date-display" onclick="document.getElementById('att-date-input').showPicker()">
-                <i class="far fa-calendar-alt"></i>
-                <span id="date-text-display">Hôm nay</span>
-                <input type="date" id="att-date-input" style="opacity: 0; width: 0; position: absolute;" onchange="onDateChanged()">
-            </div>
-            <button type="button" onclick="adjustDate(1)"><i class="fas fa-chevron-right"></i></button>
-        </div>
+            <!-- TAB 1: FORM ĐIỂM DANH -->
+            <section id="pane-attendance">
+                <div class="app-card" style="margin-bottom: 110px;">
+                    <!-- BỘ CHỌN NGÀY -->
+                    <div class="date-stepper">
+                        <button type="button" onclick="adjustDate(-1)"><i class="fas fa-chevron-left"></i></button>
+                        <div class="date-display" onclick="openDatePicker()">
+                            <i class="far fa-calendar-alt"></i>
+                            <span id="date-text-display">Hôm nay</span>
+                            <input type="date" id="att-date-input" style="opacity:0; width:1px; height:1px; position:absolute;" onchange="onDateChanged()">
+                        </div>
+                        <button type="button" onclick="adjustDate(1)"><i class="fas fa-chevron-right"></i></button>
+                    </div>
 
-        <!-- 1. BỘ LỌC LỚP & TÌM KIẾM -->
-        <div class="filter-search-container">
-            <select id="class-filter" class="form-control class-filter-select" onchange="onClassFilterChanged()">
-                <!-- Options đổ từ JS -->
-            </select>
-            <div class="search-box-wrapper">
-                <input type="text" id="search-student-input" class="form-control" placeholder="🔍 Tìm tên / mã HS..." oninput="handleSearchInput()">
-                <button type="button" class="btn-clear-search" onclick="clearSearch()"><i class="fas fa-times"></i></button>
-            </div>
-        </div>
+                    <!-- BỘ LỌC LỚP & TÌM KIẾM -->
+                    <div class="filter-search-container">
+                        <select id="class-filter" class="form-control class-filter-select" onchange="onClassFilterChanged()">
+                            <option>Đang nạp lớp...</option>
+                        </select>
+                        <div class="search-box-wrapper">
+                            <input type="text" id="search-student-input" class="form-control" placeholder="🔍 Tên hoặc mã HS..." oninput="handleSearchInput()">
+                            <button type="button" class="btn-clear-search" onclick="clearSearch()"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
 
-        <!-- 2. DANH SÁCH HỌC SINH -->
-        <div class="student-grid-scroll" id="student-list-container" style="max-height: 400px;">
-            <div class="empty-state" style="padding: 15px;">
-                <i class="fas fa-search"></i>
-                <p>Đang tải dữ liệu...</p>
-            </div>
-        </div>
-    </div>
+                    <!-- THANH CÔNG CỤ CHỌN NHANH -->
+                    <div class="list-toolbar">
+                        <span id="student-count-display">Danh sách học sinh</span>
+                        <div>
+                            <button type="button" class="btn-link-action" onclick="selectAllVisible()">Chọn tất cả</button>
+                            <span style="color:#cbd5e1; margin:0 4px;">|</span>
+                            <button type="button" class="btn-link-action" onclick="clearSelection()">Bỏ chọn</button>
+                        </div>
+                    </div>
 
-    <!-- 3. THANH HÀNH ĐỘNG (ACTION BAR) - CHỈ HIỆN KHI CHỌN HS -->
-    <div id="action-bottom-bar" class="action-bottom-bar">
-        <div class="action-header">
-            <span class="action-title" id="action-selected-count">✓ Đã chọn 0 học sinh</span>
-            <button class="btn-clear-search" style="position:relative; right:0; transform:none;" onclick="clearSelection()"><i class="fas fa-times-circle"></i> Bỏ chọn</button>
-        </div>
+                    <!-- DANH SÁCH HỌC SINH -->
+                    <div class="student-grid-scroll" id="student-list-container">
+                        <div class="empty-state">
+                            <i class="fas fa-search"></i>
+                            <p>Đang tải dữ liệu...</p>
+                        </div>
+                    </div>
+                </div>
 
-        <!-- LÝ DO VẮNG -->
-        <div class="reason-grid" style="margin-bottom: 12px;">
-            <div class="reason-chip active-p" onclick="selectReason('P', this)">
-                <span class="txt">📄 Có phép</span>
-            </div>
-            <div class="reason-chip" onclick="selectReason('KP', this)">
-                <span class="txt">⚠️ Không phép</span>
-            </div>
-            <div class="reason-chip" onclick="selectReason('B', this)">
-                <span class="txt">🩺 Báo bệnh</span>
-            </div>
-        </div>
+                <!-- THANH HÀNH ĐỘNG GHI NHẬN (BOTTOM BAR) -->
+                <div id="action-bottom-bar" class="action-bottom-bar">
+                    <div class="action-header">
+                        <span class="action-title" id="action-selected-count">✓ Đã chọn 0 học sinh</span>
+                        <button class="btn-link-action" onclick="clearSelection()"><i class="fas fa-times"></i> Hủy</button>
+                    </div>
 
-        <!-- TRIỆU CHỨNG (ẨN/HIỆN THEO BỆNH) -->
-        <div id="sick-box" class="sick-notice-box" style="margin-top:0; margin-bottom: 12px; padding: 10px;">
-            <input type="text" id="symptom-input" class="form-control" style="background:#fff; padding: 10px;" placeholder="Triệu chứng (bắt buộc)...">
-        </div>
+                    <!-- LÝ DO VẮNG -->
+                    <div class="reason-grid">
+                        <div class="reason-chip active-p" onclick="selectReason('P', this)">
+                            <span class="txt">📄 Có phép</span>
+                        </div>
+                        <div class="reason-chip" onclick="selectReason('KP', this)">
+                            <span class="txt">⚠️ Không phép</span>
+                        </div>
+                        <div class="reason-chip" onclick="selectReason('B', this)">
+                            <span class="txt">🩺 Báo bệnh</span>
+                        </div>
+                    </div>
 
-        <button type="button" onclick="submitAttendanceBatch()" id="btn-save" class="btn-submit">
-            ✓ Ghi nhận 0 học sinh
-        </button>
-    </div>
-</section>
+                    <!-- TRIỆU CHỨNG BÁO BỆNH -->
+                    <div id="sick-box" class="sick-notice-box">
+                        <input type="text" id="symptom-input" class="form-control" style="background:#fff; padding: 10px;" placeholder="Nhập triệu chứng báo bệnh...">
+                    </div>
+
+                    <button type="button" onclick="submitAttendanceBatch()" id="btn-save" class="btn-submit">
+                        ✓ Ghi nhận vắng (0)
+                    </button>
+                </div>
+            </section>
 
             <!-- TAB 2: DANH SÁCH ĐÃ VẮNG TRONG NGÀY -->
             <section id="pane-history" style="display: none;">
                 <div id="absent-list-container">
                     <div class="empty-state">
                         <i class="fas fa-spinner fa-spin"></i>
-                        <p>Đang tải dữ liệu điểm danh...</p>
+                        <p>Đang tải dữ liệu...</p>
                     </div>
                 </div>
             </section>
@@ -904,13 +860,13 @@ input:checked + .slider:before { transform: translateX(20px); }
     <script src="../assets/config.js"></script>
     <script src="../assets/js/crypto.js"></script>
     <script src="../assets/auth-check.js"></script>
+
     <script>
         /* CORE ATTENDANCE APP ENGINE (OPTIMIZED) */
-
         let currentUser = null;
         let currentUserRole = 'none'; // 'admin' | 'quansinh' | 'gvcn'
         let allowedClasses = [];      // Danh sách lớp được phép điểm danh
-        let selectedReason = 'P';     // Mặc định 'P'
+        let selectedReason = 'P';     // 'P' | 'KP' | 'B'
 
         // PIN States
         let pinInput = [];
@@ -921,60 +877,67 @@ input:checked + .slider:before { transform: translateX(20px); }
         // App States
         let allStudentsCache = [];
         let selectedStudentIds = new Set();
-        let isMultiSelectMode = false;
-
-        let classRosterCache = {};   // Dạng: { "12A4": [{id, name, class}], "11A1": [...] }
-        let currentDisplayedStudents = []; // Danh sách đang hiển thị trên màn hình
+        let currentDisplayedStudents = [];
         let searchDebounceTimeout = null;
         let lastSelectedClass = localStorage.getItem('vts_last_class') || null;
+        let lastInactiveTime = 0;
 
-        // 1. KHỞI CHẠY HỆ THỐNG VỚI HIỆU ỨNG SPLASH
+        // 1. KHỞI CHẠY HỆ THỐNG
         window.addEventListener('DOMContentLoaded', () => {
             initNumpads();
             initDate();
             setTimeout(() => {
                 checkAppSession();
-            }, 1100);
+            }, 800);
         });
 
         function hideSplashScreen() {
             const splash = document.getElementById('splash-screen');
             if (splash) {
                 splash.classList.add('splash-fade-out');
-                setTimeout(() => splash.remove(), 500); 
+                setTimeout(() => splash.remove(), 400); 
             }
         }
 
-        // 2. TẢI DỮ LIỆU TỐI ƯU (CHỈ ĐỌC KHI MÁY CHƯA CÓ LƯU TRỮ HOẶC ÉP TẢI LẠI)
+        // 2. TẢI DỮ LIỆU VÀ TỐI ƯU BỘ NHỚ
         async function fetchAndCacheStudents(forceRefresh = false) {
-            const CACHE_KEY = 'vts_cached_students_v1';
+            const CACHE_KEY = 'vts_cached_students_v2';
             const localData = localStorage.getItem(CACHE_KEY);
 
             if (!forceRefresh && localData) {
                 try {
                     allStudentsCache = JSON.parse(localData);
-                    return; // Tiết kiệm 100% tài nguyên đọc của Firestore
+                    return;
                 } catch (e) {
                     localStorage.removeItem(CACHE_KEY);
                 }
             }
 
-            // Truy vấn Firebase
-            const snap = await db.collection('yt_students').get();
-            allStudentsCache = [];
-            snap.forEach(doc => {
-                const d = doc.data();
-                allStudentsCache.push({
-                    id: doc.id,
-                    name: d.name || '',
-                    class: (d.class || '').trim().toUpperCase(),
-                    phone: d.phone || ''
+            try {
+                const snap = await db.collection('yt_students').get();
+                allStudentsCache = [];
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    allStudentsCache.push({
+                        id: doc.id,
+                        name: d.name || '',
+                        class: (d.class || '').trim().toUpperCase(),
+                        phone: d.phone || ''
+                    });
                 });
-            });
 
-            // Sắp xếp học sinh theo TÊN (Từ cuối cùng trong họ tên)
-            allStudentsCache.sort(compareVietnameseNames);
-            localStorage.setItem(CACHE_KEY, JSON.stringify(allStudentsCache));
+                allStudentsCache.sort(compareVietnameseNames);
+                localStorage.setItem(CACHE_KEY, JSON.stringify(allStudentsCache));
+            } catch(e) {
+                console.error("Lỗi nạp học sinh:", e);
+            }
+        }
+
+        function removeVietnameseTones(str) {
+            return str.normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/đ/g, 'd').replace(/Đ/g, 'D')
+                .toLowerCase().trim();
         }
 
         function compareVietnameseNames(a, b) {
@@ -984,16 +947,15 @@ input:checked + .slider:before { transform: translateX(20px); }
             };
             const nameA = getLastNameWord(a.name);
             const nameB = getLastNameWord(b.name);
-
             const cmp = nameA.localeCompare(nameB, 'vi', { sensitivity: 'base' });
-            if (cmp !== 0) return cmp;
-            return a.name.localeCompare(b.name, 'vi');
+            return cmp !== 0 ? cmp : a.name.localeCompare(b.name, 'vi');
         }
 
-        // 3. KHỞI TẠO BÀN PHÍM PIN SỐ TỐI GIẢN
+        // 3. KHỞI TẠO BÀN PHÍM PIN
         function initNumpads() {
             const makePad = (containerId, onKey) => {
                 const c = document.getElementById(containerId);
+                if (!c) return;
                 c.innerHTML = '';
                 for (let i = 1; i <= 9; i++) {
                     const btn = document.createElement('button');
@@ -1024,7 +986,7 @@ input:checked + .slider:before { transform: translateX(20px); }
             makePad('unlock-numpad', handleUnlockPinKey);
         }
 
-        // 4. KIỂM TRA PHIÊN & MỞ GIAO DIỆN
+        // 4. PHIÊN ĐĂNG NHẬP & BẢO MẬT
         function checkAppSession() {
             const isRegistered = localStorage.getItem('vts_dd_registered') === 'true';
             const isUnlocked = sessionStorage.getItem('vts_dd_unlocked') === 'true';
@@ -1035,7 +997,7 @@ input:checked + .slider:before { transform: translateX(20px); }
                 } else {
                     showAuthStep('step-unlock');
                     hideSplashScreen();
-                    setTimeout(triggerBiometrics, 300);
+                    setTimeout(triggerBiometrics, 200);
                 }
             } else {
                 showAuthStep('step-google');
@@ -1050,7 +1012,6 @@ input:checked + .slider:before { transform: translateX(20px); }
             });
         }
 
-        // 5. XÁC THỰC GOOGLE LOGIN
         function handleGoogleAuth() {
             const provider = new firebase.auth.GoogleAuthProvider();
             firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
@@ -1169,7 +1130,7 @@ input:checked + .slider:before { transform: translateX(20px); }
             } catch(e) {}
         }
 
-        // 6. KIỂM TRA PHÂN QUYỀN
+        // 5. PHÂN QUYỀN TÀI KHOẢN
         async function checkUserRole(user) {
             if (!user) return false;
             const email = user.email.toLowerCase();
@@ -1189,12 +1150,12 @@ input:checked + .slider:before { transform: translateX(20px); }
                 if (data.status !== 'active') return false;
                 if (data.expiryDate && data.expiryDate < todayStr) return false;
 
-                currentUserRole = data.role || 'collaborator';
+                currentUserRole = data.role || 'gvcn';
                 currentUser = { displayName: data.name || user.displayName, email: user.email, photoURL: user.photoURL };
 
                 if (currentUserRole === 'quansinh') {
                     allowedClasses = ['ALL'];
-                } else if (currentUserRole === 'gvcn') {
+                } else {
                     allowedClasses = data.assignedClasses || (data.class ? [data.class] : []);
                 }
                 return true;
@@ -1202,7 +1163,6 @@ input:checked + .slider:before { transform: translateX(20px); }
             return false;
         }
 
-        // 7. NẠP DỮ LIỆU APP CHÍNH
         async function verifyUserPermission() {
             firebase.auth().onAuthStateChanged(async (user) => {
                 if (user && await checkUserRole(user)) {
@@ -1225,7 +1185,7 @@ input:checked + .slider:before { transform: translateX(20px); }
                         roleBadge.className = 'user-badge badge-gvcn';
                     }
 
-                    if(typeof loadMasterCryptoKey === "function") await loadMasterCryptoKey();
+                    if (typeof loadMasterCryptoKey === "function") await loadMasterCryptoKey();
                     await fetchAndCacheStudents();
                     populateClassDropdown();
                     loadDailyAbsentRecords();
@@ -1235,358 +1195,168 @@ input:checked + .slider:before { transform: translateX(20px); }
             });
         }
 
-// 1. ĐỔ LỚP VÀO DROPDOWN & TỰ ĐỘNG CHỌN
-async function populateClassDropdown() {
-    const filterSelect = document.getElementById('class-filter');
-    filterSelect.innerHTML = '<option>Đang tải danh sách lớp...</option>';
-    
-    let classesToRender = [];
+        // 6. KHỞI TẠO BỘ LỌC LỚP
+        function populateClassDropdown() {
+            const filterSelect = document.getElementById('class-filter');
+            let classesToRender = [];
 
-    // Nếu là Quản Sinh / Admin (Có quyền ALL) -> Quét danh sách lớp thực tế từ DB
-    if (allowedClasses.includes('ALL')) {
-        try {
-            const snap = await db.collection('yt_students').get();
-            const classSet = new Set();
-            snap.forEach(doc => {
-                const c = doc.data().class;
-                if (c) classSet.add(c.trim().toUpperCase());
-            });
-            // Sắp xếp lớp theo thứ tự chữ cái/số
-            classesToRender = Array.from(classSet).sort((a, b) => a.localeCompare(b, 'vi', { numeric: true }));
-        } catch (e) {
-            console.error("Lỗi lấy danh sách lớp:", e);
-        }
-    } else {
-        // Nếu là GVCN -> Chỉ lấy các lớp được phân công
-        classesToRender = [...allowedClasses];
-    }
-
-    // Xây dựng lại Dropdown
-    filterSelect.innerHTML = '';
-    
-    // Nếu chỉ có 1 lớp (GVCN), khóa luôn
-    if (classesToRender.length === 1 && !allowedClasses.includes('ALL')) {
-        filterSelect.innerHTML = `<option value="${classesToRender[0]}">${classesToRender[0]}</option>`;
-        filterSelect.value = classesToRender[0];
-        filterSelect.disabled = true;
-    } else {
-        let options = '';
-        classesToRender.forEach(c => {
-            options += `<option value="${c}">Lớp ${c}</option>`;
-        });
-        
-        if (allowedClasses.includes('ALL')) {
-            options += `<option disabled>────────────</option>`;
-            options += `<option value="ALL">Tất cả lớp (Tìm kiếm)</option>`;
-        }
-        
-        filterSelect.innerHTML = options;
-        
-        // Phục hồi lớp chọn gần nhất nếu hợp lệ
-        if (lastSelectedClass && (classesToRender.includes(lastSelectedClass) || lastSelectedClass === 'ALL')) {
-            filterSelect.value = lastSelectedClass;
-        } else if (classesToRender.length > 0) {
-            filterSelect.value = classesToRender[0]; // Mặc định chọn lớp đầu tiên
-        } else {
-            filterSelect.value = 'ALL';
-        }
-    }
-    
-    onClassFilterChanged();
-}
-
-        // 2. KHI ĐỔI LỚP ➔ TẢI DỮ LIỆU THÔNG MINH
-// 2. KHI ĐỔI LỚP ➔ TẢI DỮ LIỆU THÔNG MINH
-async function onClassFilterChanged() {
-    const selectedClass = document.getElementById('class-filter').value;
-    document.getElementById('search-student-input').value = ''; // Clear search
-    clearSelection(); // Đổi lớp thì hủy chọn
-    
-    if (selectedClass !== 'ALL') {
-        localStorage.setItem('vts_last_class', selectedClass);
-        await fetchRosterForClass(selectedClass);
-        
-        // CHỐT CHẶN: Thêm || [] để nếu cache rỗng thì lấy mảng rỗng
-        renderStudentList(classRosterCache[selectedClass] || []); 
-    } else {
-        // Trường hợp ALL -> Không tải toàn trường, yêu cầu tìm kiếm
-        currentDisplayedStudents = [];
-        document.getElementById('student-list-container').innerHTML = `
-            <div class="empty-state" style="padding: 20px;">
-                <i class="fas fa-search" style="font-size:2rem; color:#cbd5e1;"></i>
-                <p style="margin-top:10px; font-weight:600;">Chọn "Tất cả lớp"</p>
-                <p style="font-size:0.8rem; color:#64748b;">Vui lòng nhập tên hoặc mã HS để tìm kiếm trên toàn trường.</p>
-            </div>`;
-    }
-}
-// 3. CACHE & FETCH HỌC SINH THEO LỚP (Tối ưu Firestore Reads)
-async function fetchRosterForClass(className) {
-    if (classRosterCache[className]) return; // Nếu đã có trong RAM -> Bỏ qua
-    
-    document.getElementById('student-list-container').innerHTML = `<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Đang tải lớp ${className}...</p></div>`;
-    
-    try {
-        const snap = await db.collection('yt_students').where('class', '==', className).get();
-        const roster = [];
-        snap.forEach(doc => {
-            // Chỉ lấy các trường thật sự cần
-            roster.push({
-                id: doc.id,
-                name: doc.data().name || '',
-                class: className
-            });
-        });
-        
-        // Sắp xếp Alphabet tiếng Việt
-        roster.sort((a, b) => {
-            const getLastName = (n) => n.trim().split(/\s+/).pop() || '';
-            const cmp = getLastName(a.name).localeCompare(getLastName(b.name), 'vi', { sensitivity: 'base' });
-            return cmp !== 0 ? cmp : a.name.localeCompare(b.name, 'vi');
-        });
-        
-        classRosterCache[className] = roster;
-    } catch(e) {
-        console.error("Lỗi tải lớp:", e);
-    }
-}
-        // 4. XỬ LÝ TÌM KIẾM (LOCAL & SERVER)
-function handleSearchInput() {
-    clearTimeout(searchDebounceTimeout);
-    const query = document.getElementById('search-student-input').value.trim().toLowerCase();
-    const selectedClass = document.getElementById('class-filter').value;
-
-    if (selectedClass !== 'ALL') {
-        // A. TÌM KIẾM LOCAL TỨC THÌ (Zero latency)
-        const roster = classRosterCache[selectedClass] || [];
-        if (!query) return renderStudentList(roster);
-        
-        const filtered = roster.filter(s => 
-            s.name.toLowerCase().includes(query) || s.id.toLowerCase().includes(query)
-        );
-        renderStudentList(filtered);
-    } else {
-        // B. TÌM KIẾM SERVER (Debounce 400ms để không spam API)
-        if (!query) return onClassFilterChanged(); // Reset UI
-        
-        document.getElementById('student-list-container').innerHTML = `<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Đang tìm kiếm...</p></div>`;
-        
-        searchDebounceTimeout = setTimeout(async () => {
-            try {
-                // Firebase không hỗ trợ FULL-TEXT. Mẹo: Dùng >= <= cho ID (Vì ID thường có quy luật)
-                // Hoặc tải mảng nhỏ. Ở đây dùng query kết hợp nếu mã học sinh bắt đầu bằng query
-                const snap = await db.collection('yt_students')
-                                     .orderBy('id')
-                                     .startAt(query.toUpperCase())
-                                     .endAt(query.toUpperCase() + '\uf8ff')
-                                     .limit(15)
-                                     .get();
-                
-                let results = [];
-                snap.forEach(doc => results.push({id: doc.id, name: doc.data().name, class: doc.data().class}));
-                
-                // Trả về UI
-                renderStudentList(results, true); // true = show class badge
-            } catch(e) {
-                console.log(e);
-            }
-        }, 400);
-    }
-}
-
-function clearSearch() {
-    document.getElementById('search-student-input').value = '';
-    handleSearchInput();
-}
-
-// 5. RENDER UI HỌC SINH TỐI ƯU
-// 5. RENDER UI HỌC SINH TỐI ƯU (ĐÃ FIX LỖI UNDEFINED)
-function renderStudentList(studentsData, forceShowClass = false) {
-    // CHỐT CHẶN BẢO VỆ: Đảm bảo dữ liệu luôn là một mảng, ngăn lỗi sập App
-    const safeData = Array.isArray(studentsData) ? studentsData : [];
-    currentDisplayedStudents = safeData; 
-    
-    const container = document.getElementById('student-list-container');
-    
-    if (safeData.length === 0) {
-        container.innerHTML = `<div class="empty-state"><p>Không tìm thấy học sinh.</p></div>`;
-        return;
-    }
-
-    let html = '';
-    safeData.forEach(s => {
-        const isSelected = selectedStudentIds.has(s.id);
-        const classBadge = forceShowClass ? `<span class="s-class-badge">${s.class}</span>` : '';
-        
-        html += `
-            <div class="student-item ${isSelected ? 'selected' : ''}" onclick="toggleStudentSelection('${s.id}')">
-                <div class="info">
-                    <div class="s-name">${s.name}</div>
-                    <div style="margin-top: 4px;">
-                        <span class="s-id">${s.id}</span>
-                        ${classBadge}
-                    </div>
-                </div>
-                <div class="check-icon">
-                    <i class="fas ${isSelected ? 'fa-check-circle' : 'fa-circle'}"></i>
-                </div>
-            </div>`;
-    });
-    container.innerHTML = html;
-}
-
-// 6. LOGIC CHỌN ĐA HỌC SINH MẶC ĐỊNH
-function toggleStudentSelection(studentId) {
-    if (selectedStudentIds.has(studentId)) {
-        selectedStudentIds.delete(studentId);
-    } else {
-        selectedStudentIds.add(studentId);
-    }
-    
-    // Chỉ cập nhật class của HTML Elements thay vì re-render toàn bộ DOM (Cải thiện Perf)
-    renderStudentList(currentDisplayedStudents, document.getElementById('class-filter').value === 'ALL');
-    updateActionBar();
-}
-
-function clearSelection() {
-    selectedStudentIds.clear();
-    renderStudentList(currentDisplayedStudents, document.getElementById('class-filter').value === 'ALL');
-    updateActionBar();
-}
-
-function updateActionBar() {
-    const count = selectedStudentIds.size;
-    const bar = document.getElementById('action-bottom-bar');
-    const btnSubmit = document.getElementById('btn-save');
-    const titleText = document.getElementById('action-selected-count');
-
-    if (count > 0) {
-        bar.classList.add('show');
-        titleText.innerText = `✓ Đã chọn ${count} học sinh`;
-        btnSubmit.innerHTML = `✓ Ghi nhận ${count} học sinh`;
-    } else {
-        bar.classList.remove('show');
-    }
-}
-
-// 7. GHI NHẬN LÔ DỮ LIỆU (BATCH WRITE - ĐÃ TỐI ƯU CỰC KỲ AN TOÀN)
-async function submitAttendanceBatch() {
-    const date = document.getElementById('att-date-input').value;
-    const symptom = document.getElementById('symptom-input').value.trim();
-
-    if (selectedStudentIds.size === 0) return;
-    if (selectedReason === 'B' && !symptom) {
-        return alert("Vui lòng nhập triệu chứng báo bệnh!");
-    }
-
-    const btn = document.getElementById('btn-save');
-    const orgHtml = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
-
-    try {
-        const batch = db.batch();
-        const studentIdArray = Array.from(selectedStudentIds);
-        
-        // a. Trích xuất thông tin học sinh từ Cache (để ghi vào DB)
-        const studentsToProcess = [];
-        studentIdArray.forEach(stId => {
-            // Tìm trong cache hiển thị hiện tại
-            const st = currentDisplayedStudents.find(s => s.id === stId);
-            if(st) studentsToProcess.push(st);
-        });
-
-        // b. Chống ghi đè/trùng lặp bằng việc query trước 
-        // (Do giới hạn 'in' của Firebase là 30, ta chia mảng nếu cần, nhưng thường chọn tay < 30)
-        const chunks = [];
-        for (let i = 0; i < studentsToProcess.length; i += 30) {
-            chunks.push(studentsToProcess.slice(i, i + 30).map(s => s.id));
-        }
-
-        let alreadyMarked = [];
-        for (const chunk of chunks) {
-            const snap = await db.collection('yt_attendance')
-                                 .where('date', '==', date)
-                                 .where('studentId', 'in', chunk)
-                                 .get();
-            snap.forEach(d => alreadyMarked.push(d.data().name));
-        }
-
-        if (alreadyMarked.length > 0) {
-            alert(`⚠️ Học sinh [${alreadyMarked.join(', ')}] đã được điểm danh hôm nay rồi! Vui lòng bỏ chọn.`);
-            btn.disabled = false;
-            btn.innerHTML = orgHtml;
-            return;
-        }
-
-        // c. Tạo Batch Writes
-        studentsToProcess.forEach(studentObj => {
-            const attRef = db.collection('yt_attendance').doc();
-            const attData = {
-                studentId: studentObj.id,
-                name: studentObj.name,
-                class: studentObj.class,
-                date: date,
-                reason: selectedReason,
-                recordedBy: currentUser.displayName,
-                recorderRole: currentUserRole,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            if (selectedReason === 'B') {
-                attData.symptom = symptom;
-                attData.diagnosis = "Chờ kiểm tra";
-                attData.isPendingAdmin = true;
-            }
-            batch.set(attRef, attData);
-        });
-
-        // Gửi lệnh lên Server (chỉ tốn 1 request API Network duy nhất)
-        await batch.commit();
-        
-        // Reset UI
-        clearSelection();
-        document.getElementById('symptom-input').value = '';
-        loadDailyAbsentRecords(); // Refresh tab lịch sử
-        alert(`✅ Ghi nhận thành công ${studentsToProcess.length} học sinh!`);
-
-    } catch (err) {
-        alert("Lỗi khi lưu: " + err.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = orgHtml;
-    }
-}
-
-        function onFilterOrSearchChanged() { renderStudentList(); }
-
-
-        function toggleStudentSelection(studentId) {
-            if (isMultiSelectMode) {
-                if (selectedStudentIds.has(studentId)) selectedStudentIds.delete(studentId);
-                else selectedStudentIds.add(studentId);
+            if (allowedClasses.includes('ALL')) {
+                const classSet = new Set();
+                allStudentsCache.forEach(s => { if (s.class) classSet.add(s.class); });
+                classesToRender = Array.from(classSet).sort((a, b) => a.localeCompare(b, 'vi', { numeric: true }));
             } else {
-                if (selectedStudentIds.has(studentId)) {
-                    selectedStudentIds.clear();
-                } else {
-                    selectedStudentIds.clear();
-                    selectedStudentIds.add(studentId);
+                classesToRender = [...allowedClasses];
+            }
+
+            filterSelect.innerHTML = '';
+            if (classesToRender.length === 1 && !allowedClasses.includes('ALL')) {
+                filterSelect.innerHTML = `<option value="${classesToRender[0]}">Lớp ${classesToRender[0]}</option>`;
+                filterSelect.value = classesToRender[0];
+                filterSelect.disabled = true;
+            } else {
+                let options = '';
+                classesToRender.forEach(c => {
+                    options += `<option value="${c}">Lớp ${c}</option>`;
+                });
+                if (allowedClasses.includes('ALL')) {
+                    options += `<option value="ALL">🔍 Toàn trường (Tất cả)</option>`;
+                }
+                filterSelect.innerHTML = options;
+
+                if (lastSelectedClass && (classesToRender.includes(lastSelectedClass) || lastSelectedClass === 'ALL')) {
+                    filterSelect.value = lastSelectedClass;
+                } else if (classesToRender.length > 0) {
+                    filterSelect.value = classesToRender[0];
                 }
             }
-            renderStudentList();
+
+            onClassFilterChanged();
         }
 
-        function onToggleMultiMode() {
-            isMultiSelectMode = document.getElementById('toggle-multi-select').checked;
-            if (!isMultiSelectMode && selectedStudentIds.size > 1) {
-                selectedStudentIds.clear();
-                renderStudentList();
+        // 7. THAY ĐỔI LỚP & TÌM KIẾM HỌC SINH
+        function onClassFilterChanged() {
+            const selectedClass = document.getElementById('class-filter').value;
+            document.getElementById('search-student-input').value = '';
+            clearSelection();
+            
+            if (selectedClass !== 'ALL') {
+                localStorage.setItem('vts_last_class', selectedClass);
+                const roster = allStudentsCache.filter(s => s.class === selectedClass);
+                renderStudentList(roster);
+            } else {
+                renderStudentList([]);
+                document.getElementById('student-list-container').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <p style="font-weight:700; margin-top:8px;">Tìm kiếm toàn trường</p>
+                        <p style="font-size:0.8rem; margin-top:4px;">Nhập tên hoặc mã học sinh vào ô tìm kiếm ở trên.</p>
+                    </div>`;
+                document.getElementById('student-count-display').innerText = `Học sinh: 0`;
             }
         }
 
-        function updateSelectedSummary() {
+        function handleSearchInput() {
+            clearTimeout(searchDebounceTimeout);
+            searchDebounceTimeout = setTimeout(() => {
+                const queryRaw = document.getElementById('search-student-input').value.trim();
+                const queryNormalized = removeVietnameseTones(queryRaw);
+                const selectedClass = document.getElementById('class-filter').value;
+
+                let dataset = (selectedClass === 'ALL') 
+                    ? allStudentsCache 
+                    : allStudentsCache.filter(s => s.class === selectedClass);
+
+                if (!queryRaw) {
+                    if (selectedClass === 'ALL') {
+                        return onClassFilterChanged();
+                    }
+                    return renderStudentList(dataset);
+                }
+
+                const filtered = dataset.filter(s => {
+                    const nameNorm = removeVietnameseTones(s.name);
+                    const idNorm = s.id.toLowerCase();
+                    return nameNorm.includes(queryNormalized) || idNorm.includes(queryNormalized);
+                });
+
+                renderStudentList(filtered, selectedClass === 'ALL');
+            }, 150);
+        }
+
+        function clearSearch() {
+            document.getElementById('search-student-input').value = '';
+            handleSearchInput();
+        }
+
+        // 8. RENDER DANH SÁCH & LỰA CHỌN
+        function renderStudentList(studentsData, forceShowClass = false) {
+            const safeData = Array.isArray(studentsData) ? studentsData : [];
+            currentDisplayedStudents = safeData;
+            const container = document.getElementById('student-list-container');
+            document.getElementById('student-count-display').innerText = `Hiển thị: ${safeData.length} học sinh`;
+
+            if (safeData.length === 0) {
+                container.innerHTML = `<div class="empty-state"><p>Không tìm thấy học sinh nào.</p></div>`;
+                return;
+            }
+
+            let html = '';
+            safeData.forEach(s => {
+                const isSelected = selectedStudentIds.has(s.id);
+                const classBadge = forceShowClass ? `<span class="s-class-badge">${s.class}</span>` : '';
+
+                html += `
+                    <div class="student-item ${isSelected ? 'selected' : ''}" onclick="toggleStudentSelection('${s.id}')">
+                        <div class="info">
+                            <div class="s-name">${s.name}</div>
+                            <div style="margin-top: 4px;">
+                                <span class="s-id">${s.id}</span>
+                                ${classBadge}
+                            </div>
+                        </div>
+                        <div class="check-icon">
+                            <i class="fas ${isSelected ? 'fa-check-circle' : 'fa-circle'}"></i>
+                        </div>
+                    </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function toggleStudentSelection(studentId) {
+            if (selectedStudentIds.has(studentId)) {
+                selectedStudentIds.delete(studentId);
+            } else {
+                selectedStudentIds.add(studentId);
+            }
+            renderStudentList(currentDisplayedStudents, document.getElementById('class-filter').value === 'ALL');
+            updateActionBar();
+        }
+
+        function selectAllVisible() {
+            currentDisplayedStudents.forEach(s => selectedStudentIds.add(s.id));
+            renderStudentList(currentDisplayedStudents, document.getElementById('class-filter').value === 'ALL');
+            updateActionBar();
+        }
+
+        function clearSelection() {
+            selectedStudentIds.clear();
+            renderStudentList(currentDisplayedStudents, document.getElementById('class-filter').value === 'ALL');
+            updateActionBar();
+        }
+
+        function updateActionBar() {
             const count = selectedStudentIds.size;
-            document.getElementById('selected-summary').innerText = `Đã chọn: ${count} học sinh`;
-            document.getElementById('submit-count-badge').innerText = count;
+            const bar = document.getElementById('action-bottom-bar');
+            const btnSubmit = document.getElementById('btn-save');
+            const titleText = document.getElementById('action-selected-count');
+
+            if (count > 0) {
+                bar.classList.add('show');
+                titleText.innerText = `✓ Đã chọn ${count} học sinh`;
+                btnSubmit.innerHTML = `✓ Ghi nhận vắng (${count})`;
+            } else {
+                bar.classList.remove('show');
+            }
         }
 
         function selectReason(reason, el) {
@@ -1600,42 +1370,45 @@ async function submitAttendanceBatch() {
             document.getElementById('sick-box').style.display = (reason === 'B') ? 'block' : 'none';
         }
 
-        // 10. GỬI ĐIỂM DANH HÀNG LOẠT (Đã fix lỗi giới hạn 'in' và chặn trùng lặp triệt để)
-        async function submitAttendance() {
+        // 9. GHI NHẬN LÔ ĐIỂM DANH LÊN FIRESTORE
+        async function submitAttendanceBatch() {
             const date = document.getElementById('att-date-input').value;
             const symptom = document.getElementById('symptom-input').value.trim();
 
             if (selectedStudentIds.size === 0) {
-                return alert("Vui lòng chạm chọn ít nhất 1 học sinh cần điểm danh!");
+                return alert("Vui lòng chọn ít nhất 1 học sinh!");
             }
             if (selectedReason === 'B' && !symptom) {
-                return alert("Vui lòng nhập triệu chứng báo bệnh cho học sinh!");
+                return alert("Vui lòng nhập triệu chứng báo bệnh!");
             }
 
             const btn = document.getElementById('btn-save');
+            const orgHtml = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang ghi nhận...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
 
             try {
-                // Tối ưu: Chỉ lấy dữ liệu điểm danh của ngày đó để check trùng lặp trên JS (Không bị kẹt giới hạn 30 của 'in')
+                // Kiểm tra trùng lặp bản ghi trong ngày
                 const existingSnap = await db.collection('yt_attendance').where('date', '==', date).get();
-                const alreadyMarked = [];
-                
+                const duplicateStudents = [];
+
                 existingSnap.forEach(doc => {
                     const data = doc.data();
-                    if(selectedStudentIds.has(data.studentId)) {
-                        alreadyMarked.push(data.name);
+                    if (selectedStudentIds.has(data.studentId)) {
+                        duplicateStudents.push(data.name || data.studentId);
                     }
                 });
 
-                if (alreadyMarked.length > 0) {
+                if (duplicateStudents.length > 0) {
+                    alert(`⚠️ Học sinh [${duplicateStudents.join(', ')}] đã được điểm danh trong ngày này! Vui lòng bỏ chọn.`);
                     btn.disabled = false;
-                    btn.innerHTML = `<i class="fas fa-check-circle"></i> Ghi nhận vắng (<span id="submit-count-badge">${selectedStudentIds.size}</span>)`;
-                    return alert(`⚠️ Học sinh [${alreadyMarked.join(', ')}] đã được điểm danh trong ngày hôm nay rồi!`);
+                    btn.innerHTML = orgHtml;
+                    return;
                 }
 
                 const batch = db.batch();
                 const studentIdArray = Array.from(selectedStudentIds);
+                let savedCount = 0;
 
                 studentIdArray.forEach(stId => {
                     const studentObj = allStudentsCache.find(s => s.id === stId);
@@ -1655,13 +1428,14 @@ async function submitAttendanceBatch() {
 
                     if (selectedReason === 'B') {
                         attData.symptom = symptom;
-                        attData.diagnosis = "Chờ Phòng Y Tế xác minh";
+                        attData.diagnosis = "Chờ Phòng Y Tế kiểm tra";
                         attData.isPendingAdmin = true;
 
+                        // Thông báo Admin
                         const notiRef = db.collection('yt_notifications').doc();
                         batch.set(notiRef, {
-                            title: `🚨 BÁO CA BỆNH: ${studentObj.name} - Lớp ${studentObj.class}`,
-                            content: `${currentUser.displayName} (${currentUserRole.toUpperCase()}) báo ca bệnh: ${studentObj.name} (Lớp ${studentObj.class}). Triệu chứng: ${symptom}`,
+                            title: `🚨 BÁO BỆNH: ${studentObj.name} (${studentObj.class})`,
+                            content: `${currentUser.displayName} báo ca bệnh: ${studentObj.name} - Lớp ${studentObj.class}. Triệu chứng: ${symptom}`,
                             targetType: "admin",
                             type: "sick_alert",
                             sender: currentUser.displayName,
@@ -1669,40 +1443,40 @@ async function submitAttendanceBatch() {
                             timestamp: firebase.firestore.FieldValue.serverTimestamp()
                         });
                     } else {
+                        // Thông báo Học sinh
                         const notiStudentRef = db.collection('yt_notifications').doc();
                         const reasonText = selectedReason === 'P' ? 'Có phép' : 'Không phép';
                         batch.set(notiStudentRef, {
-                            title: "Thông báo Vắng mặt Điểm danh",
-                            content: `Bạn được ghi nhận vắng mặt ngày ${new Date(date).toLocaleDateString('vi-VN')} (${reasonText}). Người ghi nhận: ${currentUser.displayName}.`,
+                            title: "Thông báo Điểm danh Vắng",
+                            content: `Ghi nhận vắng ngày ${new Date(date).toLocaleDateString('vi-VN')} (${reasonText}). Người ghi nhận: ${currentUser.displayName}.`,
                             targetType: "student",
                             targetValue: studentObj.id,
-                            sender: "Giám thị / GVCN",
+                            relatedAttendanceId: attRef.id,
+                            sender: currentUser.displayName,
                             timestamp: firebase.firestore.FieldValue.serverTimestamp()
                         });
-                        attData.notificationId = notiStudentRef.id;
                     }
 
                     batch.set(attRef, attData);
+                    savedCount++;
                 });
 
                 await batch.commit();
-                alert(`✅ Đã ghi nhận điểm danh thành công cho ${selectedStudentIds.size} học sinh!`);
-                
-                selectedStudentIds.clear();
+
+                alert(`✅ Ghi nhận thành công ${savedCount} học sinh!`);
+                clearSelection();
                 document.getElementById('symptom-input').value = '';
-                renderStudentList();
                 loadDailyAbsentRecords();
 
             } catch (err) {
-                alert("Lỗi khi lưu: " + err.message);
+                alert("Lỗi khi ghi nhận: " + err.message);
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = `<i class="fas fa-check-circle"></i> Ghi nhận vắng (<span id="submit-count-badge">0</span>)`;
-                updateSelectedSummary();
+                btn.innerHTML = orgHtml;
             }
         }
 
-        // 11. TẢI DANH SÁCH VẮNG HÔM NAY (Đã tối ưu query Firestore tránh rò rỉ và đọc thừa)
+        // 10. TẢI DANH SÁCH ĐÃ VẮNG & HỦY ĐIỂM DANH
         async function loadDailyAbsentRecords() {
             const date = document.getElementById('att-date-input').value;
             const container = document.getElementById('absent-list-container');
@@ -1710,15 +1484,13 @@ async function submitAttendanceBatch() {
 
             try {
                 let query = db.collection('yt_attendance').where('date', '==', date);
-                
-                // Tối ưu: Nếu là GVCN (không phải ALL), chỉ lấy danh sách lớp của họ. Giảm hàng trăm chi phí reads.
+
                 if (!allowedClasses.includes('ALL') && allowedClasses.length > 0) {
-                    // Firebase 'in' hỗ trợ tối đa 30, hoàn toàn an toàn cho số lượng lớp của 1 GVCN
                     query = query.where('class', 'in', allowedClasses);
                 }
 
-                let snap = await query.get();
-                let records = [];
+                const snap = await query.get();
+                const records = [];
                 snap.forEach(d => records.push({ id: d.id, ...d.data() }));
 
                 document.getElementById('absent-today-count').innerText = records.length;
@@ -1745,8 +1517,8 @@ async function submitAttendanceBatch() {
                         <div class="absent-card">
                             <div class="absent-info">
                                 <h5>${r.name} ${badge}</h5>
-                                <span>Lớp: <strong>${r.class}</strong> | Ghi bởi: ${r.recordedBy || 'Hệ thống'}</span>
-                                ${r.reason === 'B' ? `<div style="font-size:0.75rem; color:#d97706; margin-top:3px;">🩺 ${r.symptom || 'Bệnh'}</div>` : ''}
+                                <span>Lớp: <strong>${r.class}</strong> | Ghi nhận: ${r.recordedBy || 'Hệ thống'}</span>
+                                ${r.reason === 'B' ? `<div style="font-size:0.75rem; color:#d97706; margin-top:3px;">🩺 ${r.symptom || 'Chưa rõ triệu chứng'}</div>` : ''}
                             </div>
                             <button onclick="deleteAbsentRecord('${r.id}', '${r.name}')" class="btn-delete-record" title="Hủy điểm danh">
                                 <i class="fas fa-trash-alt"></i>
@@ -1756,44 +1528,48 @@ async function submitAttendanceBatch() {
                 container.innerHTML = html;
 
             } catch (e) {
-                container.innerHTML = `<div style="color:red; text-align:center; padding:20px;">Lỗi: ${e.message}</div>`;
+                container.innerHTML = `<div style="color:red; text-align:center; padding:20px;">Lỗi nạp dữ liệu: ${e.message}</div>`;
             }
         }
 
-        // HÀM XÓA ĐIỂM DANH & TỰ ĐỘNG THU HỒI THÔNG BÁO ADMIN / HỌC SINH
         async function deleteAbsentRecord(docId, name) {
-            if (confirm(`Hủy ghi nhận vắng mặt của học sinh ${name}?\n(Thông báo cảnh báo ca bệnh gửi tới Admin cũng sẽ được tự động xóa).`)) {
-                try {
-                    const batch = db.batch();
-                    const attRef = db.collection('yt_attendance').doc(docId);
-                    batch.delete(attRef);
+            if (!confirm(`Xóa điểm danh của học sinh "${name}"?\n(Các thông báo liên quan cũng sẽ được thu hồi).`)) return;
 
-                    const notiAdminSnap = await db.collection('yt_notifications')
-                        .where('relatedAttendanceId', '==', docId).get();
-                    notiAdminSnap.forEach(doc => batch.delete(doc.ref));
+            try {
+                const batch = db.batch();
+                const attRef = db.collection('yt_attendance').doc(docId);
+                batch.delete(attRef);
 
-                    const notiStudentSnap = await db.collection('yt_notifications')
-                        .where('notificationId', '==', docId).get();
-                    notiStudentSnap.forEach(doc => batch.delete(doc.ref));
+                const notiSnap = await db.collection('yt_notifications')
+                    .where('relatedAttendanceId', '==', docId).get();
+                notiSnap.forEach(doc => batch.delete(doc.ref));
 
-                    await batch.commit();
-
-                    alert("✅ Đã hủy điểm danh và thu hồi thông báo thành công!");
-                    loadDailyAbsentRecords();
-                } catch(e) {
-                    alert("Lỗi khi xóa: " + e.message);
-                }
+                await batch.commit();
+                alert("✅ Đã hủy điểm danh thành công!");
+                loadDailyAbsentRecords();
+            } catch(e) {
+                alert("Lỗi khi xóa: " + e.message);
             }
         }
 
-        // TIỆN ÍCH NGÀY THÁNG & ĐIỀU HƯỚNG
+        // 11. XỬ LÝ NGÀY THÁNG VÀ ĐIỀU HƯỚNG
         function initDate() {
             const today = new Date();
             const yyyy = today.getFullYear();
             const mm = String(today.getMonth() + 1).padStart(2, '0');
             const dd = String(today.getDate()).padStart(2, '0');
-            document.getElementById('att-date-input').value = `${yyyy}-${mm}-${dd}`;
-            updateDateText(`${yyyy}-${mm}-${dd}`);
+            const dateStr = `${yyyy}-${mm}-${dd}`;
+            document.getElementById('att-date-input').value = dateStr;
+            updateDateText(dateStr);
+        }
+
+        function openDatePicker() {
+            const input = document.getElementById('att-date-input');
+            if (input.showPicker) {
+                input.showPicker();
+            } else {
+                input.click();
+            }
         }
 
         function adjustDate(days) {
@@ -1803,13 +1579,15 @@ async function submitAttendanceBatch() {
             const yyyy = d.getFullYear();
             const mm = String(d.getMonth() + 1).padStart(2, '0');
             const dd = String(d.getDate()).padStart(2, '0');
-            input.value = `${yyyy}-${mm}-${dd}`;
+            const dateStr = `${yyyy}-${mm}-${dd}`;
+            input.value = dateStr;
             onDateChanged();
         }
 
         function onDateChanged() {
             const val = document.getElementById('att-date-input').value;
             updateDateText(val);
+            clearSelection();
             loadDailyAbsentRecords();
         }
 
@@ -1832,7 +1610,7 @@ async function submitAttendanceBatch() {
         }
 
         function handleLogout() {
-            if (confirm("Đăng xuất khỏi App Điểm danh?")) {
+            if (confirm("Đăng xuất khỏi ứng dụng Điểm danh?")) {
                 sessionStorage.clear();
                 localStorage.removeItem('vts_dd_registered');
                 localStorage.removeItem('vts_dd_pin');
@@ -1841,18 +1619,17 @@ async function submitAttendanceBatch() {
             }
         }
 
+        // Khóa App thông minh (sau 3 phút không tương tác nếu rời tab)
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
-                sessionStorage.removeItem('vts_dd_unlocked');
-            }
-        });
-
-        window.addEventListener('pageshow', () => {
-            if (localStorage.getItem('vts_dd_registered') === 'true' && sessionStorage.getItem('vts_dd_unlocked') !== 'true') {
-                unlockPinInput = [];
-                updateDots('unlock-pin-dots', 0);
-                showAuthStep('step-unlock');
-                triggerBiometrics();
+                lastInactiveTime = Date.now();
+            } else {
+                if (lastInactiveTime && (Date.now() - lastInactiveTime > 3 * 60 * 1000)) {
+                    sessionStorage.removeItem('vts_dd_unlocked');
+                    unlockPinInput = [];
+                    updateDots('unlock-pin-dots', 0);
+                    showAuthStep('step-unlock');
+                }
             }
         });
     </script>

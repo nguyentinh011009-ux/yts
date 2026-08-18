@@ -557,6 +557,7 @@
                             <tr>
                                 <th>Họ và tên</th>
                                 <th>Email kết nối</th>
+                                <th>Loại tài khoản</th>
                                 <th>Số điện thoại</th>
                                 <th>Thời hạn chứng chỉ</th>
                                 <th>Quyền hạn (Tabs)</th>
@@ -1923,12 +1924,12 @@
 <div id="collab-role-note" style="display:none; background:#eff6ff; color:#1e40af; padding:10px 12px; border-radius:8px; font-size:0.82rem; margin-bottom:12px; border:1px dashed #93c5fd;"></div>
         </div>
 
-        <div style="margin-top: 20px; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
-            <label style="font-weight: bold; color: #0284c7; display: block; margin-bottom: 12px; font-size: 1rem;">
-                <i class="fas fa-key"></i> CHỌN BẢNG / CHỨC NĂNG CỘNG TÁC VIÊN ĐƯỢC PHÉP TRUY CẬP:
-            </label>
+                <div id="collab-tabs-selection-area" style="margin-top: 20px; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
+                <label style="font-weight: bold; color: #0284c7; display: block; margin-bottom: 12px; font-size: 1rem;">
+                    <i class="fas fa-key"></i> CHỌN BẢNG / CHỨC NĂNG CỘNG TÁC VIÊN ĐƯỢC PHÉP TRUY CẬP:
+                </label>
             
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0;" id="collab-tabs-checkboxes">
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0;" id="collab-tabs-checkboxes">
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
                     <input type="checkbox" class="collab-tab-cb" value="tab-cloudinary-manager"> Kho Phương tiện
                 </label>

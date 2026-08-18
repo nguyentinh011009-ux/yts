@@ -103,52 +103,57 @@ firebase.auth().onAuthStateChanged(async (user) => {
                         .where("email", "==", userEmail)
                         .get();
 
-                    if (!collabSnap.empty) {
-                        const collabData = collabSnap.docs[0].data();
-                        const todayStr = new Date().toISOString().split('T')[0];
+                    // Thay thế khối xử lý bên trong "TRƯỜNG HỢP B" bằng đoạn sau:
+if (!collabSnap.empty) {
+    const collabData = collabSnap.docs[0].data();
+    const todayStr = new Date().toISOString().split('T')[0];
 
-                        // 1. Kiểm tra trạng thái Khóa tài khoản
-                        if (collabData.status !== 'active') {
-                            sysLoading(false);
-                            sysAlert("⛔ Tài khoản Cộng tác viên này đã bị TẠM KHÓA!", "error");
-                            firebase.auth().signOut();
-                            if (loginOverlay) loginOverlay.style.display = 'flex';
-                            if (dashboard) dashboard.style.display = 'none';
-                            return;
-                        }
+    // 1. Kiểm tra trạng thái Khóa
+    if (collabData.status !== 'active') {
+        sysLoading(false);
+        sysAlert("⛔ Tài khoản của bạn đã bị TẠM KHÓA!", "error");
+        firebase.auth().signOut();
+        return;
+    }
 
-                        // 2. Kiểm tra Ngày hết hạn chứng chỉ / truy cập
-                        if (collabData.expiryDate && collabData.expiryDate < todayStr) {
-                            sysLoading(false);
-                            sysAlert(`⛔ Chứng chỉ/Quyền truy cập của bạn đã HẾT HẠN vào ngày ${collabData.expiryDate}!`, "error");
-                            firebase.auth().signOut();
-                            if (loginOverlay) loginOverlay.style.display = 'flex';
-                            if (dashboard) dashboard.style.display = 'none';
-                            return;
-                        }
+    // 2. Kiểm tra Hạn sử dụng
+    if (collabData.expiryDate && collabData.expiryDate < todayStr) {
+        sysLoading(false);
+        sysAlert(`⛔ Tài khoản đã HẾT HẠN vào ngày ${collabData.expiryDate}!`, "error");
+        firebase.auth().signOut();
+        return;
+    }
 
-                        // 3. XÁC NHẬN CỘNG TÁC VIÊN HỢP LỆ
-                        window.currentUserRole = 'collaborator';
-                        window.userAllowedTabs = collabData.allowedTabs || [];
+    // 3. NÂNG CẤP ĐỐI TƯỢNG: Nếu là Quản sinh hoặc GVCN -> Điều hướng sang App Điểm danh, không cho vào Admin
+    const role = collabData.role || 'collaborator';
+    if (role === 'quansinh' || role === 'gvcn') {
+        sysLoading(false);
+        sysAlert(`Xin chào ${collabData.name}! Đang chuyển đến App Điểm danh...`, "success");
+        setTimeout(() => {
+            window.location.href = "diemdanh_app.html";
+        }, 800);
+        return;
+    }
 
-                        await loadMasterCryptoKey();
+    // 4. Nếu là CỘNG TÁC VIÊN (Thao tác trên trang Admin)
+    window.currentUserRole = 'collaborator';
+    window.userAllowedTabs = collabData.allowedTabs || [];
 
-                        if (loginOverlay) loginOverlay.style.display = 'none';
-                        if (dashboard) {
-                            dashboard.style.display = 'grid';
+    await loadMasterCryptoKey();
 
-                            // Ẩn/hiện các tab trên Sidebar dựa theo mảng allowedTabs
-                            applyCollaboratorPermissions(window.userAllowedTabs);
-
-                            loadAdminPosts();
-                            loadPharmacyForReception();
-                            loadAdminAnnouncements();
-                            loadFusoftxNotis();
-                            runDailyStatisticAggregation();
-
-                            updateAdminDisplayInfo(user, `CTV: ${collabData.name}`);
-                        }
-                        sysLoading(false);
+    if (loginOverlay) loginOverlay.style.display = 'none';
+    if (dashboard) {
+        dashboard.style.display = 'grid';
+        applyCollaboratorPermissions(window.userAllowedTabs);
+        loadAdminPosts();
+        loadPharmacyForReception();
+        loadAdminAnnouncements();
+        loadFusoftxNotis();
+        runDailyStatisticAggregation();
+        updateAdminDisplayInfo(user, `CTV: ${collabData.name}`);
+    }
+    sysLoading(false);
+}
                     } else {
                         // Email không thuộc Admin lẫn Cộng tác viên -> Đá ra ngoài
                         sysLoading(false);
@@ -3574,6 +3579,80 @@ function toggleAdminNotiModal() {
     document.getElementById('admin-noti-badge').style.display = 'none';
     document.getElementById('admin-bell-icon').style.color = '#cbd5e1';
 }
+// ==============================================================
+// BỘ HỖ TRỢ: PHÁT ÂM THANH CHUÔNG BÁO (5 GIÂY) & NHẤP NHÁY TAB
+// ==============================================================
+let titleBlinkInterval = null;
+let originalPageTitle = document.title || "Admin Y tế số";
+
+// 1. Hàm tạo âm thanh chuông báo chuẩn Bệnh viện/Trường học (Kéo dài 5s)
+function playNotificationSound5s() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+
+        // Chuỗi phát chuông lặp lại trong vòng 5 giây
+        let startTime = ctx.currentTime;
+        for (let i = 0; i < 5; i++) {
+            let noteTime = startTime + i * 1.0; // Mỗi giây kêu 1 nhịp đôi (Ding-Dong)
+            
+            // Âm cao (Ding)
+            let osc1 = ctx.createOscillator();
+            let gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(880, noteTime); // Nốt A5
+            gain1.gain.setValueAtTime(0.3, noteTime);
+            gain1.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.35);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start(noteTime);
+            osc1.stop(noteTime + 0.35);
+
+            // Âm trầm hơn (Dong)
+            let osc2 = ctx.createOscillator();
+            let gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(659.25, noteTime + 0.2); // Nốt E5
+            gain2.gain.setValueAtTime(0.35, noteTime + 0.2);
+            gain2.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.6);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(noteTime + 0.2);
+            osc2.stop(noteTime + 0.6);
+        }
+    } catch (e) {
+        console.warn("Trình duyệt chặn phát âm thanh tự động:", e);
+    }
+}
+
+// 2. Hàm làm nhấp nháy tiêu đề Tab trên Google Chrome (5 giây)
+function triggerTabBlinking() {
+    if (titleBlinkInterval) clearInterval(titleBlinkInterval);
+    
+    let isAlert = false;
+    let count = 0;
+    
+    titleBlinkInterval = setInterval(() => {
+        document.title = isAlert ? "🚨 [CÓ THÔNG BÁO MỚI!]" : "🔔 " + originalPageTitle;
+        isAlert = !isAlert;
+        count++;
+
+        // Sau 5 giây (10 lần đổi title với chu kỳ 500ms) thì hoàn trả tiêu đề cũ
+        if (count >= 10) {
+            clearInterval(titleBlinkInterval);
+            titleBlinkInterval = null;
+            document.title = originalPageTitle;
+        }
+    }, 500);
+}
+
+// 3. Hàm kích hoạt chuông + nhấp nháy tab
+function notifyAdminWithSoundAndBlink() {
+    playNotificationSound5s();
+    triggerTabBlinking();
+}
+let isFirstLoadNoti = true;
 
 function loadFusoftxNotis() {
     const listDiv = document.getElementById('admin-notifications-list');
@@ -3585,39 +3664,39 @@ function loadFusoftxNotis() {
             hiddenNotis = settingSnap.data().hiddenNotis;
         }
 
-        // Đã bỏ .orderBy và .where('targetType', 'in') để tránh lỗi Index của Firebase
+        // Lắng nghe cả thông báo FUSoftX và Cảnh báo ca bệnh từ Quản sinh/GVCN (targetType = 'admin')
         db.collection('yt_notifications')
-          .where('sender', '==', 'FUSoftX')
           .onSnapshot(snap => {
             let notis = [];
             snap.forEach(doc => {
                 const d = doc.data();
-                // Tự lọc bằng Javascript
-                if(d.targetType === 'admin_only' || d.targetType === 'all') {
-                    notis.push({id: doc.id, ...d});
+                if (d.sender === 'FUSoftX' || d.targetType === 'admin' || d.targetType === 'admin_only') {
+                    notis.push({ id: doc.id, ...d });
                 }
             });
 
-            // Tự sắp xếp mới nhất lên đầu bằng Javascript
             notis.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-
             adminFusoftxNotisCache = notis;
+
             let html = '';
-            let hasNew = false;
+            let unreadCount = 0;
 
             notis.forEach(d => {
                 const notiId = d.id;
-                if (hiddenNotis.includes(notiId)) return; // Ẩn nếu đã đọc
+                if (hiddenNotis.includes(notiId)) return; // Bỏ qua nếu đã đọc
                 
-                hasNew = true;
-                const time = d.timestamp ? new Date(d.timestamp.seconds * 1000).toLocaleString('vi-VN') : 'Mới';
-                
+                unreadCount++;
+                const time = d.timestamp ? new Date(d.timestamp.seconds * 1000).toLocaleString('vi-VN') : 'Vừa xong';
+                const isSickAlert = d.type === 'sick_alert';
+                const borderCol = isSickAlert ? '#ef4444' : '#0062ff';
+                const icon = isSickAlert ? '🚨' : '📩';
+
                 html += `
-                    <div style="background: #f8fafc; padding: 12px; border-radius: 10px; border-left: 4px solid #0062ff; position: relative; cursor: pointer; transition: 0.2s; margin-bottom: 10px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
+                    <div style="background: #f8fafc; padding: 12px; border-radius: 10px; border-left: 4px solid ${borderCol}; position: relative; cursor: pointer; transition: 0.2s; margin-bottom: 10px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
                         <div onclick="openAdminNotiDetail('${notiId}')" style="padding-right: 30px;">
                             <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 5px;">${time}</div>
-                            <div style="font-weight: bold; color: #0062ff; margin-bottom: 5px; font-size: 1.05rem;">${d.title}</div>
-                            <div style="font-size: 0.9rem; color: #334155; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${d.content}</div>
+                            <div style="font-weight: bold; color: ${borderCol}; margin-bottom: 5px; font-size: 1rem;">${icon} ${d.title}</div>
+                            <div style="font-size: 0.88rem; color: #334155; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${d.content}</div>
                         </div>
                         <button onclick="markAdminNotiAsRead('${notiId}')" style="position: absolute; top: 12px; right: 10px; background: none; border: none; color: #cbd5e1; cursor: pointer; font-size: 1.2rem; transition: 0.2s;" onmouseover="this.style.color='#10b981'" onmouseout="this.style.color='#cbd5e1'" title="Đánh dấu đã đọc">
                             <i class="fas fa-check-circle"></i>
@@ -3628,15 +3707,25 @@ function loadFusoftxNotis() {
 
             if (html === '') {
                 listDiv.innerHTML = '<div style="text-align:center; color:#94a3b8; padding: 20px;"><i class="fas fa-envelope-open fa-2x" style="opacity:0.3; margin-bottom:10px;"></i><br>Không có thông báo mới.</div>';
+                document.getElementById('admin-noti-badge').style.display = 'none';
+                document.getElementById('admin-bell-icon').style.color = '#cbd5e1';
             } else {
                 listDiv.innerHTML = html;
-                if(hasNew) {
-                    document.getElementById('admin-noti-badge').style.display = 'block';
-                    document.getElementById('admin-bell-icon').style.color = '#ef4444'; 
+                document.getElementById('admin-noti-badge').style.display = 'block';
+                document.getElementById('admin-bell-icon').style.color = '#ef4444';
+
+                // KIỂM TRA ĐỂ PHÁT ÂM THANH 5S VÀ NHẤP NHÁY TAB:
+                const lastSoundedId = sessionStorage.getItem('vts_last_sounded_noti_id');
+                const topNotiId = notis[0]?.id;
+
+                if (unreadCount > 0 && lastSoundedId !== topNotiId) {
+                    notifyAdminWithSoundAndBlink();
+                    sessionStorage.setItem('vts_last_sounded_noti_id', topNotiId);
                 }
             }
+            isFirstLoadNoti = false;
         }, error => {
-            console.error("Lỗi tải chuông thông báo:", error);
+            console.error("Lỗi chuông thông báo:", error);
         });
     });
 }
@@ -4081,19 +4170,37 @@ function applyPresetTemplate() {
 
 let collaboratorsCache = [];
 
-// 1. Tải danh sách Cộng tác viên
+// 1. Hàm tự động đóng mở danh sách chọn Tab khi đổi loại đối tượng
+function handleCollabRoleChange() {
+    const role = document.getElementById('collab-role').value;
+    const tabSection = document.getElementById('collab-tabs-selection-area');
+    const noteSection = document.getElementById('collab-role-note');
+
+    if (role === 'quansinh' || role === 'gvcn') {
+        if (tabSection) tabSection.style.display = 'none';
+        if (noteSection) {
+            noteSection.style.display = 'block';
+            noteSection.innerHTML = `💡 Đối tượng <strong>${role === 'gvcn' ? 'Giáo viên chủ nhiệm' : 'Quản sinh'}</strong> sẽ tự động được cấp quyền truy cập vào <strong>App Điểm Danh (Mobile)</strong> và không có quyền truy cập bảng quản trị Admin.`;
+        }
+    } else {
+        if (tabSection) tabSection.style.display = 'block';
+        if (noteSection) noteSection.style.display = 'none';
+    }
+}
+
+// 2. Tải danh sách Cộng tác viên có phân loại Đối tượng
 async function loadCollaborators() {
     const tbody = document.getElementById('collaborators-list-tbody');
     if (!tbody) return;
 
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...</td></tr>';
 
     try {
         const snap = await db.collection("yt_collaborators").orderBy("createdAt", "desc").get();
         collaboratorsCache = [];
 
         if (snap.empty) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 30px;">Chưa có cộng tác viên nào được thêm.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #94a3b8; padding: 30px;">Chưa có tài khoản nào được thêm.</td></tr>';
             return;
         }
 
@@ -4105,32 +4212,39 @@ async function loadCollaborators() {
             collaboratorsCache.push(data);
 
             const isExpired = data.expiryDate && data.expiryDate < todayStr;
-            let statusBadge = '';
+            let statusBadge = data.status === 'locked' 
+                ? '<span style="color:#ef4444; background:#fef2f2; padding:3px 8px; border-radius:10px; font-weight:bold; font-size:0.75rem;">Đã khóa</span>'
+                : (isExpired 
+                    ? '<span style="color:#f59e0b; background:#fffbeb; padding:3px 8px; border-radius:10px; font-weight:bold; font-size:0.75rem;">Hết hạn</span>' 
+                    : '<span style="color:#10b981; background:#ecfdf5; padding:3px 8px; border-radius:10px; font-weight:bold; font-size:0.75rem;">Hoạt động</span>');
 
-            if (data.status === 'locked') {
-                statusBadge = '<span style="color:#ef4444; background:#fef2f2; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:0.8rem;">🔴 Đã khóa</span>';
-            } else if (isExpired) {
-                statusBadge = '<span style="color:#f59e0b; background:#fffbeb; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:0.8rem;">⚠️ Hết hạn</span>';
-            } else {
-                statusBadge = '<span style="color:#10b981; background:#ecfdf5; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:0.8rem;">🟢 Đang hoạt động</span>';
+            // Badge Đối tượng
+            let roleBadge = '<span style="background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:6px; font-weight:bold; font-size:0.8rem;"><i class="fas fa-user-shield"></i> Cộng tác viên</span>';
+            let permDisplay = `<span style="font-weight:600; color:#475569;">${(data.allowedTabs || []).length} Tabs Admin</span>`;
+
+            if (data.role === 'gvcn') {
+                roleBadge = '<span style="background:#fef3c7; color:#b45309; padding:3px 8px; border-radius:6px; font-weight:bold; font-size:0.8rem;"><i class="fas fa-chalkboard-teacher"></i> GVCN</span>';
+                permDisplay = '<span style="color:#2563eb; font-weight:bold;"><i class="fas fa-mobile-alt"></i> App Điểm Danh</span>';
+            } else if (data.role === 'quansinh') {
+                roleBadge = '<span style="background:#f3e8ff; color:#7e22ce; padding:3px 8px; border-radius:6px; font-weight:bold; font-size:0.8rem;"><i class="fas fa-user-check"></i> Quản Sinh</span>';
+                permDisplay = '<span style="color:#2563eb; font-weight:bold;"><i class="fas fa-mobile-alt"></i> App Điểm Danh</span>';
             }
-
-            const tabCount = (data.allowedTabs || []).length;
 
             html += `
                 <tr style="transition:0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
                     <td><strong>${data.name}</strong></td>
                     <td style="color:#0284c7; font-weight:500;">${data.email}</td>
+                    <td>${roleBadge}</td>
                     <td>${data.phone || '--'}</td>
-                    <td style="font-weight:bold; color:${isExpired ? '#ef4444' : '#334155'};">${data.expiryDate || 'Vĩnh viễn'}</td>
-                    <td><span style="background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:6px; font-weight:bold; font-size:0.85rem;">${tabCount} Tabs</span></td>
+                    <td style="font-weight:bold; color:${isExpired ? '#ef4444' : '#334155'}; font-size:0.85rem;">${data.expiryDate || 'Vĩnh viễn'}</td>
+                    <td>${permDisplay}</td>
                     <td>${statusBadge}</td>
                     <td style="text-align: right;">
-                        <button onclick="editCollaborator('${data.id}')" class="btn-sm" style="background:#e0e7ff; color:#4338ca; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:500;">
-                            <i class="fas fa-user-edit"></i> Sửa
+                        <button onclick="editCollaborator('${data.id}')" class="btn-sm" style="background:#e0e7ff; color:#4338ca; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;">
+                            <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="deleteCollaborator('${data.id}', '${data.name}')" class="btn-sm" style="background:#fee2e2; color:#ef4444; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:500; margin-left:5px;">
-                            <i class="fas fa-trash-alt"></i> Xóa
+                        <button onclick="deleteCollaborator('${data.id}', '${data.name}')" class="btn-sm" style="background:#fee2e2; color:#ef4444; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; margin-left:4px;">
+                            <i class="fas fa-trash-alt"></i>
                         </button>
                     </td>
                 </tr>
@@ -4139,11 +4253,11 @@ async function loadCollaborators() {
 
         tbody.innerHTML = html;
     } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="7" style="color:red; text-align:center;">Lỗi tải dữ liệu: ${err.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="color:red; text-align:center;">Lỗi tải dữ liệu: ${err.message}</td></tr>`;
     }
 }
 
-// 2. Mở Popup Modal thêm mới / sửa
+// 3. Mở Modal Thêm mới
 function openCollaboratorModal() {
     document.getElementById('collab-id').value = '';
     document.getElementById('collab-email').value = '';
@@ -4152,41 +4266,45 @@ function openCollaboratorModal() {
     document.getElementById('collab-phone').value = '';
     document.getElementById('collab-expiry').value = '';
     document.getElementById('collab-status').value = 'active';
-    document.getElementById('collab-modal-title').innerHTML = '<i class="fas fa-user-plus"></i> Thêm Cộng tác viên mới';
-
-    // Uncheck tất cả checkbox quyền
+    
+    const roleSelect = document.getElementById('collab-role');
+    if (roleSelect) roleSelect.value = 'collaborator';
+    
+    document.getElementById('collab-modal-title').innerHTML = '<i class="fas fa-user-plus"></i> Thêm Tài khoản / Phân quyền';
     document.querySelectorAll('.collab-tab-cb').forEach(cb => cb.checked = false);
 
+    handleCollabRoleChange();
     document.getElementById('collaborator-modal').style.display = 'flex';
 }
 
-function closeCollaboratorModal() {
-    document.getElementById('collaborator-modal').style.display = 'none';
-}
-
-// 3. Mở Modal ở chế độ chỉnh sửa
+// 4. Mở Modal Sửa
 function editCollaborator(id) {
     const collab = collaboratorsCache.find(c => c.id === id);
     if (!collab) return;
 
     document.getElementById('collab-id').value = collab.id;
     document.getElementById('collab-email').value = collab.email;
-    document.getElementById('collab-email').disabled = true; // Không cho sửa email gốc
+    document.getElementById('collab-email').disabled = true;
     document.getElementById('collab-name').value = collab.name;
     document.getElementById('collab-phone').value = collab.phone || '';
     document.getElementById('collab-expiry').value = collab.expiryDate || '';
     document.getElementById('collab-status').value = collab.status || 'active';
-    document.getElementById('collab-modal-title').innerHTML = '<i class="fas fa-user-edit"></i> Cập nhật Cộng tác viên';
+    
+    const roleSelect = document.getElementById('collab-role');
+    if (roleSelect) roleSelect.value = collab.role || 'collaborator';
+
+    document.getElementById('collab-modal-title').innerHTML = '<i class="fas fa-user-edit"></i> Cập nhật Phân quyền';
 
     const allowed = collab.allowedTabs || [];
     document.querySelectorAll('.collab-tab-cb').forEach(cb => {
         cb.checked = allowed.includes(cb.value);
     });
 
+    handleCollabRoleChange();
     document.getElementById('collaborator-modal').style.display = 'flex';
 }
 
-// 4. Lưu Cộng tác viên vào Firestore
+// 5. Lưu thông tin (Tự động gán quyền theo loại đối tượng)
 async function saveCollaborator() {
     const id = document.getElementById('collab-id').value;
     const email = document.getElementById('collab-email').value.trim().toLowerCase();
@@ -4194,49 +4312,51 @@ async function saveCollaborator() {
     const phone = document.getElementById('collab-phone').value.trim();
     const expiryDate = document.getElementById('collab-expiry').value;
     const status = document.getElementById('collab-status').value;
+    const role = document.getElementById('collab-role')?.value || 'collaborator';
 
     if (!email || !name || !expiryDate) {
-        return sysAlert("Vui lòng điền đầy đủ: Email, Họ tên và Ngày hết hạn!", "warning");
+        return sysAlert("Vui lòng điền đủ: Email, Họ tên và Ngày hết hạn!", "warning");
     }
 
-    // Lấy danh sách các tab được tick chọn
-    const allowedTabs = [];
-    document.querySelectorAll('.collab-tab-cb:checked').forEach(cb => {
-        allowedTabs.push(cb.value);
-    });
-
-    if (allowedTabs.length === 0) {
-        return sysAlert("Vui lòng tick chọn ít nhất 1 quyền truy cập (Tab) cho Cộng tác viên!", "warning");
+    let allowedTabs = [];
+    if (role === 'collaborator') {
+        document.querySelectorAll('.collab-tab-cb:checked').forEach(cb => {
+            allowedTabs.push(cb.value);
+        });
+        if (allowedTabs.length === 0) {
+            return sysAlert("Cộng tác viên phải được tick chọn ít nhất 1 Tab Admin!", "warning");
+        }
+    } else {
+        // GVCN hoặc Quản sinh chỉ cấp quyền app điểm danh
+        allowedTabs = ['app_diemdanh'];
     }
 
-    sysLoading(true, "Đang lưu thông tin Cộng tác viên...");
+    sysLoading(true, "Đang lưu thông tin...");
 
     const payload = {
-        email, name, phone, expiryDate, status, allowedTabs,
+        email, name, phone, expiryDate, status, role, allowedTabs,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
     try {
         if (id) {
             await db.collection("yt_collaborators").doc(id).update(payload);
-            sysAlert("Đã cập nhật thông tin Cộng tác viên thành công!", "success");
+            sysAlert("Cập nhật tài khoản thành công!", "success");
         } else {
-            // Kiểm tra xem email đã tồn tại chưa
             const checkExist = await db.collection("yt_collaborators").where("email", "==", email).get();
             if (!checkExist.empty) {
                 sysLoading(false);
-                return sysAlert("Email này đã tồn tại trong danh sách Cộng tác viên!", "error");
+                return sysAlert("Email này đã tồn tại trong danh sách!", "error");
             }
-
             payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
             await db.collection("yt_collaborators").add(payload);
-            sysAlert("Đã thêm Cộng tác viên mới thành công!", "success");
+            sysAlert("Thêm tài khoản thành công!", "success");
         }
 
         closeCollaboratorModal();
         loadCollaborators();
     } catch (err) {
-        sysAlert("Lỗi khi lưu: " + err.message, "error");
+        sysAlert("Lỗi: " + err.message, "error");
     } finally {
         sysLoading(false);
     }

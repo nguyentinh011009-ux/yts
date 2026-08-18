@@ -1235,23 +1235,44 @@ input:checked + .slider:before { transform: translateX(20px); }
             });
         }
 
-        // 8. ĐỔ LỚP VÀO DROPDOWN PHÙ HỢP VỚI QUYỀN
-function populateClassDropdown() {
+// 1. ĐỔ LỚP VÀO DROPDOWN & TỰ ĐỘNG CHỌN
+async function populateClassDropdown() {
     const filterSelect = document.getElementById('class-filter');
+    filterSelect.innerHTML = '<option>Đang tải danh sách lớp...</option>';
+    
+    let classesToRender = [];
+
+    // Nếu là Quản Sinh / Admin (Có quyền ALL) -> Quét danh sách lớp thực tế từ DB
+    if (allowedClasses.includes('ALL')) {
+        try {
+            const snap = await db.collection('yt_students').get();
+            const classSet = new Set();
+            snap.forEach(doc => {
+                const c = doc.data().class;
+                if (c) classSet.add(c.trim().toUpperCase());
+            });
+            // Sắp xếp lớp theo thứ tự chữ cái/số
+            classesToRender = Array.from(classSet).sort((a, b) => a.localeCompare(b, 'vi', { numeric: true }));
+        } catch (e) {
+            console.error("Lỗi lấy danh sách lớp:", e);
+        }
+    } else {
+        // Nếu là GVCN -> Chỉ lấy các lớp được phân công
+        classesToRender = [...allowedClasses];
+    }
+
+    // Xây dựng lại Dropdown
     filterSelect.innerHTML = '';
     
     // Nếu chỉ có 1 lớp (GVCN), khóa luôn
-    if (allowedClasses.length === 1 && allowedClasses[0] !== 'ALL') {
-        filterSelect.innerHTML = `<option value="${allowedClasses[0]}">${allowedClasses[0]}</option>`;
-        filterSelect.value = allowedClasses[0];
+    if (classesToRender.length === 1 && !allowedClasses.includes('ALL')) {
+        filterSelect.innerHTML = `<option value="${classesToRender[0]}">${classesToRender[0]}</option>`;
+        filterSelect.value = classesToRender[0];
         filterSelect.disabled = true;
     } else {
-        // Nếu có nhiều lớp hoặc ALL
         let options = '';
-        const realClasses = allowedClasses.filter(c => c !== 'ALL');
-        
-        realClasses.forEach(c => {
-            options += `<option value="${c}">${c}</option>`;
+        classesToRender.forEach(c => {
+            options += `<option value="${c}">Lớp ${c}</option>`;
         });
         
         if (allowedClasses.includes('ALL')) {
@@ -1262,10 +1283,10 @@ function populateClassDropdown() {
         filterSelect.innerHTML = options;
         
         // Phục hồi lớp chọn gần nhất nếu hợp lệ
-        if (lastSelectedClass && allowedClasses.includes(lastSelectedClass)) {
+        if (lastSelectedClass && (classesToRender.includes(lastSelectedClass) || lastSelectedClass === 'ALL')) {
             filterSelect.value = lastSelectedClass;
-        } else if (realClasses.length > 0) {
-            filterSelect.value = realClasses[0]; // Ưu tiên chọn lớp thật trước
+        } else if (classesToRender.length > 0) {
+            filterSelect.value = classesToRender[0]; // Mặc định chọn lớp đầu tiên
         } else {
             filterSelect.value = 'ALL';
         }
@@ -1273,6 +1294,7 @@ function populateClassDropdown() {
     
     onClassFilterChanged();
 }
+
         // 2. KHI ĐỔI LỚP ➔ TẢI DỮ LIỆU THÔNG MINH
 async function onClassFilterChanged() {
     const selectedClass = document.getElementById('class-filter').value;

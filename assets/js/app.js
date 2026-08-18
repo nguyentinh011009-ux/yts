@@ -3766,6 +3766,27 @@ function openAdminNotiDetail(notiId) {
         document.getElementById('admin-noti-detail-modal').style.display = 'none';
     };
 
+    let sickActionBtn = document.getElementById('btn-goto-sick-diagnosis');
+    if (!sickActionBtn) {
+        sickActionBtn = document.createElement('a');
+        sickActionBtn.id = 'btn-goto-sick-diagnosis';
+        sickActionBtn.className = 'btn';
+        sickActionBtn.style.cssText = 'background: #ef4444; color: white; text-decoration: none; font-weight: bold; padding: 8px 16px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; margin-right: 10px; font-size: 0.9rem;';
+        // Chèn vào cạnh nút Đã đọc trong modal
+        btn.parentNode.insertBefore(sickActionBtn, btn);
+    }
+
+    if (noti.type === 'sick_alert' && noti.relatedAttendanceId) {
+        sickActionBtn.style.display = 'inline-flex';
+        sickActionBtn.innerHTML = '<i class="fas fa-stethoscope"></i> Chẩn đoán bệnh ngay';
+        sickActionBtn.href = `baocao.html?editSickId=${noti.relatedAttendanceId}`;
+        sickActionBtn.onclick = () => {
+            markAdminNotiAsRead(notiId);
+        };
+    } else {
+        sickActionBtn.style.display = 'none';
+    }
+
     document.getElementById('admin-noti-detail-modal').style.display = 'flex';
 }
 

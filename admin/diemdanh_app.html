@@ -557,6 +557,137 @@
             visibility: hidden !important;
             pointer-events: none;
         }
+        /* Khóa thao tác thu phóng, cuộn nảy của Mobile Safari/Android */
+html, body {
+    touch-action: pan-x pan-y;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior-y: none;
+}
+
+/* Thanh công cụ tìm kiếm và lọc */
+.filter-search-container {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.class-filter-select {
+    flex: 0 0 110px;
+    font-weight: 700;
+}
+.search-box-wrapper {
+    flex: 1;
+    position: relative;
+    display: flex;
+}
+.search-box-wrapper input {
+    width: 100%;
+    padding-right: 36px;
+}
+.btn-clear-search {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+/* Chế độ chọn nhiều */
+.mode-toggle-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f1f5f9;
+    border-radius: var(--radius-md);
+    margin-bottom: 12px;
+}
+.mode-toggle-bar span {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background-color: #cbd5e1;
+    transition: .3s;
+    border-radius: 34px;
+}
+.slider:before {
+    position: absolute; content: "";
+    height: 18px; width: 18px; left: 3px; bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+}
+input:checked + .slider { background-color: var(--primary); }
+input:checked + .slider:before { transform: translateX(20px); }
+
+/* Danh sách học sinh hiển thị trực quan (Grid/Card) */
+.student-grid-scroll {
+    max-height: 240px;
+    overflow-y: auto;
+    border: 1.5px solid var(--border-col);
+    border-radius: var(--radius-md);
+    padding: 8px;
+    background: #f8fafc;
+    margin-bottom: 14px;
+}
+.student-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: #ffffff;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    border: 1px solid var(--border-col);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.student-item:active { transform: scale(0.98); }
+.student-item.selected {
+    border-color: var(--primary);
+    background: #f0f9ff;
+}
+.student-item .info {
+    display: flex;
+    flex-direction: column;
+}
+.student-item .s-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+.student-item .s-sub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+.student-item .check-icon {
+    font-size: 1.1rem;
+    color: #cbd5e1;
+}
+.student-item.selected .check-icon {
+    color: var(--primary);
+}
+
+/* Danh sách học sinh đang chọn (Chips) */
+.selected-summary-bar {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 10px;
+}
     </style>
 </head>
 <body>
@@ -629,66 +760,75 @@
             </div>
 
             <!-- TAB 1: FORM ĐIỂM DANH -->
-            <section id="pane-attendance">
-                <div class="app-card">
-                    <!-- BỘ CHỌN NGÀY THÔNG MINH -->
-                    <div class="date-stepper">
-                        <button type="button" onclick="adjustDate(-1)"><i class="fas fa-chevron-left"></i></button>
-                        <div class="date-display" onclick="document.getElementById('att-date-input').showPicker()">
-                            <i class="far fa-calendar-alt"></i>
-                            <span id="date-text-display">Hôm nay</span>
-                            <input type="date" id="att-date-input" style="opacity: 0; width: 0; position: absolute;" onchange="onDateChanged()">
-                        </div>
-                        <button type="button" onclick="adjustDate(1)"><i class="fas fa-chevron-right"></i></button>
-                    </div>
+<section id="pane-attendance">
+    <div class="app-card">
+        <!-- BỘ CHỌN NGÀY -->
+        <div class="date-stepper">
+            <button type="button" onclick="adjustDate(-1)"><i class="fas fa-chevron-left"></i></button>
+            <div class="date-display" onclick="document.getElementById('att-date-input').showPicker()">
+                <i class="far fa-calendar-alt"></i>
+                <span id="date-text-display">Hôm nay</span>
+                <input type="date" id="att-date-input" style="opacity: 0; width: 0; position: absolute;" onchange="onDateChanged()">
+            </div>
+            <button type="button" onclick="adjustDate(1)"><i class="fas fa-chevron-right"></i></button>
+        </div>
 
-                    <!-- CHỌN LỚP (TỰ ĐỘNG KHÓA / PHÂN QUYỀN) -->
-                    <div class="form-group">
-                        <label class="form-label">Lớp phụ trách</label>
-                        <select id="class-select" class="form-control" onchange="loadStudentsOfSelectedClass()">
-                            <option value="">-- Đang nạp danh sách lớp --</option>
-                        </select>
-                    </div>
+        <!-- 1. BỘ LỌC LỚP & TÌM KIẾM TÊN -->
+        <div class="filter-search-container">
+            <select id="class-filter" class="form-control class-filter-select" onchange="onFilterOrSearchChanged()">
+                <option value="ALL">Tất cả lớp</option>
+            </select>
+            <div class="search-box-wrapper">
+                <input type="text" id="search-student-input" class="form-control" placeholder="Tìm tên / mã HS..." oninput="onFilterOrSearchChanged()">
+                <button type="button" class="btn-clear-search" onclick="clearSearch()"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
 
-                    <!-- CHỌN HỌC SINH -->
-                    <div class="form-group">
-                        <label class="form-label">Học sinh vắng</label>
-                        <select id="student-select" class="form-control">
-                            <option value="">-- Chọn lớp trước --</option>
-                        </select>
-                    </div>
+        <!-- 2. THANH BẬT TẮT CHỌN NHIỀU -->
+        <div class="mode-toggle-bar">
+            <span><i class="fas fa-users"></i> Chế độ chọn nhiều</span>
+            <label class="switch">
+                <input type="checkbox" id="toggle-multi-select" onchange="onToggleMultiMode()">
+                <span class="slider"></span>
+            </label>
+        </div>
 
-                    <!-- LÝ DO VẮNG (CHIPS TRỰC QUAN) -->
-                    <div class="form-group">
-                        <label class="form-label">Lý do nghỉ</label>
-                        <div class="reason-grid">
-                            <div class="reason-chip active-p" onclick="selectReason('P', this)">
-                                <span class="icon">📝</span>
-                                <span class="txt">Có phép (P)</span>
-                            </div>
-                            <div class="reason-chip" onclick="selectReason('KP', this)">
-                                <span class="icon">⚠️</span>
-                                <span class="txt">Không phép (KP)</span>
-                            </div>
-                            <div class="reason-chip" onclick="selectReason('B', this)">
-                                <span class="icon">🩺</span>
-                                <span class="txt">Báo bệnh (B)</span>
-                            </div>
-                        </div>
-                    </div>
+        <!-- 3. DANH SÁCH HỌC SINH (Sắp xếp theo Tên - từ cuối cùng) -->
+        <div class="selected-summary-bar" id="selected-summary">Đã chọn: 0 học sinh</div>
+        <div class="student-grid-scroll" id="student-list-container">
+            <div class="empty-state" style="padding: 15px;"><i class="fas fa-search"></i><p>Đang tải dữ liệu...</p></div>
+        </div>
 
-                    <!-- KHU VỰC NHẬP TRIỆU CHỨNG NGHỈ BỆNH -->
-                    <div id="sick-box" class="sick-notice-box">
-                        <label class="form-label" style="color: #92400e;"><i class="fas fa-notes-medical"></i> Triệu chứng học sinh báo</label>
-                        <input type="text" id="symptom-input" class="form-control" style="background:#fff;" placeholder="VD: Sốt cao, đau bụng, đau mắt đỏ...">
-                        <small>💡 Thông tin ca bệnh sẽ được gửi trực tiếp tới Chuông cảnh báo Y Tế để nhân viên Y tế xác minh và hoàn thiện chẩn đoán lâm sàng.</small>
-                    </div>
-
-                    <button type="button" onclick="submitAttendance()" id="btn-save" class="btn-submit">
-                        <i class="fas fa-check-circle"></i> Ghi nhận điểm danh
-                    </button>
+        <!-- 4. LÝ DO VẮNG (CHIPS) -->
+        <div class="form-group">
+            <label class="form-label">Lý do nghỉ chung</label>
+            <div class="reason-grid">
+                <div class="reason-chip active-p" onclick="selectReason('P', this)">
+                    <span class="icon">📝</span>
+                    <span class="txt">Có phép (P)</span>
                 </div>
-            </section>
+                <div class="reason-chip" onclick="selectReason('KP', this)">
+                    <span class="icon">⚠️</span>
+                    <span class="txt">Không phép (KP)</span>
+                </div>
+                <div class="reason-chip" onclick="selectReason('B', this)">
+                    <span class="icon">🩺</span>
+                    <span class="txt">Báo bệnh (B)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. TRIỆU CHỨNG NGHỈ BỆNH -->
+        <div id="sick-box" class="sick-notice-box">
+            <label class="form-label" style="color: #92400e;"><i class="fas fa-notes-medical"></i> Triệu chứng báo bệnh</label>
+            <input type="text" id="symptom-input" class="form-control" style="background:#fff;" placeholder="VD: Sốt cao, mệt mỏi, đau bụng...">
+        </div>
+
+        <button type="button" onclick="submitAttendance()" id="btn-save" class="btn-submit">
+            <i class="fas fa-check-circle"></i> Ghi nhận vắng (<span id="submit-count-badge">0</span>)
+        </button>
+    </div>
+</section>
 
             <!-- TAB 2: DANH SÁCH ĐÃ VẮNG TRONG NGÀY -->
             <section id="pane-history" style="display: none;">
@@ -724,7 +864,57 @@
         let pinConfirmInput = [];
         let isConfirmingPIN = false;
         let unlockPinInput = [];
+let allStudentsCache = [];
+let selectedStudentIds = new Set();
+let isMultiSelectMode = false;
 
+// 1. TẢI DỮ LIỆU TỐI ƯU (CHỈ ĐỌC KHI MÁY CHƯA CÓ LƯU TRỮ TRONG LOCALSTORAGE)
+async function fetchAndCacheStudents(forceRefresh = false) {
+    const CACHE_KEY = 'vts_cached_students_v1';
+    const localData = localStorage.getItem(CACHE_KEY);
+
+    if (!forceRefresh && localData) {
+        try {
+            allStudentsCache = JSON.parse(localData);
+            return; // Tiết kiệm 100% tài nguyên đọc của Firestore
+        } catch (e) {
+            localStorage.removeItem(CACHE_KEY);
+        }
+    }
+
+    // Nếu chưa lưu hoặc ép tải lại: Mới truy vấn từ Firebase
+    const snap = await db.collection('yt_students').get();
+    allStudentsCache = [];
+    snap.forEach(doc => {
+        const d = doc.data();
+        allStudentsCache.push({
+            id: doc.id,
+            name: d.name || '',
+            class: (d.class || '').trim().toUpperCase(),
+            phone: d.phone || ''
+        });
+    });
+
+    // Sắp xếp học sinh theo TÊN (Từ cuối cùng trong họ tên)
+    allStudentsCache.sort(compareVietnameseNames);
+
+    // Lưu vào bộ nhớ máy người dùng vĩnh viễn
+    localStorage.setItem(CACHE_KEY, JSON.stringify(allStudentsCache));
+}
+
+// 2. THUẬT TOÁN SẮP XẾP TÊN THEO TỪ CUỐI CÙNG TIẾNG VIỆT
+function compareVietnameseNames(a, b) {
+    const getLastNameWord = (fullName) => {
+        const parts = fullName.trim().split(/\s+/);
+        return parts[parts.length - 1] || '';
+    };
+    const nameA = getLastNameWord(a.name);
+    const nameB = getLastNameWord(b.name);
+
+    const cmp = nameA.localeCompare(nameB, 'vi', { sensitivity: 'base' });
+    if (cmp !== 0) return cmp;
+    return a.name.localeCompare(b.name, 'vi');
+}
         // 1. KHỞI CHẠY HỆ THỐNG VỚI HIỆU ỨNG SPLASH
         window.addEventListener('DOMContentLoaded', () => {
             initNumpads();
@@ -1013,36 +1203,106 @@
         }
 
         // ĐỔ LỚP VÀO DROPDOWN PHÙ HỢP VỚI QUYỀN
-        function populateClassDropdown() {
-            const classSelect = document.getElementById('class-select');
-            classSelect.innerHTML = '';
+function populateClassDropdown() {
+    const filterSelect = document.getElementById('class-filter');
+    filterSelect.innerHTML = '';
 
-            let classList = [];
-            if (allowedClasses.includes('ALL')) {
-                // Lấy toàn bộ danh sách lớp duy nhất từ danh sách học sinh
-                const set = new Set(allStudentsCache.map(s => (s.class || '').trim().toUpperCase()).filter(Boolean));
-                classList = Array.from(set).sort((a, b) => a.localeCompare(b, 'vi', { numeric: true }));
-            } else {
-                classList = allowedClasses.map(c => c.trim().toUpperCase());
-            }
+    let classList = [];
+    if (allowedClasses.includes('ALL')) {
+        const set = new Set(allStudentsCache.map(s => s.class).filter(Boolean));
+        classList = Array.from(set).sort((a, b) => a.localeCompare(b, 'vi', { numeric: true }));
+        filterSelect.innerHTML = '<option value="ALL">Tất cả lớp</option>';
+    } else {
+        classList = allowedClasses.map(c => c.trim().toUpperCase());
+    }
 
-            if (classList.length === 0) {
-                classSelect.innerHTML = '<option value="">(Chưa được phân công lớp)</option>';
-                return;
-            }
+    classList.forEach(c => {
+        filterSelect.innerHTML += `<option value="${c}">Lớp ${c}</option>`;
+    });
 
-            classSelect.innerHTML = '<option value="">-- Chọn Lớp --</option>';
-            classList.forEach(c => {
-                classSelect.innerHTML += `<option value="${c}">Lớp ${c}</option>`;
-            });
+    if (classList.length === 1) {
+        filterSelect.value = classList[0];
+    }
+    renderStudentList();
+}
+// 4. HIỂN THỊ DANH SÁCH HỌC SINH ĐÃ LỌC & TÌM KIẾM
+function renderStudentList() {
+    const filterClass = document.getElementById('class-filter').value;
+    const query = (document.getElementById('search-student-input').value || '').trim().toLowerCase();
+    const container = document.getElementById('student-list-container');
 
-            // Nếu chỉ có 1 lớp được phân công, tự động chọn luôn
-            if (classList.length === 1) {
-                classSelect.value = classList[0];
-                loadStudentsOfSelectedClass();
-            }
+    // Lọc theo lớp được phân quyền
+    let list = allStudentsCache.filter(s => {
+        if (!allowedClasses.includes('ALL') && !allowedClasses.includes(s.class)) return false;
+        if (filterClass !== 'ALL' && s.class !== filterClass) return false;
+        if (query) {
+            const matchName = s.name.toLowerCase().includes(query);
+            const matchId = s.id.toLowerCase().includes(query);
+            return matchName || matchId;
         }
+        return true;
+    });
 
+    if (list.length === 0) {
+        container.innerHTML = `<div class="empty-state" style="padding:15px;"><p>Không tìm thấy học sinh phù hợp</p></div>`;
+        return;
+    }
+
+    let html = '';
+    list.forEach(s => {
+        const isSelected = selectedStudentIds.has(s.id);
+        html += `
+            <div class="student-item ${isSelected ? 'selected' : ''}" onclick="toggleStudentSelection('${s.id}')">
+                <div class="info">
+                    <span class="s-name">${s.name}</span>
+                    <span class="s-sub">Lớp: <strong>${s.class}</strong> | Mã: ${s.id}</span>
+                </div>
+                <div class="check-icon">
+                    <i class="fas ${isSelected ? 'fa-check-circle' : 'fa-circle'}"></i>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+    updateSelectedSummary();
+}
+function onFilterOrSearchChanged() {
+    renderStudentList();
+}
+
+function clearSearch() {
+    document.getElementById('search-student-input').value = '';
+    renderStudentList();
+}
+// 5. CHỌN / BỎ CHỌN HỌC SINH (HỖ TRỢ CHỌN 1 HOẶC NHIỀU)
+function toggleStudentSelection(studentId) {
+    if (isMultiSelectMode) {
+        if (selectedStudentIds.has(studentId)) selectedStudentIds.delete(studentId);
+        else selectedStudentIds.add(studentId);
+    } else {
+        if (selectedStudentIds.has(studentId)) {
+            selectedStudentIds.clear();
+        } else {
+            selectedStudentIds.clear();
+            selectedStudentIds.add(studentId);
+        }
+    }
+    renderStudentList();
+}
+
+function onToggleMultiMode() {
+    isMultiSelectMode = document.getElementById('toggle-multi-select').checked;
+    if (!isMultiSelectMode && selectedStudentIds.size > 1) {
+        selectedStudentIds.clear();
+        renderStudentList();
+    }
+}
+
+function updateSelectedSummary() {
+    const count = selectedStudentIds.size;
+    document.getElementById('selected-summary').innerText = `Đã chọn: ${count} học sinh`;
+    document.getElementById('submit-count-badge').innerText = count;
+}
         // KHI CHỌN LỚP -> NẠP HỌC SINH TỪ RAM (0MS)
         function loadStudentsOfSelectedClass() {
             const selectedClass = document.getElementById('class-select').value;
@@ -1075,116 +1335,108 @@
         }
 
         // 9. LƯU ĐIỂM DANH (XỬ LÝ ĐÚNG LOGIC YÊU CẦU)
-        async function submitAttendance() {
-            const date = document.getElementById('att-date-input').value;
-            const classVal = document.getElementById('class-select').value;
-            const studentId = document.getElementById('student-select').value;
-            const studentSelect = document.getElementById('student-select');
-            const studentName = studentSelect.options[studentSelect.selectedIndex]?.text.split(' (')[0];
-            const symptom = document.getElementById('symptom-input').value.trim();
+// 6. GỬI ĐIỂM DANH HÀNG LOẠT TRONG 1 LẦN GHI
+async function submitAttendance() {
+    const date = document.getElementById('att-date-input').value;
+    const symptom = document.getElementById('symptom-input').value.trim();
 
-            // 1. Kiểm tra rỗng
-            if (!date || !classVal || !studentId) {
-                return alert("Vui lòng chọn đầy đủ Ngày, Lớp và Học sinh!");
-            }
+    if (selectedStudentIds.size === 0) {
+        return alert("Vui lòng chạm chọn ít nhất 1 học sinh cần điểm danh!");
+    }
+    if (selectedReason === 'B' && !symptom) {
+        return alert("Vui lòng nhập triệu chứng báo bệnh cho học sinh!");
+    }
 
-            if (selectedReason === 'B' && !symptom) {
-                return alert("Học sinh nghỉ bệnh: Vui lòng nhập triệu chứng!");
-            }
+    const btn = document.getElementById('btn-save');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang ghi nhận...';
 
-            const btn = document.getElementById('btn-save');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang kiểm tra...';
-            btn.disabled = true;
+    try {
+        const studentIdArray = Array.from(selectedStudentIds);
+        
+        // Kiểm tra trùng lặp trên bộ nhớ đệm hoặc Firebase
+        const existingSnap = await db.collection('yt_attendance')
+            .where('date', '==', date)
+            .where('studentId', 'in', studentIdArray.slice(0, 10)) // Firestore hỗ trợ kiểm tra in tối đa
+            .get();
 
-            try {
-                // 2. 👉 BỘ CHỐNG ĐIỂM DANH TRÙNG LẶP TRONG NGÀY
-                const dupCheck = await db.collection('yt_attendance')
-                    .where('date', '==', date)
-                    .where('studentId', '==', studentId)
-                    .get();
+        const alreadyMarked = [];
+        existingSnap.forEach(d => alreadyMarked.push(d.data().name));
 
-                if (!dupCheck.empty) {
-                    const oldRec = dupCheck.docs[0].data();
-                    const reasonMap = { 
-                        'P': 'Có phép (P)', 
-                        'KP': 'Không phép (KP)', 
-                        'B': `Nghỉ bệnh (${oldRec.diagnosis || oldRec.symptom || 'B'})` 
-                    };
-
-                    alert(`⚠️ CẢNH BÁO TRÙNG LẶP:\n\nHọc sinh [${studentName}] đã được điểm danh trong ngày ${new Date(date).toLocaleDateString('vi-VN')}!\n\n- Trạng thái: ${reasonMap[oldRec.reason] || oldRec.reason}\n- Người ghi nhận: ${oldRec.recordedBy || 'Hệ thống'}\n\n👉 Nếu điểm danh sai, vui lòng qua tab 'Danh sách vắng' để Xóa và thực hiện lại.`);
-                    
-                    btn.innerHTML = '<i class="fas fa-check-circle"></i> Ghi nhận điểm danh';
-                    btn.disabled = false;
-                    return; // Chặn lại, không lưu tiếp
-                }
-
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
-
-                // 3. Chuẩn bị lưu dữ liệu
-                const batch = db.batch();
-                const attRef = db.collection('yt_attendance').doc();
-
-                const attData = {
-                    studentId,
-                    name: studentName,
-                    class: classVal,
-                    date,
-                    reason: selectedReason,
-                    recordedBy: currentUser.displayName,
-                    recorderRole: currentUserRole,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                // TRƯỜNG HỢP A: NGHỈ BỆNH (B) -> Gửi cảnh báo trực tiếp đến chuông Admin để hoàn tất chẩn đoán
-                if (selectedReason === 'B') {
-                    attData.symptom = symptom;
-                    attData.diagnosis = "Chờ Phòng Y Tế xác minh";
-                    attData.isPendingAdmin = true;
-
-                    const notiAdminRef = db.collection('yt_notifications').doc();
-                    batch.set(notiAdminRef, {
-                        title: `🚨 BÁO CA BỆNH: ${studentName} - Lớp ${classVal}`,
-                        content: `${currentUser.displayName} (${currentUserRole.toUpperCase()}) báo ca nghỉ bệnh.\n- Học sinh: ${studentName} (Lớp ${classVal})\n- Triệu chứng: ${symptom}\n- Ngày nghỉ: ${new Date(date).toLocaleDateString('vi-VN')}`,
-                        targetType: "admin",
-                        type: "sick_alert",
-                        sender: currentUser.displayName,
-                        relatedAttendanceId: attRef.id,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                } else {
-                    // TRƯỜNG HỢP B: CÓ PHÉP (P) / KHÔNG PHÉP (KP) -> Lưu luôn & gửi thông báo cho học sinh
-                    const notiStudentRef = db.collection('yt_notifications').doc();
-                    const reasonText = selectedReason === 'P' ? 'Có phép' : 'Không phép';
-                    
-                    batch.set(notiStudentRef, {
-                        title: "Thông báo Vắng mặt Điểm danh",
-                        content: `Bạn được ghi nhận vắng mặt vào ngày ${new Date(date).toLocaleDateString('vi-VN')} (${reasonText}).\nNgười ghi nhận: ${currentUser.displayName}.`,
-                        targetType: "student",
-                        targetValue: studentId,
-                        sender: "Giám thị / GVCN",
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    attData.notificationId = notiStudentRef.id;
-                }
-
-                batch.set(attRef, attData);
-                await batch.commit();
-
-                alert(selectedReason === 'B' ? "✅ Đã ghi nhận & gửi thông báo ca bệnh tới Phòng Y Tế!" : "✅ Đã ghi nhận điểm danh thành công!");
-
-                // 4. Reset Form & Tải lại danh sách vắng
-                document.getElementById('symptom-input').value = '';
-                document.getElementById('student-select').value = '';
-                selectReason('P', document.querySelector('.reason-chip'));
-                loadDailyAbsentRecords();
-
-            } catch (err) {
-                alert("Lỗi lưu điểm danh: " + err.message);
-            } finally {
-                btn.innerHTML = '<i class="fas fa-check-circle"></i> Ghi nhận điểm danh';
-                btn.disabled = false;
-            }
+        if (alreadyMarked.length > 0) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Ghi nhận vắng';
+            return alert(`⚠️ Học sinh [${alreadyMarked.join(', ')}] đã được điểm danh trong ngày hôm nay rồi!`);
         }
+
+        const batch = db.batch();
+
+        studentIdArray.forEach(stId => {
+            const studentObj = allStudentsCache.find(s => s.id === stId);
+            if (!studentObj) return;
+
+            const attRef = db.collection('yt_attendance').doc();
+            const attData = {
+                studentId: studentObj.id,
+                name: studentObj.name,
+                class: studentObj.class,
+                date: date,
+                reason: selectedReason,
+                recordedBy: currentUser.displayName,
+                recorderRole: currentUserRole,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            if (selectedReason === 'B') {
+                attData.symptom = symptom;
+                attData.diagnosis = "Chờ Phòng Y Tế xác minh";
+                attData.isPendingAdmin = true;
+
+                const notiRef = db.collection('yt_notifications').doc();
+                batch.set(notiRef, {
+                    title: `🚨 BÁO CA BỆNH: ${studentObj.name} - Lớp ${studentObj.class}`,
+                    content: `${currentUser.displayName} (${currentUserRole.toUpperCase()}) báo ca bệnh: ${studentObj.name} (Lớp ${studentObj.class}). Triệu chứng: ${symptom}`,
+                    targetType: "admin",
+                    type: "sick_alert",
+                    sender: currentUser.displayName,
+                    relatedAttendanceId: attRef.id,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } else {
+                const notiStudentRef = db.collection('yt_notifications').doc();
+                const reasonText = selectedReason === 'P' ? 'Có phép' : 'Không phép';
+                batch.set(notiStudentRef, {
+                    title: "Thông báo Vắng mặt Điểm danh",
+                    content: `Bạn được ghi nhận vắng mặt ngày ${new Date(date).toLocaleDateString('vi-VN')} (${reasonText}). Người ghi nhận: ${currentUser.displayName}.`,
+                    targetType: "student",
+                    targetValue: studentObj.id,
+                    sender: "Giám thị / GVCN",
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                attData.notificationId = notiStudentRef.id;
+            }
+
+            batch.set(attRef, attData);
+        });
+
+        await batch.commit();
+
+        alert(`✅ Đã ghi nhận điểm danh thành công cho ${selectedStudentIds.size} học sinh!`);
+        
+        // Reset sau khi gửi thành công
+        selectedStudentIds.clear();
+        document.getElementById('symptom-input').value = '';
+        renderStudentList();
+        loadDailyAbsentRecords();
+
+    } catch (err) {
+        alert("Lỗi khi lưu: " + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fas fa-check-circle"></i> Ghi nhận vắng (<span id="submit-count-badge">0</span>)`;
+        updateSelectedSummary();
+    }
+}
 
         // 10. TẢI DANH SÁCH VẮNG HÔM NAY (ĐÃ LỌC THEO QUYỀN LỚP)
         async function loadDailyAbsentRecords() {

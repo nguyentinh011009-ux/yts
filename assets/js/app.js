@@ -3582,45 +3582,69 @@ function toggleAdminNotiModal() {
 // ==============================================================
 let titleBlinkInterval = null;
 let originalPageTitle = document.title || "Admin Y tế số";
+let globalAudioCtx = null;
 
-// 1. Hàm tạo âm thanh chuông báo chuẩn Bệnh viện/Trường học (Kéo dài 5s)
-function playNotificationSound5s() {
+// Tự động "mở khóa" âm thanh trình duyệt ngay khi Admin click bất kỳ đâu trên web
+function unlockAudioContext() {
+    if (!globalAudioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) globalAudioCtx = new AudioContext();
+    }
+    if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
+        globalAudioCtx.resume();
+    }
+}
+document.addEventListener('click', unlockAudioContext, { once: false });
+document.addEventListener('keydown', unlockAudioContext, { once: false });
+
+// 1. Hàm tạo âm thanh chuông báo chuẩn Bệnh viện (Kêu Ding-Dong lặp lại trong 5 giây)
+async function playNotificationSound5s() {
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
-        const ctx = new AudioContext();
 
-        // Chuỗi phát chuông lặp lại trong vòng 5 giây
+        if (!globalAudioCtx) {
+            globalAudioCtx = new AudioContext();
+        }
+
+        // Bắt buộc resume AudioContext nếu đang bị trình duyệt giữ ở chế độ treo (suspended)
+        if (globalAudioCtx.state === 'suspended') {
+            await globalAudioCtx.resume();
+        }
+
+        const ctx = globalAudioCtx;
         let startTime = ctx.currentTime;
+
+        // Phát 5 hồi chuông đôi (Ding - Dong) trong 5 giây
         for (let i = 0; i < 5; i++) {
-            let noteTime = startTime + i * 1.0; // Mỗi giây kêu 1 nhịp đôi (Ding-Dong)
+            let noteTime = startTime + i * 1.0; 
             
-            // Âm cao (Ding)
+            // Âm cao (Ding - Nốt A5: 880Hz)
             let osc1 = ctx.createOscillator();
             let gain1 = ctx.createGain();
             osc1.type = 'sine';
-            osc1.frequency.setValueAtTime(880, noteTime); // Nốt A5
-            gain1.gain.setValueAtTime(0.3, noteTime);
-            gain1.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.35);
+            osc1.frequency.setValueAtTime(880, noteTime);
+            gain1.gain.setValueAtTime(0.4, noteTime);
+            gain1.gain.exponentialRampToValueAtTime(0.0001, noteTime + 0.35);
             osc1.connect(gain1);
             gain1.connect(ctx.destination);
             osc1.start(noteTime);
             osc1.stop(noteTime + 0.35);
 
-            // Âm trầm hơn (Dong)
+            // Âm trầm (Dong - Nốt E5: 659.25Hz)
             let osc2 = ctx.createOscillator();
             let gain2 = ctx.createGain();
             osc2.type = 'sine';
-            osc2.frequency.setValueAtTime(659.25, noteTime + 0.2); // Nốt E5
-            gain2.gain.setValueAtTime(0.35, noteTime + 0.2);
-            gain2.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.6);
+            osc2.frequency.setValueAtTime(659.25, noteTime + 0.2);
+            gain2.gain.setValueAtTime(0.45, noteTime + 0.2);
+            gain2.gain.exponentialRampToValueAtTime(0.0001, noteTime + 0.6);
             osc2.connect(gain2);
             gain2.connect(ctx.destination);
             osc2.start(noteTime + 0.2);
             osc2.stop(noteTime + 0.6);
         }
     } catch (e) {
-        console.warn("Trình duyệt chặn phát âm thanh tự động:", e);
+        console.warn("[Audio] Trình duyệt chưa cho phép phát âm thanh do chưa có tương tác:", e);
     }
 }
 
@@ -3636,7 +3660,6 @@ function triggerTabBlinking() {
         isAlert = !isAlert;
         count++;
 
-        // Sau 5 giây (10 lần đổi title với chu kỳ 500ms) thì hoàn trả tiêu đề cũ
         if (count >= 10) {
             clearInterval(titleBlinkInterval);
             titleBlinkInterval = null;

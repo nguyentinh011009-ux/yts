@@ -4212,25 +4212,125 @@ function applyPresetTemplate() {
 
 let collaboratorsCache = [];
 
-// 1. Hàm tự động đóng mở danh sách chọn Tab khi đổi loại đối tượng
-function handleCollabRoleChange() {
+// 1. Hàm tự động đóng mở danh sách chọn Tab / Phân công Lớp khi đổi loại đối tượng
+async function handleCollabRoleChange() {
     const role = document.getElementById('collab-role').value;
     const tabSection = document.getElementById('collab-tabs-selection-area');
+    const gvcnClassSection = document.getElementById('collab-gvcn-class-area');
     const noteSection = document.getElementById('collab-role-note');
+    const currentId = document.getElementById('collab-id').value;
 
-    if (role === 'quansinh' || role === 'gvcn') {
+    if (role === 'gvcn') {
         if (tabSection) tabSection.style.display = 'none';
+        if (gvcnClassSection) gvcnClassSection.style.display = 'block';
         if (noteSection) {
             noteSection.style.display = 'block';
-            noteSection.innerHTML = `💡 Đối tượng <strong>${role === 'gvcn' ? 'Giáo viên chủ nhiệm' : 'Quản sinh'}</strong> sẽ tự động được cấp quyền truy cập vào <strong>App Điểm Danh (Mobile)</strong> và không có quyền truy cập bảng quản trị Admin.`;
+            noteSection.innerHTML = `👨‍🏫 <strong>Giáo viên chủ nhiệm</strong>: Được cấp quyền đăng nhập vào <strong>App Điểm Danh</strong> cho các lớp được phân công bên dưới.`;
+        }
+        await renderGvcnClassCheckboxes(currentId);
+    } else if (role === 'quansinh') {
+        if (tabSection) tabSection.style.display = 'none';
+        if (gvcnClassSection) gvcnClassSection.style.display = 'none';
+        if (noteSection) {
+            noteSection.style.display = 'block';
+            noteSection.innerHTML = `📋 <strong>Quản Sinh / Giám Thị</strong>: Được quyền điểm danh <strong>Toàn trường (Tất cả lớp)</strong> trên App Điểm Danh.`;
         }
     } else {
+        // Cộng tác viên Admin
         if (tabSection) tabSection.style.display = 'block';
+        if (gvcnClassSection) gvcnClassSection.style.display = 'none';
         if (noteSection) noteSection.style.display = 'none';
     }
 }
 
-// 2. Tải danh sách Cộng tác viên có phân loại Đối tượng
+// 2. Hàm vẽ danh sách Lớp & Khóa nếu đã đủ 2 Giáo viên
+async function renderGvcnClassCheckboxes(currentCollabId = '', preSelectedClasses = []) {
+    const container = document.getElementById('collab-gvcn-class-grid');
+    if (!container) return;
+
+    // 1. Quét danh sách tất cả các lớp thực tế từ bộ nhớ đệm học sinh
+    const allStudents = await getStudentsList();
+    const classSet = new Set();
+    allStudents.forEach(s => {
+        if (s.class && s.class.trim()) {
+            classSet.add(s.class.trim().toUpperCase());
+        }
+    });
+
+    const sortedClasses = Array.from(classSet).sort((a, b) => a.localeCompare(b, 'vi', { numeric: true }));
+
+    if (sortedClasses.length === 0) {
+        container.innerHTML = '<div style="color:#ef4444; font-size:0.85rem; padding:10px;">Chưa có dữ liệu lớp học sinh trong hệ thống!</div>';
+        return;
+    }
+
+    // 2. Thống kê số lượng GV phụ trách từng lớp từ collaboratorsCache
+    // Dạng: { "10A1": ["GV Nguyễn Văn A", "GV Trần Thị B"], ... }
+    const classTeachersMap = {};
+    collaboratorsCache.forEach(c => {
+        if (c.role === 'gvcn' && c.status === 'active' && c.assignedClasses && Array.isArray(c.assignedClasses)) {
+            // Không tính chính tài khoản đang sửa để tránh tự khóa lớp của mình
+            if (c.id !== currentCollabId) {
+                c.assignedClasses.forEach(cls => {
+                    const normalizedCls = cls.trim().toUpperCase();
+                    if (!classTeachersMap[normalizedCls]) {
+                        classTeachersMap[normalizedCls] = [];
+                    }
+                    classTeachersMap[normalizedCls].push(c.name);
+                });
+            }
+        }
+    });
+
+    // 3. Render HTML từng ô Checkbox Lớp
+    let html = '';
+    sortedClasses.forEach(className => {
+        const assignedTeachers = classTeachersMap[className] || [];
+        const teacherCount = assignedTeachers.length;
+        const isFull = teacherCount >= 2; // Đã đủ 2 GV
+        const isChecked = preSelectedClasses.includes(className);
+
+        let badgeColor = '#10b981'; // Xanh lá: 0/2
+        let badgeText = `${teacherCount}/2 GV`;
+        let disabledAttr = '';
+        let itemBg = '#ffffff';
+        let itemBorder = '#cbd5e1';
+        let cursorStyle = 'pointer';
+
+        if (teacherCount === 1) {
+            badgeColor = '#f59e0b'; // Vàng cam: 1/2
+        }
+
+        if (isFull) {
+            badgeColor = '#ef4444'; // Đỏ: 2/2 (Khóa)
+            badgeText = `2/2 Đầy`;
+            disabledAttr = 'disabled';
+            itemBg = '#f1f5f9';
+            itemBorder = '#e2e8f0';
+            cursorStyle = 'not-allowed';
+        }
+
+        const tooltip = assignedTeachers.length > 0 
+            ? `Đã phân công: ${assignedTeachers.join(', ')}` 
+            : `Chưa có GV nào`;
+
+        html += `
+            <label title="${tooltip}" style="display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 10px; background: ${itemBg}; border: 1.5px solid ${itemBorder}; border-radius: 8px; cursor: ${cursorStyle}; font-size: 0.85rem; transition: 0.15s;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <input type="checkbox" class="collab-gvcn-class-cb" value="${className}" ${isChecked ? 'checked' : ''} ${disabledAttr} style="cursor: ${cursorStyle};">
+                    <strong style="color: ${isFull ? '#94a3b8' : '#1e293b'};">${className}</strong>
+                </div>
+                <span style="font-size: 0.7rem; font-weight: bold; color: ${badgeColor}; background: ${badgeColor}15; padding: 2px 5px; border-radius: 4px; white-space: nowrap;">
+                    ${badgeText}
+                </span>
+            </label>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+// 3. Tải danh sách Cộng tác viên có hiển thị các Lớp phân công của GVCN
 async function loadCollaborators() {
     const tbody = document.getElementById('collaborators-list-tbody');
     if (!tbody) return;
@@ -4260,16 +4360,21 @@ async function loadCollaborators() {
                     ? '<span style="color:#f59e0b; background:#fffbeb; padding:3px 8px; border-radius:10px; font-weight:bold; font-size:0.75rem;">Hết hạn</span>' 
                     : '<span style="color:#10b981; background:#ecfdf5; padding:3px 8px; border-radius:10px; font-weight:bold; font-size:0.75rem;">Hoạt động</span>');
 
-            // Badge Đối tượng
+            // Badge Đối tượng & Quyền hiển thị
             let roleBadge = '<span style="background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:6px; font-weight:bold; font-size:0.8rem;"><i class="fas fa-user-shield"></i> Cộng tác viên</span>';
             let permDisplay = `<span style="font-weight:600; color:#475569;">${(data.allowedTabs || []).length} Tabs Admin</span>`;
 
             if (data.role === 'gvcn') {
                 roleBadge = '<span style="background:#fef3c7; color:#b45309; padding:3px 8px; border-radius:6px; font-weight:bold; font-size:0.8rem;"><i class="fas fa-chalkboard-teacher"></i> GVCN</span>';
-                permDisplay = '<span style="color:#2563eb; font-weight:bold;"><i class="fas fa-mobile-alt"></i> App Điểm Danh</span>';
+                const classes = data.assignedClasses || (data.class ? [data.class] : []);
+                if (classes.length > 0) {
+                    permDisplay = `<span style="color:#0284c7; font-weight:bold; font-size:0.82rem;" title="${classes.join(', ')}"><i class="fas fa-layer-group"></i> Lớp: ${classes.join(', ')}</span>`;
+                } else {
+                    permDisplay = '<span style="color:#ef4444; font-size:0.8rem; font-style:italic;">Chưa phân lớp</span>';
+                }
             } else if (data.role === 'quansinh') {
                 roleBadge = '<span style="background:#f3e8ff; color:#7e22ce; padding:3px 8px; border-radius:6px; font-weight:bold; font-size:0.8rem;"><i class="fas fa-user-check"></i> Quản Sinh</span>';
-                permDisplay = '<span style="color:#2563eb; font-weight:bold;"><i class="fas fa-mobile-alt"></i> App Điểm Danh</span>';
+                permDisplay = '<span style="color:#7e22ce; font-weight:bold; font-size:0.82rem;"><i class="fas fa-globe"></i> Toàn trường</span>';
             }
 
             html += `
@@ -4282,10 +4387,10 @@ async function loadCollaborators() {
                     <td>${permDisplay}</td>
                     <td>${statusBadge}</td>
                     <td style="text-align: right;">
-                        <button onclick="editCollaborator('${data.id}')" class="btn-sm" style="background:#e0e7ff; color:#4338ca; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;">
+                        <button onclick="editCollaborator('${data.id}')" class="btn-sm" style="background:#e0e7ff; color:#4338ca; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;" title="Sửa">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="deleteCollaborator('${data.id}', '${data.name}')" class="btn-sm" style="background:#fee2e2; color:#ef4444; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; margin-left:4px;">
+                        <button onclick="deleteCollaborator('${data.id}', '${data.name}')" class="btn-sm" style="background:#fee2e2; color:#ef4444; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; margin-left:4px;" title="Xóa">
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </td>
@@ -4299,7 +4404,7 @@ async function loadCollaborators() {
     }
 }
 
-// 3. Mở Modal Thêm mới
+// 4. Mở Modal Thêm mới
 function openCollaboratorModal() {
     document.getElementById('collab-id').value = '';
     document.getElementById('collab-email').value = '';
@@ -4318,14 +4423,9 @@ function openCollaboratorModal() {
     handleCollabRoleChange();
     document.getElementById('collaborator-modal').style.display = 'flex';
 }
-function closeCollaboratorModal() {
-    const modal = document.getElementById('collaborator-modal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
-// 4. Mở Modal Sửa
-function editCollaborator(id) {
+
+// 5. Mở Modal Sửa
+async function editCollaborator(id) {
     const collab = collaboratorsCache.find(c => c.id === id);
     if (!collab) return;
 
@@ -4338,7 +4438,8 @@ function editCollaborator(id) {
     document.getElementById('collab-status').value = collab.status || 'active';
     
     const roleSelect = document.getElementById('collab-role');
-    if (roleSelect) roleSelect.value = collab.role || 'collaborator';
+    const userRole = collab.role || 'collaborator';
+    if (roleSelect) roleSelect.value = userRole;
 
     document.getElementById('collab-modal-title').innerHTML = '<i class="fas fa-user-edit"></i> Cập nhật Phân quyền';
 
@@ -4347,11 +4448,17 @@ function editCollaborator(id) {
         cb.checked = allowed.includes(cb.value);
     });
 
-    handleCollabRoleChange();
+    await handleCollabRoleChange();
+
+    if (userRole === 'gvcn') {
+        const assigned = collab.assignedClasses || (collab.class ? [collab.class] : []);
+        await renderGvcnClassCheckboxes(collab.id, assigned);
+    }
+
     document.getElementById('collaborator-modal').style.display = 'flex';
 }
 
-// 5. Lưu thông tin (Tự động gán quyền theo loại đối tượng)
+// 6. Lưu thông tin và phân quyền lớp
 async function saveCollaborator() {
     const id = document.getElementById('collab-id').value;
     const email = document.getElementById('collab-email').value.trim().toLowerCase();
@@ -4366,6 +4473,8 @@ async function saveCollaborator() {
     }
 
     let allowedTabs = [];
+    let assignedClasses = [];
+
     if (role === 'collaborator') {
         document.querySelectorAll('.collab-tab-cb:checked').forEach(cb => {
             allowedTabs.push(cb.value);
@@ -4373,15 +4482,32 @@ async function saveCollaborator() {
         if (allowedTabs.length === 0) {
             return sysAlert("Cộng tác viên phải được tick chọn ít nhất 1 Tab Admin!", "warning");
         }
-    } else {
-        // GVCN hoặc Quản sinh chỉ cấp quyền app điểm danh
+    } else if (role === 'gvcn') {
         allowedTabs = ['app_diemdanh'];
+        // Lấy tất cả các lớp được tick chọn
+        document.querySelectorAll('.collab-gvcn-class-cb:checked').forEach(cb => {
+            assignedClasses.push(cb.value);
+        });
+
+        if (assignedClasses.length === 0) {
+            return sysAlert("Vui lòng tick chọn ít nhất 1 Lớp cho Giáo viên chủ nhiệm!", "warning");
+        }
+    } else if (role === 'quansinh') {
+        allowedTabs = ['app_diemdanh'];
+        assignedClasses = ['ALL'];
     }
 
     sysLoading(true, "Đang lưu thông tin...");
 
     const payload = {
-        email, name, phone, expiryDate, status, role, allowedTabs,
+        email, 
+        name, 
+        phone, 
+        expiryDate, 
+        status, 
+        role, 
+        allowedTabs,
+        assignedClasses, // Mảng các lớp GVCN phụ trách (VD: ["10A1", "10A2"])
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
@@ -4397,7 +4523,7 @@ async function saveCollaborator() {
             }
             payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
             await db.collection("yt_collaborators").add(payload);
-            sysAlert("Thêm tài khoản thành công!", "success");
+            sysAlert("Thêm tài khoản GVCN/CTV thành công!", "success");
         }
 
         closeCollaboratorModal();
@@ -4409,7 +4535,7 @@ async function saveCollaborator() {
     }
 }
 
-// 5. Xóa Cộng tác viên
+// 7. Xóa Cộng tác viên
 async function deleteCollaborator(id, name) {
     const isConfirm = await sysConfirm(`Xác nhận xóa quyền Cộng tác viên của [${name}]?`, "Xóa Cộng tác viên", true);
     if (isConfirm) {

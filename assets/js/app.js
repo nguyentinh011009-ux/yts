@@ -4441,7 +4441,13 @@ function openCollaboratorModal() {
     handleCollabRoleChange();
     document.getElementById('collaborator-modal').style.display = 'flex';
 }
-
+// Thêm hàm đóng Modal Cộng tác viên
+function closeCollaboratorModal() {
+    const modal = document.getElementById('collaborator-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
 // 5. Mở Modal Sửa
 async function editCollaborator(id) {
     const collab = collaboratorsCache.find(c => c.id === id);

@@ -1141,7 +1141,7 @@
 
         // 2. TẢI DỮ LIỆU VÀ TỐI ƯU BỘ NHỚ
         async function fetchAndCacheStudents(forceRefresh = false) {
-            const CACHE_KEY = 'vts_cached_students_v2';
+            const CACHE_KEY = 'vts_cached_students_v3';
             const localData = localStorage.getItem(CACHE_KEY);
 
             if (!forceRefresh && localData) {
@@ -1162,6 +1162,7 @@
                         id: doc.id,
                         name: d.name || '',
                         class: (d.class || '').trim().toUpperCase(),
+                        dob: d.dob || '',
                         phone: d.phone || ''
                     });
                 });
@@ -1542,7 +1543,12 @@
                 const filtered = dataset.filter(s => {
                     const nameNorm = removeVietnameseTones(s.name);
                     const idNorm = s.id.toLowerCase();
-                    return nameNorm.includes(queryNormalized) || idNorm.includes(queryNormalized);
+                    const dobRaw = (s.dob || '').toLowerCase(); // VD: 2008-05-12
+                    const dobFormatted = s.dob ? new Date(s.dob).toLocaleDateString('vi-VN') : ''; // VD: 12/05/2008
+                    return nameNorm.includes(queryNormalized) || 
+                           idNorm.includes(queryNormalized) || 
+                           dobRaw.includes(queryNormalized) || 
+                           dobFormatted.includes(queryNormalized);
                 });
 
                 renderStudentList(filtered, selectedClass === 'ALL');
@@ -1570,14 +1576,17 @@
             safeData.forEach(s => {
                 const isSelected = selectedStudentIds.has(s.id);
                 const classBadge = forceShowClass ? `<span class="s-class-badge">${s.class}</span>` : '';
-
+                const dobStr = s.dob ? new Date(s.dob).toLocaleDateString('vi-VN') : '';
+                const dobBadge = dobStr ? `<span style="font-size:0.75rem; color:#64748b; margin-left:6px;"><i class="far fa-calendar-alt"></i> ${dobStr}</span>` : '';
+            
                 html += `
                     <div class="student-item ${isSelected ? 'selected' : ''}" onclick="toggleStudentSelection('${s.id}')">
                         <div class="info">
                             <div class="s-name">${s.name}</div>
-                            <div style="margin-top: 4px;">
+                            <div style="margin-top: 4px; display:flex; align-items:center; flex-wrap:wrap; gap:4px;">
                                 <span class="s-id">${s.id}</span>
                                 ${classBadge}
+                                ${dobBadge}
                             </div>
                         </div>
                         <div class="check-icon">

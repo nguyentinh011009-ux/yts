@@ -2522,12 +2522,20 @@ async function handleExcelUpload(event) {
     reader.readAsArrayBuffer(file);
 }
 
-// TÍNH NĂNG XUẤT DANH SÁCH HỌC SINH (A4 DỌC)
 // ==========================================
-function openExportStudentModal() { document.getElementById('export-student-modal').style.display = 'flex'; }
-function closeExportStudentModal() { document.getElementById('export-student-modal').style.display = 'none'; }
+// TÍNH NĂNG XUẤT DANH SÁCH HỌC SINH (PDF HOẶC EXCEL)
+// ==========================================
+function openExportStudentModal() { 
+    document.getElementById('export-student-modal').style.display = 'flex'; 
+}
+
+function closeExportStudentModal() { 
+    document.getElementById('export-student-modal').style.display = 'none'; 
+}
 
 async function executeExportStudents() {
+    const selectedFormat = document.querySelector('input[name="export-file-format"]:checked')?.value || 'pdf';
+
     const showId = document.getElementById('col-id').checked;
     const showHeight = document.getElementById('col-height').checked;
     const showWeight = document.getElementById('col-weight').checked;
@@ -2551,18 +2559,19 @@ async function executeExportStudents() {
     let originalText = "";
     if (btn) {
         originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang trích xuất dữ liệu...';
         btn.disabled = true;
     }
 
-    sysLoading(true, "Đang trích xuất dữ liệu tạo bản in...");
+    sysLoading(true, "Đang xử lý dữ liệu xuất...");
+
     try {
         const allStudents = await getStudentsList();
 
-        if (allStudents.length === 0) {
+        if (!allStudents || allStudents.length === 0) {
             if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
             sysLoading(false);
-            return alert("Hiện chưa có học sinh nào trong hệ thống!");
+            return sysAlert("Hiện chưa có học sinh nào trong hệ thống!", "warning");
         }
 
         let filteredStudents = targetClasses.length > 0 
@@ -2572,18 +2581,16 @@ async function executeExportStudents() {
         if (filteredStudents.length === 0) {
             if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
             sysLoading(false);
-            return alert("Không tìm thấy học sinh nào thuộc các lớp đã nhập!");
+            return sysAlert("Không tìm thấy học sinh nào thuộc các lớp đã nhập!", "warning");
         }
 
+        // Nhóm theo từng lớp
         let studentsByClass = {};
         filteredStudents.forEach(hs => {
             const cName = hs.class || "Chưa xếp lớp";
             if (!studentsByClass[cName]) studentsByClass[cName] = [];
             studentsByClass[cName].push(hs);
         });
-
-        const sortedClasses = Object.keys(studentsByClass).sort((a, b) => a.localeCompare(b, 'vi'));
-        let fullPrintHTML = '';
 
         const getSortableName = (fullName) => {
             if (!fullName) return "";
@@ -2594,13 +2601,92 @@ async function executeExportStudents() {
             return ten + " " + hoDem;    
         };
 
+        const sortedClasses = Object.keys(studentsByClass).sort((a, b) => a.localeCompare(b, 'vi', { numeric: true }));
+
+        // ==========================================
+        // TRƯỜNG HỢP 1: XUẤT EXCEL (.xlsx)
+        // ==========================================
+        if (selectedFormat === 'excel') {
+            if (typeof XLSX === 'undefined') {
+                throw new Error("Chưa tải được thư viện SheetJS (XLSX)!");
+            }
+
+            const wb = XLSX.utils.book_new();
+
+            // Tạo bảng chung hoặc từng sheet theo lớp
+            sortedClasses.forEach(className => {
+                let classStudents = studentsByClass[className];
+                classStudents.sort((a, b) => getSortableName(a.name).localeCompare(getSortableName(b.name), 'vi'));
+
+                const rowsData = [];
+                classStudents.forEach((hs, i) => {
+                    const decryptedPhone = hs.phone ? decryptField(hs.phone) : '';
+                    const decryptedParentPhone = hs.parentPhone ? decryptField(hs.parentPhone) : '';
+                    const decryptedStreet = hs.street ? decryptField(hs.street) : '';
+                    const fullAddress = decryptedStreet ? `${decryptedStreet}${hs.ward ? ', ' + hs.ward : ''}` : '';
+
+                    let bmiValue = '';
+                    if (showBmi && hs.height && hs.weight) {
+                        const h = parseFloat(hs.height);
+                        const w = parseFloat(hs.weight);
+                        if (h > 0 && w > 0) {
+                            bmiValue = (w / Math.pow(h / 100, 2)).toFixed(1);
+                        }
+                    }
+
+                    const rowObj = {};
+                    rowObj["STT"] = i + 1;
+                    if (showId) rowObj["Mã Y Tế"] = hs.id || '';
+                    if (showStCode) rowObj["Mã Học Sinh"] = hs.studentCode || '';
+                    rowObj["Họ và Tên"] = hs.name || '';
+                    rowObj["Lớp"] = hs.class || '';
+                    if (showDob) rowObj["Ngày Sinh"] = hs.dob ? new Date(hs.dob).toLocaleDateString('vi-VN') : '';
+                    if (showGender) rowObj["Giới Tính"] = hs.gender || '';
+                    if (showHeight) rowObj["Chiều Cao (cm)"] = hs.height || '';
+                    if (showWeight) rowObj["Cân Nặng (kg)"] = hs.weight || '';
+                    if (showBmi) rowObj["BMI"] = bmiValue;
+                    if (showPhone) rowObj["SĐT Học Sinh"] = decryptedPhone;
+                    if (showParentPhone) rowObj["SĐT Phụ Huynh"] = decryptedParentPhone;
+                    if (showEmail) rowObj["Email Liên Kết"] = hs.linkedEmail || '';
+                    if (showAddress) rowObj["Địa Chỉ"] = fullAddress;
+                    if (showNote) rowObj["Ghi Chú Lâm Sàng"] = hs.medicalNote || '';
+
+                    rowsData.push(rowObj);
+                });
+
+                const ws = XLSX.utils.json_to_sheet(rowsData);
+
+                // Tự động căn chỉnh độ rộng cột
+                const colWidths = Object.keys(rowsData[0] || {}).map(key => {
+                    const maxLen = Math.max(
+                        key.length,
+                        ...rowsData.map(r => (r[key] ? r[key].toString().length : 0))
+                    );
+                    return { wch: Math.min(Math.max(maxLen + 3, 10), 40) };
+                });
+                ws['!cols'] = colWidths;
+
+                // Tên sheet (giới hạn tối đa 31 ký tự)
+                let sheetName = `Lớp ${className}`.replace(/[:\\/?*\[\]]/g, '').substring(0, 31);
+                XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            });
+
+            const fileName = `Danh_Sach_Hoc_Sinh_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+
+            closeExportStudentModal();
+            sysAlert("Xuất file Excel thành công!", "success");
+            return;
+        }
+
+        // ==========================================
+        // TRƯỜNG HỢP 2: XUẤT BẢN IN / PDF (NHƯ CŨ)
+        // ==========================================
+        let fullPrintHTML = '';
+
         sortedClasses.forEach((className, index) => {
             let classStudents = studentsByClass[className];
-            classStudents.sort((a, b) => {
-                let nameA = getSortableName(a.name);
-                let nameB = getSortableName(b.name);
-                return nameA.localeCompare(nameB, 'vi');
-            });
+            classStudents.sort((a, b) => getSortableName(a.name).localeCompare(getSortableName(b.name), 'vi'));
 
             const pageBreakCSS = index > 0 ? 'page-break-before: always; break-before: page;' : '';
 
@@ -2616,9 +2702,9 @@ async function executeExportStudents() {
                 ${showWeight ? '<th>Nặng</th>' : ''}
                 ${showBmi ? '<th>BMI</th>' : ''}
                 ${showPhone ? '<th>SĐT Học sinh</th>' : ''}
-		${showParentPhone ? '<th>SĐT Phụ huynh</th>' : ''}
+                ${showParentPhone ? '<th>SĐT Phụ huynh</th>' : ''}
                 ${showEmail ? '<th>Email Liên kết</th>' : ''}
-		${showAddress ? '<th>Địa chỉ</th>' : ''}
+                ${showAddress ? '<th>Địa chỉ</th>' : ''}
                 ${showNote ? '<th style="width: 15%;">Ghi chú LS</th>' : ''}
             </tr>`;
 
@@ -2626,9 +2712,9 @@ async function executeExportStudents() {
             classStudents.forEach((hs, i) => {
                 const dobFormat = hs.dob ? new Date(hs.dob).toLocaleDateString('vi-VN') : '';
                 const decryptedPhone = hs.phone ? decryptField(hs.phone) : '';
-    		const decryptedParentPhone = hs.parentPhone ? decryptField(hs.parentPhone) : '';
-    		const decryptedStreet = hs.street ? decryptField(hs.street) : '';
-    		const fullAddress = decryptedStreet ? `${decryptedStreet}${hs.ward ? ', ' + hs.ward : ''}` : '';
+                const decryptedParentPhone = hs.parentPhone ? decryptField(hs.parentPhone) : '';
+                const decryptedStreet = hs.street ? decryptField(hs.street) : '';
+                const fullAddress = decryptedStreet ? `${decryptedStreet}${hs.ward ? ', ' + hs.ward : ''}` : '';
                 let bmiValue = '';
                 if (showBmi && hs.height && hs.weight) {
                     const h = parseFloat(hs.height);
@@ -2696,19 +2782,20 @@ async function executeExportStudents() {
             printArea.innerHTML = '';
             document.getElementById('print-portrait-style').remove();
             
-            // KHÔI PHỤC LẠI NÚT IN SAU KHI ĐÃ HIỂN THỊ HỘP THOẠI IN
             if (btn) {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }
         }, 800);
+
     } catch (err) {
+        sysAlert("Lỗi xuất dữ liệu: " + err.message, "error");
+    } finally {
         sysLoading(false);
         if (btn) {
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
-        sysAlert("Lỗi xuất dữ liệu: " + err.message, "error");
     }
 }
 // ==========================================

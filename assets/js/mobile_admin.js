@@ -373,7 +373,7 @@ async function searchStudent() {
 		            <div class="st-left-info">
 		                <h4>${hs.name}</h4>
 		                <div style="font-size:0.83rem; color:#64748b; margin-top:2px;">
-		                    <strong style="color:#0284c7;">Lớp: ${hs.class}</strong> | <span>🎂 ${dobDisplay}</span>
+		                    <strong style="color:#0284c7;">Lớp: ${hs.class}</strong> | <span> <i class="fa fa-solid fa-calendar-days"></i> ${dobDisplay}</span>
 		                </div>
 		                <small style="color:#94a3b8; font-size:0.75rem;">Mã YT: ${hs.id}</small>
 		            </div>

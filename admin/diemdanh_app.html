@@ -274,10 +274,12 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: #f1f5f9;
+            background: #ffffff;
             padding: 6px;
             border-radius: var(--radius-md);
             margin-bottom: 14px;
+            border: 1px solid var(--border-col);
+            box-shadow: var(--shadow-sm);
         }
 
         .date-stepper button {
@@ -693,6 +695,93 @@
             from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        /* --- GIAO DIỆN TÀI KHOẢN PROFILE --- */
+        .profile-card {
+            text-align: center;
+            padding: 24px 16px;
+        }
+
+        .profile-avatar-lg {
+            width: 86px;
+            height: 86px;
+            border-radius: 26px;
+            object-fit: cover;
+            border: 3px solid var(--primary-light);
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.2);
+            margin-bottom: 12px;
+        }
+
+        .profile-name {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .profile-info-list {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+        }
+
+        .profile-info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 14px;
+            background: #f8fafc;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-col);
+            font-size: 0.88rem;
+        }
+
+        .profile-info-label {
+            color: var(--text-muted);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .profile-info-val {
+            font-weight: 700;
+            color: var(--text-main);
+            text-align: right;
+            max-width: 60%;
+            word-break: break-word;
+        }
+
+        .profile-footer-box {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px dashed var(--border-col);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .profile-footer-box a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .btn-profile-back {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-bottom: 12px;
+            padding: 4px 0;
+        }
     </style>
 </head>
 <body>
@@ -742,19 +831,35 @@
     <!-- 2. GIAO DIỆN CHÍNH CỦA APP ĐIỂM DANH -->
     <div id="app-main" style="display: none;">
         <header class="app-header">
-            <div class="user-chip">
+            <div class="user-chip" onclick="openProfile()" style="cursor: pointer;" title="Bấm để xem thông tin tài khoản">
                 <img id="user-avatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="user-avatar" alt="Avatar">
                 <div class="user-details">
-                    <h4 id="user-name">Đang tải...</h4>
+                    <h4 id="user-name">Đang tải... <i class="fas fa-chevron-right" style="font-size: 0.7rem; color: var(--text-muted); margin-left: 2px;"></i></h4>
                     <span id="user-role-badge" class="user-badge badge-gvcn">GVCN</span>
                 </div>
             </div>
-            <button onclick="handleLogout()" class="btn-icon-header" title="Đăng xuất">
-                <i class="fas fa-sign-out-alt"></i>
-            </button>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button id="btn-sync-data" onclick="handleRefreshData()" class="btn-icon-header" title="Cập nhật dữ liệu">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button onclick="handleLogout()" class="btn-icon-header" title="Đăng xuất">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
         </header>
 
         <main class="app-container">
+            <!-- BỘ CHỌN NGÀY CHUNG CHO TOÀN BỘ APP -->
+            <div class="date-stepper">
+                <button type="button" onclick="adjustDate(-1)" title="Ngày trước"><i class="fas fa-chevron-left"></i></button>
+                <div class="date-display" onclick="openDatePicker()">
+                    <i class="far fa-calendar-alt"></i>
+                    <span id="date-text-display">Hôm nay</span>
+                    <input type="date" id="att-date-input" style="opacity:0; width:1px; height:1px; position:absolute; pointer-events:none;" onchange="onDateChanged()">
+                </div>
+                <button type="button" onclick="adjustDate(1)" title="Ngày sau"><i class="fas fa-chevron-right"></i></button>
+            </div>
+
             <!-- THANH ĐIỀU HƯỚNG TAB -->
             <div class="nav-segments">
                 <button class="nav-segment-btn active" onclick="switchTab('pane-attendance', this)">
@@ -768,16 +873,6 @@
             <!-- TAB 1: FORM ĐIỂM DANH -->
             <section id="pane-attendance">
                 <div class="app-card" style="margin-bottom: 110px;">
-                    <!-- BỘ CHỌN NGÀY -->
-                    <div class="date-stepper">
-                        <button type="button" onclick="adjustDate(-1)"><i class="fas fa-chevron-left"></i></button>
-                        <div class="date-display" onclick="openDatePicker()">
-                            <i class="far fa-calendar-alt"></i>
-                            <span id="date-text-display">Hôm nay</span>
-                            <input type="date" id="att-date-input" style="opacity:0; width:1px; height:1px; position:absolute;" onchange="onDateChanged()">
-                        </div>
-                        <button type="button" onclick="adjustDate(1)"><i class="fas fa-chevron-right"></i></button>
-                    </div>
 
                     <!-- BỘ LỌC LỚP & TÌM KIẾM -->
                     <div class="filter-search-container">
@@ -846,6 +941,54 @@
                     <div class="empty-state">
                         <i class="fas fa-spinner fa-spin"></i>
                         <p>Đang tải dữ liệu...</p>
+                    </div>
+                </div>
+            </section>
+            <!-- TAB 3: THÔNG TIN TÀI KHOẢN (PROFILE) -->
+            <section id="pane-profile" style="display: none;">
+                <button type="button" class="btn-profile-back" onclick="closeProfile()">
+                    <i class="fas fa-arrow-left"></i> Quay lại Điểm danh
+                </button>
+
+                <div class="app-card profile-card">
+                    <img id="prof-avatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="profile-avatar-lg" alt="Avatar">
+                    <h3 id="prof-name" class="profile-name">Họ và Tên</h3>
+                    <span id="prof-role-badge" class="user-badge badge-gvcn">GVCN</span>
+
+                    <div class="profile-info-list">
+                        <div class="profile-info-item">
+                            <span class="profile-info-label"><i class="far fa-envelope"></i> Email</span>
+                            <span id="prof-email" class="profile-info-val">---</span>
+                        </div>
+
+                        <div class="profile-info-item">
+                            <span class="profile-info-label"><i class="fas fa-phone-alt"></i> Số điện thoại</span>
+                            <span id="prof-phone" class="profile-info-val">---</span>
+                        </div>
+
+                        <div class="profile-info-item">
+                            <span class="profile-info-label"><i class="fas fa-user-tag"></i> Loại tài khoản</span>
+                            <span id="prof-role-text" class="profile-info-val">---</span>
+                        </div>
+
+                        <div class="profile-info-item">
+                            <span class="profile-info-label"><i class="fas fa-tasks"></i> Quyền điểm danh</span>
+                            <span id="prof-classes" class="profile-info-val">---</span>
+                        </div>
+
+                        <div class="profile-info-item">
+                            <span class="profile-info-label"><i class="far fa-calendar-check"></i> Hạn chứng chỉ</span>
+                            <span id="prof-expiry" class="profile-info-val">---</span>
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="handleLogout()" class="btn-submit" style="background:#fee2e2; color:#b91c1c; box-shadow:none; margin-top:20px;">
+                        <i class="fas fa-sign-out-alt"></i> Đăng xuất tài khoản
+                    </button>
+
+                    <div class="profile-footer-box">
+                        <div>Hỗ trợ: <a href="mailto:nguyentinh011009@gmail.com">nguyentinh011009@gmail.com</a></div>
+                        <div style="font-weight: 700; margin-top: 4px; color: var(--text-main);">Cooperation by Nguyễn Tính</div>
                     </div>
                 </div>
             </section>
@@ -1137,7 +1280,13 @@
 
             if (typeof ALLOWED_ADMIN_EMAILS !== 'undefined' && ALLOWED_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email)) {
                 currentUserRole = 'admin';
-                currentUser = { displayName: user.displayName || 'Admin', email: user.email, photoURL: user.photoURL };
+                currentUser = { 
+                    displayName: user.displayName || 'Quản Trị Viên', 
+                    email: user.email, 
+                    photoURL: user.photoURL,
+                    phone: 'Hệ thống Admin',
+                    expiryDate: 'Vô thời hạn (Admin)'
+                };
                 allowedClasses = ['ALL'];
                 return true;
             }
@@ -1151,7 +1300,13 @@
                 if (data.expiryDate && data.expiryDate < todayStr) return false;
 
                 currentUserRole = data.role || 'gvcn';
-                currentUser = { displayName: data.name || user.displayName, email: user.email, photoURL: user.photoURL };
+                currentUser = { 
+                    displayName: data.name || user.displayName, 
+                    email: user.email, 
+                    photoURL: user.photoURL,
+                    phone: data.phone || 'Chưa cập nhật',
+                    expiryDate: data.expiryDate ? new Date(data.expiryDate).toLocaleDateString('vi-VN') : 'Không giới hạn'
+                };
 
                 if (currentUserRole === 'quansinh') {
                     allowedClasses = ['ALL'];
@@ -1608,6 +1763,59 @@
             document.getElementById('pane-history').style.display = (tabId === 'pane-history') ? 'block' : 'none';
             if (tabId === 'pane-history') loadDailyAbsentRecords();
         }
+        // HÀM MỞ VÀ HIỂN THỊ THÔNG TIN PROFILE
+        function openProfile() {
+            if (!currentUser) return;
+
+            // Đổ dữ liệu vào giao diện
+            document.getElementById('prof-avatar').src = currentUser.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+            document.getElementById('prof-name').innerText = currentUser.displayName;
+            document.getElementById('prof-email').innerText = currentUser.email || '---';
+            document.getElementById('prof-phone').innerText = currentUser.phone || '---';
+            document.getElementById('prof-expiry').innerText = currentUser.expiryDate || 'Không giới hạn';
+
+            const badge = document.getElementById('prof-role-badge');
+            const roleText = document.getElementById('prof-role-text');
+
+            if (currentUserRole === 'admin') {
+                badge.innerText = 'Admin';
+                badge.className = 'user-badge badge-admin';
+                roleText.innerText = 'Ban Quản Trị';
+                document.getElementById('prof-classes').innerText = 'Toàn trường (Tất cả lớp)';
+            } else if (currentUserRole === 'quansinh') {
+                badge.innerText = 'Quản Sinh';
+                badge.className = 'user-badge badge-quansinh';
+                roleText.innerText = 'Quản Sinh';
+                document.getElementById('prof-classes').innerText = 'Toàn trường (Tất cả lớp)';
+            } else {
+                badge.innerText = 'GVCN';
+                badge.className = 'user-badge badge-gvcn';
+                roleText.innerText = 'Giáo viên chủ nhiệm';
+                document.getElementById('prof-classes').innerText = allowedClasses.length > 0 ? allowedClasses.join(', ') : 'Chưa phân công';
+            }
+
+            // Ẩn các pane khác và các thanh điều hướng
+            document.querySelector('.date-stepper').style.display = 'none';
+            document.querySelector('.nav-segments').style.display = 'none';
+            document.getElementById('pane-attendance').style.display = 'none';
+            document.getElementById('pane-history').style.display = 'none';
+            document.getElementById('action-bottom-bar').classList.remove('show');
+
+            // Hiện pane profile
+            document.getElementById('pane-profile').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // HÀM ĐÓNG PROFILE QUAY LẠI MÀN HÌNH ĐIỂM DANH
+        function closeProfile() {
+            document.querySelector('.date-stepper').style.display = 'flex';
+            document.querySelector('.nav-segments').style.display = 'flex';
+            document.getElementById('pane-profile').style.display = 'none';
+            
+            // Quay về tab điểm danh
+            const firstTabBtn = document.querySelectorAll('.nav-segment-btn')[0];
+            switchTab('pane-attendance', firstTabBtn);
+        }
 
         function handleLogout() {
             if (confirm("Đăng xuất khỏi ứng dụng Điểm danh?")) {
@@ -1632,6 +1840,30 @@
                 }
             }
         });
+        // HÀM CẬP NHẬT DỮ LIỆU MỚI NHẤT TỪ SERVER
+        async function handleRefreshData() {
+            const btn = document.getElementById('btn-sync-data');
+            const icon = btn.querySelector('i');
+            
+            // Hiệu ứng xoay icon và khóa nút bấm tạm thời
+            btn.disabled = true;
+            icon.classList.add('fa-spin');
+
+            try {
+                await fetchAndCacheStudents(true);
+
+                populateClassDropdown();
+
+                await loadDailyAbsentRecords();
+
+                alert("✅ Dữ liệu học sinh và điểm danh đã được cập nhật mới nhất!");
+            } catch (error) {
+                alert("❌ Lỗi khi cập nhật dữ liệu: " + error.message);
+            } finally {
+                btn.disabled = false;
+                icon.classList.remove('fa-spin');
+            }
+        }
     </script>
 </body>
 </html>

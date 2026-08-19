@@ -3578,9 +3578,10 @@ function toggleAdminNotiModal() {
 let titleBlinkInterval = null;
 let originalPageTitle = document.title || "Admin Y tế số";
 let globalAudioCtx = null;
-let hasUserInteracted = false; // Biến cờ kiểm tra tương tác người dùng
+let hasUserInteracted = false;
+let pendingUnreadAlert = false; // Biến cờ đợi phát chuông nhắc tin chưa đọc
 
-// Kích hoạt quyền âm thanh ngay khi người dùng click/chạm/bấm phím
+// Kích hoạt quyền âm thanh ngay khi người dùng click/chạm
 function markUserInteracted() {
     hasUserInteracted = true;
     try {
@@ -3592,30 +3593,27 @@ function markUserInteracted() {
             globalAudioCtx.resume();
         }
     } catch(e) {}
+
+    // 👉 NẾU ĐANG CÓ TIN CHƯA ĐỌC ĐỢI NHẮC -> PHÁT CHUÔNG NGAY KHI CLICK ĐẦU TIÊN
+    if (pendingUnreadAlert) {
+        pendingUnreadAlert = false;
+        triggerUnreadReminder();
+    }
 }
 
-// Bắt tất cả sự kiện tương tác đầu tiên
+// Lắng nghe tương tác đầu tiên của người dùng
 ['click', 'keydown', 'touchstart', 'mousedown'].forEach(evt => {
     document.addEventListener(evt, markUserInteracted, { capture: true, passive: true });
 });
 
 // 1. Hàm tạo âm thanh chuông báo chuẩn Bệnh viện (Kêu Ding-Dong lặp lại trong 5 giây)
 async function playNotificationSound5s() {
-    // Nếu chưa có tương tác từ người dùng, bỏ qua để không bị trình duyệt báo lỗi
-    if (!hasUserInteracted) return;
-
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
 
-        if (!globalAudioCtx) {
-            globalAudioCtx = new AudioContext();
-        }
-
-        if (globalAudioCtx.state === 'suspended') {
-            await globalAudioCtx.resume();
-        }
-
+        if (!globalAudioCtx) globalAudioCtx = new AudioContext();
+        if (globalAudioCtx.state === 'suspended') await globalAudioCtx.resume();
         if (globalAudioCtx.state !== 'running') return;
 
         const ctx = globalAudioCtx;
@@ -3650,18 +3648,18 @@ async function playNotificationSound5s() {
             osc2.stop(noteTime + 0.6);
         }
     } catch (e) {
+        console.warn("[Audio] Không thể phát âm thanh:", e);
     }
 }
 
-// 2. Hàm làm nhấp nháy tiêu đề Tab trên Google Chrome (5 giây)
+// 2. Nhấp nháy tiêu đề Tab trên trình duyệt
 function triggerTabBlinking() {
     if (titleBlinkInterval) clearInterval(titleBlinkInterval);
-    
     let isAlert = false;
     let count = 0;
     
     titleBlinkInterval = setInterval(() => {
-        document.title = isAlert ? "🚨 [CÓ THÔNG BÁO MỚI!]" : "🔔 " + originalPageTitle;
+        document.title = isAlert ? "🚨 [CÓ THÔNG BÁO CHƯA ĐỌC!]" : "🔔 " + originalPageTitle;
         isAlert = !isAlert;
         count++;
 
@@ -3673,28 +3671,41 @@ function triggerTabBlinking() {
     }, 500);
 }
 
-// 3. Hàm kích hoạt chuông + nhấp nháy tab
+// 3. Kích hoạt chuông + nhấp nháy
 function notifyAdminWithSoundAndBlink() {
     playNotificationSound5s();
     triggerTabBlinking();
 }
-let isFirstLoadNoti = true;
+
+// 4. Hàm kích hoạt nhắc nhở theo phiên đăng nhập
+function triggerUnreadReminder() {
+    const isAlertedThisSession = sessionStorage.getItem('vts_unread_sounded_session');
+    if (!isAlertedThisSession) {
+        notifyAdminWithSoundAndBlink();
+        sessionStorage.setItem('vts_unread_sounded_session', 'true');
+    }
+}
+
+// ==============================================================
+// TẢI VÀ ĐỒNG BỘ THÔNG BÁO FUSOFTX VÀ HỆ THỐNG
+// ==============================================================
+let adminFusoftxNotisCache = [];
 
 function loadFusoftxNotis() {
     const listDiv = document.getElementById('admin-notifications-list');
-    if(!listDiv) return;
+    if (!listDiv) return;
 
     const currentUser = firebase.auth().currentUser;
     const userDocKey = currentUser ? `admin_reads_${currentUser.uid}` : 'admin_reads_guest';
 
-    // Lắng nghe danh sách ID đã đọc riêng của tài khoản Admin hiện tại
+    // Lắng nghe danh sách ID đã đọc riêng của từng Admin
     db.collection('settings').doc(userDocKey).onSnapshot(settingSnap => {
         let readNotis = [];
         if (settingSnap.exists && settingSnap.data().readNotis) {
             readNotis = settingSnap.data().readNotis;
         }
 
-        // Lắng nghe thông báo hệ thống
+        // Lắng nghe thông báo hệ thống thời gian thực
         db.collection('yt_notifications').onSnapshot(snap => {
             let notis = [];
             snap.forEach(doc => {
@@ -3748,27 +3759,30 @@ function loadFusoftxNotis() {
                 listDiv.innerHTML = '<div style="text-align:center; color:#94a3b8; padding: 20px;"><i class="fas fa-envelope-open fa-2x" style="opacity:0.3; margin-bottom:10px;"></i><br>Không có thông báo nào.</div>';
                 document.getElementById('admin-noti-badge').style.display = 'none';
                 document.getElementById('admin-bell-icon').style.color = '#cbd5e1';
+                pendingUnreadAlert = false;
             } else {
                 listDiv.innerHTML = html;
                 
-                // Chỉ hiện chấm đỏ và chuông đỏ khi Admin này CÒN THÔNG BÁO CHƯA ĐỌC
+                // 👉 XỬ LÝ NHẮC NHỞ KHI CÒN TIN CHƯA ĐỌC
                 if (unreadCount > 0) {
                     document.getElementById('admin-noti-badge').style.display = 'block';
                     document.getElementById('admin-bell-icon').style.color = '#ef4444';
 
-                    // Phát chuông báo nếu có thông báo mới tinh
-                    const lastSoundedId = sessionStorage.getItem('vts_last_sounded_noti_id');
-                    const topNotiId = notis[0]?.id;
-                    if (!isFirstLoadNoti && lastSoundedId !== topNotiId) {
-                        notifyAdminWithSoundAndBlink();
-                        sessionStorage.setItem('vts_last_sounded_noti_id', topNotiId);
+                    const isAlerted = sessionStorage.getItem('vts_unread_sounded_session');
+                    if (!isAlerted) {
+                        if (hasUserInteracted) {
+                            triggerUnreadReminder();
+                        } else {
+                            // Nếu chưa có click nào -> đợi click đầu tiên của Admin sẽ phát chuông
+                            pendingUnreadAlert = true;
+                        }
                     }
                 } else {
                     document.getElementById('admin-noti-badge').style.display = 'none';
                     document.getElementById('admin-bell-icon').style.color = '#cbd5e1';
+                    pendingUnreadAlert = false;
                 }
             }
-            isFirstLoadNoti = false;
         }, error => {
             console.error("Lỗi chuông thông báo:", error);
         });

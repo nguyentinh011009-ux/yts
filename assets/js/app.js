@@ -3578,22 +3578,32 @@ function toggleAdminNotiModal() {
 let titleBlinkInterval = null;
 let originalPageTitle = document.title || "Admin Y tế số";
 let globalAudioCtx = null;
+let hasUserInteracted = false; // Biến cờ kiểm tra tương tác người dùng
 
-// Tự động "mở khóa" âm thanh trình duyệt ngay khi Admin click bất kỳ đâu trên web
-function unlockAudioContext() {
-    if (!globalAudioCtx) {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (AudioContext) globalAudioCtx = new AudioContext();
-    }
-    if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
-        globalAudioCtx.resume();
-    }
+// Kích hoạt quyền âm thanh ngay khi người dùng click/chạm/bấm phím
+function markUserInteracted() {
+    hasUserInteracted = true;
+    try {
+        if (!globalAudioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) globalAudioCtx = new AudioContext();
+        }
+        if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
+            globalAudioCtx.resume();
+        }
+    } catch(e) {}
 }
-document.addEventListener('click', unlockAudioContext, { once: false });
-document.addEventListener('keydown', unlockAudioContext, { once: false });
+
+// Bắt tất cả sự kiện tương tác đầu tiên
+['click', 'keydown', 'touchstart', 'mousedown'].forEach(evt => {
+    document.addEventListener(evt, markUserInteracted, { capture: true, passive: true });
+});
 
 // 1. Hàm tạo âm thanh chuông báo chuẩn Bệnh viện (Kêu Ding-Dong lặp lại trong 5 giây)
 async function playNotificationSound5s() {
+    // Nếu chưa có tương tác từ người dùng, bỏ qua để không bị trình duyệt báo lỗi
+    if (!hasUserInteracted) return;
+
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
@@ -3602,10 +3612,11 @@ async function playNotificationSound5s() {
             globalAudioCtx = new AudioContext();
         }
 
-        // Bắt buộc resume AudioContext nếu đang bị trình duyệt giữ ở chế độ treo (suspended)
         if (globalAudioCtx.state === 'suspended') {
             await globalAudioCtx.resume();
         }
+
+        if (globalAudioCtx.state !== 'running') return;
 
         const ctx = globalAudioCtx;
         let startTime = ctx.currentTime;
@@ -3639,7 +3650,6 @@ async function playNotificationSound5s() {
             osc2.stop(noteTime + 0.6);
         }
     } catch (e) {
-        console.warn("[Audio] Trình duyệt chưa cho phép phát âm thanh do chưa có tương tác:", e);
     }
 }
 

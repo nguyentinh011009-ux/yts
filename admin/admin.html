@@ -1505,13 +1505,15 @@
         <div style="margin-bottom: 18px;">
             <label style="font-size: 0.85rem; color: #1e293b; font-weight: bold; margin-bottom: 8px; display: block;">ĐỊNH DẠNG XUẤT DỮ LIỆU</label>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <label style="display: flex; align-items: center; gap: 10px; padding: 10px 15px; border: 2px solid #2563eb; border-radius: 10px; cursor: pointer; background: #eff6ff; font-weight: bold; color: #1e40af;">
-                    <input type="radio" name="export-file-format" value="pdf" checked style="width: 18px; height: 18px;">
-                    <i class="fas fa-file-pdf" style="color: #ef4444; font-size: 1.3rem;"></i> Bản in / PDF A4
+                <label class="export-format-option">
+                    <input type="radio" name="export-file-format" value="pdf" checked style="width: 18px; height: 18px; cursor: pointer;">
+                    <i class="fas fa-file-pdf" style="color: #ef4444; font-size: 1.3rem;"></i> 
+                    <span>Bản in / PDF A4</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 10px; padding: 10px 15px; border: 2px solid #cbd5e1; border-radius: 10px; cursor: pointer; background: white; font-weight: bold; color: #334155;">
-                    <input type="radio" name="export-file-format" value="excel" style="width: 18px; height: 18px;">
-                    <i class="fas fa-file-excel" style="color: #10b981; font-size: 1.3rem;"></i> File Excel (.xlsx)
+                <label class="export-format-option">
+                    <input type="radio" name="export-file-format" value="excel" style="width: 18px; height: 18px; cursor: pointer;">
+                    <i class="fas fa-file-excel" style="color: #10b981; font-size: 1.3rem;"></i> 
+                    <span>File Excel (.xlsx)</span>
                 </label>
             </div>
         </div>

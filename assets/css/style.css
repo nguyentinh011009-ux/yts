@@ -972,3 +972,30 @@ __________
         justify-content: center;
     }
 }
+/* HIỆU ỨNG TỰ ĐỘNG ĐỔI VIỀN & NỀN CHO TÙY CHỌN XUẤT FILE */
+.export-format-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    border: 2px solid #cbd5e1;
+    border-radius: 10px;
+    cursor: pointer;
+    background: #ffffff;
+    font-weight: bold;
+    color: #475569;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.export-format-option:hover {
+    border-color: #94a3b8;
+    background: #f8fafc;
+}
+
+.export-format-option:has(input[type="radio"]:checked) {
+    border-color: #2563eb !important;
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}

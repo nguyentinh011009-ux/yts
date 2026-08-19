@@ -937,7 +937,6 @@ function copySignLink() {
 }
 // LƯU LƯỢT TIẾP NHẬN & KIỂM TRA GIƯỜNG TRỐNG
 // ==========================================
-let studentId = selectedReceptionStudentId;
 async function saveVisit(withSign) {
     const name = document.getElementById('yt-name').value.trim();
     const className = document.getElementById('yt-class').value.trim();
@@ -1837,35 +1836,41 @@ async function checkStudentHistory() {
     try {
         let studentIdStr = "<span style='color: #ef4444; font-weight: bold;'><i class='fas fa-user-plus'></i> Học sinh mới (Chưa có mã)</span><br><span style='font-size:0.85rem; color:#64748b;'>Vui lòng nhập thông tin khám, hệ thống sẽ tự động tạo hồ sơ mới.</span>";
 
-        const hsSnap = await db.collection('yt_students').where('name', '==', name).where('class', '==', className).get();
+        let st = null;
+        let sid = selectedReceptionStudentId;
 
-        if (!hsSnap.empty) {
-            const st = hsSnap.docs[0].data();
-            const sid = hsSnap.docs[0].id;
-            
+        // 1. Nếu đã có ID được chọn từ gợi ý -> Lấy trực tiếp theo ID
+        if (sid) {
+            const doc = await db.collection('yt_students').doc(sid).get();
+            if (doc.exists) st = doc.data();
+        } else {
+            // Nếu gõ tay -> Thử tìm theo Tên + Lớp
+            const hsSnap = await db.collection('yt_students').where('name', '==', name).where('class', '==', className).get();
+            if (!hsSnap.empty) {
+                st = hsSnap.docs[0].data();
+                sid = hsSnap.docs[0].id;
+            }
+        }
+
+        if (st && sid) {
             // Hiện nút sửa hồ sơ gốc
             currentReceptionStudent = { id: sid, ...st };
             btnQuickEdit.style.display = 'inline-flex';
 
-            // Hiển thị Thông tin hành chính
-            // Tìm đến nơi vẽ HTML thông tin hành chính và sửa lại:
-let adminInfoHTML = `
-    <div style="background: white; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 10px; font-size: 0.85rem;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <div>🎂 Ngày sinh: <strong>${st.dob ? new Date(st.dob).toLocaleDateString('vi-VN') : '--'}</strong></div>
-            <div>⚥ Giới tính: <strong>${st.gender || '--'}</strong></div>
-            <!-- 👉 GIẢI MÃ KHI HIỂN THỊ -->
-            <div>📞 SĐT HS: <strong>${decryptField(st.phone) || '--'}</strong></div>
-            <div>👨‍👩‍👧 SĐT PH: <strong>${decryptField(st.parentPhone) || '--'}</strong></div>
-            <div style="grid-column: span 2;">🏠 Đ/c: <strong>${st.street ? `${decryptField(st.street)}, ${st.ward}, ${st.city}` : '--'}</strong></div>
-        </div>
-    </div>
-`;
+            let adminInfoHTML = `
+                <div style="background: white; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 10px; font-size: 0.85rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <div>🎂 Ngày sinh: <strong>${st.dob ? new Date(st.dob).toLocaleDateString('vi-VN') : '--'}</strong></div>
+                        <div>⚥ Giới tính: <strong>${st.gender || '--'}</strong></div>
+                        <div>📞 SĐT HS: <strong>${decryptField(st.phone) || '--'}</strong></div>
+                        <div>👨‍👩‍👧 SĐT PH: <strong>${decryptField(st.parentPhone) || '--'}</strong></div>
+                        <div style="grid-column: span 2;">🏠 Đ/c: <strong>${st.street ? `${decryptField(st.street)}, ${st.ward || ''}, ${st.city || ''}` : '--'}</strong></div>
+                    </div>
+                </div>
+            `;
 
-            // Xử lý Cảnh báo Y tế
             let warningHTML = st.medicalNote ? `<div style="background: #fee2e2; border-left: 4px solid #ef4444; padding: 8px; margin-top: 10px; color: #991b1b; font-size: 0.85rem; border-radius: 4px;"><strong style="color: #ef4444;"><i class="fas fa-exclamation-triangle"></i> CẢNH BÁO:</strong> ${st.medicalNote}</div>` : '';
 
-            // Xử lý Thể trạng
             let physicalInfoHTML = "";
             if (st.height && st.weight) {
                 const h = parseFloat(st.height); const w = parseFloat(st.weight);
@@ -1876,19 +1881,24 @@ let adminInfoHTML = `
             studentIdStr = `<span style="color: #0062ff; font-weight: bold; font-size:1.1rem;"><i class='fas fa-id-card'></i> Mã YT: ${sid}</span> ${adminInfoHTML} ${physicalInfoHTML} ${warningHTML}`;
         }
 
-        const snap = await db.collection('yt_visits').where('name', '==', name).where('class', '==', className).get();
-        if (snap.empty) {
+        // 🔥 Truy vấn lịch sử khám chính xác theo studentId
+        let visitsSnap;
+        if (sid) {
+            visitsSnap = await db.collection('yt_visits').where('studentId', '==', sid).get();
+        } else {
+            visitsSnap = await db.collection('yt_visits').where('name', '==', name).where('class', '==', className).get();
+        }
+
+        if (visitsSnap.empty) {
             previewBox.innerHTML = `${studentIdStr}<br><div style="margin-top:15px; color:var(--text-gray); font-size: 0.85rem; text-align:center;">Chưa có lịch sử khám bệnh.</div>`;
         } else {
-            let visits = []; snap.forEach(doc => visits.push(doc.data()));
-            
-            // Sắp xếp lịch sử khám mới nhất lên đầu
+            let visits = []; 
+            visitsSnap.forEach(doc => visits.push(doc.data()));
             visits.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
             let historyHTML = `${studentIdStr}<hr style="margin: 15px 0; border: 0; border-top: 1px dashed #cbd5e1;">`;
             historyHTML += `<div style="font-weight:bold; color:#1e293b; margin-bottom:10px; font-size:0.9rem;">TOÀN BỘ LỊCH SỬ KHÁM BỆNH:</div><ul style="padding-left: 15px; margin: 0; color: #334155; font-size: 0.85rem;">`;
             
-            // ĐÃ BỎ LỆNH .slice(0, 5) ĐỂ HIỂN THỊ TOÀN BỘ
             visits.forEach(v => { 
                 const date = v.timestamp ? new Date(v.timestamp.seconds * 1000).toLocaleDateString('vi-VN') : 'N/A';
                 historyHTML += `<li style="margin-bottom: 8px;"><strong style="color: #0f172a;">${date}</strong>: ${v.symptom} <i class="fas fa-arrow-right" style="font-size:0.8em; color:#94a3b8; margin: 0 5px;"></i> <span style="color: #059669;">${v.treatment}</span></li>`;
@@ -1897,9 +1907,10 @@ let adminInfoHTML = `
             historyHTML += `</ul>`;
             previewBox.innerHTML = historyHTML;
         }
-    } catch (err) { previewBox.innerHTML = "<span style='color:red;'>Lỗi tải dữ liệu!</span>"; }
+    } catch (err) { 
+        previewBox.innerHTML = "<span style='color:red;'>Lỗi tải dữ liệu: " + err.message + "</span>"; 
+    }
 }
-// Hàm tải trạng thái giường bệnh
 // ==========================================
 // QUẢN LÝ GIƯỜNG & DANH SÁCH TRONG NGÀY
 // ==========================================
@@ -2473,10 +2484,14 @@ async function handleExcelUpload(event) {
                 if (name && className) {
                     const cleanName = name.toString().trim();
                     const cleanClass = className.toString().trim();
-                    const studentKey = `${cleanName.toLowerCase()}_${cleanClass.toLowerCase()}`;
 
-                    if (existingStudentsMap.has(studentKey)) {
-                        const existingData = existingStudentsMap.get(studentKey);
+                    const studentKeyByCode = studentCode ? `code_${studentCode.toLowerCase()}` : null;
+                    const studentKeyByCombo = `combo_${cleanName.toLowerCase()}_${cleanClass.toLowerCase()}_${dob}`;
+
+                    const existingData = (studentKeyByCode && existingStudentsMap.get(studentKeyByCode)) 
+                                      || existingStudentsMap.get(studentKeyByCombo);
+
+                    if (existingData) {
                         let updatePayload = {};
 
                         const checkAndUpdate = (field, excelValue) => {
@@ -2521,7 +2536,11 @@ async function handleExcelUpload(event) {
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         };
                         currentBatch.set(ref, newData);
-                        existingStudentsMap.set(studentKey, newData);
+                        
+                        // Cập nhật lại vào Map để tránh trùng lặp ngay trong cùng 1 file Excel
+                        if (studentKeyByCode) existingStudentsMap.set(studentKeyByCode, newData);
+                        existingStudentsMap.set(studentKeyByCombo, newData);
+
                         successCount++;
                         operationCount++;
                     }

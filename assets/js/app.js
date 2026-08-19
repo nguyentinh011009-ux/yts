@@ -3722,17 +3722,15 @@ function toggleAdminNotiModal() {
     document.getElementById('admin-bell-icon').style.color = '#cbd5e1';
 }
 // ==============================================================
-// BỘ HỖ TRỢ: PHÁT ÂM THANH CHUÔNG BÁO (5 GIÂY) & NHẤP NHÁY TAB
+// BỘ HỖ TRỢ: PHÁT ÂM THANH CHUÔNG BÁO & NHẤP NHÁY TAB CHUẨN XÁC
 // ==============================================================
 let titleBlinkInterval = null;
 let originalPageTitle = document.title || "Admin Y tế số";
 let globalAudioCtx = null;
-let hasUserInteracted = false;
-let pendingUnreadAlert = false; // Biến cờ đợi phát chuông nhắc tin chưa đọc
+let isFirstLoadNoti = true; // Biến cờ phân biệt lần tải đầu tiên và tin nhắn mới tới
 
-// Kích hoạt quyền âm thanh ngay khi người dùng click/chạm
-function markUserInteracted() {
-    hasUserInteracted = true;
+// 1. Kích hoạt quyền âm thanh ngay khi Admin click chuột
+function unlockAudioContext() {
     try {
         if (!globalAudioCtx) {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -3742,54 +3740,42 @@ function markUserInteracted() {
             globalAudioCtx.resume();
         }
     } catch(e) {}
-
-    // 👉 NẾU ĐANG CÓ TIN CHƯA ĐỌC ĐỢI NHẮC -> PHÁT CHUÔNG NGAY KHI CLICK ĐẦU TIÊN
-    if (pendingUnreadAlert) {
-        pendingUnreadAlert = false;
-        triggerUnreadReminder();
-    }
 }
-
-// Lắng nghe tương tác đầu tiên của người dùng
 ['click', 'keydown', 'touchstart', 'mousedown'].forEach(evt => {
-    document.addEventListener(evt, markUserInteracted, { capture: true, passive: true });
+    document.addEventListener(evt, unlockAudioContext, { capture: true, passive: true });
 });
 
-// 1. Hàm tạo âm thanh chuông báo chuẩn Bệnh viện (Kêu Ding-Dong lặp lại trong 5 giây)
+// 2. Hàm phát chuông Ting-Ting chuẩn y tế (5 giây)
 async function playNotificationSound5s() {
     try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-
-        if (!globalAudioCtx) globalAudioCtx = new AudioContext();
-        if (globalAudioCtx.state === 'suspended') await globalAudioCtx.resume();
-        if (globalAudioCtx.state !== 'running') return;
+        unlockAudioContext();
+        if (!globalAudioCtx || globalAudioCtx.state !== 'running') return;
 
         const ctx = globalAudioCtx;
         let startTime = ctx.currentTime;
 
-        // Phát 5 hồi chuông đôi (Ding - Dong) trong 5 giây
-        for (let i = 0; i < 5; i++) {
-            let noteTime = startTime + i * 1.0; 
+        // Kêu 4 nhịp chuông đôi nhẹ nhàng
+        for (let i = 0; i < 4; i++) {
+            let noteTime = startTime + i * 1.1; 
             
-            // Âm cao (Ding - Nốt A5: 880Hz)
+            // Âm cao (Ding - 880Hz)
             let osc1 = ctx.createOscillator();
             let gain1 = ctx.createGain();
             osc1.type = 'sine';
             osc1.frequency.setValueAtTime(880, noteTime);
-            gain1.gain.setValueAtTime(0.4, noteTime);
+            gain1.gain.setValueAtTime(0.35, noteTime);
             gain1.gain.exponentialRampToValueAtTime(0.0001, noteTime + 0.35);
             osc1.connect(gain1);
             gain1.connect(ctx.destination);
             osc1.start(noteTime);
             osc1.stop(noteTime + 0.35);
 
-            // Âm trầm (Dong - Nốt E5: 659.25Hz)
+            // Âm trầm (Dong - 659.25Hz)
             let osc2 = ctx.createOscillator();
             let gain2 = ctx.createGain();
             osc2.type = 'sine';
             osc2.frequency.setValueAtTime(659.25, noteTime + 0.2);
-            gain2.gain.setValueAtTime(0.45, noteTime + 0.2);
+            gain2.gain.setValueAtTime(0.4, noteTime + 0.2);
             gain2.gain.exponentialRampToValueAtTime(0.0001, noteTime + 0.6);
             osc2.connect(gain2);
             gain2.connect(ctx.destination);
@@ -3801,18 +3787,18 @@ async function playNotificationSound5s() {
     }
 }
 
-// 2. Nhấp nháy tiêu đề Tab trên trình duyệt
-function triggerTabBlinking() {
+// 3. Hàm nhấp nháy tiêu đề Tab
+function triggerTabBlinking(customText = "🚨 CÓ THÔNG BÁO MỚI!") {
     if (titleBlinkInterval) clearInterval(titleBlinkInterval);
     let isAlert = false;
     let count = 0;
     
     titleBlinkInterval = setInterval(() => {
-        document.title = isAlert ? "🚨 [CÓ THÔNG BÁO CHƯA ĐỌC!]" : "🔔 " + originalPageTitle;
+        document.title = isAlert ? `[${customText}]` : "🔔 " + originalPageTitle;
         isAlert = !isAlert;
         count++;
 
-        if (count >= 10) {
+        if (count >= 14) { // Nhấp nháy khoảng 7 giây
             clearInterval(titleBlinkInterval);
             titleBlinkInterval = null;
             document.title = originalPageTitle;
@@ -3820,23 +3806,14 @@ function triggerTabBlinking() {
     }, 500);
 }
 
-// 3. Kích hoạt chuông + nhấp nháy
+// 4. Kích hoạt cả Chuông + Nhấp nháy
 function notifyAdminWithSoundAndBlink() {
     playNotificationSound5s();
     triggerTabBlinking();
 }
 
-// 4. Hàm kích hoạt nhắc nhở theo phiên đăng nhập
-function triggerUnreadReminder() {
-    const isAlertedThisSession = sessionStorage.getItem('vts_unread_sounded_session');
-    if (!isAlertedThisSession) {
-        notifyAdminWithSoundAndBlink();
-        sessionStorage.setItem('vts_unread_sounded_session', 'true');
-    }
-}
-
 // ==============================================================
-// TẢI VÀ ĐỒNG BỘ THÔNG BÁO FUSOFTX VÀ HỆ THỐNG
+// TẢI VÀ ĐỒNG BỘ THÔNG BÁO REAL-TIME
 // ==============================================================
 function loadFusoftxNotis() {
     const listDiv = document.getElementById('admin-notifications-list');
@@ -3845,16 +3822,27 @@ function loadFusoftxNotis() {
     const currentUser = firebase.auth().currentUser;
     const userDocKey = currentUser ? `admin_reads_${currentUser.uid}` : 'admin_reads_guest';
 
-    // Lắng nghe danh sách ID đã đọc riêng của từng Admin
     db.collection('settings').doc(userDocKey).onSnapshot(settingSnap => {
         let readNotis = [];
         if (settingSnap.exists && settingSnap.data().readNotis) {
             readNotis = settingSnap.data().readNotis;
         }
 
-        // Lắng nghe thông báo hệ thống thời gian thực
         db.collection('yt_notifications').onSnapshot(snap => {
             let notis = [];
+            let hasNewIncomingDoc = false;
+
+            if (!isFirstLoadNoti) {
+                snap.docChanges().forEach(change => {
+                    if (change.type === "added") {
+                        const newDoc = change.doc.data();
+                        if (newDoc.sender === 'FUSoftX' || newDoc.targetType === 'admin' || newDoc.targetType === 'admin_only') {
+                            hasNewIncomingDoc = true;
+                        }
+                    }
+                });
+            }
+
             snap.forEach(doc => {
                 const d = doc.data();
                 if (d.sender === 'FUSoftX' || d.targetType === 'admin' || d.targetType === 'admin_only') {
@@ -3871,10 +3859,7 @@ function loadFusoftxNotis() {
             notis.forEach(d => {
                 const notiId = d.id;
                 const isRead = readNotis.includes(notiId);
-                
-                if (!isRead) {
-                    unreadCount++;
-                }
+                if (!isRead) unreadCount++;
 
                 const time = d.timestamp ? new Date(d.timestamp.seconds * 1000).toLocaleString('vi-VN') : 'Vừa xong';
                 const isSickAlert = d.type === 'sick_alert';
@@ -3883,7 +3868,6 @@ function loadFusoftxNotis() {
                 const bgCol = isRead ? '#f8fafc' : '#ffffff';
                 const opacityStyle = isRead ? 'opacity: 0.75;' : 'opacity: 1;';
                 const statusIconCol = isRead ? '#10b981' : '#cbd5e1';
-                const tooltipText = isRead ? 'Đã đọc' : 'Đánh dấu là đã đọc';
 
                 html += `
                     <div style="background: ${bgCol}; padding: 12px; border-radius: 10px; border-left: 4px solid ${borderCol}; position: relative; cursor: pointer; transition: 0.2s; margin-bottom: 10px; border: 1px solid #e2e8f0; border-left-width: 4px; ${opacityStyle}" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='${bgCol}'">
@@ -3895,7 +3879,7 @@ function loadFusoftxNotis() {
                             <div style="font-weight: bold; color: ${isRead ? '#475569' : borderCol}; margin-bottom: 5px; font-size: 0.95rem;">${icon} ${d.title}</div>
                             <div style="font-size: 0.85rem; color: ${isRead ? '#64748b' : '#334155'}; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5;">${d.content}</div>
                         </div>
-                        <button onclick="event.stopPropagation(); markAdminNotiAsRead('${notiId}')" style="position: absolute; top: 12px; right: 10px; background: none; border: none; color: ${statusIconCol}; cursor: pointer; font-size: 1.2rem; transition: 0.2s;" title="${tooltipText}">
+                        <button onclick="event.stopPropagation(); markAdminNotiAsRead('${notiId}')" style="position: absolute; top: 12px; right: 10px; background: none; border: none; color: ${statusIconCol}; cursor: pointer; font-size: 1.2rem;" title="${isRead ? 'Đã đọc' : 'Đánh dấu đã đọc'}">
                             <i class="fas fa-check-circle"></i>
                         </button>
                     </div>
@@ -3906,36 +3890,28 @@ function loadFusoftxNotis() {
                 listDiv.innerHTML = '<div style="text-align:center; color:#94a3b8; padding: 20px;"><i class="fas fa-envelope-open fa-2x" style="opacity:0.3; margin-bottom:10px;"></i><br>Không có thông báo nào.</div>';
                 document.getElementById('admin-noti-badge').style.display = 'none';
                 document.getElementById('admin-bell-icon').style.color = '#cbd5e1';
-                pendingUnreadAlert = false;
             } else {
                 listDiv.innerHTML = html;
                 
-                // 👉 XỬ LÝ NHẮC NHỞ KHI CÒN TIN CHƯA ĐỌC
                 if (unreadCount > 0) {
                     document.getElementById('admin-noti-badge').style.display = 'block';
                     document.getElementById('admin-bell-icon').style.color = '#ef4444';
 
-                    const isAlerted = sessionStorage.getItem('vts_unread_sounded_session');
-                    if (!isAlerted) {
-                        if (hasUserInteracted) {
-                            triggerUnreadReminder();
-                        } else {
-                            // Nếu chưa có click nào -> đợi click đầu tiên của Admin sẽ phát chuông
-                            pendingUnreadAlert = true;
-                        }
+                    if (hasNewIncomingDoc) {
+                        notifyAdminWithSoundAndBlink();
+                    } else if (isFirstLoadNoti) {
+                        triggerTabBlinking();
                     }
                 } else {
                     document.getElementById('admin-noti-badge').style.display = 'none';
                     document.getElementById('admin-bell-icon').style.color = '#cbd5e1';
-                    pendingUnreadAlert = false;
                 }
             }
-        }, error => {
-            console.error("Lỗi chuông thông báo:", error);
+
+            isFirstLoadNoti = false;
         });
     });
 }
-
 // Lưu thông báo đã đọc riêng cho từng UID của Admin
 async function markAdminNotiAsRead(notiId) {
     try {

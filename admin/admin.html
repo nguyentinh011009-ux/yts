@@ -78,11 +78,14 @@
 </div>
 <!-- KẾT THÚC: Khối hiển thị thông tin Admin -->
             <nav>
+    <button class="admin-tab-btn active" onclick="switchTab('tab-dashboard', this)">
+    <i class="fas fa-chart-line"></i> Bảng điều khiển (AI)
+    </button>
     <p style="font-size: 0.7rem; color: #94a3b8; margin: 20px 0 10px 10px; text-transform: uppercase;">Nội dung</p>
     <button class="admin-tab-btn" onclick="switchTab('tab-cloudinary-manager', this)">
     <i class="fas fa-photo-video"></i> Kho Phương tiện
     </button>
-    <button class="admin-tab-btn active" onclick="switchTab('tab-posts', this)">
+    <button class="admin-tab-btn" onclick="switchTab('tab-posts', this)">
         <i class="fas fa-edit"></i> Quản lý bài viết
     </button>
     <button class="admin-tab-btn" onclick="switchTab('tab-announce', this)">
@@ -154,7 +157,108 @@
         </aside>
 
         <main class="admin-main">
+            <!-- ========================================================================= -->
+            <!-- 0. TAB DASHBOARD TỔNG QUAN THÔNG MINH KẾT HỢP AI (TỐI ƯU DATABASE) -->
+            <!-- ========================================================================= -->
+            <section id="tab-dashboard" class="tab-pane active">
+                <!-- Header Dashboard -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px; flex-wrap:wrap; gap:15px;">
+                    <div>
+                        <h2 style="margin:0; color:#1e293b; font-size:1.6rem; display:flex; align-items:center; gap:10px;">
+                            <i class="fas fa-chart-pie" style="color:#0284c7;"></i> Trung Tâm Điều Hành Y Tế Số
+                        </h2>
+                        <p style="color:#64748b; margin:4px 0 0 0; font-size:0.9rem;">Tổng hợp dữ liệu theo thời gian thực và phân tích dịch tễ tự động bằng AI</p>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="refreshDashboard(true)" class="btn" style="background:#ffffff; border:1px solid #cbd5e1; color:#475569; font-weight:600; padding:8px 16px;">
+                            <i class="fas fa-sync-alt" id="db-refresh-icon"></i> Đồng bộ ngay
+                        </button>
+                        <button onclick="requestDashboardAIAnalysis()" id="btn-db-ai-trigger" class="btn" style="background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color:white; font-weight:bold; padding:8px 18px; box-shadow:0 4px 12px rgba(2,132,199,0.25);">
+                            <i class="fas fa-brain"></i> AI Tóm Tắt & Cảnh Báo
+                        </button>
+                    </div>
+                </div>
             
+                <!-- 4 THẺ METRICS (KPIs) -->
+                <div class="db-kpi-grid">
+                    <div class="db-kpi-card" style="border-left-color: #0284c7;">
+                        <div class="db-kpi-icon" style="background: #e0f2fe; color: #0284c7;"><i class="fas fa-user-graduate"></i></div>
+                        <div class="db-kpi-info">
+                            <span class="db-kpi-label">Tổng số Học sinh</span>
+                            <h3 class="db-kpi-val" id="db-kpi-students">--</h3>
+                            <span class="db-kpi-sub" id="db-kpi-students-sub"><i class="fas fa-shield-alt"></i> Hồ sơ điện tử</span>
+                        </div>
+                    </div>
+            
+                    <div class="db-kpi-card" style="border-left-color: #10b981;">
+                        <div class="db-kpi-icon" style="background: #dcfce7; color: #10b981;"><i class="fas fa-stethoscope"></i></div>
+                        <div class="db-kpi-info">
+                            <span class="db-kpi-label">Tiếp nhận Hôm nay</span>
+                            <h3 class="db-kpi-val" id="db-kpi-today-visits">--</h3>
+                            <span class="db-kpi-sub" id="db-kpi-visits-sub"><i class="fas fa-clock"></i> Cập nhật trực tiếp</span>
+                        </div>
+                    </div>
+            
+                    <div class="db-kpi-card" style="border-left-color: #f59e0b;">
+                        <div class="db-kpi-icon" style="background: #fef3c7; color: #d97706;"><i class="fas fa-bed"></i></div>
+                        <div class="db-kpi-info">
+                            <span class="db-kpi-label">Giường bệnh lưu trú</span>
+                            <h3 class="db-kpi-val" id="db-kpi-beds">-- / 3</h3>
+                            <span class="db-kpi-sub" id="db-kpi-beds-sub">Trạng thái phòng</span>
+                        </div>
+                    </div>
+            
+                    <div class="db-kpi-card" style="border-left-color: #ef4444;">
+                        <div class="db-kpi-icon" style="background: #fee2e2; color: #ef4444;"><i class="fas fa-envelope-open-text"></i></div>
+                        <div class="db-kpi-info">
+                            <span class="db-kpi-label">Yêu cầu & Tin nhắn</span>
+                            <h3 class="db-kpi-val" id="db-kpi-pending-tickets">--</h3>
+                            <span class="db-kpi-sub" id="db-kpi-tickets-sub">Cần xử lý</span>
+                        </div>
+                    </div>
+                </div>
+            
+                <!-- KHỐI AI DỰ BÁO NHANH & BÁO CÁO HÀNG NGÀY -->
+                <div class="form-card" style="background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%); border: 1.5px solid #bae6fd; padding: 22px 25px; margin-bottom: 25px; border-radius: 16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span class="db-ai-badge"><i class="fas fa-sparkles"></i> AI Health Insights</span>
+                            <strong style="color:#0369a1; font-size:1.05rem;">Bản tin Trợ lý Sức khỏe Học đường</strong>
+                        </div>
+                        <span id="db-ai-timestamp" style="font-size:0.8rem; color:#64748b;">Chưa khởi tạo</span>
+                    </div>
+                    <div id="db-ai-summary-content" style="color:#334155; font-size:0.95rem; line-height:1.7; min-height: 48px;">
+                        <i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu và phân tích tổng quan...
+                    </div>
+                </div>
+            
+                <!-- BỐ CỤC 2 CỘT CHI TIẾT -->
+                <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px;">
+                    <!-- CỘT TRÁI: TOP TRIỆU CHỨNG & THỐNG KÊ THÁNG -->
+                    <div class="form-card" style="margin: 0; padding: 22px; display: flex; flex-direction: column;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
+                            <h3 style="color: #1e293b; font-size: 1.1rem; margin:0;"><i class="fas fa-notes-medical" style="color:#0284c7;"></i> Triệu Chứng Phổ Biến Tháng Này</h3>
+                            <span id="db-stat-month-label" style="font-size:0.8rem; font-weight:bold; color:#0284c7; background:#e0f2fe; padding:3px 10px; border-radius:12px;">--</span>
+                        </div>
+                        <div id="db-top-symptoms-list" style="flex:1; display:flex; flex-direction:column; gap:12px;">
+                            <div style="text-align:center; padding:30px; color:#94a3b8;"><i class="fas fa-spinner fa-spin"></i> Đang tính toán...</div>
+                        </div>
+                    </div>
+            
+                    <!-- CỘT PHẢI: LƯỢT TIẾP NHẬN GẦN NHẤT & TRUY CẬP NHANH -->
+                    <div class="form-card" style="margin: 0; padding: 22px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
+                            <h3 style="color: #1e293b; font-size: 1.1rem; margin:0;"><i class="fas fa-history" style="color:#10b981;"></i> Tiếp Nhận Gần Đây</h3>
+                            <button onclick="switchTab('tab-yte-tiepnhan')" class="btn-sm" style="background:#f1f5f9; color:#0284c7; border:none; padding:4px 10px; border-radius:6px; cursor:pointer; font-weight:bold;">
+                                + Khám mới
+                            </button>
+                        </div>
+                        <div id="db-recent-visits-list" style="display:flex; flex-direction:column; gap:10px; max-height:360px; overflow-y:auto; padding-right:4px;">
+                            <div style="text-align:center; padding:30px; color:#94a3b8;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
             <!-- ========================================================================= -->
             <!-- 1. TAB DANH SÁCH BÀI VIẾT -->
             <!-- ========================================================================= -->
@@ -1997,6 +2101,9 @@
                 </label>
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
                     <input type="checkbox" class="collab-tab-cb" value="tab-yte-tracuu-admin"> Tra cứu hồ sơ
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <input type="checkbox" class="collab-tab-cb" value="tab-dashboard"> Bảng điều khiển (Dashboard)
                 </label>
             </div>
         </div>

@@ -894,7 +894,7 @@ async function startSignatureProcess() {
     qrcodeDiv.innerHTML = "";
     // Link tới trang ký tên (bạn sẽ tạo file sign.html riêng cho học sinh)
     const signUrl = `${window.location.origin}/sign.html?token=${token}`;
-    
+    if (linkInput) linkInput.value = signUrl;
     new QRCode(qrcodeDiv, { text: signUrl, width: 150, height: 150 });
     qrArea.style.display = 'block';
 
@@ -1766,15 +1766,19 @@ const dataToSave = {
         closeEditModal();
         
         // Nếu đang ở tab Tiếp Nhận thì gọi tải lại khung Lịch sử
-        if(document.getElementById('tab-yte-tiepnhan').style.display !== 'none') {
+        const tiepNhanTab = document.getElementById('tab-yte-tiepnhan');
+        if (tiepNhanTab && tiepNhanTab.style.display !== 'none') {
             checkStudentHistory(); 
         } else {
             loadStudentData(); // Đang ở tab Quản lý thì load lại bảng
         }
-        ytStudentsCache = null; 
-    window.allStudents = []; 
-    adminLookupCache = null;
-    allStudentsForNotiCache = [];} catch(e) { sysAlert("Lỗi cập nhật: " + e.message); }
+        
+        // Reset toàn bộ bộ nhớ đệm
+        adminLookupCache = null;
+        allStudentsForNotiCache = [];
+    } catch (e) { 
+        sysAlert("Lỗi cập nhật: " + e.message, "error"); 
+    }
 }
 // Hàm hiển thị toàn bộ lịch sử & Mã Y Tế khi gõ tên học sinh
 // ==========================================
@@ -3689,8 +3693,6 @@ function triggerUnreadReminder() {
 // ==============================================================
 // TẢI VÀ ĐỒNG BỘ THÔNG BÁO FUSOFTX VÀ HỆ THỐNG
 // ==============================================================
-let adminFusoftxNotisCache = [];
-
 function loadFusoftxNotis() {
     const listDiv = document.getElementById('admin-notifications-list');
     if (!listDiv) return;

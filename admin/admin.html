@@ -1911,17 +1911,33 @@
                     <option value="locked">🔴 Tạm khóa tài khoản</option>
                 </select>
             </div>
-            <div class="input-group">
-    <label>Loại Đối Tượng</label>
-    <select id="collab-role" onchange="handleCollabRoleChange()" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: bold;">
-        <option value="collaborator">🛡️ Cộng tác viên (Quản trị Admin theo Tab)</option>
-        <option value="gvcn">👨‍🏫 Giáo viên chủ nhiệm (Chỉ dùng App Điểm Danh)</option>
-        <option value="quansinh">📋 Quản Sinh / Giám Thị (Chỉ dùng App Điểm Danh)</option>
-    </select>
-</div>
+            <div class="input-group" style="grid-column: span 2;">
+                <label style="font-weight: bold; color: #334155;">Loại Đối Tượng</label>
+                <select id="collab-role" onchange="handleCollabRoleChange()" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: bold;">
+                    <option value="collaborator">🛡️ Cộng tác viên (Quản trị Admin theo Tab)</option>
+                    <option value="gvcn">👨‍🏫 Giáo viên chủ nhiệm (Chỉ dùng App Điểm Danh)</option>
+                    <option value="quansinh">📋 Quản Sinh / Giám Thị (Chỉ dùng App Điểm Danh)</option>
+                </select>
+            </div>
 
-<!-- Khung ghi chú khi chọn GVCN / Quản sinh -->
-<div id="collab-role-note" style="display:none; background:#eff6ff; color:#1e40af; padding:10px 12px; border-radius:8px; font-size:0.82rem; margin-bottom:12px; border:1px dashed #93c5fd;"></div>
+            <!-- Khung ghi chú đối tượng -->
+            <div id="collab-role-note" style="display:none; grid-column: span 2; background:#eff6ff; color:#1e40af; padding:10px 14px; border-radius:8px; font-size:0.85rem; border:1px dashed #93c5fd;"></div>
+        </div>
+
+        <!-- KHU VỰC PHÂN QUYỀN LỚP CHO GIÁO VIÊN CHỦ NHIỆM -->
+        <div id="collab-gvcn-class-area" style="display:none; margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <label style="font-weight: bold; color: #b45309; font-size: 0.95rem; margin: 0;">
+                    <i class="fas fa-chalkboard-teacher"></i> PHÂN CÔNG LỚP CHỦ NHIỆM / ĐIỂM DANH:
+                </label>
+                <span style="font-size: 0.78rem; color: #64748b;">(Tối đa 2 GV / Lớp)</span>
+            </div>
+            <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 10px;">
+                Tick chọn các lớp Giáo viên này phụ trách điểm danh. Lớp đã có đủ 2 Giáo viên sẽ tự động bị khóa.
+            </p>
+            <div id="collab-gvcn-class-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; max-height: 220px; overflow-y: auto; background: #fffbeb; padding: 12px; border-radius: 10px; border: 1px solid #fde68a;">
+                <div style="color:#b45309; font-size:0.85rem; padding:10px;"><i class="fas fa-spinner fa-spin"></i> Đang tải danh sách lớp...</div>
+            </div>
         </div>
 
                 <div id="collab-tabs-selection-area" style="margin-top: 20px; border-top: 1px dashed #cbd5e1; padding-top: 15px;">

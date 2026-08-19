@@ -3674,15 +3674,18 @@ function loadFusoftxNotis() {
     const listDiv = document.getElementById('admin-notifications-list');
     if(!listDiv) return;
 
-    db.collection('settings').doc('admin_notis').onSnapshot(settingSnap => {
-        let hiddenNotis = [];
-        if (settingSnap.exists && settingSnap.data().hiddenNotis) {
-            hiddenNotis = settingSnap.data().hiddenNotis;
+    const currentUser = firebase.auth().currentUser;
+    const userDocKey = currentUser ? `admin_reads_${currentUser.uid}` : 'admin_reads_guest';
+
+    // Lắng nghe danh sách ID đã đọc riêng của tài khoản Admin hiện tại
+    db.collection('settings').doc(userDocKey).onSnapshot(settingSnap => {
+        let readNotis = [];
+        if (settingSnap.exists && settingSnap.data().readNotis) {
+            readNotis = settingSnap.data().readNotis;
         }
 
-        // Lắng nghe cả thông báo FUSoftX và Cảnh báo ca bệnh từ Quản sinh/GVCN (targetType = 'admin')
-        db.collection('yt_notifications')
-          .onSnapshot(snap => {
+        // Lắng nghe thông báo hệ thống
+        db.collection('yt_notifications').onSnapshot(snap => {
             let notis = [];
             snap.forEach(doc => {
                 const d = doc.data();
@@ -3699,44 +3702,60 @@ function loadFusoftxNotis() {
 
             notis.forEach(d => {
                 const notiId = d.id;
-                if (hiddenNotis.includes(notiId)) return; // Bỏ qua nếu đã đọc
+                const isRead = readNotis.includes(notiId);
                 
-                unreadCount++;
+                if (!isRead) {
+                    unreadCount++;
+                }
+
                 const time = d.timestamp ? new Date(d.timestamp.seconds * 1000).toLocaleString('vi-VN') : 'Vừa xong';
                 const isSickAlert = d.type === 'sick_alert';
-                const borderCol = isSickAlert ? '#ef4444' : '#0062ff';
+                const borderCol = isRead ? '#cbd5e1' : (isSickAlert ? '#ef4444' : '#0062ff');
                 const icon = isSickAlert ? '🚨' : '📩';
+                const bgCol = isRead ? '#f8fafc' : '#ffffff';
+                const opacityStyle = isRead ? 'opacity: 0.75;' : 'opacity: 1;';
+                const statusIconCol = isRead ? '#10b981' : '#cbd5e1';
+                const tooltipText = isRead ? 'Đã đọc' : 'Đánh dấu là đã đọc';
 
                 html += `
-                    <div style="background: #f8fafc; padding: 12px; border-radius: 10px; border-left: 4px solid ${borderCol}; position: relative; cursor: pointer; transition: 0.2s; margin-bottom: 10px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
+                    <div style="background: ${bgCol}; padding: 12px; border-radius: 10px; border-left: 4px solid ${borderCol}; position: relative; cursor: pointer; transition: 0.2s; margin-bottom: 10px; border: 1px solid #e2e8f0; border-left-width: 4px; ${opacityStyle}" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='${bgCol}'">
                         <div onclick="openAdminNotiDetail('${notiId}')" style="padding-right: 30px;">
-                            <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 5px;">${time}</div>
-                            <div style="font-weight: bold; color: ${borderCol}; margin-bottom: 5px; font-size: 1rem;">${icon} ${d.title}</div>
-                            <div style="font-size: 0.88rem; color: #334155; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${d.content}</div>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #64748b; margin-bottom: 5px;">
+                                <span>${time}</span>
+                                ${isRead ? '<span style="color:#10b981; font-weight:600;"><i class="fas fa-check"></i> Đã đọc</span>' : '<span style="color:#ef4444; font-weight:600;">● Mới</span>'}
+                            </div>
+                            <div style="font-weight: bold; color: ${isRead ? '#475569' : borderCol}; margin-bottom: 5px; font-size: 0.95rem;">${icon} ${d.title}</div>
+                            <div style="font-size: 0.85rem; color: ${isRead ? '#64748b' : '#334155'}; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5;">${d.content}</div>
                         </div>
-                        <button onclick="markAdminNotiAsRead('${notiId}')" style="position: absolute; top: 12px; right: 10px; background: none; border: none; color: #cbd5e1; cursor: pointer; font-size: 1.2rem; transition: 0.2s;" onmouseover="this.style.color='#10b981'" onmouseout="this.style.color='#cbd5e1'" title="Đánh dấu đã đọc">
+                        <button onclick="event.stopPropagation(); markAdminNotiAsRead('${notiId}')" style="position: absolute; top: 12px; right: 10px; background: none; border: none; color: ${statusIconCol}; cursor: pointer; font-size: 1.2rem; transition: 0.2s;" title="${tooltipText}">
                             <i class="fas fa-check-circle"></i>
                         </button>
                     </div>
                 `;
             });
 
-            if (html === '') {
-                listDiv.innerHTML = '<div style="text-align:center; color:#94a3b8; padding: 20px;"><i class="fas fa-envelope-open fa-2x" style="opacity:0.3; margin-bottom:10px;"></i><br>Không có thông báo mới.</div>';
+            if (notis.length === 0) {
+                listDiv.innerHTML = '<div style="text-align:center; color:#94a3b8; padding: 20px;"><i class="fas fa-envelope-open fa-2x" style="opacity:0.3; margin-bottom:10px;"></i><br>Không có thông báo nào.</div>';
                 document.getElementById('admin-noti-badge').style.display = 'none';
                 document.getElementById('admin-bell-icon').style.color = '#cbd5e1';
             } else {
                 listDiv.innerHTML = html;
-                document.getElementById('admin-noti-badge').style.display = 'block';
-                document.getElementById('admin-bell-icon').style.color = '#ef4444';
+                
+                // Chỉ hiện chấm đỏ và chuông đỏ khi Admin này CÒN THÔNG BÁO CHƯA ĐỌC
+                if (unreadCount > 0) {
+                    document.getElementById('admin-noti-badge').style.display = 'block';
+                    document.getElementById('admin-bell-icon').style.color = '#ef4444';
 
-                // KIỂM TRA ĐỂ PHÁT ÂM THANH 5S VÀ NHẤP NHÁY TAB:
-                const lastSoundedId = sessionStorage.getItem('vts_last_sounded_noti_id');
-                const topNotiId = notis[0]?.id;
-
-                if (unreadCount > 0 && lastSoundedId !== topNotiId) {
-                    notifyAdminWithSoundAndBlink();
-                    sessionStorage.setItem('vts_last_sounded_noti_id', topNotiId);
+                    // Phát chuông báo nếu có thông báo mới tinh
+                    const lastSoundedId = sessionStorage.getItem('vts_last_sounded_noti_id');
+                    const topNotiId = notis[0]?.id;
+                    if (!isFirstLoadNoti && lastSoundedId !== topNotiId) {
+                        notifyAdminWithSoundAndBlink();
+                        sessionStorage.setItem('vts_last_sounded_noti_id', topNotiId);
+                    }
+                } else {
+                    document.getElementById('admin-noti-badge').style.display = 'none';
+                    document.getElementById('admin-bell-icon').style.color = '#cbd5e1';
                 }
             }
             isFirstLoadNoti = false;
@@ -3746,6 +3765,20 @@ function loadFusoftxNotis() {
     });
 }
 
+// Lưu thông báo đã đọc riêng cho từng UID của Admin
+async function markAdminNotiAsRead(notiId) {
+    try {
+        const currentUser = firebase.auth().currentUser;
+        if (!currentUser) return;
+        const userDocKey = `admin_reads_${currentUser.uid}`;
+
+        await db.collection('settings').doc(userDocKey).set({
+            readNotis: firebase.firestore.FieldValue.arrayUnion(notiId)
+        }, { merge: true });
+    } catch(e) {
+        console.error("Lỗi đánh dấu đã đọc:", e);
+    }
+}
 function openAdminNotiDetail(notiId) {
     const noti = adminFusoftxNotisCache.find(n => n.id === notiId);
     if(!noti) return;
@@ -3783,16 +3816,6 @@ function openAdminNotiDetail(notiId) {
     }
 
     document.getElementById('admin-noti-detail-modal').style.display = 'flex';
-}
-
-async function markAdminNotiAsRead(notiId) {
-    try {
-        await db.collection('settings').doc('admin_notis').set({
-            hiddenNotis: firebase.firestore.FieldValue.arrayUnion(notiId)
-        }, { merge: true });
-    } catch(e) {
-        console.error("Lỗi ẩn thông báo:", e);
-    }
 }
 // 2. Chat Hỗ trợ với FUSoftX
 async function createFusoftxTicket() {

@@ -3562,11 +3562,6 @@ async function deleteNotification(docId) {
     }
 }
 // ==========================================
-// KẾT NỐI VỚI ĐƠN VỊ CUNG CẤP (FUSOFTX)
-// ==========================================
-
-// 1. Nhận thông báo từ FUSoftX
-// ==========================================
 // HỆ THỐNG CHUÔNG THÔNG BÁO TỪ FUSOFTX (ĐÃ FIX LỖI)
 // ==========================================
 let adminFusoftxNotisCache = [];

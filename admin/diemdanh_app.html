@@ -1082,7 +1082,14 @@
     <script src="../assets/auth-check.js"></script>
 
     <script>
-        /* CORE ATTENDANCE APP ENGINE (OPTIMIZED) */
+        <script>    
+        // 👉 TẠO INSTANCE FIREBASE ĐỘC LẬP CHO APP ĐIỂM DANH
+        const ddApp = firebase.apps.some(a => a.name === "VTS_DiemDanhApp") 
+            ? firebase.app("VTS_DiemDanhApp") 
+            : firebase.initializeApp(firebaseConfig, "VTS_DiemDanhApp");
+        const ddAuth = ddApp.auth();
+        const db = ddApp.firestore(); // Gán db riêng cho Điểm Danh
+    
         let currentUser = null;
         let currentUserRole = 'none'; // 'admin' | 'quansinh' | 'gvcn'
         let allowedClasses = [];      // Danh sách lớp được phép điểm danh
@@ -1234,15 +1241,15 @@
 
         function handleGoogleAuth() {
             const provider = new firebase.auth.GoogleAuthProvider();
-            firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-                .then(() => firebase.auth().signInWithPopup(provider))
+            ddAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+                .then(() => ddAuth.signInWithPopup(provider))
                 .then(async (res) => {
                     const valid = await checkUserRole(res.user);
                     if (valid) {
                         showAuthStep('step-set-pin');
                     } else {
                         alert("⛔ Tài khoản của bạn không được phân quyền sử dụng App Điểm Danh!");
-                        firebase.auth().signOut();
+                        ddAuth.signOut();
                     }
                 })
                 .catch(err => alert("Lỗi đăng nhập: " + err.message));
@@ -1396,7 +1403,7 @@
         }
 
         async function verifyUserPermission() {
-            firebase.auth().onAuthStateChanged(async (user) => {
+            ddAuth.onAuthStateChanged(async (user) => {
                 if (user && await checkUserRole(user)) {
                     document.getElementById('auth-screen').style.display = 'none';
                     document.getElementById('app-main').style.display = 'block';
@@ -2062,7 +2069,7 @@
                 localStorage.removeItem('vts_dd_registered');
                 localStorage.removeItem('vts_dd_pin');
                 localStorage.removeItem('vts_dd_bio_id');
-                firebase.auth().signOut().then(() => location.reload());
+                ddAuth.signOut().then(() => location.reload());
             }
         }
 

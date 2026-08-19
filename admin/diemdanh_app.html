@@ -1101,7 +1101,7 @@
             ? firebase.app("VTS_DiemDanhApp") 
             : firebase.initializeApp(firebaseConfig, "VTS_DiemDanhApp");
         const ddAuth = ddApp.auth();
-        const db = ddApp.firestore();
+        const ddDb = ddApp.firestore();
 
         let currentUser = null;
         let currentUserRole = 'none'; // 'admin' | 'quansinh' | 'gvcn'
@@ -1154,7 +1154,7 @@
             }
 
             try {
-                const snap = await db.collection('yt_students').get();
+                const snap = await ddDb.collection('yt_students').get();
                 allStudentsCache = [];
                 snap.forEach(doc => {
                     const d = doc.data();
@@ -1388,7 +1388,7 @@
                 return true;
             }
 
-            const snap = await db.collection("yt_collaborators").where("email", "==", email).get();
+            const snap = await ddDb.collection("yt_collaborators").where("email", "==", email).get();
             if (!snap.empty) {
                 const data = snap.docs[0].data();
                 const todayStr = new Date().toISOString().split('T')[0];
@@ -1654,7 +1654,7 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
 
             try {
-                const existingSnap = await db.collection('yt_attendance').where('date', '==', date).get();
+                const existingSnap = await ddDb.collection('yt_attendance').where('date', '==', date).get();
                 const duplicateStudents = [];
 
                 existingSnap.forEach(doc => {
@@ -1671,7 +1671,7 @@
                     return;
                 }
 
-                const batch = db.batch();
+                const batch = ddDb.batch();
                 const studentIdArray = Array.from(selectedStudentIds);
                 let savedCount = 0;
 
@@ -1679,7 +1679,7 @@
                     const studentObj = allStudentsCache.find(s => s.id === stId);
                     if (!studentObj) return;
 
-                    const attRef = db.collection('yt_attendance').doc();
+                    const attRef = ddDb.collection('yt_attendance').doc();
                     const attData = {
                         studentId: studentObj.id,
                         name: studentObj.name,
@@ -1696,7 +1696,7 @@
                         attData.diagnosis = "Chờ Phòng Y Tế kiểm tra";
                         attData.isPendingAdmin = true;
 
-                        const notiRef = db.collection('yt_notifications').doc();
+                        const notiRef = ddDb.collection('yt_notifications').doc();
                         batch.set(notiRef, {
                             title: `🚨 BÁO BỆNH: ${studentObj.name} (${studentObj.class})`,
                             content: `${currentUser.displayName} báo ca bệnh: ${studentObj.name} - Lớp ${studentObj.class}. Triệu chứng: ${symptom}`,
@@ -1707,7 +1707,7 @@
                             timestamp: firebase.firestore.FieldValue.serverTimestamp()
                         });
                     } else {
-                        const notiStudentRef = db.collection('yt_notifications').doc();
+                        const notiStudentRef = ddDb.collection('yt_notifications').doc();
                         const reasonText = selectedReason === 'P' ? 'Có phép' : 'Không phép';
                         batch.set(notiStudentRef, {
                             title: "Thông báo Điểm danh Vắng",
@@ -1746,7 +1746,7 @@
             if (!date || !container) return;
 
             try {
-                let query = db.collection('yt_attendance').where('date', '==', date);
+                let query = ddDb.collection('yt_attendance').where('date', '==', date);
 
                 if (!allowedClasses.includes('ALL') && allowedClasses.length > 0) {
                     query = query.where('class', 'in', allowedClasses);
@@ -1799,11 +1799,11 @@
             if (!confirm(`Xóa điểm danh của học sinh "${name}"?\n(Các thông báo liên quan cũng sẽ được thu hồi).`)) return;
 
             try {
-                const batch = db.batch();
-                const attRef = db.collection('yt_attendance').doc(docId);
+                const batch = ddDb.batch();
+                const attRef = ddDb.collection('yt_attendance').doc(docId);
                 batch.delete(attRef);
 
-                const notiSnap = await db.collection('yt_notifications')
+                const notiSnap = await ddDb.collection('yt_notifications')
                     .where('relatedAttendanceId', '==', docId).get();
                 notiSnap.forEach(doc => batch.delete(doc.ref));
 

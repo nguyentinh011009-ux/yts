@@ -782,6 +782,70 @@
             margin-bottom: 12px;
             padding: 4px 0;
         }
+        /* --- CÔNG TẮC BẬT/TẮT (TOGGLE SWITCH) --- */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 26px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; inset: 0;
+            background-color: #cbd5e1;
+            transition: .3s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: "";
+            height: 20px; width: 20px; left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* --- MODAL ĐỔI MÃ PIN --- */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.2s ease;
+        }
+        .modal-box {
+            background: #ffffff;
+            width: 100%;
+            max-width: 360px;
+            border-radius: var(--radius-lg);
+            padding: 24px 20px;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            position: relative;
+        }
+        .btn-modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: #f1f5f9;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -979,6 +1043,19 @@
                         <div class="profile-info-item">
                             <span class="profile-info-label"><i class="far fa-calendar-check"></i> Hạn chứng chỉ</span>
                             <span id="prof-expiry" class="profile-info-val">---</span>
+                        </div>
+
+                        <div class="profile-info-item">
+                            <span class="profile-info-label"><i class="fas fa-fingerprint" style="color: var(--primary);"></i> Mở khóa Vân tay / FaceID</span>
+                            <label class="switch">
+                                <input type="checkbox" id="profile-bio-toggle" onchange="handleToggleBiometrics(this)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+ 
+                        <div class="profile-info-item" onclick="openChangePinModal()" style="cursor: pointer;">
+                            <span class="profile-info-label"><i class="fas fa-key" style="color: var(--warning);"></i> Đổi mã PIN 6 số</span>
+                            <span class="profile-info-val" style="color: var(--primary);">Thay đổi <i class="fas fa-chevron-right" style="font-size: 0.75rem;"></i></span>
                         </div>
                     </div>
 
@@ -1774,6 +1851,10 @@
             document.getElementById('prof-phone').innerText = currentUser.phone || '---';
             document.getElementById('prof-expiry').innerText = currentUser.expiryDate || 'Không giới hạn';
 
+            const hasBio = !!localStorage.getItem('vts_dd_bio_id');
+            const bioToggle = document.getElementById('profile-bio-toggle');
+            if (bioToggle) bioToggle.checked = hasBio;
+            
             const badge = document.getElementById('prof-role-badge');
             const roleText = document.getElementById('prof-role-text');
 
@@ -1815,6 +1896,164 @@
             // Quay về tab điểm danh
             const firstTabBtn = document.querySelectorAll('.nav-segment-btn')[0];
             switchTab('pane-attendance', firstTabBtn);
+        }
+        // ==========================================
+        // 1. XỬ LÝ BẬT / TẮT SINH TRẮC HỌC
+        // ==========================================
+        async function handleToggleBiometrics(toggleEl) {
+            if (toggleEl.checked) {
+                // Kiểm tra hỗ trợ WebAuthn
+                if (!window.PublicKeyCredential) {
+                    alert("Thiết bị hoặc trình duyệt của bạn không hỗ trợ xác thực Sinh trắc học!");
+                    toggleEl.checked = false;
+                    return;
+                }
+
+                try {
+                    const opt = {
+                        publicKey: {
+                            challenge: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]),
+                            rp: { name: "VTS Attendance App" },
+                            user: { 
+                                id: new Uint8Array([1, 2, 3, 4]), 
+                                name: currentUser ? currentUser.email : "user", 
+                                displayName: currentUser ? currentUser.displayName : "User" 
+                            },
+                            pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+                            authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
+                            timeout: 60000
+                        }
+                    };
+
+                    const cred = await navigator.credentials.create(opt);
+                    if (cred) {
+                        const rawId = new Uint8Array(cred.rawId);
+                        localStorage.setItem('vts_dd_bio_id', btoa(String.fromCharCode.apply(null, rawId)));
+                        alert("✅ Đã kích hoạt mở khóa bằng Vân tay / FaceID thành công!");
+                    } else {
+                        toggleEl.checked = false;
+                    }
+                } catch (e) {
+                    alert("Không thể thiết lập Sinh trắc học: " + e.message);
+                    toggleEl.checked = false;
+                }
+            } else {
+                // Tắt sinh trắc học
+                if (confirm("Bạn có chắc muốn tắt mở khóa bằng Vân tay / FaceID?")) {
+                    localStorage.removeItem('vts_dd_bio_id');
+                    alert("Đã tắt mở khóa Sinh trắc học.");
+                } else {
+                    toggleEl.checked = true;
+                }
+            }
+        }
+
+        // ==========================================
+        // 2. XỬ LÝ ĐỔI MÃ PIN 6 SỐ
+        // ==========================================
+        let changePinStep = 1; // 1: PIN Cũ, 2: PIN Mới, 3: Xác nhận PIN Mới
+        let tempOldPin = [];
+        let tempNewPin = [];
+        let tempConfirmPin = [];
+
+        function initChangePinNumpad() {
+            const c = document.getElementById('change-pin-numpad');
+            if (!c) return;
+            c.innerHTML = '';
+            for (let i = 1; i <= 9; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'num-key';
+                btn.innerText = i;
+                btn.onclick = () => handleChangePinKey(i);
+                c.appendChild(btn);
+            }
+            const emptyBtn = document.createElement('button');
+            emptyBtn.className = 'num-key ghost';
+            c.appendChild(emptyBtn);
+
+            const zero = document.createElement('button');
+            zero.className = 'num-key';
+            zero.innerText = '0';
+            zero.onclick = () => handleChangePinKey(0);
+            c.appendChild(zero);
+
+            const del = document.createElement('button');
+            del.className = 'num-key ghost';
+            del.innerHTML = '<i class="fas fa-backspace"></i>';
+            del.onclick = () => handleChangePinKey('del');
+            c.appendChild(del);
+        }
+
+        function openChangePinModal() {
+            changePinStep = 1;
+            tempOldPin = [];
+            tempNewPin = [];
+            tempConfirmPin = [];
+            
+            document.getElementById('change-pin-title').innerText = "NHẬP PIN HIỆN TẠI";
+            document.getElementById('change-pin-desc').innerText = "Nhập mã PIN 6 số đang sử dụng";
+            updateDots('change-pin-dots', 0);
+            
+            initChangePinNumpad();
+            document.getElementById('modal-change-pin').style.display = 'flex';
+        }
+
+        function closeChangePinModal() {
+            document.getElementById('modal-change-pin').style.display = 'none';
+        }
+
+        function handleChangePinKey(key) {
+            let activeArray;
+            if (changePinStep === 1) activeArray = tempOldPin;
+            else if (changePinStep === 2) activeArray = tempNewPin;
+            else activeArray = tempConfirmPin;
+
+            if (key === 'del') {
+                activeArray.pop();
+            } else if (activeArray.length < 6) {
+                activeArray.push(key);
+            }
+
+            updateDots('change-pin-dots', activeArray.length);
+
+            if (activeArray.length === 6) {
+                setTimeout(() => {
+                    if (changePinStep === 1) {
+                        // Kiểm tra PIN cũ
+                        const savedPin = localStorage.getItem('vts_dd_pin');
+                        if (tempOldPin.join('') === savedPin) {
+                            changePinStep = 2;
+                            document.getElementById('change-pin-title').innerText = "NHẬP PIN MỚI";
+                            document.getElementById('change-pin-desc').innerText = "Nhập mã PIN 6 số mới bạn muốn đặt";
+                            updateDots('change-pin-dots', 0);
+                        } else {
+                            alert("❌ Mã PIN hiện tại không chính xác!");
+                            tempOldPin = [];
+                            updateDots('change-pin-dots', 0);
+                        }
+                    } else if (changePinStep === 2) {
+                        changePinStep = 3;
+                        document.getElementById('change-pin-title').innerText = "XÁC NHẬN PIN MỚI";
+                        document.getElementById('change-pin-desc').innerText = "Nhập lại mã PIN mới một lần nữa";
+                        updateDots('change-pin-dots', 0);
+                    } else if (changePinStep === 3) {
+                        // So sánh PIN mới & xác nhận
+                        if (tempNewPin.join('') === tempConfirmPin.join('')) {
+                            localStorage.setItem('vts_dd_pin', tempNewPin.join(''));
+                            alert("🎉 Đổi mã PIN thành công! Hãy ghi nhớ mã PIN mới của bạn.");
+                            closeChangePinModal();
+                        } else {
+                            alert("❌ Mã PIN xác nhận không khớp! Vui lòng nhập lại PIN mới.");
+                            changePinStep = 2;
+                            tempNewPin = [];
+                            tempConfirmPin = [];
+                            document.getElementById('change-pin-title').innerText = "NHẬP PIN MỚI";
+                            document.getElementById('change-pin-desc').innerText = "Nhập mã PIN 6 số mới bạn muốn đặt";
+                            updateDots('change-pin-dots', 0);
+                        }
+                    }
+                }, 150);
+            }
         }
 
         function handleLogout() {
@@ -1865,5 +2104,19 @@
             }
         }
     </script>
+    <!-- 3. MODAL ĐỔI MÃ PIN -->
+    <div id="modal-change-pin" class="modal-overlay" style="display: none;">
+        <div class="modal-box">
+            <button type="button" class="btn-modal-close" onclick="closeChangePinModal()"><i class="fas fa-times"></i></button>
+            <h3 class="auth-title" id="change-pin-title" style="margin-top: 8px;">NHẬP PIN CŨ</h3>
+            <p class="auth-desc" id="change-pin-desc" style="margin-bottom: 20px;">Nhập mã PIN 6 số hiện tại của bạn</p>
+            
+            <div class="pin-dots" id="change-pin-dots" style="margin-bottom: 24px;">
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+            
+            <div class="numpad" id="change-pin-numpad"></div>
+        </div>
+    </div>
 </body>
 </html>

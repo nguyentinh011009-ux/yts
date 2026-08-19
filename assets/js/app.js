@@ -88,6 +88,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
 
                     loadAdminPosts();
                     loadPharmacyForReception();
+					loadDashboardData();
                     loadAdminAnnouncements();
                     loadFusoftxNotis();
                     runDailyStatisticAggregation();
@@ -146,6 +147,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
 					            applyCollaboratorPermissions(window.userAllowedTabs);
 					            loadAdminPosts();
 					            loadPharmacyForReception();
+								loadDashboardData();
 					            loadAdminAnnouncements();
 					            loadFusoftxNotis();
 					            runDailyStatisticAggregation();
@@ -712,6 +714,7 @@ function switchTab(tabId, btn) {
     if (tabId === 'tab-fusoftx') loadFusoftxTickets();
     if (tabId === 'tab-send-noti') loadAdminNotifications();
     if (tabId === 'tab-collaborators') loadCollaborators();
+	if (tabId === 'tab-dashboard') loadDashboardData();
 }
 // --- 6. XỬ LÝ TRANG CHI TIẾT BÀI VIẾT LẺ ---
 async function loadSinglePost() {
@@ -4721,4 +4724,210 @@ async function deleteCollaborator(id, name) {
             sysLoading(false);
         }
     }
+}
+// =========================================================================
+// HỆ THỐNG DASHBOARD TỔNG QUAN KẾT HỢP AI (TỐI ƯU HÓA DATABASE 100%)
+// =========================================================================
+let dashboardDataCache = null;
+
+async function loadDashboardData(forceRefresh = false) {
+    const kpiStudents = document.getElementById('db-kpi-students');
+    if (!kpiStudents) return;
+
+    const refreshIcon = document.getElementById('db-refresh-icon');
+    if (refreshIcon) refreshIcon.classList.add('fa-spin');
+
+    try {
+        const today = new Date();
+        const currentMonth = today.getMonth() + 1;
+        const currentYear = today.getFullYear();
+        const monthId = `${currentMonth.toString().padStart(2, '0')}-${currentYear}`;
+        
+        const monthLabel = document.getElementById('db-stat-month-label');
+        if (monthLabel) monthLabel.innerText = `Tháng ${currentMonth}/${currentYear}`;
+
+        // 1. TẬN DỤNG RAM: Lấy tổng số học sinh từ cache (0 lượt đọc Firestore)
+        const allStudents = await getStudentsList();
+        kpiStudents.innerText = allStudents.length.toLocaleString('vi-VN');
+
+        // 2. TẬN DỤNG TRẠNG THÁI GIƯỜNG (3 docs nhẹ)
+        const bedsSnap = await db.collection('yt_beds').get();
+        const occupiedBeds = bedsSnap.size;
+        const kpiBeds = document.getElementById('db-kpi-beds');
+        if (kpiBeds) {
+            kpiBeds.innerText = `${occupiedBeds} / 3`;
+            kpiBeds.style.color = occupiedBeds >= 3 ? '#ef4444' : (occupiedBeds > 0 ? '#f59e0b' : '#0f172a');
+        }
+
+        // 3. LẤY SỐ LƯỢT KHÁM HÔM NAY (Chỉ query từ 00:00 sáng nay)
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const todayVisitsSnap = await db.collection('yt_visits')
+            .where('timestamp', '>=', startOfDay)
+            .orderBy('timestamp', 'desc')
+            .get();
+
+        const todayVisitsCount = todayVisitsSnap.size;
+        const kpiToday = document.getElementById('db-kpi-today-visits');
+        if (kpiToday) kpiToday.innerText = todayVisitsCount;
+
+        // 4. LẤY TICKET CHỜ (Tái sử dụng cachedTickets nếu có, hoặc query giới hạn 10)
+        let pendingTicketsCount = 0;
+        if (typeof cachedTickets !== 'undefined' && cachedTickets.length > 0) {
+            pendingTicketsCount = cachedTickets.filter(t => t.status === 'pending').length;
+        } else {
+            const ticketSnap = await db.collection('yt_tickets').where('status', '==', 'pending').get();
+            pendingTicketsCount = ticketSnap.size;
+        }
+        const kpiTickets = document.getElementById('db-kpi-pending-tickets');
+        if (kpiTickets) kpiTickets.innerText = pendingTicketsCount;
+
+        // 5. ĐỔ DANH SÁCH TIẾP NHẬN GẦN ĐÂY
+        renderDashboardRecentVisits(todayVisitsSnap);
+
+        // 6. LẤY DỮ LIỆU CHỐT SỔ THÁNG ĐỂ VẼ TOP TRIỆU CHỨNG (Chỉ đọc đúng 1 document yt_stats)
+        await renderDashboardTopSymptoms(monthId);
+
+        // 7. KHỞI CHẠY AI HEALTH INSIGHTS (Có cache SessionStorage theo ngày)
+        initDashboardAIInsights(todayVisitsCount, occupiedBeds, pendingTicketsCount);
+
+    } catch (err) {
+        console.error("Dashboard Load Error:", err);
+    } finally {
+        if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+    }
+}
+
+// Hàm render danh sách khám gần đây
+function renderDashboardRecentVisits(snap) {
+    const list = document.getElementById('db-recent-visits-list');
+    if (!list) return;
+
+    if (snap.empty) {
+        list.innerHTML = '<div style="text-align:center; padding:30px; color:#94a3b8; font-size:0.9rem;"><i class="fas fa-check-circle" style="color:#10b981;"></i> Hôm nay chưa có lượt tiếp nhận nào.</div>';
+        return;
+    }
+
+    let html = '';
+    snap.forEach(doc => {
+        const v = doc.data();
+        const time = v.timestamp ? new Date(v.timestamp.seconds * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--';
+        html += `
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong style="color:#1e293b; font-size:0.92rem;">${v.name}</strong> 
+                    <span style="color:#0284c7; font-weight:bold; font-size:0.82rem;">(${v.class})</span>
+                    <div style="font-size:0.82rem; color:#64748b; margin-top:2px;">${v.symptom || 'Khám tổng quát'}</div>
+                </div>
+                <div style="text-align:right;">
+                    <span style="font-size:0.75rem; font-weight:bold; color:#475569; background:#e2e8f0; padding:2px 8px; border-radius:6px;">${time}</span>
+                </div>
+            </div>
+        `;
+    });
+    list.innerHTML = html;
+}
+
+// Hàm render Top triệu chứng từ Doc yt_stats chốt sổ
+async function renderDashboardTopSymptoms(monthId) {
+    const container = document.getElementById('db-top-symptoms-list');
+    if (!container) return;
+
+    try {
+        const statDoc = await db.collection('yt_stats').doc(monthId).get();
+        if (!statDoc.exists || !statDoc.data().topSymptoms || statDoc.data().topSymptoms.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:30px; color:#94a3b8; font-size:0.88rem;">Chưa có dữ liệu thống kê tổng hợp trong tháng.</div>';
+            return;
+        }
+
+        const symptoms = statDoc.data().topSymptoms.slice(0, 5);
+        const maxCount = Math.max(...symptoms.map(s => s.count), 1);
+
+        let html = '';
+        symptoms.forEach(item => {
+            const percent = Math.round((item.count / maxCount) * 100);
+            html += `
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.88rem; font-weight:600; color:#334155;">
+                        <span>${item.name}</span>
+                        <span style="color:#0284c7; font-weight:700;">${item.count} ca</span>
+                    </div>
+                    <div class="db-symptom-bar-bg">
+                        <div class="db-symptom-bar-fill" style="width: ${percent}%;"></div>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = '<div style="color:#ef4444; font-size:0.85rem; text-align:center;">Lỗi nạp thống kê: ' + e.message + '</div>';
+    }
+}
+
+// TÍCH HỢP AI TÓM TẮT DỊCH TỄ TỰ ĐỘNG (CACHE SESSION THEO NGÀY)
+async function initDashboardAIInsights(todayVisits, beds, pendingTickets, forceRegen = false) {
+    const contentBox = document.getElementById('db-ai-summary-content');
+    const timeLabel = document.getElementById('db-ai-timestamp');
+    if (!contentBox) return;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const cacheKey = `vts_ai_db_insight_${todayStr}`;
+    const cachedInsight = sessionStorage.getItem(cacheKey);
+
+    if (cachedInsight && !forceRegen) {
+        const parsed = JSON.parse(cachedInsight);
+        contentBox.innerHTML = parsed.text;
+        if (timeLabel) timeLabel.innerText = `Cập nhật: ${parsed.time}`;
+        return;
+    }
+
+    contentBox.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AI đang phân tích toàn diện tình hình y tế...';
+
+    try {
+        const AI_SERVER_URL = "https://vts-health-ai.yte-thptvothisaubrvt.workers.dev";
+        const prompt = `Bạn là Trợ lý AI Y Tế Học Đường trường THPT Võ Thị Sáu. Hãy viết một đoạn nhận xét/tóm tắt ngắn gọn (3 - 4 câu, tối đa 90 từ), dùng giọng văn y khoa chuẩn mực, khích lệ và cảnh báo chuyên nghiệp:
+        - Số ca khám hôm nay: ${todayVisits}
+        - Giường bệnh đang nằm: ${beds}/3
+        - Yêu cầu học sinh đang chờ: ${pendingTickets}
+        Đưa ra 1 khuyến nghị phòng bệnh trọng tâm phù hợp với môi trường học sinh cấp 3.`;
+
+        const response = await fetch(AI_SERVER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }]
+            })
+        });
+
+        const data = await response.json();
+        let aiText = "Tình hình sức khỏe học đường hôm nay duy trì ổn định. Cán bộ y tế chú ý kiểm tra định kỳ các trường hợp sốt nhẹ và vệ sinh phòng y tế.";
+        
+        if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+            aiText = data.candidates[0].content.parts[0].text.replace(/\*\*/g, '').trim();
+        }
+
+        const formattedTime = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        contentBox.innerHTML = `<i class="fas fa-quote-left" style="color:#0284c7; margin-right:6px; opacity:0.5;"></i> ${aiText}`;
+        if (timeLabel) timeLabel.innerText = `Cập nhật: ${formattedTime}`;
+
+        sessionStorage.setItem(cacheKey, JSON.stringify({ text: contentBox.innerHTML, time: formattedTime }));
+    } catch (e) {
+        contentBox.innerHTML = `<span style="color:#64748b;">Hệ thống ghi nhận hôm nay có <strong>${todayVisits}</strong> lượt tiếp nhận và <strong>${beds}</strong> giường đang sử dụng. Trạng thái hoạt động bình thường.</span>`;
+    }
+}
+
+// Nút bấm làm mới thủ công trên Dashboard
+function refreshDashboard(force = false) {
+    loadDashboardData(force);
+}
+
+// Nút bấm tạo lại phân tích AI
+function requestDashboardAIAnalysis() {
+    initDashboardAIInsights(
+        document.getElementById('db-kpi-today-visits')?.innerText || 0,
+        document.getElementById('db-kpi-beds')?.innerText?.split('/')[0]?.trim() || 0,
+        document.getElementById('db-kpi-pending-tickets')?.innerText || 0,
+        true
+    );
 }

@@ -333,48 +333,55 @@ async function searchStudent() {
         const normalizedInput = removeVietnameseTones(inputVal.toLowerCase());
 
         snap.forEach(doc => {
-            const data = doc.data();
-            const nameSearch = removeVietnameseTones(data.name || '').toLowerCase();
-            const classSearch = (data.class || '').toLowerCase();
-            const idSearch = doc.id.toLowerCase();
-	    const phoneSearch = decryptField(data.phone) || "";
-            const parentPhoneSearch = decryptField(data.parentPhone) || "";
-
-            if (nameSearch.includes(normalizedInput) || 
-                classSearch.includes(normalizedInput) || 
-                idSearch.includes(normalizedInput) ||
-                phoneSearch.includes(normalizedInput) ||
-                parentPhoneSearch.includes(normalizedInput)) {
-                
-                matched.push({ id: doc.id, ...data });
-            }
-        });
-
-        document.getElementById('results-count').innerText = `Kết quả tìm kiếm (${matched.length})`;
-
-        if (matched.length === 0) {
-            resultsContainer.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-user-times"></i>
-                    <p>Không tìm thấy học sinh nào!</p>
-                </div>`;
-            return;
-        }
-
-        resultsContainer.innerHTML = '';
-        matched.forEach(hs => {
-            resultsContainer.innerHTML += `
-                <div class="student-row-card" onclick="loadStudentToTask('${hs.id}')">
-                    <div class="st-left-info">
-                        <h4>${hs.name}</h4>
-                        <span>Lớp: ${hs.class}</span>
-                        <small>Mã YT: ${hs.id}</small>
-                    </div>
-                    <button class="btn-action-go">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>`;
-        });
+		    const data = doc.data();
+		    const nameSearch = removeVietnameseTones(data.name || '').toLowerCase();
+		    const classSearch = (data.class || '').toLowerCase();
+		    const idSearch = doc.id.toLowerCase();
+		    const dobRaw = (data.dob || '').toLowerCase();
+		    const dobFormatted = data.dob ? new Date(data.dob).toLocaleDateString('vi-VN') : '';
+		    const phoneSearch = decryptField(data.phone) || "";
+		    const parentPhoneSearch = decryptField(data.parentPhone) || "";
+		
+		    if (nameSearch.includes(normalizedInput) || 
+		        classSearch.includes(normalizedInput) || 
+		        idSearch.includes(normalizedInput) ||
+		        dobRaw.includes(normalizedInput) ||
+		        dobFormatted.includes(normalizedInput) ||
+		        phoneSearch.includes(normalizedInput) ||
+		        parentPhoneSearch.includes(normalizedInput)) {
+		        
+		        matched.push({ id: doc.id, ...data });
+		    }
+		});
+		
+		document.getElementById('results-count').innerText = `Kết quả tìm kiếm (${matched.length})`;
+		
+		if (matched.length === 0) {
+		    resultsContainer.innerHTML = `
+		        <div class="empty-state">
+		            <i class="fas fa-user-times"></i>
+		            <p>Không tìm thấy học sinh nào!</p>
+		        </div>`;
+		    return;
+		}
+		
+		resultsContainer.innerHTML = '';
+		matched.forEach(hs => {
+		    const dobDisplay = hs.dob ? new Date(hs.dob).toLocaleDateString('vi-VN') : 'Chưa có NS';
+		    resultsContainer.innerHTML += `
+		        <div class="student-row-card" onclick="loadStudentToTask('${hs.id}')">
+		            <div class="st-left-info">
+		                <h4>${hs.name}</h4>
+		                <div style="font-size:0.83rem; color:#64748b; margin-top:2px;">
+		                    <strong style="color:#0284c7;">Lớp: ${hs.class}</strong> | <span>🎂 ${dobDisplay}</span>
+		                </div>
+		                <small style="color:#94a3b8; font-size:0.75rem;">Mã YT: ${hs.id}</small>
+		            </div>
+		            <button class="btn-action-go">
+		                <i class="fas fa-chevron-right"></i>
+		            </button>
+		        </div>`;
+		});
 
     } catch (e) {
         alert("Lỗi tìm kiếm học sinh: " + e.message);

@@ -768,24 +768,29 @@ function moveToNext(event, nextId) {
 // ==================================================
 // 1. TÌM KIẾM HỌC SINH CÓ SẴN (BẢN NÂNG CẤP THÔNG MINH)
 // ==================================================
-let ytStudentsCache = null;    // Lưu cache để tìm siêu tốc không gọi Firebase nhiều lần
-let currentSuggestIndex = -1;  // Lưu vị trí đang chọn bằng phím mũi tên
+let ytStudentsCache = null;           
+let currentSuggestIndex = -1;         
+let selectedReceptionStudentId = null;
 
 async function searchStudentSuggest(val) {
     const box = document.getElementById('yt-suggest-box');
-    if (val.trim().length < 2) { 
+    if (!val || val.trim().length < 2) { 
         box.style.display = 'none'; 
+        selectedReceptionStudentId = null; 
         return; 
     }
 
-    // Tận dụng trực tiếp bộ nhớ đệm dùng chung của trang
     const students = await getStudentsList();
 
     const queryRaw = removeVietnameseTones(val.trim());
     const searchTerms = queryRaw.split(/\s+/);
 
     const matched = students.filter(st => {
-        const dataString = `${st.name_search} ${st.class.toLowerCase()} ${st.id.toLowerCase()}`;
+        const dobFormatted = st.dob ? new Date(st.dob).toLocaleDateString('vi-VN') : '';
+        const dobRaw = st.dob || '';
+        const code = (st.studentCode || '').toLowerCase();
+
+        const dataString = `${st.name_search} ${st.class.toLowerCase()} ${st.id.toLowerCase()} ${code} ${dobRaw} ${dobFormatted}`.toLowerCase();
         return searchTerms.every(term => dataString.includes(term));
     });
 
@@ -793,7 +798,7 @@ async function searchStudentSuggest(val) {
     currentSuggestIndex = -1;
 
     if (matched.length === 0) { 
-        box.innerHTML = '<div style="padding:10px; color:#ef4444; font-size:0.85rem;">Không tìm thấy!</div>';
+        box.innerHTML = '<div style="padding:10px; color:#ef4444; font-size:0.85rem; text-align:center;">Không tìm thấy học sinh!</div>';
         box.style.display = 'block'; 
         return; 
     }
@@ -805,13 +810,42 @@ async function searchStudentSuggest(val) {
         item.style.padding = '10px 15px';
         item.style.borderBottom = '1px solid #f1f5f9';
         item.style.cursor = 'pointer';
-        item.innerHTML = `<strong>${d.name}</strong> - Lớp: <span style="color:#0062ff; font-weight:bold;">${d.class}</span>`;
+        item.style.transition = '0.15s';
+
+        const dobDisplay = d.dob ? new Date(d.dob).toLocaleDateString('vi-VN') : 'Chưa có NS';
+        const codeDisplay = d.studentCode ? ` | Mã HS: ${d.studentCode}` : '';
+
+        item.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong style="color:#0f172a; font-size:0.95rem;">${d.name}</strong> 
+                <span style="color:#0062ff; font-weight:bold; font-size:0.85rem;">Lớp: ${d.class}</span>
+            </div>
+            <div style="font-size:0.8rem; color:#64748b; margin-top:3px; display:flex; justify-content:space-between;">
+                <span>🎂 ${dobDisplay}${codeDisplay}</span>
+                <span style="color:#059669; font-weight:600;">Mã YT: ${d.id}</span>
+            </div>
+        `;
 
         item.onmouseover = () => { currentSuggestIndex = index; updateSuggestHighlight(); };
         item.onclick = () => { selectSuggestedStudent(d); };
         box.appendChild(item);
     });
     box.style.display = 'block';
+}
+
+// 🔥 CẬP NHẬT LUÔN HÀM CHỌN HỌC SINH (NẰM NGAY BÊN DƯỚI):
+function selectSuggestedStudent(student) {
+    selectedReceptionStudentId = student.id;
+    
+    document.getElementById('yt-name').value = student.name;
+    document.getElementById('yt-class').value = student.class;
+    
+    document.getElementById('yt-suggest-box').style.display = 'none';
+    currentSuggestIndex = -1;
+    
+    checkStudentHistory();
+    
+    document.getElementById('yt-symptom').focus();
 }
 // 3. Hàm xử lý Sự kiện Bàn phím (Lên, Xuống, Enter)
 function handleNameInputKeydown(event) {
@@ -867,23 +901,6 @@ function updateSuggestHighlight() {
     });
 }
 
-// Hàm chốt học sinh khi bấm click hoặc Enter
-function selectSuggestedStudent(student) {
-    document.getElementById('yt-name').value = student.name;
-    document.getElementById('yt-class').value = student.class;
-    
-    // Ẩn hộp thoại đi
-    document.getElementById('yt-suggest-box').style.display = 'none';
-    currentSuggestIndex = -1;
-    
-    // Gọi hàm load Lịch sử khám 
-    checkStudentHistory();
-    
-    // Đỉnh cao: Tự động nhảy con trỏ chuột thẳng xuống ô "Triệu chứng" luôn cho nhanh
-    document.getElementById('yt-symptom').focus();
-}
-// ==================================================
-
 // 2. TẠO MÃ QR VÀ ĐỢI CHỮ KÝ (REALTIME)
 async function startSignatureProcess() {
     const token = "SIGN_" + Date.now();
@@ -918,15 +935,9 @@ function copySignLink() {
     document.execCommand("copy");
     alert("✅ Sao chép thành công");
 }
-// ==========================================
-// LƯU LƯỢT TIẾP NHẬN & CẬP NHẬT HỒ SƠ
-// ==========================================
-// ==========================================
-// LƯU LƯỢT TIẾP NHẬN 
-// ==========================================
-// ==========================================
 // LƯU LƯỢT TIẾP NHẬN & KIỂM TRA GIƯỜNG TRỐNG
 // ==========================================
+let studentId = selectedReceptionStudentId;
 async function saveVisit(withSign) {
     const name = document.getElementById('yt-name').value.trim();
     const className = document.getElementById('yt-class').value.trim();
@@ -941,7 +952,9 @@ async function saveVisit(withSign) {
     if(!symptom) return alert("❌ Cảnh báo: Vui lòng nhập Triệu chứng của học sinh!");
     if(!treatment) return alert("❌ Cảnh báo: Vui lòng nhập Cách xử lý / Cấp thuốc!");
 
-try {
+    sysLoading(true, "Đang lưu lượt tiếp nhận...");
+
+    try {
         // KIỂM TRA TRẠNG THÁI GIƯỜNG
         if (bed) {
             const bedDoc = await db.collection('yt_beds').doc('bed_' + bed).get();
@@ -956,36 +969,58 @@ try {
             }
         }
 
-        // TẠO BATCH FIREBASE ĐỂ LƯU ĐỒNG THỜI CẢ TIẾP NHẬN VÀ TRỪ KHO DƯỢC
         const mainBatch = db.batch();
 
-        // 1. TẠO HOẶC LẤY ID HỌC SINH
-        let studentId;
-        const hsSnap = await db.collection('yt_students').where('name', '==', name).where('class', '==', className).get();
+        // ==============================================================
+        // 1. TẠO HOẶC LẤY ID HỌC SINH (ĐÃ ĐƯỢC NÂNG CẤP CHỐNG TRÙNG TÊN)
+        // ==============================================================
+        let studentId = selectedReceptionStudentId; // 🔥 Ưu tiên dùng ID chính xác đã chọn từ gợi ý/máy quét
 
-        if (hsSnap.empty) {
-            studentId = `YT-${Math.floor(10000 + Math.random() * 90000)}`;
-            const newHSRef = db.collection('yt_students').doc(studentId);
-            mainBatch.set(newHSRef, {
-                id: studentId, name: name, class: className, 
-                name_search: removeVietnameseTones(name), createdAt: new Date()
-            });
-        } else {
-            studentId = hsSnap.docs[0].id;
+        if (!studentId) {
+            // Nếu người dùng gõ tay hoàn toàn (không chọn từ gợi ý), kiểm tra database
+            const hsSnap = await db.collection('yt_students')
+                .where('name', '==', name)
+                .where('class', '==', className)
+                .get();
+
+            if (hsSnap.empty) {
+                // Chưa có học sinh nào -> Tạo mới hoàn toàn
+                studentId = generateStudentId();
+                const newHSRef = db.collection('yt_students').doc(studentId);
+                mainBatch.set(newHSRef, {
+                    id: studentId, 
+                    name: name, 
+                    class: className, 
+                    name_search: removeVietnameseTones(name), 
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } else if (hsSnap.size === 1) {
+                // Chỉ có đúng 1 học sinh trùng tên + lớp -> Lấy luôn
+                studentId = hsSnap.docs[0].id;
+            } else {
+                // Có TỪ 2 HỌC SINH TRỞ LÊN trùng tên + lớp -> Cảnh báo yêu cầu chọn đúng người
+                sysLoading(false);
+                return alert(`⚠️ CẢNH BÁO: Trong lớp ${className} có ${hsSnap.size} học sinh cùng tên "${name}".\n\nVui lòng chọn đúng học sinh từ danh sách gợi ý (dựa vào Ngày sinh / Mã HS) trước khi lưu!`);
+            }
         }
 
         // 2. LƯU LƯỢT TIẾP NHẬN (VISIT)
         const visitRef = db.collection('yt_visits').doc();
         mainBatch.set(visitRef, {
-            studentId: studentId, name: name, class: className, 
-            symptom: symptom, treatment: treatment, note: note, 
-            sign: signImg, bed: bed || null, status: bed ? "staying" : "completed",
+            studentId: studentId, 
+            name: name, 
+            class: className, 
+            symptom: symptom, 
+            treatment: treatment, 
+            note: note, 
+            sign: signImg, 
+            bed: bed || null, 
+            status: bed ? "staying" : "completed",
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
         // 3. XỬ LÝ TRỪ KHO THUỐC (NẾU CÓ CẤP PHÁT)
         if (pendingMedicineDeductions.length > 0) {
-            // Gom nhóm cập nhật lô thuốc
             let batchUpdates = {}; 
             pendingMedicineDeductions.forEach(med => {
                 const item = ytPharmacyCache.find(i => i.id === med.itemId);
@@ -993,16 +1028,13 @@ try {
                 batchUpdates[med.itemId][med.batchIndex].qty -= med.qty;
             });
 
-            // Ghi lệnh trừ kho
             for (const [iId, newBatches] of Object.entries(batchUpdates)) {
                 mainBatch.update(db.collection('yt_pharmacy_items').doc(iId), { batches: newBatches });
             }
 
-            // Ghi log Giao dịch Xuất kho (Để tab Quản lý Dược thấy được)
-            // Ghi log Giao dịch Xuất kho (Để tab Quản lý Dược thấy được)
             const txId = "XK-" + Date.now().toString().slice(-6);
             const txRef = db.collection('yt_pharmacy_transactions').doc(txId);
-            const activeUser = firebase.auth().currentUser; // Lấy dữ liệu user chuẩn từ Firebase
+            const activeUser = firebase.auth().currentUser;
             
             mainBatch.set(txRef, {
                 id: txId, 
@@ -1011,7 +1043,7 @@ try {
                 reason: "Cấp phát y tế tại phòng", 
                 notes: `Kèm theo Lượt khám Y tế số ${visitRef.id}`, 
                 items: pendingMedicineDeductions,
-                user: activeUser ? (activeUser.displayName || activeUser.email) : 'Hệ thống', // Đã sửa ở đây
+                user: activeUser ? (activeUser.displayName || activeUser.email) : 'Hệ thống',
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
         }
@@ -1032,7 +1064,10 @@ try {
             await db.collection('yt_notifications').add({
                 title: "Thông báo Lượt khám Y tế",
                 content: `Bạn vừa được ghi nhận một lượt khám tại phòng Y tế.\n- Triệu chứng: ${symptom}\n- Xử lý: ${treatment}`,
-                targetType: "student", targetValue: studentId, sender: "Phòng Y Tế", relatedVisitId: visitRef.id,
+                targetType: "student", 
+                targetValue: studentId, 
+                sender: "Phòng Y Tế", 
+                relatedVisitId: visitRef.id,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
         } catch(e) { console.error("Lỗi gửi thông báo:", e); }
@@ -1048,6 +1083,7 @@ try {
 // ==========================================
 // HÀM DỌN DẸP MÀN HÌNH SAU KHI TIẾP NHẬN XONG
 function resetReceptionForm() {
+	selectedReceptionStudentId = null;
     document.getElementById('yt-name').value = "";
     document.getElementById('yt-class').value = "";
     document.getElementById('yt-symptom').value = "";
@@ -2402,10 +2438,13 @@ async function handleExcelUpload(event) {
             snapshot.forEach(doc => {
                 const d = doc.data();
                 existingIds.add(doc.id);
-                if (d.name && d.class) {
-                    const key = `${d.name.trim().toLowerCase()}_${d.class.trim().toLowerCase()}`;
-                    existingStudentsMap.set(key, { id: doc.id, ...d });
-                }
+				if (d.name && d.class) {
+				    const studentCodeKey = d.studentCode ? `code_${d.studentCode.trim().toLowerCase()}` : null;
+				    const nameClassDobKey = `combo_${d.name.trim().toLowerCase()}_${d.class.trim().toLowerCase()}_${(d.dob || '').trim()}`;
+				    
+				    if (studentCodeKey) existingStudentsMap.set(studentCodeKey, { id: doc.id, ...d });
+				    existingStudentsMap.set(nameClassDobKey, { id: doc.id, ...d });
+				}
             });
 
             let batches = [];

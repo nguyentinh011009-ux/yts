@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Điểm Danh - Y Tế Số VTS</title>
+    <title>Điểm Danh</title>
     <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/uq7hr3wp/image/upload/v1787045296/rfhuztp3qiohlvwr4bhf.png">
     <link rel="icon" href="https://res.cloudinary.com/uq7hr3wp/image/upload/v1787045296/rfhuztp3qiohlvwr4bhf.png" sizes="32x32" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -1361,8 +1361,8 @@
                     displayName: user.displayName || 'Quản Trị Viên', 
                     email: user.email, 
                     photoURL: user.photoURL,
-                    phone: 'Hệ thống Admin',
-                    expiryDate: 'Vô thời hạn (Admin)'
+                    phone: 'N/A',
+                    expiryDate: 'Vô thời hạn'
                 };
                 allowedClasses = ['ALL'];
                 return true;
@@ -1861,13 +1861,13 @@
             if (currentUserRole === 'admin') {
                 badge.innerText = 'Admin';
                 badge.className = 'user-badge badge-admin';
-                roleText.innerText = 'Ban Quản Trị';
-                document.getElementById('prof-classes').innerText = 'Toàn trường (Tất cả lớp)';
+                roleText.innerText = 'Quản Trị';
+                document.getElementById('prof-classes').innerText = 'Toàn trường';
             } else if (currentUserRole === 'quansinh') {
                 badge.innerText = 'Quản Sinh';
                 badge.className = 'user-badge badge-quansinh';
                 roleText.innerText = 'Quản Sinh';
-                document.getElementById('prof-classes').innerText = 'Toàn trường (Tất cả lớp)';
+                document.getElementById('prof-classes').innerText = 'Toàn trường';
             } else {
                 badge.innerText = 'GVCN';
                 badge.className = 'user-badge badge-gvcn';

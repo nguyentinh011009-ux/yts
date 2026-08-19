@@ -1071,6 +1071,20 @@
             </section>
         </main>
     </div>
+    <!-- 3. MODAL ĐỔI MÃ PIN (Đưa lên trước Script) -->
+    <div id="modal-change-pin" class="modal-overlay" style="display: none;">
+        <div class="modal-box">
+            <button type="button" class="btn-modal-close" onclick="closeChangePinModal()"><i class="fas fa-times"></i></button>
+            <h3 class="auth-title" id="change-pin-title" style="margin-top: 8px;">NHẬP PIN CŨ</h3>
+            <p class="auth-desc" id="change-pin-desc" style="margin-bottom: 20px;">Nhập mã PIN 6 số hiện tại của bạn</p>
+            
+            <div class="pin-dots" id="change-pin-dots" style="margin-bottom: 24px;">
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+            
+            <div class="numpad" id="change-pin-numpad"></div>
+        </div>
+    </div>
 
     <!-- FIREBASE & CORE LIBS -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -1082,18 +1096,17 @@
     <script src="../assets/auth-check.js"></script>
 
     <script>
-        <script>    
-        // 👉 TẠO INSTANCE FIREBASE ĐỘC LẬP CHO APP ĐIỂM DANH
+        // 👉 TẠO INSTANCE FIREBASE ĐỘC LẬP CHO APP ĐIỂM DANH (Đã bỏ thẻ <script> thừa)
         const ddApp = firebase.apps.some(a => a.name === "VTS_DiemDanhApp") 
             ? firebase.app("VTS_DiemDanhApp") 
             : firebase.initializeApp(firebaseConfig, "VTS_DiemDanhApp");
         const ddAuth = ddApp.auth();
-        const db = ddApp.firestore(); // Gán db riêng cho Điểm Danh
-    
+        const db = ddApp.firestore();
+
         let currentUser = null;
         let currentUserRole = 'none'; // 'admin' | 'quansinh' | 'gvcn'
-        let allowedClasses = [];      // Danh sách lớp được phép điểm danh
-        let selectedReason = 'P';     // 'P' | 'KP' | 'B'
+        let allowedClasses = [];      
+        let selectedReason = 'P';     
 
         // PIN States
         let pinInput = [];
@@ -1323,7 +1336,7 @@
                             challenge: new Uint8Array([1, 2, 3, 4, 5]),
                             rp: { name: "VTS Attendance" },
                             user: { id: new Uint8Array([1]), name: "user", displayName: "User" },
-                            pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+                            pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
                             authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" }
                         }
                     };
@@ -1403,35 +1416,49 @@
         }
 
         async function verifyUserPermission() {
-            ddAuth.onAuthStateChanged(async (user) => {
-                if (user && await checkUserRole(user)) {
-                    document.getElementById('auth-screen').style.display = 'none';
-                    document.getElementById('app-main').style.display = 'block';
-                    hideSplashScreen();
-                    
-                    document.getElementById('user-name').innerText = currentUser.displayName;
-                    if (currentUser.photoURL) document.getElementById('user-avatar').src = currentUser.photoURL;
-
-                    const roleBadge = document.getElementById('user-role-badge');
-                    if (currentUserRole === 'admin') {
-                        roleBadge.innerText = 'Admin';
-                        roleBadge.className = 'user-badge badge-admin';
-                    } else if (currentUserRole === 'quansinh') {
-                        roleBadge.innerText = 'Quản Sinh';
-                        roleBadge.className = 'user-badge badge-quansinh';
-                    } else {
-                        roleBadge.innerText = 'GVCN';
-                        roleBadge.className = 'user-badge badge-gvcn';
-                    }
-
-                    if (typeof loadMasterCryptoKey === "function") await loadMasterCryptoKey();
-                    await fetchAndCacheStudents();
-                    populateClassDropdown();
-                    loadDailyAbsentRecords();
+            const user = ddAuth.currentUser;
+            if (user) {
+                const valid = await checkUserRole(user);
+                if (valid) {
+                    initAppUI();
                 } else {
                     showAuthStep('step-google');
                 }
-            });
+            } else {
+                ddAuth.onAuthStateChanged(async (u) => {
+                    if (u && await checkUserRole(u)) {
+                        initAppUI();
+                    } else {
+                        showAuthStep('step-google');
+                    }
+                });
+            }
+        }
+
+        async function initAppUI() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('app-main').style.display = 'block';
+            hideSplashScreen();
+            
+            document.getElementById('user-name').innerText = currentUser.displayName;
+            if (currentUser.photoURL) document.getElementById('user-avatar').src = currentUser.photoURL;
+
+            const roleBadge = document.getElementById('user-role-badge');
+            if (currentUserRole === 'admin') {
+                roleBadge.innerText = 'Admin';
+                roleBadge.className = 'user-badge badge-admin';
+            } else if (currentUserRole === 'quansinh') {
+                roleBadge.innerText = 'Quản Sinh';
+                roleBadge.className = 'user-badge badge-quansinh';
+            } else {
+                roleBadge.innerText = 'GVCN';
+                roleBadge.className = 'user-badge badge-gvcn';
+            }
+
+            if (typeof loadMasterCryptoKey === "function") await loadMasterCryptoKey();
+            await fetchAndCacheStudents();
+            populateClassDropdown();
+            loadDailyAbsentRecords();
         }
 
         // 6. KHỞI TẠO BỘ LỌC LỚP
@@ -1627,7 +1654,6 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
 
             try {
-                // Kiểm tra trùng lặp bản ghi trong ngày
                 const existingSnap = await db.collection('yt_attendance').where('date', '==', date).get();
                 const duplicateStudents = [];
 
@@ -1670,7 +1696,6 @@
                         attData.diagnosis = "Chờ Phòng Y Tế kiểm tra";
                         attData.isPendingAdmin = true;
 
-                        // Thông báo Admin
                         const notiRef = db.collection('yt_notifications').doc();
                         batch.set(notiRef, {
                             title: `🚨 BÁO BỆNH: ${studentObj.name} (${studentObj.class})`,
@@ -1682,7 +1707,6 @@
                             timestamp: firebase.firestore.FieldValue.serverTimestamp()
                         });
                     } else {
-                        // Thông báo Học sinh
                         const notiStudentRef = db.collection('yt_notifications').doc();
                         const reasonText = selectedReason === 'P' ? 'Có phép' : 'Không phép';
                         batch.set(notiStudentRef, {
@@ -1847,11 +1871,10 @@
             document.getElementById('pane-history').style.display = (tabId === 'pane-history') ? 'block' : 'none';
             if (tabId === 'pane-history') loadDailyAbsentRecords();
         }
-        // HÀM MỞ VÀ HIỂN THỊ THÔNG TIN PROFILE
+
         function openProfile() {
             if (!currentUser) return;
 
-            // Đổ dữ liệu vào giao diện
             document.getElementById('prof-avatar').src = currentUser.photoURL || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
             document.getElementById('prof-name').innerText = currentUser.displayName;
             document.getElementById('prof-email').innerText = currentUser.email || '---';
@@ -1882,34 +1905,30 @@
                 document.getElementById('prof-classes').innerText = allowedClasses.length > 0 ? allowedClasses.join(', ') : 'Chưa phân công';
             }
 
-            // Ẩn các pane khác và các thanh điều hướng
             document.querySelector('.date-stepper').style.display = 'none';
             document.querySelector('.nav-segments').style.display = 'none';
             document.getElementById('pane-attendance').style.display = 'none';
             document.getElementById('pane-history').style.display = 'none';
             document.getElementById('action-bottom-bar').classList.remove('show');
 
-            // Hiện pane profile
             document.getElementById('pane-profile').style.display = 'block';
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // HÀM ĐÓNG PROFILE QUAY LẠI MÀN HÌNH ĐIỂM DANH
         function closeProfile() {
             document.querySelector('.date-stepper').style.display = 'flex';
             document.querySelector('.nav-segments').style.display = 'flex';
             document.getElementById('pane-profile').style.display = 'none';
             
-            // Quay về tab điểm danh
             const firstTabBtn = document.querySelectorAll('.nav-segment-btn')[0];
             switchTab('pane-attendance', firstTabBtn);
         }
+
         // ==========================================
-        // 1. XỬ LÝ BẬT / TẮT SINH TRẮC HỌC
+        // 12. XỬ LÝ SINH TRẮC HỌC & ĐỔI MÃ PIN
         // ==========================================
         async function handleToggleBiometrics(toggleEl) {
             if (toggleEl.checked) {
-                // Kiểm tra hỗ trợ WebAuthn
                 if (!window.PublicKeyCredential) {
                     alert("Thiết bị hoặc trình duyệt của bạn không hỗ trợ xác thực Sinh trắc học!");
                     toggleEl.checked = false;
@@ -1945,7 +1964,6 @@
                     toggleEl.checked = false;
                 }
             } else {
-                // Tắt sinh trắc học
                 if (confirm("Bạn có chắc muốn tắt mở khóa bằng Vân tay / FaceID?")) {
                     localStorage.removeItem('vts_dd_bio_id');
                     alert("Đã tắt mở khóa Sinh trắc học.");
@@ -1955,10 +1973,7 @@
             }
         }
 
-        // ==========================================
-        // 2. XỬ LÝ ĐỔI MÃ PIN 6 SỐ
-        // ==========================================
-        let changePinStep = 1; // 1: PIN Cũ, 2: PIN Mới, 3: Xác nhận PIN Mới
+        let changePinStep = 1; 
         let tempOldPin = [];
         let tempNewPin = [];
         let tempConfirmPin = [];
@@ -2026,7 +2041,6 @@
             if (activeArray.length === 6) {
                 setTimeout(() => {
                     if (changePinStep === 1) {
-                        // Kiểm tra PIN cũ
                         const savedPin = localStorage.getItem('vts_dd_pin');
                         if (tempOldPin.join('') === savedPin) {
                             changePinStep = 2;
@@ -2044,7 +2058,6 @@
                         document.getElementById('change-pin-desc').innerText = "Nhập lại mã PIN mới một lần nữa";
                         updateDots('change-pin-dots', 0);
                     } else if (changePinStep === 3) {
-                        // So sánh PIN mới & xác nhận
                         if (tempNewPin.join('') === tempConfirmPin.join('')) {
                             localStorage.setItem('vts_dd_pin', tempNewPin.join(''));
                             alert("🎉 Đổi mã PIN thành công! Hãy ghi nhớ mã PIN mới của bạn.");
@@ -2073,7 +2086,6 @@
             }
         }
 
-        // Khóa App thông minh (sau 3 phút không tương tác nếu rời tab)
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
                 lastInactiveTime = Date.now();
@@ -2086,20 +2098,17 @@
                 }
             }
         });
-        // HÀM CẬP NHẬT DỮ LIỆU MỚI NHẤT TỪ SERVER
+
         async function handleRefreshData() {
             const btn = document.getElementById('btn-sync-data');
             const icon = btn.querySelector('i');
             
-            // Hiệu ứng xoay icon và khóa nút bấm tạm thời
             btn.disabled = true;
             icon.classList.add('fa-spin');
 
             try {
                 await fetchAndCacheStudents(true);
-
                 populateClassDropdown();
-
                 await loadDailyAbsentRecords();
 
                 alert("✅ Dữ liệu học sinh và điểm danh đã được cập nhật mới nhất!");
@@ -2111,19 +2120,5 @@
             }
         }
     </script>
-    <!-- 3. MODAL ĐỔI MÃ PIN -->
-    <div id="modal-change-pin" class="modal-overlay" style="display: none;">
-        <div class="modal-box">
-            <button type="button" class="btn-modal-close" onclick="closeChangePinModal()"><i class="fas fa-times"></i></button>
-            <h3 class="auth-title" id="change-pin-title" style="margin-top: 8px;">NHẬP PIN CŨ</h3>
-            <p class="auth-desc" id="change-pin-desc" style="margin-bottom: 20px;">Nhập mã PIN 6 số hiện tại của bạn</p>
-            
-            <div class="pin-dots" id="change-pin-dots" style="margin-bottom: 24px;">
-                <span></span><span></span><span></span><span></span><span></span><span></span>
-            </div>
-            
-            <div class="numpad" id="change-pin-numpad"></div>
-        </div>
-    </div>
 </body>
 </html>

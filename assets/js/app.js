@@ -4790,7 +4790,7 @@ async function loadDashboardData(forceRefresh = false) {
         await renderDashboardTopSymptoms(monthId);
 
         // 7. KHỞI CHẠY AI HEALTH INSIGHTS (Có cache SessionStorage theo ngày)
-        initDashboardAIInsights(todayVisitsCount, occupiedBeds, pendingTicketsCount);
+        initDashboardAIInsights(forceRefresh);
 
     } catch (err) {
         console.error("Dashboard Load Error:", err);
@@ -4864,70 +4864,130 @@ async function renderDashboardTopSymptoms(monthId) {
         container.innerHTML = '<div style="color:#ef4444; font-size:0.85rem; text-align:center;">Lỗi nạp thống kê: ' + e.message + '</div>';
     }
 }
-
-// TÍCH HỢP AI TÓM TẮT DỊCH TỄ TỰ ĐỘNG (CACHE SESSION THEO NGÀY)
-async function initDashboardAIInsights(todayVisits, beds, pendingTickets, forceRegen = false) {
+// =========================================================================
+// AI HEALTH INSIGHTS: LẤY BẢN TIN TỪ LỊCH SỬ DỰ BÁO DỊCH TỄ GẦN NHẤT (0 PROMPT THỪA)
+// =========================================================================
+async function initDashboardAIInsights(forceRefresh = false) {
     const contentBox = document.getElementById('db-ai-summary-content');
     const timeLabel = document.getElementById('db-ai-timestamp');
     if (!contentBox) return;
 
-    const todayStr = new Date().toISOString().split('T')[0];
-    const cacheKey = `vts_ai_db_insight_${todayStr}`;
-    const cachedInsight = sessionStorage.getItem(cacheKey);
-
-    if (cachedInsight && !forceRegen) {
-        const parsed = JSON.parse(cachedInsight);
-        contentBox.innerHTML = parsed.text;
-        if (timeLabel) timeLabel.innerText = `Cập nhật: ${parsed.time}`;
-        return;
+    // 1. Kiểm tra cache SessionStorage nếu không ép làm mới
+    const cacheKey = 'vts_latest_ai_epidemic_insight';
+    if (!forceRefresh) {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+            try {
+                const parsed = JSON.parse(cached);
+                contentBox.innerHTML = parsed.html;
+                if (timeLabel) timeLabel.innerText = parsed.timeText;
+                return;
+            } catch(e) {}
+        }
     }
 
-    contentBox.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AI đang phân tích toàn diện tình hình y tế...';
+    contentBox.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tải bản tin phân tích dịch tễ gần nhất...';
 
     try {
-        const AI_SERVER_URL = "https://vts-health-ai.yte-thptvothisaubrvt.workers.dev";
-        const prompt = `Bạn là Trợ lý AI Y Tế Học Đường trường THPT Võ Thị Sáu. Hãy viết một đoạn nhận xét/tóm tắt ngắn gọn (3 - 4 câu, tối đa 90 từ), dùng giọng văn y khoa chuẩn mực, khích lệ và cảnh báo chuyên nghiệp:
-        - Số ca khám hôm nay: ${todayVisits}
-        - Giường bệnh đang nằm: ${beds}/3
-        - Yêu cầu học sinh đang chờ: ${pendingTickets}
-        Đưa ra 1 khuyến nghị phòng bệnh trọng tâm phù hợp với môi trường học sinh cấp 3.`;
-
-        const response = await fetch(AI_SERVER_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }]
-            })
-        });
-
-        const data = await response.json();
-        let aiText = "Tình hình sức khỏe học đường hôm nay duy trì ổn định. Cán bộ y tế chú ý kiểm tra định kỳ các trường hợp sốt nhẹ và vệ sinh phòng y tế.";
+        // 2. Truy vấn đúng 1 bản ghi dự báo dịch tễ mới nhất từ Firestore
+        let latestDoc = null;
         
-        if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-            aiText = data.candidates[0].content.parts[0].text.replace(/\*\*/g, '').trim();
+        // Thử collection chuẩn yt_epidemic_predictions
+        const snap = await db.collection("yt_epidemic_predictions")
+            .orderBy("timestamp", "desc")
+            .limit(1)
+            .get();
+
+        if (!snap.empty) {
+            latestDoc = snap.docs[0].data();
+        } else {
+            // Thử collection dự phòng yt_ai_predictions nếu có
+            const fallbackSnap = await db.collection("yt_ai_predictions")
+                .orderBy("timestamp", "desc")
+                .limit(1)
+                .get();
+            if (!fallbackSnap.empty) {
+                latestDoc = fallbackSnap.docs[0].data();
+            }
         }
 
-        const formattedTime = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-        contentBox.innerHTML = `<i class="fas fa-quote-left" style="color:#0284c7; margin-right:6px; opacity:0.5;"></i> ${aiText}`;
-        if (timeLabel) timeLabel.innerText = `Cập nhật: ${formattedTime}`;
+        // 3. Nếu chưa từng chạy phân tích dịch tễ lần nào
+        if (!latestDoc) {
+            const emptyHtml = `
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <span style="color:#64748b;">Chưa có bản tin phân tích dịch tễ học đường nào được lưu trong hệ thống.</span>
+                    <button onclick="switchTab('tab-yte-thongke')" class="btn-sm" style="background:#0284c7; color:white; border:none; padding:5px 12px; border-radius:6px; font-weight:bold; cursor:pointer;">
+                        <i class="fas fa-microscope"></i> Chạy phân tích ngay
+                    </button>
+                </div>
+            `;
+            contentBox.innerHTML = emptyHtml;
+            if (timeLabel) timeLabel.innerText = "Chưa có dữ liệu";
+            return;
+        }
 
-        sessionStorage.setItem(cacheKey, JSON.stringify({ text: contentBox.innerHTML, time: formattedTime }));
-    } catch (e) {
-        contentBox.innerHTML = `<span style="color:#64748b;">Hệ thống ghi nhận hôm nay có <strong>${todayVisits}</strong> lượt tiếp nhận và <strong>${beds}</strong> giường đang sử dụng. Trạng thái hoạt động bình thường.</span>`;
+        // 4. Trích xuất thông tin bản tin
+        const timeObj = latestDoc.timestamp ? (latestDoc.timestamp.toDate ? latestDoc.timestamp.toDate() : new Date(latestDoc.timestamp)) : new Date();
+        const timeText = timeObj.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+        
+        // Lấy đoạn tóm tắt/kết luận từ dữ liệu dự báo
+        let summaryText = latestDoc.summary || latestDoc.shortSummary || latestDoc.conclusion || "";
+        
+        // Nếu bản tin lưu dạng HTML đầy đủ, tự động trích xuất đoạn kết luận hoặc đoạn đầu
+        if (!summaryText && latestDoc.reportContent) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = latestDoc.reportContent;
+            summaryText = tempDiv.innerText.replace(/\n+/g, ' ').substring(0, 220) + '...';
+        }
+
+        if (!summaryText) {
+            summaryText = "Tình hình dịch tễ tại trường học duy trì ổn định. Cán bộ y tế chú ý kiểm tra định kỳ các ca sốt nhẹ và vệ sinh học đường.";
+        }
+
+        // Mức độ cảnh báo (nếu có)
+        const riskLevel = latestDoc.riskLevel || latestDoc.level || "Bình thường";
+        let riskBadge = '';
+        if (riskLevel.includes('Cao') || riskLevel.includes('Nguy cơ')) {
+            riskBadge = `<span style="background:#fee2e2; color:#ef4444; padding:2px 8px; border-radius:6px; font-size:0.78rem; font-weight:bold; margin-right:6px;"><i class="fas fa-exclamation-triangle"></i> Cảnh báo: ${riskLevel}</span>`;
+        } else {
+            riskBadge = `<span style="background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:6px; font-size:0.78rem; font-weight:bold; margin-right:6px;"><i class="fas fa-shield-check"></i> Trạng thái: ${riskLevel}</span>`;
+        }
+
+        const renderHtml = `
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <div>
+                    ${riskBadge}
+                    <span style="font-size:0.92rem; color:#334155; line-height:1.6;">${summaryText}</span>
+                </div>
+                <div style="margin-top:4px;">
+                    <a href="javascript:void(0)" onclick="switchTab('tab-yte-thongke')" style="color:#0284c7; font-weight:600; font-size:0.83rem; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                        <span>Xem toàn bộ báo cáo phân tích dịch tễ chi tiết</span> <i class="fas fa-arrow-right" style="font-size:0.75rem;"></i>
+                    </a>
+                </div>
+            </div>
+        `;
+
+        contentBox.innerHTML = renderHtml;
+        if (timeLabel) timeLabel.innerText = `Đợt phân tích: ${timeText}`;
+
+        // Lưu cache Session
+        sessionStorage.setItem(cacheKey, JSON.stringify({ html: renderHtml, timeText: `Đợt phân tích: ${timeText}` }));
+
+    } catch (err) {
+        console.error("Lỗi tải AI Insights Dashboard:", err);
+        contentBox.innerHTML = `<span style="color:#64748b;">Không thể tải bản tin dự báo dịch tễ: ${err.message}</span>`;
     }
 }
 
+// Nút bấm "AI Tóm Tắt & Cảnh Báo" trên Dashboard: Làm mới dữ liệu từ kết quả mới nhất hoặc chuyển sang chạy phân tích mới
+function requestDashboardAIAnalysis() {
+    sysLoading(true, "Đang đồng bộ bản tin dịch tễ mới nhất...");
+    initDashboardAIInsights(true).finally(() => {
+        sysLoading(false);
+        sysAlert("Đã cập nhật bản tin dự báo dịch tễ mới nhất!", "success");
+    });
+}
 // Nút bấm làm mới thủ công trên Dashboard
 function refreshDashboard(force = false) {
     loadDashboardData(force);
-}
-
-// Nút bấm tạo lại phân tích AI
-function requestDashboardAIAnalysis() {
-    initDashboardAIInsights(
-        document.getElementById('db-kpi-today-visits')?.innerText || 0,
-        document.getElementById('db-kpi-beds')?.innerText?.split('/')[0]?.trim() || 0,
-        document.getElementById('db-kpi-pending-tickets')?.innerText || 0,
-        true
-    );
 }

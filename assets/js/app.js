@@ -824,8 +824,8 @@ async function searchStudentSuggest(val) {
                 <span style="color:#0062ff; font-weight:bold; font-size:0.85rem;">Lớp: ${d.class}</span>
             </div>
             <div style="font-size:0.8rem; color:#64748b; margin-top:3px; display:flex; justify-content:space-between;">
-                <span>🎂 ${dobDisplay}${codeDisplay}</span>
-                <span style="color:#059669; font-weight:600;">Mã YT: ${d.id}</span>
+                <span><i class="fa-solid fa-calendar-days"></i> ${dobDisplay}${codeDisplay}</span>
+                <span style="color:#059669; font-weight:600;">Mã Y tế: ${d.id}</span>
             </div>
         `;
 
@@ -1863,11 +1863,11 @@ async function checkStudentHistory() {
             let adminInfoHTML = `
                 <div style="background: white; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 10px; font-size: 0.85rem;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <div>🎂 Ngày sinh: <strong>${st.dob ? new Date(st.dob).toLocaleDateString('vi-VN') : '--'}</strong></div>
-                        <div>⚥ Giới tính: <strong>${st.gender || '--'}</strong></div>
-                        <div>📞 SĐT HS: <strong>${decryptField(st.phone) || '--'}</strong></div>
-                        <div>👨‍👩‍👧 SĐT PH: <strong>${decryptField(st.parentPhone) || '--'}</strong></div>
-                        <div style="grid-column: span 2;">🏠 Đ/c: <strong>${st.street ? `${decryptField(st.street)}, ${st.ward || ''}, ${st.city || ''}` : '--'}</strong></div>
+                        <div>Ngày sinh: <strong>${st.dob ? new Date(st.dob).toLocaleDateString('vi-VN') : '--'}</strong></div>
+                        <div>Giới tính: <strong>${st.gender || '--'}</strong></div>
+                        <div>SĐT Học sinh: <strong>${decryptField(st.phone) || '--'}</strong></div>
+                        <div>SĐT Phụ huynh: <strong>${decryptField(st.parentPhone) || '--'}</strong></div>
+                        <div style="grid-column: span 2;">Địa chỉ: <strong>${st.street ? `${decryptField(st.street)}, ${st.ward || ''}, ${st.city || ''}` : '--'}</strong></div>
                     </div>
                 </div>
             `;

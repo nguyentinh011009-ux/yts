@@ -101,19 +101,22 @@
     <script src="../assets/js/app.js"></script>
 
     <script>
-        let globalHistoryData = []; // Biến lưu trữ data để đẩy vào Modal
+        let globalHistoryData = []; 
 
         // 1. KIỂM TRA ĐĂNG NHẬP
         firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
                 document.getElementById('top-user-avatar').src = user.photoURL || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
                 
+                if (typeof loadMasterCryptoKey === 'function') await loadMasterCryptoKey();
+
                 const snap = await db.collection('yt_students').where('linkedEmail', '==', user.email).get();
                 if (snap.empty) {
                     window.location.href = "../student.html";
                 } else {
                     let currentStudent = snap.docs[0].data();
-                    document.getElementById('top-user-name').innerText = currentStudent.name;
+                    const sName = typeof decryptField === 'function' ? decryptField(currentStudent.name) : currentStudent.name;
+                    document.getElementById('top-user-name').innerText = sName || user.displayName || user.email.split('@')[0];
                     loadHistory(user.email);
                 }
             } else {

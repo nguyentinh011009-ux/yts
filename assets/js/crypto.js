@@ -15,6 +15,8 @@ function clearMasterKey() {
     sessionStorage.removeItem('vts_students_cache');
 }
 
+let masterKeyPromise = null;
+
 async function loadMasterCryptoKey() {
     const existingKey = getMasterKey();
     if (existingKey) return existingKey;
@@ -45,12 +47,23 @@ async function loadMasterCryptoKey() {
             const data = await response.json();
             setMasterKey(data.key);
             console.log("🔒 [Security] Đã nạp khóa E2EE thành công!");
+            
+            // Tự động quét và vá lại giao diện ngay khi có khóa
+            setTimeout(scanAndFixDOM, 100);
             return data.key;
         }
     } catch (e) {
         console.error("❌ Lỗi nạp khóa bảo mật:", e);
     }
     return null;
+}
+
+function ensureCryptoKeyReady() {
+    if (getMasterKey()) return Promise.resolve(getMasterKey());
+    if (!masterKeyPromise) {
+        masterKeyPromise = loadMasterCryptoKey();
+    }
+    return masterKeyPromise;
 }
 
 function encryptField(plainText) {
@@ -113,8 +126,45 @@ function autoDecryptDeep(data) {
     return data;
 }
 
+function scanAndFixDOM() {
+    if (!getMasterKey() || typeof document === 'undefined') return;
+
+    try {
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+        let node;
+        while ((node = walker.nextNode())) {
+            if (node.nodeValue && node.nodeValue.includes("U2FsdGVkX1")) {
+                node.nodeValue = node.nodeValue.replace(/U2FsdGVkX1[A-Za-z0-9+/=]+/g, match => decryptField(match));
+            }
+        }
+
+        document.querySelectorAll('input, textarea').forEach(el => {
+            if (el.value && el.value.startsWith("U2FsdGVkX1")) {
+                el.value = decryptField(el.value);
+            }
+        });
+    } catch(e) {}
+}
+
 try {
     if (typeof firebase !== 'undefined' && firebase.firestore) {
+        
+        if (firebase.firestore.DocumentReference) {
+            const origDocGet = firebase.firestore.DocumentReference.prototype.get;
+            firebase.firestore.DocumentReference.prototype.get = async function(...args) {
+                await ensureCryptoKeyReady();
+                return origDocGet.apply(this, args);
+            };
+        }
+
+        if (firebase.firestore.Query) {
+            const origQueryGet = firebase.firestore.Query.prototype.get;
+            firebase.firestore.Query.prototype.get = async function(...args) {
+                await ensureCryptoKeyReady();
+                return origQueryGet.apply(this, args);
+            };
+        }
+
         if (firebase.firestore.DocumentSnapshot) {
             const origDocData = firebase.firestore.DocumentSnapshot.prototype.data;
             firebase.firestore.DocumentSnapshot.prototype.data = function(...args) {
@@ -139,7 +189,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (typeof firebase !== 'undefined' && firebase.auth && firebase.apps && firebase.apps.length > 0) {
         firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
-                await loadMasterCryptoKey();
+                await ensureCryptoKeyReady();
             } else {
                 clearMasterKey();
             }

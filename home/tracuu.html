@@ -66,12 +66,12 @@
         </div>
     </div>
 
-    <!-- Tải Firebase (Bắt buộc) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="../assets/config.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="../assets/js/crypto.js"></script>
-    <!-- CODE XỬ LÝ TRA CỨU ĐẶC BIỆT CHO TRANG NÀY -->
     <script>
         async function performLookup() {
             const nameInput = document.getElementById('lookup-name').value.trim();
@@ -88,10 +88,13 @@
             resultDiv.innerHTML = '<div style="text-align:center; padding: 40px;"><i class="fas fa-spinner fa-spin fa-3x" style="color:var(--primary);"></i><p style="margin-top:15px; color: var(--text-gray);">Đang tìm kiếm trong cơ sở dữ liệu...</p></div>';
 
             try {
-                // 1. Kiểm tra Hồ sơ học sinh
-                const studentDoc = await db.collection('yt_students').doc(idInput).get();
+                if (typeof loadMasterCryptoKey === 'function') await loadMasterCryptoKey();
 
-                if (!studentDoc.exists || studentDoc.data().name.toLowerCase() !== nameInput.toLowerCase()) {
+                const studentDoc = await db.collection('yt_students').doc(idInput).get();
+                const rawData = studentDoc.exists ? studentDoc.data() : null;
+                const studentName = rawData && typeof decryptField === 'function' ? decryptField(rawData.name) : (rawData?.name || '');
+
+                if (!studentDoc.exists || studentName.trim().toLowerCase() !== nameInput.trim().toLowerCase()) {
                     resultDiv.innerHTML = `
                         <div style="text-align: center; padding: 20px;">
                             <i class="fas fa-exclamation-triangle fa-3x" style="color: #ef4444; margin-bottom: 15px;"></i>
@@ -103,7 +106,13 @@
                     return;
                 }
 
-                const student = studentDoc.data();
+                const student = {
+                    ...rawData,
+                    name: studentName,
+                    class: typeof decryptField === 'function' ? decryptField(rawData.class) : rawData.class,
+                    height: typeof decryptField === 'function' ? decryptField(rawData.height) : rawData.height,
+                    weight: typeof decryptField === 'function' ? decryptField(rawData.weight) : rawData.weight
+                };
 
                 // 2. Lấy lịch sử khám bệnh
                 const visitsSnap = await db.collection('yt_visits').where('studentId', '==', idInput).get();

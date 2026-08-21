@@ -1821,7 +1821,7 @@ const dataToSave = {
     height: encryptField(document.getElementById('edit-hs-height').value.trim()),
     weight: encryptField(document.getElementById('edit-hs-weight').value.trim()),
     medicalNote: document.getElementById('edit-hs-medical-note').value.trim(),
-    name_search: encryptField(removeVietnameseTones(rawName)
+    name_search: encryptField(removeVietnameseTones(rawName))
 };
     if (!dataToSave.name || !dataToSave.class) return sysAlert("Tên và lớp không được để trống!", "error");
 
@@ -2583,9 +2583,7 @@ async function handleExcelUpload(event) {
                             name_search: encryptField(removeVietnameseTones(cleanName)),
 							createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         };
-                        currentBatch.set(ref, newData);
-                        currentBatch.set(ref, newData);
-                        
+                        currentBatch.set(ref, newData);                        
                         if (studentKeyByCode) existingStudentsMap.set(studentKeyByCode, newData);
                         existingStudentsMap.set(studentKeyByCombo, newData);
 
@@ -3333,8 +3331,8 @@ async function scanStudentForReception() {
         // KẾT QUẢ
         if (studentData) {
             // Điền tự động vào ô Tên và Lớp
-            document.getElementById('yt-name').value = studentData.name;
-            document.getElementById('yt-class').value = studentData.class;
+            document.getElementById('yt-name').value = studentData.name ? decryptField(studentData.name) : '';
+			document.getElementById('yt-class').value = studentData.class ? decryptField(studentData.class) : '';
             
             // Xóa rỗng ô quét để chuẩn bị cho người tiếp theo
             scanInput.value = ''; 

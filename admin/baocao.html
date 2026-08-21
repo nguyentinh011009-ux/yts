@@ -198,37 +198,29 @@
 
         // --- LOAD HỌC SINH VÀO COMBOBOX KHI GÕ LỚP ---
         async function fetchStudentsForDD() {
-            // Lấy đúng lớp (xóa khoảng trắng và viết in hoa để đồng bộ)
             const cls = document.getElementById('dd-class').value.trim().toUpperCase();
             const sel = document.getElementById('dd-student');
             if(!cls) return;
 
-            sel.innerHTML = '<option>Đang tải dữ liệu...</option>';
-            try {
-                const snap = await db.collection('yt_students').where('class', '==', cls).get();
-                currentStudentsInClass = [];
-                sel.innerHTML = '<option value="">-- Chọn Học Sinh --</option>';
-                
-                if (snap.empty) {
-                    sel.innerHTML = '<option value="">(Lớp không có học sinh)</option>';
-                    return;
-                }
-
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    currentStudentsInClass.push({id: doc.id, ...d});
-                });
-
-                // Sắp xếp Alphabet theo tên tiếng Việt
-                currentStudentsInClass.sort((a,b) => (a.name || "").localeCompare(b.name || "", 'vi'));
-                
-                currentStudentsInClass.forEach(hs => {
-                    sel.innerHTML += `<option value="${hs.id}">${hs.name}</option>`;
-                });
-            } catch (err) {
-                console.error("Lỗi khi load học sinh:", err);
-                sel.innerHTML = '<option value="">(Lỗi tải dữ liệu)</option>';
+            sel.innerHTML = '<option>Đang lọc dữ liệu...</option>';
+            
+            if (!allStudentsCache || allStudentsCache.length === 0) {
+                await loadAllStudentsCache();
             }
+
+            currentStudentsInClass = allStudentsCache.filter(s => (s.class || '').trim().toUpperCase() === cls);
+            sel.innerHTML = '<option value="">-- Chọn Học Sinh --</option>';
+
+            if (currentStudentsInClass.length === 0) {
+                sel.innerHTML = '<option value="">(Không tìm thấy học sinh lớp này)</option>';
+                return;
+            }
+
+            currentStudentsInClass.sort((a, b) => (a.name || "").localeCompare(b.name || "", 'vi'));
+            
+            currentStudentsInClass.forEach(hs => {
+                sel.innerHTML += `<option value="${hs.id}">${hs.name}</option>`;
+            });
         }
 // --- TÍNH NĂNG TÌM KIẾM NHANH ---
         let allStudentsCache = []; // Biến lưu toàn bộ học sinh
@@ -354,14 +346,15 @@ async function saveAttendance() {
         }
 
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
-
+		const currentUser = firebase.auth().currentUser;
+        const recorderName = currentUser ? (currentUser.displayName || currentUser.email.split('@')[0]) : "Không rõ";
         const data = {
             studentId: sid, 
-            name: sname, 
-            class: cls,
+            name: encryptField(sname), 
+            class: encryptField(cls),
             date: date,
             reason: reason,
-            recordedBy: "Phòng Y Tế (Admin)",
+            recordedBy: recorderName,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             notificationId: null
         };

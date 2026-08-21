@@ -1226,7 +1226,7 @@ async function getStudentsList() {
             phone: d.phone ? decryptField(d.phone) : '',
             parentPhone: d.parentPhone ? decryptField(d.parentPhone) : '',
             street: d.street ? decryptField(d.street) : '',
-            linkedEmail: d.linkedEmail ? decryptField(d.linkedEmail) : '',
+            linkedEmail: d.linkedEmail || '',
             name_search: removeVietnameseTones(decryptedName)
         });
     });
@@ -3019,7 +3019,8 @@ async function performAdminFullLookup() {
                         <tr><td style="color:#64748b;">SĐT Học sinh:</td><td style="font-weight:500;">${decPhone}</td></tr>
             		<tr><td style="color:#64748b;">SĐT Phụ huynh:</td><td style="font-weight:500;">${decParentPhone}</td></tr>
             		<tr><td style="color:#64748b; vertical-align: top;">Địa chỉ:</td><td style="font-weight:500;">${fullDecAddress}</td>
-                        <tr><td style="color:#64748b;">Email liên kết:</td><td style="font-weight:500; color:#0ea5e9;">${st.linkedEmail ? decryptField(st.linkedEmail) : 'Chưa liên kết app'}</td></tr>
+                        <tr><td style="color:#64748b;">Email liên kết:</td><td style="font-weight:500; color:#0ea5e9;">${st.linkedEmail || 'Chưa liên kết app'}</td></tr>
+
                     </table>
                 </div>
 

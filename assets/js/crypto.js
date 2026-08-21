@@ -89,3 +89,45 @@ function decryptField(cipherText) {
         return "🔒 Lỗi giải mã";
     }
 }
+// =========================================================================
+// 4. HỆ THỐNG TỰ ĐỘNG GIẢI MÃ TOÀN CỤC (GLOBAL AUTO-DECRYPT INTERCEPTOR)
+// =========================================================================
+
+function autoDecryptDeep(data) {
+    if (!data) return data;
+    
+    if (typeof data === 'string') {
+        if (data.startsWith("U2FsdGVkX1")) {
+            return decryptField(data);
+        }
+        return data;
+    }
+
+    if (data instanceof Date || (data && typeof data.toDate === 'function')) {
+        return data;
+    }
+
+    if (Array.isArray(data)) {
+        return data.map(item => autoDecryptDeep(item));
+    }
+
+    if (typeof data === 'object') {
+        const decryptedObj = {};
+        for (const key in data) {
+            if (Object.prototype.hasOwnProperty.call(data, key)) {
+                decryptedObj[key] = autoDecryptDeep(data[key]);
+            }
+        }
+        return decryptedObj;
+    }
+
+    return data;
+}
+
+if (typeof firebase !== 'undefined' && firebase.firestore) {
+    const originalDocData = firebase.firestore.DocumentSnapshot.prototype.data;
+    firebase.firestore.DocumentSnapshot.prototype.data = function(...args) {
+        const rawData = originalDocData.apply(this, args);
+        return autoDecryptDeep(rawData);
+    };
+}

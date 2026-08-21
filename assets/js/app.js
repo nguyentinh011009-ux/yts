@@ -1010,12 +1010,12 @@ async function saveVisit(withSign) {
         const visitRef = db.collection('yt_visits').doc();
         mainBatch.set(visitRef, {
             studentId: studentId, 
-            name: name, 
-            class: className, 
-            symptom: symptom, 
-            treatment: treatment, 
-            note: note, 
-            sign: signImg, 
+            name: encryptField(name), 
+            class: encryptField(className), 
+            symptom: encryptField(symptom), 
+            treatment: encryptField(treatment), 
+            note: encryptField(note), 
+            sign: signImg ? encryptField(signImg) : "", 
             bed: bed || null, 
             status: bed ? "staying" : "completed",
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -1211,7 +1211,22 @@ async function getStudentsList() {
     const snapshot = await db.collection('yt_students').get();
     window.allStudents = [];
     snapshot.forEach(doc => {
-        window.allStudents.push({ id: doc.id, ...doc.data() });
+        const d = doc.data();
+        const decryptedName = d.name ? decryptField(d.name) : '';
+        const decryptedClass = d.class ? decryptField(d.class) : '';
+        window.allStudents.push({
+            id: doc.id,
+            ...d,
+            name: decryptedName,
+            class: decryptedClass,
+            gender: d.gender ? decryptField(d.gender) : '',
+            height: d.height ? decryptField(d.height) : '',
+            weight: d.weight ? decryptField(d.weight) : '',
+            phone: d.phone ? decryptField(d.phone) : '',
+            parentPhone: d.parentPhone ? decryptField(d.parentPhone) : '',
+            street: d.street ? decryptField(d.street) : '',
+            name_search: removeVietnameseTones(decryptedName)
+        });
     });
 
     // 4. Lưu dữ liệu vào Bộ nhớ đệm để các lần truy cập tiếp theo tải tức thì (0ms)
@@ -1646,8 +1661,17 @@ async function viewHistory(sid, name) {
             body.innerHTML = "<p style='text-align:center; color:var(--text-gray); margin-top:20px;'>Học sinh chưa có lịch sử khám bệnh.</p>";
         } else {
             let visits = [];
-            // FIX LỖI: Lấy cả id của Document để truyền vào hàm Xóa
-            snap.forEach(doc => visits.push({ id: doc.id, ...doc.data() }));
+            snap.forEach(doc => {
+                const d = doc.data();
+                visits.push({ 
+                    id: doc.id, 
+                    ...d,
+                    symptom: d.symptom ? decryptField(d.symptom) : '',
+                    treatment: d.treatment ? decryptField(d.treatment) : '',
+                    note: d.note ? decryptField(d.note) : '',
+                    sign: d.sign ? decryptField(d.sign) : ''
+                });
+            });
             visits.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
             let html = '<ul style="list-style:none; padding:0; margin:0;">';
@@ -1774,24 +1798,22 @@ try {
 async function saveStudentEdit() {
     const sid = document.getElementById('edit-hs-id').value;
     
-// Tìm đến nơi khai báo dataToSave và sửa:
+const rawName = document.getElementById('edit-hs-name').value.trim();
 const dataToSave = {
     studentCode: document.getElementById('edit-hs-code').value.trim(), 
-    name: document.getElementById('edit-hs-name').value.trim(),
-    class: document.getElementById('edit-hs-class').value.trim(),
+    name: encryptField(rawName),
+    class: encryptField(document.getElementById('edit-hs-class').value.trim()),
     dob: document.getElementById('edit-hs-dob').value,
-    gender: document.getElementById('edit-hs-gender').value,
-    
-    // 👉 MÃ HÓA CÁC TRƯỜNG NÀY TRƯỚC KHI LƯU
+    gender: encryptField(document.getElementById('edit-hs-gender').value),
     phone: encryptField(document.getElementById('edit-hs-phone').value.trim()),
     parentPhone: encryptField(document.getElementById('edit-hs-parent-phone').value.trim()),
     street: encryptField(document.getElementById('edit-hs-street').value.trim()),
-    
     ward: document.getElementById('edit-hs-ward').value.trim(),
     city: document.getElementById('edit-hs-city').value,
-    height: document.getElementById('edit-hs-height').value.trim(),
-    weight: document.getElementById('edit-hs-weight').value.trim(),
-    medicalNote: document.getElementById('edit-hs-medical-note').value.trim()
+    height: encryptField(document.getElementById('edit-hs-height').value.trim()),
+    weight: encryptField(document.getElementById('edit-hs-weight').value.trim()),
+    medicalNote: document.getElementById('edit-hs-medical-note').value.trim(),
+    name_search: removeVietnameseTones(rawName)
 };
     if (!dataToSave.name || !dataToSave.class) return sysAlert("Tên và lớp không được để trống!", "error");
 
@@ -1948,10 +1970,16 @@ async function loadBeds() {
         }
 
         snap.forEach(doc => {
-            const v = doc.data();
+            const rawV = doc.data();
+            const v = {
+                ...rawV,
+                name: rawV.name ? decryptField(rawV.name) : '',
+                class: rawV.class ? decryptField(rawV.class) : '',
+                symptom: rawV.symptom ? decryptField(rawV.symptom) : '',
+                treatment: rawV.treatment ? decryptField(rawV.treatment) : ''
+            };
             const time = v.timestamp ? new Date(v.timestamp.seconds * 1000).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) : '';
             
-            // Nút báo phụ huynh
             let btnPH = `<button onclick="notifyParent('${doc.id}', '${v.studentId}')" class="btn" style="background:#fef3c7; color:#d97706; padding: 6px 12px; font-size: 0.85rem; font-weight: bold;"><i class="fas fa-phone-volume"></i> Gọi Phụ Huynh</button>`;
             if (v.notifiedParentAt) {
                 const notiTime = new Date(v.notifiedParentAt.seconds * 1000).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
@@ -2371,8 +2399,6 @@ function formatExcelDateToHTML5(dateVal) {
     // Nếu đã đúng chuẩn YYYY-MM-DD rồi thì giữ nguyên
     return str;
 }
-// ==========================================
-// ==========================================
 // TÍNH NĂNG IMPORT & LÀM GIÀU DỮ LIỆU TỪ EXCEL
 // ==========================================
 
@@ -2533,14 +2559,25 @@ async function handleExcelUpload(event) {
 
                         const ref = db.collection('yt_students').doc(sid);
                         const newData = {
-                            id: sid, name: cleanName, class: cleanClass, studentCode: studentCode,
-                            height, weight, dob, gender, phone, parentPhone, street, ward, city,
+                            id: sid, 
+                            name: encryptField(cleanName), 
+                            class: encryptField(cleanClass), 
+                            studentCode: studentCode,
+                            height: height ? encryptField(height) : '', 
+                            weight: weight ? encryptField(weight) : '', 
+                            dob, 
+                            gender: gender ? encryptField(gender) : '', 
+                            phone: phone ? encryptField(phone) : '', 
+                            parentPhone: parentPhone ? encryptField(parentPhone) : '', 
+                            street: street ? encryptField(street) : '', 
+                            ward, 
+                            city,
                             name_search: removeVietnameseTones(cleanName),
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         };
                         currentBatch.set(ref, newData);
+                        currentBatch.set(ref, newData);
                         
-                        // Cập nhật lại vào Map để tránh trùng lặp ngay trong cùng 1 file Excel
                         if (studentKeyByCode) existingStudentsMap.set(studentKeyByCode, newData);
                         existingStudentsMap.set(studentKeyByCombo, newData);
 

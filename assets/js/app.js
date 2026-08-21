@@ -1799,6 +1799,7 @@ try {
     } catch(e) { 
         console.error("Lỗi lấy dữ liệu:", e); 
     }
+}
 async function saveStudentEdit() {
     const sid = document.getElementById('edit-hs-id').value;
     

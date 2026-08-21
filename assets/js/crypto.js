@@ -1,30 +1,34 @@
-// assets/js/crypto.js - HỆ THỐNG MÃ HÓA & GIẢI MÃ TỰ ĐỘNG TOÀN CỤC (ALL-IN-ONE)
+// assets/js/crypto.js - HỆ THỐNG MÃ HÓA & TỰ ĐỘNG GIẢI MÃ TOÀN DIỆN (FIXED)
 
-// 1. BIẾN PROMISE TOÀN CỤC KIỂM SOÁT TIẾN TRÌNH NẠP KHÓA
-window.masterCryptoKeyReady = null;
-
-// Hàm kiểm tra và lấy User Firebase
-function getFirebaseUserAsync() {
-    return new Promise((resolve) => {
-        if (firebase.auth().currentUser) {
-            return resolve(firebase.auth().currentUser);
-        }
-        const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
-            unsubscribe();
-            resolve(user);
-        });
-    });
+function getMasterKey() {
+    return localStorage.getItem('vts_master_crypto_key') || sessionStorage.getItem('vts_master_crypto_key') || '';
 }
 
-// 2. HÀM TẢI KHÓA MASTER TỪ CLOUDFLARE WORKER
-async function loadMasterCryptoKey() {
-    // Nếu trong session đã có khóa sẵn -> Dùng ngay lập tức (0ms)
-    if (sessionStorage.getItem('vts_master_crypto_key')) {
-        return sessionStorage.getItem('vts_master_crypto_key');
+function setMasterKey(key) {
+    if (key) {
+        localStorage.setItem('vts_master_crypto_key', key);
+        sessionStorage.setItem('vts_master_crypto_key', key);
     }
+}
+
+function clearMasterKey() {
+    localStorage.removeItem('vts_master_crypto_key');
+    sessionStorage.removeItem('vts_master_crypto_key');
+    sessionStorage.removeItem('vts_students_cache'); // Xóa cache cũ bị dính mã hóa
+}
+
+// 1. HÀM TẢI KHÓA MASTER TỪ CLOUDFLARE WORKER
+async function loadMasterCryptoKey() {
+    const existingKey = getMasterKey();
+    if (existingKey) return existingKey;
 
     try {
-        let currentUser = await getFirebaseUserAsync();
+        let currentUser = firebase.auth().currentUser;
+        if (!currentUser) {
+            currentUser = await new Promise(resolve => {
+                const unsub = firebase.auth().onAuthStateChanged(user => { unsub(); resolve(user); });
+            });
+        }
         if (!currentUser) return null;
 
         const idToken = await currentUser.getIdToken(true);
@@ -38,14 +42,9 @@ async function loadMasterCryptoKey() {
 
         if (response.ok) {
             const data = await response.json();
-            sessionStorage.setItem('vts_master_crypto_key', data.key);
-            console.log("🔒 [Security] Đã thiết lập khóa giải mã E2EE toàn cục thành công!");
-
-            // Bắn sự kiện ra toàn bộ trang web để các trang tự làm mới giao diện nếu cần
-            window.dispatchEvent(new CustomEvent('vts_crypto_ready', { detail: { key: data.key } }));
+            setMasterKey(data.key);
+            console.log("🔒 [Security] Đã nạp khóa E2EE thành công!");
             return data.key;
-        } else {
-            console.warn("⚠️ [Security] Cloudflare từ chối cấp khóa hoặc phiên chưa hợp lệ.");
         }
     } catch (e) {
         console.error("❌ Lỗi nạp khóa bảo mật:", e);
@@ -53,21 +52,21 @@ async function loadMasterCryptoKey() {
     return null;
 }
 
-// TỰ ĐỘNG LẮNG NGHE ĐĂNG NHẬP VÀ NẠP KHÓA NGAY LẬP TỨC CHO MỌI FILE
+// Lắng nghe đăng nhập để tự động nạp hoặc xóa khóa
 if (typeof firebase !== 'undefined' && firebase.auth) {
-    firebase.auth().onAuthStateChanged((user) => {
+    firebase.auth().onAuthStateChanged(async (user) => {
         if (user) {
-            window.masterCryptoKeyReady = loadMasterCryptoKey();
+            await loadMasterCryptoKey();
         } else {
-            sessionStorage.removeItem('vts_master_crypto_key');
+            clearMasterKey();
         }
     });
 }
 
-// 3. HÀM MÃ HÓA CHUẨN
+// 2. HÀM MÃ HÓA
 function encryptField(plainText) {
     if (!plainText || typeof plainText !== 'string' || plainText.trim() === "") return plainText || "";
-    const key = sessionStorage.getItem('vts_master_crypto_key');
+    const key = getMasterKey();
     if (!key) return plainText;
     try {
         return CryptoJS.AES.encrypt(plainText.trim(), key).toString();
@@ -76,17 +75,15 @@ function encryptField(plainText) {
     }
 }
 
-// 4. HÀM GIẢI MÃ CHUẨN (CHỐNG LỖI VÀ CHỐNG SẬP NGÀY THÁNG)
+// 3. HÀM GIẢI MÃ
 function decryptField(cipherText) {
     if (!cipherText || typeof cipherText !== 'string' || cipherText.trim() === "") return cipherText || "";
-    
-    // Nếu không phải chuỗi mã hóa AES của CryptoJS -> Trả về text gốc luôn
     if (!cipherText.startsWith("U2FsdGVkX1")) {
-        return cipherText;
+        return cipherText; // Dữ liệu cũ chưa mã hóa
     }
 
-    const key = sessionStorage.getItem('vts_master_crypto_key');
-    if (!key) return cipherText; // Trả về chuỗi gốc để không làm đơ code hiển thị
+    const key = getMasterKey();
+    if (!key) return cipherText;
 
     try {
         const bytes = CryptoJS.AES.decrypt(cipherText.trim(), key);
@@ -97,7 +94,7 @@ function decryptField(cipherText) {
     }
 }
 
-// 5. BỘ QUÉT ĐỆ QUY TỰ ĐỘNG GIẢI MÃ MỌI ĐỐI TƯỢNG VÀ MẢNG
+// 4. BỘ ĐỆ QUY TỰ ĐỘNG GIẢI MÃ TẤT CẢ CÁC TRƯỜNG
 function autoDecryptDeep(data) {
     if (!data) return data;
     
@@ -108,7 +105,6 @@ function autoDecryptDeep(data) {
         return data;
     }
 
-    // Bỏ qua Timestamp của Firebase và Date của JS
     if (data instanceof Date || (data && typeof data.toDate === 'function')) {
         return data;
     }
@@ -130,12 +126,23 @@ function autoDecryptDeep(data) {
     return data;
 }
 
-// 6. CAN THIỆP TRỰC TIẾP VÀO GỐC FIREBASE SDK
-// Bất cứ file nào gọi doc.data() sẽ tự động nhận dữ liệu đã giải mã sẵn 100%
+// 5. CAN THIỆP VÀO CẢ 2 LOẠI SNAPSHOT CỦA FIREBASE SDK V8
 if (typeof firebase !== 'undefined' && firebase.firestore) {
-    const originalDocData = firebase.firestore.DocumentSnapshot.prototype.data;
-    firebase.firestore.DocumentSnapshot.prototype.data = function(...args) {
-        const rawData = originalDocData.apply(this, args);
-        return autoDecryptDeep(rawData);
-    };
+    // A. Chặn DocumentSnapshot (Dành cho doc.get())
+    if (firebase.firestore.DocumentSnapshot) {
+        const origDocData = firebase.firestore.DocumentSnapshot.prototype.data;
+        firebase.firestore.DocumentSnapshot.prototype.data = function(...args) {
+            const raw = origDocData.apply(this, args);
+            return autoDecryptDeep(raw);
+        };
+    }
+
+    // B. Chặn QueryDocumentSnapshot (Dành cho collection.get(), where, onSnapshot)
+    if (firebase.firestore.QueryDocumentSnapshot) {
+        const origQueryDocData = firebase.firestore.QueryDocumentSnapshot.prototype.data;
+        firebase.firestore.QueryDocumentSnapshot.prototype.data = function(...args) {
+            const raw = origQueryDocData.apply(this, args);
+            return autoDecryptDeep(raw);
+        };
+    }
 }

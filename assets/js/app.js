@@ -987,13 +987,13 @@ async function saveVisit(withSign) {
 
             if (hsSnap.empty) {
                 // Chưa có học sinh nào -> Tạo mới hoàn toàn
-                studentId = generateStudentId();
+               studentId = generateStudentId();
                 const newHSRef = db.collection('yt_students').doc(studentId);
                 mainBatch.set(newHSRef, {
                     id: studentId, 
-                    name: name, 
-                    class: className, 
-                    name_search: removeVietnameseTones(name), 
+                    name: encryptField(name), 
+                    class: encryptField(className), 
+                    name_search: encryptField(removeVietnameseTones(name)),
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
             } else if (hsSnap.size === 1) {
@@ -1226,6 +1226,7 @@ async function getStudentsList() {
             phone: d.phone ? decryptField(d.phone) : '',
             parentPhone: d.parentPhone ? decryptField(d.parentPhone) : '',
             street: d.street ? decryptField(d.street) : '',
+            linkedEmail: d.linkedEmail ? decryptField(d.linkedEmail) : '',
             name_search: removeVietnameseTones(decryptedName)
         });
     });
@@ -1820,7 +1821,7 @@ const dataToSave = {
     height: encryptField(document.getElementById('edit-hs-height').value.trim()),
     weight: encryptField(document.getElementById('edit-hs-weight').value.trim()),
     medicalNote: document.getElementById('edit-hs-medical-note').value.trim(),
-    name_search: removeVietnameseTones(rawName)
+    name_search: encryptField(removeVietnameseTones(rawName)
 };
     if (!dataToSave.name || !dataToSave.class) return sysAlert("Tên và lớp không được để trống!", "error");
 
@@ -2572,15 +2573,15 @@ async function handleExcelUpload(event) {
                             studentCode: studentCode,
                             height: height ? encryptField(height) : '', 
                             weight: weight ? encryptField(weight) : '', 
-                            dob, 
+                            dob: dob ? encryptField(dob) : '', 
                             gender: gender ? encryptField(gender) : '', 
                             phone: phone ? encryptField(phone) : '', 
                             parentPhone: parentPhone ? encryptField(parentPhone) : '', 
                             street: street ? encryptField(street) : '', 
                             ward, 
                             city,
-                            name_search: removeVietnameseTones(cleanName),
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                            name_search: encryptField(removeVietnameseTones(cleanName)),
+							createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         };
                         currentBatch.set(ref, newData);
                         currentBatch.set(ref, newData);
@@ -3020,7 +3021,7 @@ async function performAdminFullLookup() {
                         <tr><td style="color:#64748b;">SĐT Học sinh:</td><td style="font-weight:500;">${decPhone}</td></tr>
             		<tr><td style="color:#64748b;">SĐT Phụ huynh:</td><td style="font-weight:500;">${decParentPhone}</td></tr>
             		<tr><td style="color:#64748b; vertical-align: top;">Địa chỉ:</td><td style="font-weight:500;">${fullDecAddress}</td>
-                        <tr><td style="color:#64748b;">Email liên kết:</td><td style="font-weight:500; color:#0ea5e9;">${st.linkedEmail || 'Chưa liên kết app'}</td></tr>
+                        <tr><td style="color:#64748b;">Email liên kết:</td><td style="font-weight:500; color:#0ea5e9;">${st.linkedEmail ? decryptField(st.linkedEmail) : 'Chưa liên kết app'}</td></tr>
                     </table>
                 </div>
 

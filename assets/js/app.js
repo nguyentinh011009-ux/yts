@@ -1219,6 +1219,7 @@ async function getStudentsList() {
             ...d,
             name: decryptedName,
             class: decryptedClass,
+            dob: d.dob ? decryptField(d.dob) : '',
             gender: d.gender ? decryptField(d.gender) : '',
             height: d.height ? decryptField(d.height) : '',
             weight: d.weight ? decryptField(d.weight) : '',
@@ -1778,32 +1779,37 @@ try {
         const doc = await db.collection('yt_students').doc(sid).get();
         if(doc.exists) {
             const d = doc.data();
-            // Lấy mã HS đổ ra giao diện
+            
+            if(d.name) document.getElementById('edit-hs-name').value = decryptField(d.name);
+            if(d.class) document.getElementById('edit-hs-class').value = decryptField(d.class);
             if(d.studentCode) document.getElementById('edit-hs-code').value = d.studentCode; 
             
-            if(d.dob) document.getElementById('edit-hs-dob').value = d.dob;
-            if(d.gender) document.getElementById('edit-hs-gender').value = d.gender;
-	    if (d.phone) document.getElementById('edit-hs-phone').value = decryptField(d.phone);
-	    if (d.parentPhone) document.getElementById('edit-hs-parent-phone').value = decryptField(d.parentPhone);
-	    if (d.street) document.getElementById('edit-hs-street').value = decryptField(d.street);
-            if(d.ward) document.getElementById('edit-hs-ward').value = d.ward;
-            if(d.height) document.getElementById('edit-hs-height').value = d.height;
-            if(d.weight) document.getElementById('edit-hs-weight').value = d.weight;
-            if(d.medicalNote) document.getElementById('edit-hs-medical-note').value = d.medicalNote;
+            if(d.dob) document.getElementById('edit-hs-dob').value = decryptField(d.dob);
+            if(d.gender) document.getElementById('edit-hs-gender').value = decryptField(d.gender);
+            if(d.height) document.getElementById('edit-hs-height').value = decryptField(d.height);
+            if(d.weight) document.getElementById('edit-hs-weight').value = decryptField(d.weight);
+
+            if(d.phone) document.getElementById('edit-hs-phone').value = decryptField(d.phone);
+            if(d.parentPhone) document.getElementById('edit-hs-parent-phone').value = decryptField(d.parentPhone);
+            if(d.street) document.getElementById('edit-hs-street').value = decryptField(d.street);
+            
+            if(d.ward) document.getElementById('edit-hs-ward').value = d.ward || '';
+            if(d.medicalNote) document.getElementById('edit-hs-medical-note').value = d.medicalNote || '';
         }
     } catch(e) { 
         console.error("Lỗi lấy dữ liệu:", e); 
     }
-}
 async function saveStudentEdit() {
     const sid = document.getElementById('edit-hs-id').value;
     
+// --- CODE MỚI ---
 const rawName = document.getElementById('edit-hs-name').value.trim();
+const rawDob = document.getElementById('edit-hs-dob').value;
 const dataToSave = {
     studentCode: document.getElementById('edit-hs-code').value.trim(), 
     name: encryptField(rawName),
     class: encryptField(document.getElementById('edit-hs-class').value.trim()),
-    dob: document.getElementById('edit-hs-dob').value,
+    dob: rawDob ? encryptField(rawDob) : '',
     gender: encryptField(document.getElementById('edit-hs-gender').value),
     phone: encryptField(document.getElementById('edit-hs-phone').value.trim()),
     parentPhone: encryptField(document.getElementById('edit-hs-parent-phone').value.trim()),

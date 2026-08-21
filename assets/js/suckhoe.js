@@ -125,8 +125,8 @@ async function saveManualPhysicalExam() {
     const payload = {
         campaignId: activeCampaignId,
         studentId: sid,
-        name,
-        class: className,
+        name: encryptField(name),
+        class: encryptField(className),
         facility: document.getElementById('ex-facility').value.trim(),
         height,
         weight,
@@ -503,9 +503,23 @@ async function handleExcelExamUpload(event) {
                         const refResult = db.collection('yt_exam_results').doc(recordId);
 
                         currentBatch.set(refResult, {
-                            campaignId: activeCampaignId, studentId: student.id, name, class: className, dob,
-                            facility, height, weight, examDate, reportDate, mentalHealth: mental,
-                            internalMedicine: internal, ent, surgery, eyes, dental, summary
+                            campaignId: activeCampaignId, 
+                            studentId: student.id, 
+                            name: encryptField(name),
+                            class: encryptField(className),
+                            dob: dob ? encryptField(dob) : '',
+                            facility, 
+                            height, 
+                            weight, 
+                            examDate, 
+                            reportDate, 
+                            mentalHealth: mental,
+                            internalMedicine: internal, 
+                            ent, 
+                            surgery, 
+                            eyes, 
+                            dental, 
+                            summary
                         });
                         opCount++;
 
@@ -656,13 +670,22 @@ function loadExamResultsForCampaign(cid, searchQuery = "") {
     // HUỶ luồng lắng nghe cũ (nếu có) trước khi mở đợt khám mới
     if (examResultsListener) examResultsListener();
 
-    examResultsListener = db.collection('yt_exam_results')
-        .where('campaignId', '==', cid)
-        .onSnapshot(snap => {
-            activeCampaignResults = [];
-            snap.forEach(doc => { activeCampaignResults.push({ id: doc.id, ...doc.data() }); });
-            renderCampaignStudentsTable(searchQuery);
-        });
+	examResultsListener = db.collection('yt_exam_results')
+	        .where('campaignId', '==', cid)
+	        .onSnapshot(snap => {
+	            activeCampaignResults = [];
+	            snap.forEach(doc => { 
+	                const d = doc.data();
+	                activeCampaignResults.push({ 
+	                    id: doc.id, 
+	                    ...d,
+	                    name: d.name ? decryptField(d.name) : '',
+	                    class: d.class ? decryptField(d.class) : '',
+	                    dob: d.dob ? decryptField(d.dob) : '' 
+	                }); 
+	            });
+	            renderCampaignStudentsTable(searchQuery);
+	        });
 }
 
 // 3. TỐI ƯU HÓA KẾT XUẤT DANH SÁCH HỌC SINH ĐÃ KHÁM ĐỊNH KỲ

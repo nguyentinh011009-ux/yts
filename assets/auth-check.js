@@ -4,6 +4,5 @@ const ALLOWED_ADMIN_EMAILS = [
      "tomizy09icloud@gmail.com",
      "nguyenthixuandongvts@gmail.com",
      "yte.thptvothisaubrvt@gmail.com",
-     "nguyentinh52009@gmail.com",
-     "bgk.demo@yteso.vn"
+     "nguyentinh52009@gmail.com"
 ];

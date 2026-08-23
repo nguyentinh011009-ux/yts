@@ -1,8 +1,9 @@
 /* ==========================================================
-   HỆ THỐNG DEMO TOÀN DIỆN CHO BAN GIÁM KHẢO (ĐẦY ĐỦ 20 BẢNG)
+   HỆ THỐNG DEMO TOÀN DIỆN CHO BAN GIÁM KHẢO (ĐÃ FIX LỖI 100%)
    ========================================================== */
 
 const DEMO_ACCOUNT_EMAIL = "bgk.demo@yteso.vn";
+const DEMO_ACCOUNT_PASS = "Demo@BGK2025";
 
 // DANH SÁCH TOÀN BỘ 20 COLLECTION CẦN CÁCH LY
 const DEMO_ISOLATED_COLLECTIONS = [
@@ -28,7 +29,7 @@ const DEMO_ISOLATED_COLLECTIONS = [
     'yt_attendance'
 ];
 
-// BỘ DỮ LIỆU MẪU ĐƯỢC CHUẨN HÓA SẴN
+// BỘ DỮ LIỆU MẪU CHUẨN HÓA DẠNG MẢNG (ARRAY)
 const INITIAL_DEMO_DATA = {
     // 1. Học sinh mẫu
     yt_students: [
@@ -49,8 +50,38 @@ const INITIAL_DEMO_DATA = {
             city: "Thành phố Hồ Chí Minh", 
             medicalNote: "Tiền sử hen phế quản nhẹ" 
         },
-        { id: "YT-10002", name: "Trần Thị Mai Anh", class: "11A4", studentCode: "HS1002", dob: "2007-08-20", gender: "Nữ", height: "160", weight: "48", phone: "0902345678", parentPhone: "0913456789", street: "45 Lê Lợi", ward: "Xã Long Điền", city: "Thành phố Hồ Chí Minh", medicalNote: "Dị ứng Paracetamol" },
-        { id: "YT-10003", name: "Lê Quốc Bảo", class: "12A2", studentCode: "HS1003", dob: "2006-11-05", gender: "Nam", height: "175", weight: "68", phone: "0903456789", parentPhone: "0914567890", street: "78 Hùng Vương", ward: "Xã Phước Hải", city: "Thành phố Hồ Chí Minh", medicalNote: "" }
+        { 
+            id: "YT-10002", 
+            name: "Trần Thị Mai Anh", 
+            class: "11A4", 
+            studentCode: "HS1002", 
+            dob: "2007-08-20", 
+            gender: "Nữ", 
+            height: "160", 
+            weight: "48", 
+            phone: "0902345678", 
+            parentPhone: "0913456789", 
+            street: "45 Lê Lợi", 
+            ward: "Xã Long Điền", 
+            city: "Thành phố Hồ Chí Minh", 
+            medicalNote: "Dị ứng Paracetamol" 
+        },
+        { 
+            id: "YT-10003", 
+            name: "Lê Quốc Bảo", 
+            class: "12A2", 
+            studentCode: "HS1003", 
+            dob: "2006-11-05", 
+            gender: "Nam", 
+            height: "175", 
+            weight: "68", 
+            phone: "0903456789", 
+            parentPhone: "0914567890", 
+            street: "78 Hùng Vương", 
+            ward: "Xã Phước Hải", 
+            city: "Thành phố Hồ Chí Minh", 
+            medicalNote: "" 
+        }
     ],
 
     // 2. Giường bệnh
@@ -112,25 +143,28 @@ const INITIAL_DEMO_DATA = {
             }
         }
     ],
-    // 4. Lịch sử điểm danh (Nghỉ học)
+
+    // 6. Lịch sử điểm danh (Nghỉ học)
     yt_attendance: [
         {
+            id: "ATT_DEMO_01",
             studentId: "YT-10001",
-            date: new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0], // 3 ngày trước
+            date: new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0],
             reason: "B",
             diagnosis: "Cảm cúm mùa",
             symptom: "Sốt, ho có đờm"
         }
     ],
 
-    // 6. Trắc nghiệm / Test tâm lý sức khỏe
+    // 7. Trắc nghiệm tâm lý
     yt_tests: [
         { id: "TEST_STRESS_01", title: "Thang đánh giá lo âu & trầm cảm DASS-21", type: "mental", description: "Đánh giá mức độ stress học đường", totalQuestions: 21, active: true }
     ],
 
-  // 5. Hòm thư hỗ trợ (Tickets)
+    // 8. Hòm thư hỗ trợ (Tickets)
     yt_tickets: [
         { 
+            id: "TK_DEMO_01",
             ticketId: "REQ-88992", 
             studentId: "YT-10001", 
             name: "Nguyễn Hoàng Long", 
@@ -142,6 +176,7 @@ const INITIAL_DEMO_DATA = {
         }
     ],
 
+    // 9. Thông báo
     yt_notifications: [
         { 
             id: "NOTI_DEMO_01", 
@@ -154,15 +189,16 @@ const INITIAL_DEMO_DATA = {
         }
     ],
 
-    // 9. Bộ nhớ AI
+    // 10. Bộ nhớ AI
     ai_memory_notes: [
         { id: "NOTE_AI_01", title: "Lưu ý dịch tễ học đường", content: "Mùa mưa đang đến, cần theo dõi sát các ca sốt xuất huyết và cảm cúm mùa ở khối 10 và 11.", timestamp: new Date() }
-    ]
-};
-    // 7. Thống kê & Xếp hạng tháng
-    yt_stats: {
-        // Doc ID định dạng MM-YYYY
-        [`${(new Date().getMonth() + 1).toString().padStart(2, '0')}-${new Date().getFullYear()}`]: {
+    ],
+
+    // 11. Thống kê tháng (Đã chuyển thành Array chuẩn)
+    yt_stats: [
+        {
+            id: `${(new Date().getMonth() + 1).toString().padStart(2, '0')}-${new Date().getFullYear()}`,
+            monthInfo: `${(new Date().getMonth() + 1).toString().padStart(2, '0')}-${new Date().getFullYear()}`,
             lastUpdated: new Date(),
             topSymptoms: [
                 { name: "Sốt & Cảm cúm", count: 12 },
@@ -170,15 +206,14 @@ const INITIAL_DEMO_DATA = {
                 { name: "Đau bụng tiêu hóa", count: 5 }
             ],
             studentVisits: {
-                "YT-10001": 1 // Học sinh mẫu đã ghé 1 lần
+                "YT-10001": 1
             }
         }
-    }
+    ]
 };
 
-
 // ==========================================================
-// CƠ CHẾ ĐÁNH CHẶN & CHUYỂN HƯỚNG CƠ SỞ DỮ LIỆU
+// CƠ CHẾ ĐÁNH CHẶN & CHUYỂN HƯỚNG DATABASE
 // ==========================================================
 (function initDemoInterceptor() {
     const isDemo = sessionStorage.getItem('is_demo_mode') === 'true';
@@ -194,7 +229,6 @@ function enableDemoMode() {
     if (window.db && typeof db.collection === 'function' && !db._isIntercepted) {
         const originalCollection = db.collection.bind(db);
         
-        // Ghi đè phương thức truy vấn collection
         db.collection = function(name) {
             if (DEMO_ISOLATED_COLLECTIONS.includes(name)) {
                 return originalCollection(`demo_${name}`);
@@ -207,8 +241,33 @@ function enableDemoMode() {
     window.addEventListener('DOMContentLoaded', renderDemoTopBanner);
 }
 
-// Hàm phục hồi / làm sạch toàn bộ dữ liệu mẫu
-async function resetDemoDatabase() {
+// Hàm đăng nhập 1-click cho BGK (Tự động tạo tài khoản Firebase Auth nếu chưa có)
+async function loginDemoJudge() {
+    if (typeof sysLoading === 'function') sysLoading(true, "Đang kết nối phiên Ban Giám Khảo...");
+    enableDemoMode();
+
+    try {
+        await firebase.auth().signInWithEmailAndPassword(DEMO_ACCOUNT_EMAIL, DEMO_ACCOUNT_PASS);
+    } catch(err) {
+        if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+            // Tự động khởi tạo user trên Firebase Auth nếu chưa tồn tại
+            try {
+                await firebase.auth().createUserWithEmailAndPassword(DEMO_ACCOUNT_EMAIL, DEMO_ACCOUNT_PASS);
+                // Nạp sẵn data lần đầu
+                await resetDemoDatabase(false);
+            } catch(createErr) {
+                alert("Lỗi tạo phiên demo: " + createErr.message);
+            }
+        } else {
+            alert("Lỗi đăng nhập demo: " + err.message);
+        }
+    } finally {
+        if (typeof sysLoading === 'function') sysLoading(false);
+    }
+}
+
+// Hàm phục hồi dữ liệu mẫu
+async function resetDemoDatabase(showToast = true) {
     if (typeof sysLoading === 'function') sysLoading(true, "Đang khôi phục toàn bộ 20 bảng dữ liệu mẫu...");
     
     try {
@@ -244,8 +303,10 @@ async function resetDemoDatabase() {
         sessionStorage.removeItem('vts_students_cache');
         if (window.allStudents) window.allStudents = [];
 
-        if (typeof sysAlert === 'function') sysAlert("Đã hoàn nguyên dữ liệu mẫu thành công!", "success");
-        setTimeout(() => window.location.reload(), 800);
+        if (showToast && typeof sysAlert === 'function') {
+            sysAlert("Đã hoàn nguyên dữ liệu mẫu thành công!", "success");
+            setTimeout(() => window.location.reload(), 800);
+        }
     } catch (err) {
         console.error("Lỗi Reset Demo:", err);
         if (typeof sysAlert === 'function') sysAlert("Lỗi: " + err.message, "error");
@@ -281,7 +342,7 @@ function renderDemoTopBanner() {
     document.body.style.paddingTop = "34px";
 }
 
-// Đồng bộ trạng thái khi đăng nhập / đăng xuất
+// Đồng bộ khi đăng nhập/đăng xuất
 window.addEventListener('load', () => {
     if (window.firebase && firebase.auth()) {
         firebase.auth().onAuthStateChanged(user => {

@@ -1,7 +1,11 @@
 /* ==========================================================
    HỆ THỐNG DEMO TOÀN DIỆN CHO BAN GIÁM KHẢO (ĐÃ FIX LỖI 100%)
    ========================================================== */
-
+if (typeof ALLOWED_ADMIN_EMAILS !== 'undefined' && Array.isArray(ALLOWED_ADMIN_EMAILS)) {
+    if (!ALLOWED_ADMIN_EMAILS.includes("bgk.demo@yteso.vn")) {
+        ALLOWED_ADMIN_EMAILS.push("bgk.demo@yteso.vn");
+    }
+}
 const DEMO_ACCOUNT_EMAIL = "bgk.demo@yteso.vn";
 const DEMO_ACCOUNT_PASS = "Demo@BGK2025";
 

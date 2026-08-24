@@ -228,24 +228,99 @@ function enableDemoMode() {
 }
 
 // =========================================================================
-// HÀM RESET & NẠP TỰ ĐỘNG DỮ LIỆU MẪU LÊN CLOUD
+// HÀM RESET & NẠP TỰ ĐỘNG DỮ LIỆU MẪU LÊN CLOUD (CÓ GIỚI HẠN & AN TOÀN)
 // =========================================================================
-async function resetDemoDatabase(showToast = true) {
-    if (typeof sysLoading === 'function') sysLoading(true, "Đang khởi tạo toàn bộ 20 bảng dữ liệu mẫu...");
+const MAX_GLOBAL_RESET_COUNT = 0;
+let isResetting = false;
+
+// Hiển thị thông báo dễ thương khi hết lượt reset
+function showCuteLimitModal(usedCount) {
+    const modalHtml = `
+        <div id="demo-limit-modal" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:99999999; display:flex; align-items:center; justify-content:center; animation: fadeIn 0.3s ease;">
+            <div style="background:#fff; border-radius:20px; max-width:440px; padding:28px 24px; text-align:center; box-shadow:0 15px 35px rgba(0,0,0,0.2); font-family:sans-serif; margin:15px;">
+                <div style="font-size:3.5rem; margin-bottom:10px;">🌸🥺🌸</div>
+                <h3 style="color:#d97706; margin:0 0 12px; font-size:1.3rem;">Kính gửi Ban Giám Khảo mến thương!</h3>
+                <p style="color:#4b5563; font-size:0.95rem; line-height:1.6; margin-bottom:18px;">
+                   Dạ hệ thống đã sử dụng hết <b>${usedCount}/${MAX_GLOBAL_RESET_COUNT} lượt khôi phục trong ngày hôm nay</b> của Cuộc thi nhằm bảo vệ tài nguyên đám mây phục vụ Cuộc thi ạ.
+               </p>
+                <div style="background:#fef3c7; border:1px dashed #f59e0b; border-radius:12px; padding:12px; color:#92400e; font-size:0.88rem; margin-bottom:20px;">
+                    ✨ Toàn bộ dữ liệu dịch tễ học đường, hồ sơ và kho dược hiện tại vẫn đang ở trạng thái chuẩn chỉnh để quý Ban giám khảo trải nghiệm trọn vẹn ạ!
+                </div>
+                <p style="color:#6b7280; font-size:0.85rem; margin-bottom:20px; font-style:italic;">
+                    Mong quý Ban giám khảo thương  em và thông cảm cho sự bất tiện nhỏ này nhé ạ ❤️
+                </p>
+                <button onclick="document.getElementById('demo-limit-modal').remove()" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:white; border:none; padding:10px 30px; border-radius:25px; font-weight:bold; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(217,119,6,0.3);">
+                    Dạ, mình đã hiểu rồi nè ✨
+                </button>
+            </div>
+        </div>
+    `;
+    const oldModal = document.getElementById('demo-limit-modal');
+    if (oldModal) oldModal.remove();
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+async function resetDemoDatabase(isManualTrigger = true) {
+    if (isResetting) return;
+    isResetting = true;
+
+    const btn = document.getElementById('btn-demo-reset');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Đang khôi phục...';
+    }
 
     try {
         const rawDb = firebase.firestore();
         const getRawCol = (name) => rawDb._originalCollection ? rawDb._originalCollection(name) : rawDb.collection(name);
+        const quotaDocRef = getRawCol('demo_stats').doc('global_reset_quota');
 
-        // 1. Xóa dữ liệu demo cũ
-        for (const colName of DEMO_ISOLATED_COLLECTIONS) {
-            const snap = await getRawCol(`demo_${colName}`).get();
-            const batch = rawDb.batch();
-            snap.forEach(doc => batch.delete(doc.ref));
-            await batch.commit();
+// 1. Kiểm tra giới hạn 4 lần / ngày trên toàn hệ thống
+        if (isManualTrigger) {
+            const quotaSnap = await quotaDocRef.get();
+            const todayStr = new Date().toISOString().slice(0, 10); // Chuỗi YYYY-MM-DD
+            let currentCount = 0;
+
+            if (quotaSnap.exists) {
+                const data = quotaSnap.data();
+                // Nếu cùng ngày thì tính tiếp, nếu qua ngày mới tự reset về 0
+                if (data.date === todayStr) {
+                    currentCount = data.count || 0;
+                }
+            }
+
+            if (currentCount >= MAX_GLOBAL_RESET_COUNT) {
+                showCuteLimitModal(currentCount);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '🔄 Khôi phục dữ liệu gốc';
+                }
+                isResetting = false;
+                return;
+            }
+
+            // Lưu số lượt kèm theo ngày hôm nay
+            await quotaDocRef.set({
+                date: todayStr,
+                count: currentCount + 1,
+                lastResetAt: new Date(),
+                lastResetBy: DEMO_ACCOUNT_EMAIL
+            }, { merge: true });
         }
 
-      // 2. Nạp dữ liệu mẫu mới (Có chia nhỏ Batch để nạp hơn 1000 records)
+        if (typeof sysLoading === 'function') sysLoading(true, "Đang làm mới dữ liệu hệ thống độc lập...");
+
+        // 2. Xóa dữ liệu demo cũ
+        for (const colName of DEMO_ISOLATED_COLLECTIONS) {
+            const snap = await getRawCol(`demo_${colName}`).get();
+            if (!snap.empty) {
+                const batch = rawDb.batch();
+                snap.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+            }
+        }
+
+        // 3. Nạp lại dữ liệu mẫu mới
         for (const [colName, docs] of Object.entries(INITIAL_DEMO_DATA)) {
             const CHUNK_SIZE = 200;
             for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
@@ -260,7 +335,9 @@ async function resetDemoDatabase(showToast = true) {
                         ['name', 'class', 'dob', 'phone', 'parentPhone', 'street', 'symptom', 'treatment', 'note'].forEach(f => {
                             if (payload[f]) payload[f] = encryptField(payload[f]);
                         });
-                        if (payload.name) payload.name_search = encryptField(removeVietnameseTones(item.name));
+                        if (payload.name && typeof removeVietnameseTones === 'function') {
+                            payload.name_search = encryptField(removeVietnameseTones(item.name));
+                        }
                     }
                     batch.set(docRef, payload);
                 });
@@ -268,20 +345,39 @@ async function resetDemoDatabase(showToast = true) {
             }
         }
 
-// Kiểm tra xem database demo có dữ liệu chưa, nếu chưa có thì tự động tạo luôn
+        if (typeof sysLoading === 'function') sysLoading(false);
+        if (typeof showNotification === 'function') showNotification("Đã khôi phục dữ liệu mẫu gốc thành công!", "success");
+        setTimeout(() => window.location.reload(), 800);
+
+    } catch (err) {
+        console.error("Lỗi khi reset demo database:", err);
+        if (typeof sysLoading === 'function') sysLoading(false);
+        alert("Có lỗi xảy ra khi khôi phục dữ liệu. Vui lòng thử lại!");
+    } finally {
+        isResetting = false;
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '🔄 Khôi phục dữ liệu gốc';
+        }
+    }
+}
+
+// Kiểm tra xem database demo có dữ liệu chưa (Chống lặp vô tận)
 async function autoSeedIfEmpty() {
+    if (sessionStorage.getItem('demo_seed_checked')) return;
+    sessionStorage.setItem('demo_seed_checked', 'true');
+
     try {
         const rawDb = firebase.firestore();
         const getRawCol = (name) => rawDb._originalCollection ? rawDb._originalCollection(name) : rawDb.collection(name);
         const checkSnap = await getRawCol('demo_yt_students').limit(1).get();
         
         if (checkSnap.empty) {
-            console.log("Database demo trống, đang tự động nạp dữ liệu mẫu...");
-            await resetDemoDatabase(false);
-            window.location.reload();
+            console.log("Database demo chưa có dữ liệu, đang khởi tạo lần đầu...");
+            await resetDemoDatabase(false); // Không tính vào 4 lượt bấm của BGK
         }
     } catch (e) {
-        console.warn("Auto-seed check:", e);
+        console.warn("Auto-seed check error:", e);
     }
 }
 
@@ -303,7 +399,7 @@ function renderDemoTopBanner() {
             <span style="font-weight:normal; margin-left:8px; opacity:0.9;">(Dữ liệu mẫu độc lập - Toàn quyền thao tác)</span>
         </div>
         <div>
-            <button onclick="resetDemoDatabase()" style="background: white; color: #b45309; border: none; padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer;">
+            <button id="btn-demo-reset" onclick="resetDemoDatabase(true)" style="background: white; color: #b45309; border: none; padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: 0.2s;">
                 🔄 Khôi phục dữ liệu gốc
             </button>
         </div>
@@ -321,6 +417,7 @@ window.addEventListener('load', () => {
                 await autoSeedIfEmpty();
             } else if (!user) {
                 sessionStorage.removeItem('is_demo_mode');
+                sessionStorage.removeItem('demo_seed_checked');
             }
         });
     }

@@ -362,19 +362,23 @@ async function resetDemoDatabase(isManualTrigger = true) {
     }
 }
 
-// Kiểm tra xem database demo có dữ liệu chưa (Chống lặp vô tận)
+// Tự động kiểm tra và ép nạp bộ dữ liệu 500 HS nếu dữ liệu hiện tại bị thiếu
 async function autoSeedIfEmpty() {
-    if (sessionStorage.getItem('demo_seed_checked')) return;
-    sessionStorage.setItem('demo_seed_checked', 'true');
+    if (sessionStorage.getItem('demo_seed_v2_applied')) return;
 
     try {
         const rawDb = firebase.firestore();
         const getRawCol = (name) => rawDb._originalCollection ? rawDb._originalCollection(name) : rawDb.collection(name);
-        const checkSnap = await getRawCol('demo_yt_students').limit(1).get();
         
-        if (checkSnap.empty) {
-            console.log("Database demo chưa có dữ liệu, đang khởi tạo lần đầu...");
-            await resetDemoDatabase(false); // Không tính vào 4 lượt bấm của BGK
+        // Kiểm tra xem đã nạp đủ bộ dữ liệu chuẩn 500 HS chưa
+        const checkSnap = await getRawCol('demo_yt_students').limit(10).get();
+        
+        if (checkSnap.size < 5) {
+            console.log("Dữ liệu demo chưa đủ 500 HS, đang tự động nạp mới toàn bộ...");
+            sessionStorage.setItem('demo_seed_v2_applied', 'true');
+            await resetDemoDatabase(false); // Nạp tự động, không tính vào 4 lượt của BGK
+        } else {
+            sessionStorage.setItem('demo_seed_v2_applied', 'true');
         }
     } catch (e) {
         console.warn("Auto-seed check error:", e);

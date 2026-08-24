@@ -230,7 +230,7 @@ function enableDemoMode() {
 // =========================================================================
 // HÀM RESET & NẠP TỰ ĐỘNG DỮ LIỆU MẪU LÊN CLOUD (CÓ GIỚI HẠN & AN TOÀN)
 // =========================================================================
-const MAX_GLOBAL_RESET_COUNT = 0;
+const MAX_GLOBAL_RESET_COUNT = 4;
 let isResetting = false;
 
 // Hiển thị thông báo dễ thương khi hết lượt reset

@@ -28,49 +28,167 @@ const DEMO_ISOLATED_COLLECTIONS = [
     'yt_tickets', 'yt_visits', 'yt_beds', 'yt_attendance'
 ];
 
-// BỘ DỮ LIỆU MẪU CHUẨN HOÀN CHỈNH
-const INITIAL_DEMO_DATA = {
-    yt_students: [
-        { id: "YT-10001", name: "Nguyễn Hoàng Long", class: "10A1", studentCode: "HS1001", linkedEmail: "bgk.demo@yteso.vn", dob: "2008-03-15", gender: "Nam", height: "170", weight: "62", phone: "0901234567", parentPhone: "0912345678", street: "123 Cách Mạng Tháng Tám", ward: "Xã Đất Đỏ", city: "Thành phố Hồ Chí Minh", medicalNote: "Tiền sử hen phế quản nhẹ" },
-        { id: "YT-10002", name: "Trần Thị Mai Anh", class: "11A4", studentCode: "HS1002", dob: "2007-08-20", gender: "Nữ", height: "160", weight: "48", phone: "0902345678", parentPhone: "0913456789", street: "45 Lê Lợi", ward: "Xã Long Điền", city: "Thành phố Hồ Chí Minh", medicalNote: "Dị ứng Paracetamol" },
-        { id: "YT-10003", name: "Lê Quốc Bảo", class: "12A2", studentCode: "HS1003", dob: "2006-11-05", gender: "Nam", height: "175", weight: "68", phone: "0903456789", parentPhone: "0914567890", street: "78 Hùng Vương", ward: "Xã Phước Hải", city: "Thành phố Hồ Chí Minh", medicalNote: "" }
-    ],
-    yt_beds: [
-        { id: "bed_1", name: "Nguyễn Hoàng Long", class: "10A1", visitId: "VISIT_DEMO_01", startTime: new Date() }
-    ],
-    yt_visits: [
-        { id: "VISIT_DEMO_01", studentId: "YT-10001", name: "Nguyễn Hoàng Long", class: "10A1", symptom: "Sốt nhẹ 38°C, đau đầu, chóng mặt", treatment: "Cấp 01 gói Oresol, nằm nghỉ tại giường số 1", note: "Học sinh đã ổn định và quay lại lớp sau tiết 3", bed: "1", status: "completed", timestamp: new Date() }
-    ],
-    yt_pharmacy_items: [
-        { id: "MED-001", name: "Paracetamol 500mg", type: "drug", unit: "Viên", batches: [{ lot: "LOT202501", qty: 250, expiry: "2026-12-31" }] },
-        { id: "MED-002", name: "Oresol 245mg", type: "drug", unit: "Gói", batches: [{ lot: "LOT202502", qty: 85, expiry: "2026-06-30" }] },
-        { id: "MED-003", name: "Băng dán cá nhân Urgo", type: "supply", unit: "Miếng", batches: [{ lot: "LOT202503", qty: 500, expiry: "2027-01-01" }] }
-    ],
-    yt_exam_campaigns: [
-        { id: "DOTKHAM_2025_K10", name: "Khám sức khỏe đầu năm học 2025-2026", createdAt: new Date() }
-    ],
-    yt_exam_results: [
-        { id: "EXAM_RES_01", campaignId: "DOTKHAM_2025_K10", studentId: "YT-10001", name: "Nguyễn Hoàng Long", class: "10A1", height: "170", weight: "62", facility: "Trung tâm Y tế Huyện", examDate: new Date().toISOString().split('T')[0], reportDate: new Date().toISOString().split('T')[0], eyes: "10/10 (Bình thường)", dental: "Có sâu 01 răng hàm dưới", ent: "Bình thường", internalMedicine: "Bình thường", surgery: "Bình thường", mentalHealth: "Bình thường", summary: { physicalDev: "Thể lực tốt", mentalDev: "Bình thường", healthStatus: "Đủ điều kiện học tập", notes: "Trám răng sâu sớm", advice: "Khám chuyên khoa Răng Hàm Mặt" } }
-    ],
-    yt_attendance: [
-        { id: "ATT_DEMO_01", studentId: "YT-10001", date: new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0], reason: "B", diagnosis: "Cảm cúm mùa", symptom: "Sốt, ho có đờm" }
-    ],
-    yt_tests: [
-        { id: "TEST_STRESS_01", title: "Thang đánh giá lo âu & trầm cảm DASS-21", type: "mental", description: "Đánh giá mức độ stress học đường", totalQuestions: 21, active: true }
-    ],
-    yt_tickets: [
-        { id: "TK_DEMO_01", ticketId: "REQ-88992", studentId: "YT-10001", name: "Nguyễn Hoàng Long", class: "10A1", content: "Thưa cô, em muốn cập nhật lại thông tin dị ứng thuốc của em trong hồ sơ y tế ạ.", status: "resolved", adminReply: "Chào em, Phòng Y Tế đã ghi nhận và cập nhật vào hồ sơ theo dõi rồi nhé!", timestamp: new Date(Date.now() - 86400000) }
-    ],
-    yt_notifications: [
-        { id: "NOTI_DEMO_01", title: "Nhắc nhở khám sức khỏe định kỳ Khối 10", content: "Chào bạn Long, sáng mai bạn nhớ có mặt tại phòng Y tế lúc 8h00 để kiểm tra chuyên khoa Răng Hàm Mặt nhé.", targetType: "student", targetValue: ["YT-10001"], sender: "Phòng Y Tế", timestamp: new Date() }
-    ],
-    ai_memory_notes: [
-        { id: "NOTE_AI_01", title: "Lưu ý dịch tễ học đường", content: "Mùa mưa đang đến, cần theo dõi sát các ca sốt xuất huyết và cảm cúm mùa ở khối 10 và 11.", timestamp: new Date() }
-    ],
-    yt_stats: [
-        { id: `${(new Date().getMonth() + 1).toString().padStart(2, '0')}-${new Date().getFullYear()}`, monthInfo: `${(new Date().getMonth() + 1).toString().padStart(2, '0')}-${new Date().getFullYear()}`, lastUpdated: new Date(), topSymptoms: [{ name: "Sốt & Cảm cúm", count: 12 }, { name: "Đau đầu, Chóng mặt", count: 8 }, { name: "Đau bụng tiêu hóa", count: 5 }], studentVisits: { "YT-10001": 1 } }
-    ]
-};
+// =========================================================================
+// TRÌNH SINH DỮ LIỆU LỚN & MÔ PHỎNG DỊCH TỄ HỌC ĐƯỜNG (THÁNG 08/2026)
+// =========================================================================
+function buildSmartEpidemicDemoData() {
+    const ho = ["Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Huỳnh", "Phan", "Vũ", "Võ", "Đặng", "Bùi", "Đỗ"];
+    const demNam = ["Văn", "Hữu", "Đức", "Quốc", "Minh", "Gia", "Thanh", "Nhật", "Thành"];
+    const demNu = ["Thị", "Ngọc", "Mai", "Thảo", "Phương", "Diệu", "Quỳnh", "Thùy"];
+    const tenNam = ["Long", "Bảo", "Nam", "Khánh", "Huy", "Khoa", "Phong", "Tuấn", "Dũng", "Tùng", "Phát", "Kiên"];
+    const tenNu = ["Anh", "Linh", "Trang", "Vy", "Hà", "Nhi", "Hân", "Châu", "My", "Trâm", "Yến", "Chi"];
+    const wards = ["Xã Đất Đỏ", "Xã Long Điền", "Xã Phước Hải", "Thị trấn Long Hải", "Phường 1", "Phường Thắng Tam"];
+    const classes = [];
+    ['10A', '11A', '12A'].forEach(prefix => {
+        for (let i = 1; i <= 5; i++) classes.push(`${prefix}${i}`);
+    });
+
+    const students = [];
+    let studentCounter = 10001;
+
+    // 1. SINH 500 HỌC SINH
+    for (let c of classes) {
+        for (let i = 0; i < 33; i++) { // ~33-34 hs / lớp => 500 hs
+            if (students.length >= 500) break;
+            const isMale = Math.random() > 0.5;
+            const h = ho[Math.floor(Math.random() * ho.length)];
+            const d = isMale ? demNam[Math.floor(Math.random() * demNam.length)] : demNu[Math.floor(Math.random() * demNu.length)];
+            const t = isMale ? tenNam[Math.floor(Math.random() * tenNam.length)] : tenNu[Math.floor(Math.random() * tenNu.length)];
+            const birthYear = c.startsWith('10') ? 2011 : (c.startsWith('11') ? 2010 : 2009);
+            
+            // Tạo độ lệch dịch tễ: 10A1, 10A2 sống nhiều ở Xã Phước Hải & Long Điền
+            let ward = wards[Math.floor(Math.random() * wards.length)];
+            if (c === '10A1' || c === '10A2') {
+                ward = Math.random() > 0.3 ? "Xã Phước Hải" : "Xã Đất Đỏ";
+            }
+
+            const sid = `YT-${studentCounter++}`;
+            students.push({
+                id: sid,
+                name: `${h} ${d} ${t}`,
+                class: c,
+                studentCode: `HS${studentCounter}`,
+                linkedEmail: sid === "YT-10001" ? DEMO_ACCOUNT_EMAIL : `hs.${studentCounter}@school.edu.vn`,
+                dob: `${birthYear}-${String(Math.floor(Math.random()*12)+1).padStart(2,'0')}-${String(Math.floor(Math.random()*28)+1).padStart(2,'0')}`,
+                gender: isMale ? "Nam" : "Nữ",
+                height: `${Math.floor(Math.random()*25 + 155)}`,
+                weight: `${Math.floor(Math.random()*30 + 45)}`,
+                phone: `09${Math.floor(10000000 + Math.random()*90000000)}`,
+                parentPhone: `09${Math.floor(10000000 + Math.random()*90000000)}`,
+                street: `${Math.floor(Math.random()*200 + 1)} Đường 3/2`,
+                ward: ward,
+                city: "Bà Rịa - Vũng Tàu",
+                medicalNote: Math.random() < 0.1 ? "Dị ứng phấn hoa / Kháng sinh" : ""
+            });
+        }
+    }
+
+    // 2. SINH 200 LƯỢT KHÁM VÀ 250 LƯỢT NGHỈ HỌC (GÀI LOGIC DỊCH TỄ THÁNG 8/2026)
+    const visits = [];
+    const attendance = [];
+    
+    // Pattern 1: Bùng phát CÚM A / HÔ HẤP từ ngày 08/08 -> 18/08 (Tập trung lớp 10A1, 10A2)
+    // Pattern 2: Dịch SỐT XUẤT HUYẾT từ ngày 15/08 -> 29/08 (Tập trung khu vực Xã Phước Hải)
+    // Pattern 3: Nhiễm trùng tiêu hóa rải rác ngày 22/08
+    for (let day = 1; day <= 31; day++) {
+        const dateStr = `2026-08-${String(day).padStart(2, '0')}`;
+        const dayTime = new Date(`2026-08-${String(day).padStart(2, '0')}T08:30:00Z`);
+
+        // Đếm mật độ ca theo kịch bản bùng phát
+        let fluBurst = (day >= 8 && day <= 18);
+        let dengueBurst = (day >= 15 && day <= 29);
+
+        for (let s of students) {
+            // Logic Cúm Khối 10
+            if (fluBurst && (s.class === '10A1' || s.class === '10A2') && Math.random() < 0.18) {
+                if (visits.length < 200) {
+                    visits.push({
+                        id: `VISIT_202608_${visits.length + 1}`,
+                        studentId: s.id, name: s.name, class: s.class,
+                        symptom: "Sốt cao 38.8°C, ho khan liên tục, đau rát họng, mệt mỏi",
+                        treatment: "Nghỉ ngơi phòng cách ly, hạ sốt Paracetamol 500mg, bù Oresol",
+                        note: "Nghi ngờ Cúm A học đường - Đã liên hệ PH đón",
+                        status: "completed", timestamp: dayTime
+                    });
+                }
+                if (attendance.length < 250) {
+                    attendance.push({
+                        id: `ATT_202608_${attendance.length + 1}`,
+                        studentId: s.id, date: dateStr, reason: "P",
+                        diagnosis: "Viêm đường hô hấp trên / Cúm A", symptom: "Sốt cao, đau họng, ho"
+                    });
+                }
+            }
+
+            // Logic Sốt Xuất Huyết theo Xã
+            if (dengueBurst && s.ward === "Xã Phước Hải" && Math.random() < 0.12) {
+                if (visits.length < 200 && Math.random() < 0.6) {
+                    visits.push({
+                        id: `VISIT_202608_${visits.length + 1}`,
+                        studentId: s.id, name: s.name, class: s.class,
+                        symptom: "Sốt li bì ngày thứ 2, đau nhức 2 hốc mắt, đau mỏi cơ",
+                        treatment: "Theo dõi mạch/nhiệt, uống nhiều nước, chuyển viện huyện test Dengue",
+                        note: "Khu vực cư trú đang có ổ lăng quăng",
+                        status: "completed", timestamp: dayTime
+                    });
+                }
+                if (attendance.length < 250) {
+                    attendance.push({
+                        id: `ATT_202608_${attendance.length + 1}`,
+                        studentId: s.id, date: dateStr, reason: "B",
+                        diagnosis: "Theo dõi Sốt xuất huyết Dengue", symptom: "Sốt cao liên tục, phát ban"
+                    });
+                }
+            }
+
+            // Ca thông thường rải rác tạo độ lắc léo (Ngoại khoa, Chấn thương, Đau bụng...)
+            if (Math.random() < 0.007) {
+                if (visits.length < 200) {
+                    const normalCases = [
+                        { sym: "Trầy xước gối do ngã giờ thể dục", treat: "Rửa oxy già, bôi Povidine, băng gạc", note: "Chấn thương nhẹ" },
+                        { sym: "Đau bụng vùng thượng vị sau ăn sáng", treat: "Uống trà gừng ấm, nằm nghỉ", note: "Rối loạn tiêu hóa" },
+                        { sym: "Choáng váng, hạ đường huyết", treat: "Uống 1 cốc nước đường nóng", note: "Bỏ bữa sáng" }
+                    ];
+                    const chosen = normalCases[Math.floor(Math.random() * normalCases.length)];
+                    visits.push({
+                        id: `VISIT_202608_${visits.length + 1}`,
+                        studentId: s.id, name: s.name, class: s.class,
+                        symptom: chosen.sym, treatment: chosen.treat, note: chosen.note,
+                        status: "completed", timestamp: dayTime
+                    });
+                }
+                if (attendance.length < 250 && Math.random() < 0.5) {
+                    attendance.push({
+                        id: `ATT_202608_${attendance.length + 1}`,
+                        studentId: s.id, date: dateStr, reason: "P",
+                        diagnosis: "Rối loạn tiêu hóa cấp", symptom: "Đau quặn bụng, nôn ói"
+                    });
+                }
+            }
+        }
+    }
+
+    return {
+        yt_students: students,
+        yt_visits: visits,
+        yt_attendance: attendance,
+        yt_beds: [{ id: "bed_1", name: students[0].name, class: students[0].class, visitId: visits[0]?.id || "VISIT_01", startTime: new Date() }],
+        yt_pharmacy_items: [
+            { id: "MED-001", name: "Paracetamol 500mg", type: "drug", unit: "Viên", batches: [{ lot: "LOT2026A", qty: 850, expiry: "2027-12-31" }] },
+            { id: "MED-002", name: "Oresol 245mg", type: "drug", unit: "Gói", batches: [{ lot: "LOT2026B", qty: 320, expiry: "2027-06-30" }] },
+            { id: "MED-003", name: "Băng dán Urgo", type: "supply", unit: "Miếng", batches: [{ lot: "LOT2026C", qty: 1000, expiry: "2028-01-01" }] }
+        ],
+        yt_exam_campaigns: [{ id: "DOTKHAM_2026_K10", name: "Khám sức khỏe đầu năm học 2026-2027", createdAt: new Date("2026-08-05") }],
+        yt_exam_results: [{ id: "EXAM_RES_01", campaignId: "DOTKHAM_2026_K10", studentId: "YT-10001", name: students[0].name, class: "10A1", height: "170", weight: "62", facility: "Trung tâm Y tế Huyện", examDate: "2026-08-05", reportDate: "2026-08-06", eyes: "10/10", dental: "Bình thường", ent: "Bình thường", internalMedicine: "Bình thường", surgery: "Bình thường", mentalHealth: "Bình thường", summary: { physicalDev: "Thể lực tốt", mentalDev: "Bình thường", healthStatus: "Đạt chuẩn" } }],
+        yt_tests: [{ id: "TEST_STRESS_01", title: "Thang DASS-21 (Tâm lý học đường)", type: "mental", description: "Đánh giá stress", totalQuestions: 21, active: true }],
+        yt_tickets: [{ id: "TK_DEMO_01", ticketId: "REQ-88992", studentId: "YT-10001", name: students[0].name, class: "10A1", content: "Em xin cấp lại thuốc Oresol ạ", status: "resolved", adminReply: "Em ghé phòng y tế nhé", timestamp: new Date() }],
+        yt_notifications: [{ id: "NOTI_DEMO_01", title: "Cảnh báo dịch Cúm mùa Khối 10", content: "Đề nghị GVCN theo dõi sát sĩ số học sinh nghỉ ốm.", targetType: "all", sender: "Phòng Y Tế", timestamp: new Date("2026-08-12") }],
+        ai_memory_notes: [{ id: "NOTE_AI_01", title: "Ổ dịch Cúm A và SXH tháng 8/2026", content: "Phát hiện chùm ca sốt tại lớp 10A1-10A2 và khu vực Xã Phước Hải.", timestamp: new Date("2026-08-20") }],
+        yt_stats: [{ id: "08-2026", monthInfo: "08-2026", lastUpdated: new Date("2026-08-31"), topSymptoms: [{ name: "Sốt & Cảm cúm", count: 85 }, { name: "Sốt phát ban (Dengue)", count: 32 }, { name: "Đau bụng tiêu hóa", count: 18 }] }]
+    };
+}
+
+const INITIAL_DEMO_DATA = buildSmartEpidemicDemoData();
 
 // =========================================================================
 // CAN THIỆP TẦNG LÕI PROTOTYPE CỦA FIRESTORE (CHẮC CHẮN ĐỔI BẢNG 100%)
@@ -127,38 +245,28 @@ async function resetDemoDatabase(showToast = true) {
             await batch.commit();
         }
 
-        // 2. Nạp dữ liệu mẫu mới
+      // 2. Nạp dữ liệu mẫu mới (Có chia nhỏ Batch để nạp hơn 1000 records)
         for (const [colName, docs] of Object.entries(INITIAL_DEMO_DATA)) {
-            const batch = rawDb.batch();
-            docs.forEach(item => {
-                const docRef = getRawCol(`demo_${colName}`).doc(item.id);
-                let payload = { ...item };
+            const CHUNK_SIZE = 200;
+            for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
+                const chunk = docs.slice(i, i + CHUNK_SIZE);
+                const batch = rawDb.batch();
+                
+                chunk.forEach(item => {
+                    const docRef = getRawCol(`demo_${colName}`).doc(item.id);
+                    let payload = { ...item };
 
-                if (typeof encryptField === 'function') {
-                    ['name', 'class', 'dob', 'phone', 'parentPhone', 'street', 'symptom', 'treatment', 'note'].forEach(f => {
-                        if (payload[f]) payload[f] = encryptField(payload[f]);
-                    });
-                    if (payload.name) payload.name_search = encryptField(removeVietnameseTones(item.name));
-                }
-                batch.set(docRef, payload);
-            });
-            await batch.commit();
+                    if (typeof encryptField === 'function') {
+                        ['name', 'class', 'dob', 'phone', 'parentPhone', 'street', 'symptom', 'treatment', 'note'].forEach(f => {
+                            if (payload[f]) payload[f] = encryptField(payload[f]);
+                        });
+                        if (payload.name) payload.name_search = encryptField(removeVietnameseTones(item.name));
+                    }
+                    batch.set(docRef, payload);
+                });
+                await batch.commit();
+            }
         }
-
-        sessionStorage.removeItem('vts_students_cache');
-        if (window.allStudents) window.allStudents = [];
-
-        if (showToast && typeof sysAlert === 'function') {
-            sysAlert("Đã hoàn nguyên dữ liệu mẫu thành công!", "success");
-            setTimeout(() => window.location.reload(), 800);
-        }
-    } catch (err) {
-        console.error("Lỗi Reset Demo:", err);
-        if (typeof sysAlert === 'function') sysAlert("Lỗi: " + err.message, "error");
-    } finally {
-        if (typeof sysLoading === 'function') sysLoading(false);
-    }
-}
 
 // Kiểm tra xem database demo có dữ liệu chưa, nếu chưa có thì tự động tạo luôn
 async function autoSeedIfEmpty() {

@@ -164,18 +164,21 @@ async function gatherEpidemicData(rangeDays) {
     let totalVisits = visitsSnap.size;
 
     visitsSnap.forEach(doc => {
-        const v = doc.data();
-        if (v.symptom) {
-            let symps = v.symptom.toLowerCase().split(/[,+\/]+|\s+và\s+/g);
-            symps.forEach(s => {
-                let clean = s.trim();
-                if (clean) visitSymptoms[clean] = (visitSymptoms[clean] || 0) + 1;
-            });
-        }
-        if (v.class) {
-            visitClasses[v.class] = (visitClasses[v.class] || 0) + 1;
-        }
-    });
+    const v = doc.data();
+    const rawSymptom = v.symptom ? (typeof decryptField === 'function' ? decryptField(v.symptom) : v.symptom) : '';
+    const rawClass = v.class ? (typeof decryptField === 'function' ? decryptField(v.class) : v.class) : '';
+    
+    if (rawSymptom) {
+        let symps = rawSymptom.toLowerCase().split(/[,+\/]+|\s+và\s+/g);
+        symps.forEach(s => {
+            let clean = s.trim();
+            if (clean) visitSymptoms[clean] = (visitSymptoms[clean] || 0) + 1;
+        });
+    }
+    if (rawClass) {
+        visitClasses[rawClass] = (visitClasses[rawClass] || 0) + 1;
+    }
+});
 
     let sickAbsences = 0;
     let sickDiagnoses = {};

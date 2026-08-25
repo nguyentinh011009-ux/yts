@@ -4089,78 +4089,131 @@ async function deleteFusoftxSupportTicket(docId) {
         }
     }
 }
-// HÀM CHỐT SỔ THỐNG KÊ (DÀNH CHO ADMIN)
-    async function runDailyStatisticAggregation() {
-        console.log("Checking if daily stats aggregation is needed...");
-        try {
-            const today = new Date();
-            const currentMonth = today.getMonth() + 1;
-            const currentYear = today.getFullYear();
-            const monthId = `${currentMonth.toString().padStart(2, '0')}-${currentYear}`;
+// --- HÀM PHỤ TRỢ: LẤY DỮ LIỆU THỜI TIẾT THỰC TẾ (BÀ RỊA - VŨNG TÀU) TỪ OPEN-METEO ---
+async function fetchCurrentWeatherData() {
+    try {
+        // Tọa độ khu vực Bà Rịa - Vũng Tàu (Lat: 10.499, Lon: 107.168)
+        const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=10.499&longitude=107.168&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code&timezone=Asia%2FBangkok");
+        if (!res.ok) return null;
+        const json = await res.json();
+        const cur = json.current || {};
+        return {
+            temperature: cur.temperature_2m,       // Nhiệt độ (°C)
+            apparentTemp: cur.apparent_temperature,// Nhiệt độ cảm nhận thực tế (°C)
+            humidity: cur.relative_humidity_2m,    // Độ ẩm (%)
+            precipitation: cur.precipitation,      // Lượng mưa (mm)
+            weatherCode: cur.weather_code,
+            fetchedAt: new Date().toISOString()
+        };
+    } catch(err) {
+        console.warn("[WeatherAPI] Không thể lấy dữ liệu thời tiết:", err.message);
+        return null;
+    }
+}
 
-            const statRef = db.collection('yt_stats').doc(monthId);
-            const statDoc = await statRef.get();
+// HÀM CHỐT SỔ THỐNG KÊ TOÀN DIỆN (Y TẾ + ĐIỂM DANH NGHỈ BỆNH + THỜI TIẾT THỰC TẾ)
+async function runDailyStatisticAggregation() {
+    console.log("Checking if daily stats aggregation is needed...");
+    try {
+        const today = new Date();
+        const currentMonth = today.getMonth() + 1;
+        const currentYear = today.getFullYear();
+        const monthId = `${currentMonth.toString().padStart(2, '0')}-${currentYear}`;
 
-            // Kiểm tra xem hôm nay đã cập nhật chưa?
-            if (statDoc.exists) {
-                const lastUpdated = statDoc.data().lastUpdated.toDate();
-                if (lastUpdated.getDate() === today.getDate() && 
-                    lastUpdated.getMonth() === today.getMonth() &&
-                    lastUpdated.getFullYear() === today.getFullYear()) {
-                    console.log("Dữ liệu thống kê đã được cập nhật hôm nay rồi. Bỏ qua.");
-                    return { status: 'skipped', message: 'Đã cập nhật hôm nay.' };
-                }
+        const statRef = db.collection('yt_stats').doc(monthId);
+        const statDoc = await statRef.get();
+
+        // Kiểm tra xem hôm nay đã cập nhật chưa?
+        if (statDoc.exists) {
+            const lastUpdated = statDoc.data().lastUpdated.toDate();
+            if (lastUpdated.getDate() === today.getDate() && 
+                lastUpdated.getMonth() === today.getMonth() &&
+                lastUpdated.getFullYear() === today.getFullYear()) {
+                console.log("Dữ liệu thống kê đã được cập nhật hôm nay rồi. Bỏ qua.");
+                return { status: 'skipped', message: 'Đã cập nhật hôm nay.' };
             }
+        }
 
-            console.log("Bắt đầu tính toán chốt sổ dữ liệu Y tế...");
-            const startOfMonth = new Date(currentYear, currentMonth - 1, 1);
-            const endOfYesterday = new Date();
-            endOfYesterday.setHours(0, 0, 0, 0);
+        console.log("Bắt đầu tính toán chốt sổ dữ liệu Y tế & Dịch tễ học đường...");
+        const startOfMonth = new Date(currentYear, currentMonth - 1, 1);
+        const startOfMonthStr = startOfMonth.toISOString().split('T')[0];
+        const endOfYesterday = new Date();
+        endOfYesterday.setHours(0, 0, 0, 0);
 
-            const snap = await db.collection('yt_visits')
+        // 1. TẢI ĐỒNG THỜI: Lượt khám tại phòng y tế + Ca nghỉ học do bệnh + Thời tiết thực tế
+        const [visitsSnap, sickAttendanceSnap, weatherData] = await Promise.all([
+            db.collection('yt_visits')
                 .where('timestamp', '>=', startOfMonth)
                 .where('timestamp', '<', endOfYesterday)
-                .get();
+                .get(),
+            db.collection('yt_attendance')
+                .where('date', '>=', startOfMonthStr)
+                .where('reason', '==', 'B')
+                .get(),
+            fetchCurrentWeatherData()
+        ]);
 
-            let symptomCounts = {};
-            let studentVisitCounts = {};
+        let symptomCounts = {};
+        let studentVisitCounts = {};
+        let sickLeaveStudentIds = new Set();
 
-            snap.forEach(doc => {
-                const v = doc.data();
-                if (v.symptom) {
-                    let symps = v.symptom.toLowerCase().split(/[,+\/]+|\s+và\s+/g);
-                    symps.forEach(s => {
-                        let cleanS = s.trim();
-                        if (cleanS.length > 0) {
-                            cleanS = cleanS.charAt(0).toUpperCase() + cleanS.slice(1);
-                            symptomCounts[cleanS] = (symptomCounts[cleanS] || 0) + 1;
-                        }
-                    });
-                }
-                if (v.studentId) {
-                    studentVisitCounts[v.studentId] = (studentVisitCounts[v.studentId] || 0) + 1;
+        const addSymptom = (rawText) => {
+            if (!rawText) return;
+            let text = typeof decryptField === 'function' ? decryptField(rawText) : rawText;
+            let symps = text.toLowerCase().split(/[,+\/]+|\s+và\s+/g);
+            symps.forEach(s => {
+                let cleanS = s.trim();
+                if (cleanS.length > 1) {
+                    cleanS = cleanS.charAt(0).toUpperCase() + cleanS.slice(1);
+                    symptomCounts[cleanS] = (symptomCounts[cleanS] || 0) + 1;
                 }
             });
+        };
 
-            let topSymptomsArray = Object.keys(symptomCounts)
-                .map(k => ({ name: k, count: symptomCounts[k] }))
-                .sort((a, b) => b.count - a.count);
+        // 2. GOM DỮ LIỆU TỪ LƯỢT KHÁM TRỰC TIẾP (yt_visits)
+        visitsSnap.forEach(doc => {
+            const v = doc.data();
+            addSymptom(v.symptom);
+            if (v.studentId) {
+                studentVisitCounts[v.studentId] = (studentVisitCounts[v.studentId] || 0) + 1;
+            }
+        });
 
-            await statRef.set({
-                monthInfo: monthId,
-                lastUpdated: new Date(),
-                topSymptoms: topSymptomsArray,
-                studentVisits: studentVisitCounts
-            }, { merge: true }); // Dùng merge để không ghi đè cấu trúc doc
+        // 3. GOM TIẾP DỮ LIỆU NGHỈ HỌC DO BỆNH Ở NHÀ (yt_attendance reason == 'B')
+        sickAttendanceSnap.forEach(doc => {
+            const a = doc.data();
+            addSymptom(a.diagnosis); // Chẩn đoán bệnh
+            addSymptom(a.symptom);   // Triệu chứng kèm theo
+            if (a.studentId) {
+                sickLeaveStudentIds.add(a.studentId);
+                studentVisitCounts[a.studentId] = (studentVisitCounts[a.studentId] || 0) + 1;
+            }
+        });
 
-            console.log(`Đã chốt sổ thành công dữ liệu cho tháng ${monthId}`);
-            return { status: 'success', message: `Chốt sổ thành công dữ liệu tháng ${currentMonth}/${currentYear}!` };
+        let topSymptomsArray = Object.keys(symptomCounts)
+            .map(k => ({ name: k, count: symptomCounts[k] }))
+            .sort((a, b) => b.count - a.count);
 
-        } catch (error) {
-            console.error("Lỗi khi chạy hàm chốt sổ thống kê: ", error);
-            return { status: 'error', message: 'Có lỗi xảy ra: ' + error.message };
-        }
+        // 4. LƯU TOÀN DIỆN VÀO FIRESTORE LÀM ĐẦU VÀO CHUẨN XÁC CHO AI
+        await statRef.set({
+            monthInfo: monthId,
+            lastUpdated: new Date(),
+            topSymptoms: topSymptomsArray,
+            studentVisits: studentVisitCounts,
+            totalClinicVisits: visitsSnap.size,
+            totalSickAbsences: sickAttendanceSnap.size,
+            uniqueSickStudentsCount: Object.keys(studentVisitCounts).length,
+            latestWeatherContext: weatherData || { note: "Chưa nạp được thời tiết" }
+        }, { merge: true });
+
+        console.log(`Đã chốt sổ thành công dữ liệu tháng ${monthId} (Kèm thời tiết & nghỉ bệnh)!`);
+        return { status: 'success', message: `Chốt sổ thành công dữ liệu tháng ${currentMonth}/${currentYear}!` };
+
+    } catch (error) {
+        console.error("Lỗi khi chạy hàm chốt sổ thống kê: ", error);
+        return { status: 'error', message: 'Có lỗi xảy ra: ' + error.message };
     }
+}
 // ==========================================
 // TÍCH HỢP XUẤT KHO DƯỢC TẠI BÀN TIẾP NHẬN
 // ==========================================

@@ -128,8 +128,8 @@ async function saveManualPhysicalExam() {
         name: encryptField(name),
         class: encryptField(className),
         facility: document.getElementById('ex-facility').value.trim(),
-        height,
-        weight,
+	    height: height ? encryptField(height) : '',
+	    weight: weight ? encryptField(weight) : '',
         examDate: document.getElementById('ex-date').value,
         reportDate: document.getElementById('ex-report-date').value,
         mentalHealth: document.getElementById('ex-mental').value,
@@ -506,11 +506,11 @@ async function handleExcelExamUpload(event) {
                             campaignId: activeCampaignId, 
                             studentId: student.id, 
                             name: encryptField(name),
-                            class: encryptField(className),
-                            dob: dob ? encryptField(dob) : '',
-                            facility, 
-                            height, 
-                            weight, 
+						    class: encryptField(className),
+						    dob: dob ? encryptField(dob) : '',
+						    facility, 
+						    height: height ? encryptField(height) : '', 
+						    weight: weight ? encryptField(weight) : '', 
                             examDate, 
                             reportDate, 
                             mentalHealth: mental,
@@ -677,12 +677,14 @@ function loadExamResultsForCampaign(cid, searchQuery = "") {
 	            snap.forEach(doc => { 
 	                const d = doc.data();
 	                activeCampaignResults.push({ 
-	                    id: doc.id, 
-	                    ...d,
-	                    name: d.name ? decryptField(d.name) : '',
-	                    class: d.class ? decryptField(d.class) : '',
-	                    dob: d.dob ? decryptField(d.dob) : '' 
-	                }); 
+					    id: doc.id, 
+					    ...d,
+					    name: d.name ? decryptField(d.name) : '',
+					    class: d.class ? decryptField(d.class) : '',
+					    dob: d.dob ? decryptField(d.dob) : '',
+					    height: d.height ? decryptField(d.height) : '',
+					    weight: d.weight ? decryptField(d.weight) : ''
+					});
 	            });
 	            renderCampaignStudentsTable(searchQuery);
 	        });
@@ -1002,20 +1004,42 @@ async function viewCampaignStats(cid, event) {
     document.getElementById('exam-stats-modal').style.display = 'flex';
 
     try {
-        const snap = await db.collection('yt_exam_results').where('campaignId', '==', cid).get();
-        if (snap.empty) {
+        let results = [];
+
+        if (activeCampaignId === cid && activeCampaignResults && activeCampaignResults.length > 0) {
+            results = activeCampaignResults;
+        } else {
+            const snap = await db.collection('yt_exam_results').where('campaignId', '==', cid).get();
+            if (snap.empty) {
+                grid.innerHTML = '<div style="grid-column: span 2; text-align:center; padding: 50px; color:#64748b;">Chưa tìm thấy dữ liệu khám trong đợt này.</div>';
+                return;
+            }
+
+            snap.forEach(doc => {
+                const v = doc.data();
+                results.push({
+                    id: doc.id,
+                    ...v,
+                    name: v.name ? decryptField(v.name) : '',
+                    class: v.class ? decryptField(v.class) : '',
+                    dob: v.dob ? decryptField(v.dob) : '',
+                    height: v.height ? decryptField(v.height) : '',
+                    weight: v.weight ? decryptField(v.weight) : ''
+                });
+            });
+        }
+
+        if (results.length === 0) {
             grid.innerHTML = '<div style="grid-column: span 2; text-align:center; padding: 50px; color:#64748b;">Chưa tìm thấy dữ liệu khám trong đợt này.</div>';
             return;
         }
 
-        let total = snap.size;
+        currentStatsResultsCache = results;
+        let total = results.length;
         let bmiStats = { underweight: 0, normal: 0, overweight: 0, obese: 0 };
         let diseaseStats = { eyes: 0, dental: 0, mental: 0, ent: 0, surgery: 0, internal: 0 };
 
-        currentStatsResultsCache = [];
-		snap.forEach(doc => {
-    	const v = doc.data();
-    		currentStatsResultsCache.push({ id: doc.id, ...v });
+        results.forEach(v => {
             if (v.height && v.weight) {
                 const h = parseFloat(v.height) / 100;
                 const w = parseFloat(v.weight);
@@ -1034,7 +1058,6 @@ async function viewCampaignStats(cid, event) {
             if (v.surgery && v.surgery !== "Bình thường") diseaseStats.surgery++;
             if (v.internalMedicine && v.internalMedicine !== "Bình thường") diseaseStats.internal++;
         });
-
         const getPercent = (count) => total > 0 ? ((count / total) * 100).toFixed(1) : "0.0";
 
         // Tạo ra các biến lưu phần trăm để vẽ biểu đồ thanh (bar charts)

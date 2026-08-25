@@ -102,8 +102,8 @@ async function searchStudentForExam(val) {
                 document.getElementById('exam-selected-sid').value = st.id;
                 box.style.display = 'none';
                 
-                if(st.height) document.getElementById('ex-height').value = st.height;
-                if(st.weight) document.getElementById('ex-weight').value = st.weight;
+                if(st.height) document.getElementById('ex-height').value = decryptField(st.height);
+				if(st.weight) document.getElementById('ex-weight').value = decryptField(st.weight);
             };
             box.appendChild(item);
         });
@@ -153,11 +153,11 @@ async function saveManualPhysicalExam() {
         batch.set(db.collection('yt_exam_results').doc(recordId), payload);
 
         if (height || weight) {
-            let updateObj = {};
-            if (height) updateObj.height = height;
-            if (weight) updateObj.weight = weight;
-            batch.update(db.collection('yt_students').doc(sid), updateObj);
-        }
+		    let updateObj = {};
+		    if (height) updateObj.height = encryptField(height);
+		    if (weight) updateObj.weight = encryptField(weight);
+		    batch.update(db.collection('yt_students').doc(sid), updateObj);
+		}
 
         await batch.commit();
         alert("✅ Đã lưu phiếu khám và cập nhật thể trạng học sinh gốc thành công!");
@@ -524,15 +524,15 @@ async function handleExcelExamUpload(event) {
                         opCount++;
 
                         let updatePayload = {};
-                        if (height) updatePayload.height = height;
-                        if (weight) updatePayload.weight = weight;
-                        if (!student.dob && dob) updatePayload.dob = dob;
-
-                        if (Object.keys(updatePayload).length > 0) {
-                            const refStudent = db.collection('yt_students').doc(student.id);
-                            currentBatch.update(refStudent, updatePayload);
-                            opCount++;
-                        }
+						if (height) updatePayload.height = encryptField(height);
+						if (weight) updatePayload.weight = encryptField(weight);
+						if (!student.dob && dob) updatePayload.dob = encryptField(dob);
+						
+						if (Object.keys(updatePayload).length > 0) {
+						    const refStudent = db.collection('yt_students').doc(student.id);
+						    currentBatch.update(refStudent, updatePayload);
+						    opCount++;
+						}
 
                         successCount++;
 

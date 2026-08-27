@@ -1,8 +1,3 @@
-/* =========================================================================
-   HỆ THỐNG DEMO TOÀN DIỆN & TỰ ĐỘNG 100% CHO BAN GIÁM KHẢO (ALL-IN-ONE)
-   Không cần chỉnh sửa bất kỳ file nào khác trong hệ thống!
-   ========================================================================= */
-
 const DEMO_ACCOUNT_EMAIL = "bgk.demo@yteso.vn";
 const DEMO_ACCOUNT_PASS = "Demo@BGK2025";
 
@@ -19,18 +14,15 @@ const DEMO_ACCOUNT_PASS = "Demo@BGK2025";
     window.addEventListener('DOMContentLoaded', injectEmail);
 })();
 
-// DANH SÁCH TOÀN BỘ 20 COLLECTION CẦN CÁCH LY
 const DEMO_ISOLATED_COLLECTIONS = [
     'ai_memory_notes', 'announcements', 'posts', 'temp_signatures',
     'yt_audit_logs', 'yt_collaborators', 'yt_exam_campaigns', 'yt_exam_results',
     'yt_media_assets', 'yt_notifications', 'yt_pharmacy_items', 'yt_pharmacy_transactions',
     'yt_stats', 'yt_students', 'yt_test_results', 'yt_tests',
-    'yt_tickets', 'yt_visits', 'yt_beds', 'yt_attendance'
+    'yt_tickets', 'yt_visits', 'yt_beds', 'yt_attendance',
+    'yt_ai_predictions', 'yt_system_config'
 ];
 
-// =========================================================================
-// TRÌNH SINH DỮ LIỆU LỚN & MÔ PHỎNG DỊCH TỄ HỌC ĐƯỜNG (THÁNG 08/2026)
-// =========================================================================
 function buildSmartEpidemicDemoData() {
     const ho = ["Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Huỳnh", "Phan", "Vũ", "Võ", "Đặng", "Bùi", "Đỗ"];
     const demNam = ["Văn", "Hữu", "Đức", "Quốc", "Minh", "Gia", "Thanh", "Nhật", "Thành"];
@@ -83,20 +75,20 @@ function buildSmartEpidemicDemoData() {
         }
     }
 
-    // 2. SINH 200 LƯỢT KHÁM VÀ 250 LƯỢT NGHỈ HỌC (GÀI LOGIC DỊCH TỄ THÁNG 8/2026)
+    // 2. SINH 200 LƯỢT KHÁM VÀ 250 LƯỢT NGHỈ HỌC (TRONG 30 NGÀY GẦN NHẤT TÍNH ĐẾN HÔM NAY)
     const visits = [];
     const attendance = [];
+    const now = new Date();
     
-    // Pattern 1: Bùng phát CÚM A / HÔ HẤP từ ngày 08/08 -> 18/08 (Tập trung lớp 10A1, 10A2)
-    // Pattern 2: Dịch SỐT XUẤT HUYẾT từ ngày 15/08 -> 29/08 (Tập trung khu vực Xã Phước Hải)
-    // Pattern 3: Nhiễm trùng tiêu hóa rải rác ngày 22/08
-    for (let day = 1; day <= 31; day++) {
-        const dateStr = `2026-08-${String(day).padStart(2, '0')}`;
-        const dayTime = new Date(`2026-08-${String(day).padStart(2, '0')}T08:30:00Z`);
+    // Tạo kịch bản dịch tễ trải dài từ 30 ngày trước đến ngày hiện tại
+    for (let offset = 29; offset >= 0; offset--) {
+        const targetDate = new Date(now.getTime() - offset * 24 * 60 * 60 * 1000);
+        const dateStr = targetDate.toISOString().split('T')[0];
+        const dayTime = new Date(targetDate.setHours(8, 30, 0, 0));
 
-        // Đếm mật độ ca theo kịch bản bùng phát
-        let fluBurst = (day >= 8 && day <= 18);
-        let dengueBurst = (day >= 15 && day <= 29);
+        // Kịch bản Cúm (7 - 20 ngày trước) và Sốt xuất huyết (1 - 15 ngày trước)
+        let fluBurst = (offset >= 7 && offset <= 20);
+        let dengueBurst = (offset >= 1 && offset <= 15);
 
         for (let s of students) {
             // Logic Cúm Khối 10
@@ -385,7 +377,8 @@ async function autoSeedIfEmpty() {
     }
 }
 
-// Render thanh công cụ màu cam trên đầu trang
+
+
 function renderDemoTopBanner() {
     if (document.getElementById('demo-top-banner')) return;
     const banner = document.createElement('div');

@@ -1011,21 +1011,39 @@ window.addEventListener('load', () => {
         setTimeout(() => openEditSickModal(editSickId), 800);
     }
 });
-// =========================================================================
-// HỆ THỐNG TRA CỨU ICD-10 ĐA BỆNH & TỰ ĐỘNG DỊCH TIẾNG VIỆT QUA API
-// =========================================================================
 let icdDebounceTimer = null;
 
-// Hàm dịch tự động trực tuyến (Google Translation API mở)
-async function translateText(text, fromLang = 'en', toLang = 'vi') {
+const MEDICAL_TERM_DICTIONARY = {
+    "weakness": "Suy nhược / Yếu sức",
+    "facial weakness": "Yếu cơ mặt / Liệt mặt",
+    "muscle weakness": "Yếu cơ",
+    "malaise": "Mệt mỏi khó chịu",
+    "fatigue": "Mệt mỏi toàn thân",
+    "fever": "Sốt",
+    "syncope": "Ngất / Bất tỉnh tạm thời",
+    "dizziness": "Chóng mặt / Choáng váng",
+    "somnolence": "Ngủ gà / Buồn ngủ li bì"
+};
+
+async function translateMedicalText(text, fromLang = 'en', toLang = 'vi') {
     if (!text || !text.trim()) return text;
+    
+    const lower = text.trim().toLowerCase();
+    if (fromLang === 'en' && MEDICAL_TERM_DICTIONARY[lower]) {
+        return MEDICAL_TERM_DICTIONARY[lower];
+    }
+
     try {
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${toLang}&dt=t&q=${encodeURIComponent(text)}`;
+        const queryText = fromLang === 'en' ? `Medical condition: ${text}` : text;
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${toLang}&dt=t&q=${encodeURIComponent(queryText)}`;
+        
         const res = await fetch(url);
         if (res.ok) {
             const data = await res.json();
             if (data && data[0] && data[0][0] && data[0][0][0]) {
-                return data[0][0][0];
+                let result = data[0][0][0];
+                result = result.replace(/^(Tình trạng y tế|Bệnh lý|Chẩn đoán y khoa|Tình trạng bệnh|Triệu chứng y tế):\s*/i, '');
+                return result.trim();
             }
         }
     } catch (e) {
@@ -1038,7 +1056,7 @@ async function searchICD10Online(fullInputValue, boxId, targetInputId) {
     const box = document.getElementById(boxId);
     if (!box) return;
 
-    // 1. HỖ TRỢ NHIỀU BỆNH: Chỉ lấy từ khóa sau dấu phẩy (,) hoặc dấu chấm phẩy (;) cuối cùng
+    // 1. Chỉ lấy từ khóa sau dấu phẩy (,) hoặc chấm phẩy (;) cuối cùng
     const parts = fullInputValue.split(/[,;]/);
     const activeQuery = parts[parts.length - 1].trim();
 
@@ -1052,18 +1070,18 @@ async function searchICD10Online(fullInputValue, boxId, targetInputId) {
 
     icdDebounceTimer = setTimeout(async () => {
         box.style.display = 'block';
-        box.innerHTML = '<div style="padding:10px 14px; color:#64748b; font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> Đang tìm kiếm mã bệnh chuẩn Tiếng Việt...</div>';
+        box.innerHTML = '<div style="padding:10px 14px; color:#64748b; font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> Đang tra cứu mã bệnh chuẩn Y khoa...</div>';
 
         try {
             let searchTerm = activeQuery;
 
-            // Nếu người dùng gõ Tiếng Việt có dấu -> Dịch sang Tiếng Anh để tra NIH API
+            // Nếu gõ tiếng Việt có dấu -> Dịch sang tiếng Anh Y khoa để tra NIH API
             const isVietnamese = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(activeQuery);
             if (isVietnamese) {
-                searchTerm = await translateText(activeQuery, 'vi', 'en');
+                searchTerm = await translateMedicalText(activeQuery, 'vi', 'en');
             }
 
-            // Gọi REST API NIH NLM lấy mã ICD-10
+            // Gọi REST API NIH NLM
             const apiUrl = `https://clinicaltables.nlm.nih.gov/api/icd10cm/v3/search?sf=code,name&terms=${encodeURIComponent(searchTerm)}&maxList=8`;
             const res = await fetch(apiUrl);
             
@@ -1080,17 +1098,17 @@ async function searchICD10Online(fullInputValue, boxId, targetInputId) {
                 return;
             }
 
-            // 2. DỊCH SONG SONG TÊN BỆNH SANG TIẾNG VIỆT
+            // 2. Dịch chuẩn xác theo thuật ngữ Y học Việt Nam
             const translatedItems = await Promise.all(items.map(async (item) => {
-                const nameVi = await translateText(item.nameEn, 'en', 'vi');
+                const nameVi = await translateMedicalText(item.nameEn, 'en', 'vi');
                 return {
                     code: item.code,
-                    nameVi: nameVi.charAt(0).toUpperCase() + nameVi.slice(1), // Viết hoa chữ đầu
+                    nameVi: nameVi.charAt(0).toUpperCase() + nameVi.slice(1),
                     nameEn: item.nameEn
                 };
             }));
 
-            // 3. RENDER DROPDOWN KẾT QUẢ TIẾNG VIỆT
+            // 3. Render Dropdown
             let html = '';
             translatedItems.forEach(item => {
                 const diseaseDisplay = `${item.nameVi} [${item.code}]`;
@@ -1114,22 +1132,17 @@ async function searchICD10Online(fullInputValue, boxId, targetInputId) {
         }
     }, 300);
 }
-
-// 4. HÀM CHỌN BỆNH (Tự động nối tiếp nhiều bệnh)
 function selectICD10Result(selectedDisease, boxId, targetInputId) {
     const input = document.getElementById(targetInputId);
     if (input) {
-        // Tách các bệnh đã có trước đó
         let parts = input.value.split(/[,;]/).map(p => p.trim()).filter(p => p.length > 0);
         
-        // Thay thế từ khóa đang gõ dở ở cuối bằng bệnh vừa chọn
         if (parts.length > 0) {
             parts[parts.length - 1] = selectedDisease;
         } else {
             parts.push(selectedDisease);
         }
 
-        // Nối các bệnh lại bằng dấu chấm phẩy kèm khoảng trắng để sẵn sàng gõ bệnh tiếp theo
         input.value = parts.join('; ') + '; ';
         input.focus();
     }

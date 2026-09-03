@@ -84,10 +84,17 @@
              
             </div>
 
-            <div id="benh-fields" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px; background: #fff1f2; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px dashed #ef4444;">
-                <div class="input-group" style="margin:0;"><label style="color:#ef4444;">Triệu chứng</label><input type="text" id="dd-symptom" placeholder="VD: Sốt cao, ho..." onkeydown="if(event.key === 'Enter') { event.preventDefault(); document.getElementById('dd-diagnosis').focus(); }"></div>
-                <div class="input-group" style="margin:0;"><label style="color:#ef4444;">Chẩn đoán (Bệnh)</label><input type="text" id="dd-diagnosis" list="benh-list" placeholder="Chọn hoặc nhập..."><datalist id="benh-list"><option value="Sốt xuất huyết"><option value="Tay chân miệng"><option value="Thủy đậu"><option value="Quai bị"></datalist></div>
-            </div>
+			<div id="benh-fields" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px; background: #fff1f2; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px dashed #ef4444;">
+			    <div class="input-group" style="margin:0;">
+			        <label style="color:#ef4444;">Triệu chứng</label>
+			        <input type="text" id="dd-symptom" placeholder="VD: Sốt cao, ho..." onkeydown="if(event.key === 'Enter') { event.preventDefault(); document.getElementById('dd-diagnosis').focus(); }">
+			    </div>
+			    <div class="input-group" style="margin:0; position:relative;">
+			        <label style="color:#ef4444;"><i class="fas fa-search-plus"></i> Chẩn đoán ICD-10 (Tra cứu trực tuyến)</label>
+			        <input type="text" id="dd-diagnosis" placeholder="Nhập mã (A90, J00...) hoặc tên bệnh..." autocomplete="off" oninput="searchICD10Online(this.value, 'icd-suggest-main', 'dd-diagnosis')">
+			        <div id="icd-suggest-main" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #cbd5e1; border-radius:8px; max-height:220px; overflow-y:auto; z-index:1100; box-shadow:0 10px 20px rgba(0,0,0,0.15); margin-top:4px;"></div>
+			    </div>
+			</div>
 
             <button onclick="saveAttendance()" class="btn btn-primary" style="width: 100%; justify-content: center;"><i class="fas fa-save"></i> Lưu điểm danh</button>
 	<!-- KHU VỰC HIỂN THỊ DANH SÁCH ĐÃ ĐIỂM DANH TRONG NGÀY -->
@@ -1004,6 +1011,126 @@ window.addEventListener('load', () => {
         setTimeout(() => openEditSickModal(editSickId), 800);
     }
 });
+let icdDebounceTimer = null;
+const POPULAR_VN_ICD10 = [
+    { code: "A90", nameVi: "Sốt xuất huyết Dengue", nameEn: "Dengue fever" },
+    { code: "B08.4", nameVi: "Bệnh Tay chân miệng", nameEn: "Enteroviral vesicular stomatitis with exanthem" },
+    { code: "B01.9", nameVi: "Thủy đậu (Trái rạ)", nameEn: "Varicella without complication" },
+    { code: "B26.9", nameVi: "Quai bị", nameEn: "Mumps without complication" },
+    { code: "J10.1", nameVi: "Cúm mùa (Cảm cúm siêu vi)", nameEn: "Influenza with other respiratory manifestations" },
+    { code: "B30.9", nameVi: "Đau mắt đỏ (Viêm kết mạc)", nameEn: "Viral conjunctivitis, unspecified" },
+    { code: "A09", nameVi: "Viêm dạ dày - ruột / Tiêu chảy cấp", nameEn: "Infectious gastroenteritis and colitis" },
+    { code: "J02.9", nameVi: "Viêm họng cấp", nameEn: "Acute pharyngitis, unspecified" },
+    { code: "J03.9", nameVi: "Viêm amidan cấp", nameEn: "Acute tonsillitis, unspecified" },
+    { code: "R50.9", nameVi: "Sốt không rõ nguyên nhân", nameEn: "Fever, unspecified" },
+    { code: "K29.7", nameVi: "Viêm dạ dày", nameEn: "Gastritis, unspecified" }
+];
+
+async function searchICD10Online(query, boxId, targetInputId) {
+    const box = document.getElementById(boxId);
+    if (!box) return;
+
+    const val = (query || "").trim();
+    if (val.length < 2) {
+        box.style.display = 'none';
+        box.innerHTML = '';
+        return;
+    }
+
+    if (icdDebounceTimer) clearTimeout(icdDebounceTimer);
+
+    icdDebounceTimer = setTimeout(async () => {
+        box.style.display = 'block';
+        box.innerHTML = '<div style="padding:10px 14px; color:#64748b; font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> Đang tra cứu cơ sở dữ liệu ICD-10...</div>';
+
+        try {
+            const cleanVal = removeVietnameseTones(val).toLowerCase();
+            
+            // 1. Quét đối chiếu từ danh mục tiếng Việt phổ biến
+            const localMatches = POPULAR_VN_ICD10.filter(item => {
+                const searchStr = `${item.code} ${removeVietnameseTones(item.nameVi)} ${item.nameEn}`.toLowerCase();
+                return searchStr.includes(cleanVal);
+            });
+
+            // 2. Gọi đồng thời REST API của Viện Y tế Quốc gia Hoa Kỳ (NIH NLM ICD-10 API)
+            const apiUrl = `https://clinicaltables.nlm.nih.gov/api/icd10cm/v3/search?sf=code,name&terms=${encodeURIComponent(val)}&maxList=8`;
+            const res = await fetch(apiUrl);
+            let apiResults = [];
+            
+            if (res.ok) {
+                const data = await res.json();
+                // Response format NIH: [total, codes_array, extra_data, [[code, name], ...]]
+                if (data && data[3] && Array.isArray(data[3])) {
+                    apiResults = data[3].map(item => ({
+                        code: item[0],
+                        nameVi: "",
+                        nameEn: item[1]
+                    }));
+                }
+            }
+
+            // Gộp kết quả và loại trừ trùng lặp mã
+            const combined = [...localMatches];
+            apiResults.forEach(apiItem => {
+                if (!combined.some(c => c.code.toLowerCase() === apiItem.code.toLowerCase())) {
+                    combined.push(apiItem);
+                }
+            });
+
+            if (combined.length === 0) {
+                box.innerHTML = '<div style="padding:10px 14px; color:#ef4444; font-size:0.85rem;">Không tìm thấy mã ICD-10 phù hợp!</div>';
+                return;
+            }
+
+            let html = '';
+            combined.slice(0, 10).forEach(item => {
+                const displayTitle = item.nameVi ? `${item.nameVi}` : `${item.nameEn}`;
+                const subTitle = item.nameVi ? item.nameEn : '';
+                const formatSelected = item.nameVi ? `${item.nameVi} [${item.code}]` : `${item.nameEn} [${item.code}]`;
+
+                html += `
+                    <div onclick="selectICD10Result('${formatSelected.replace(/'/g, "\\'")}', '${boxId}', '${targetInputId}')" 
+                         style="padding:10px 14px; border-bottom:1px solid #f1f5f9; cursor:pointer; transition:0.15s; text-align:left;"
+                         onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='white'">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <strong style="color:#0f172a; font-size:0.9rem;">${displayTitle}</strong>
+                            <span style="background:#fee2e2; color:#ef4444; font-weight:bold; font-size:0.78rem; padding:2px 6px; border-radius:4px;">${item.code}</span>
+                        </div>
+                        ${subTitle ? `<div style="font-size:0.75rem; color:#64748b; margin-top:2px;">${subTitle}</div>` : ''}
+                    </div>
+                `;
+            });
+
+            box.innerHTML = html;
+        } catch (err) {
+            box.innerHTML = `<div style="padding:10px 14px; color:#ef4444; font-size:0.85rem;">Lỗi kết nối tra cứu ICD-10: ${err.message}</div>`;
+        }
+    }, 250);
+}
+
+function selectICD10Result(fullDiagnosis, boxId, targetInputId) {
+    const input = document.getElementById(targetInputId);
+    if (input) {
+        input.value = fullDiagnosis;
+    }
+    const box = document.getElementById(boxId);
+    if (box) {
+        box.style.display = 'none';
+        box.innerHTML = '';
+    }
+}
+
+// Ẩn bảng gợi ý khi click ra ngoài
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#dd-diagnosis') && !e.target.closest('#icd-suggest-main')) {
+        const box1 = document.getElementById('icd-suggest-main');
+        if (box1) box1.style.display = 'none';
+    }
+    if (!e.target.closest('#edit-sick-diagnosis') && !e.target.closest('#icd-suggest-modal')) {
+        const box2 = document.getElementById('icd-suggest-modal');
+        if (box2) box2.style.display = 'none';
+    }
+});
 </script>
 <!-- MODAL CHỈNH SỬA CHẨN ĐOÁN CA BỆNH DÀNH CHO Y TẾ -->
 <div id="modal-edit-sick" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
@@ -1026,19 +1153,11 @@ window.addEventListener('load', () => {
             <input type="text" id="edit-sick-symptom" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
         </div>
 
-        <div class="input-group" style="margin-bottom: 20px;">
-            <label style="font-weight: bold; color: #ef4444;">Chẩn đoán của Y tế (Tên bệnh chính thức)</label>
-            <input type="text" id="edit-sick-diagnosis" list="benh-list-modal" placeholder="Chọn hoặc nhập tên bệnh..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1.5px solid #ef4444;">
-            <datalist id="benh-list-modal">
-                <option value="Sốt xuất huyết">
-                <option value="Tay chân miệng">
-                <option value="Thủy đậu">
-                <option value="Quai bị">
-                <option value="Cảm cúm siêu vi">
-                <option value="Đau mắt đỏ">
-                <option value="Rối loạn tiêu hóa">
-            </datalist>
-        </div>
+        <div class="input-group" style="margin-bottom: 20px; position: relative;">
+		    <label style="font-weight: bold; color: #ef4444;"><i class="fas fa-search-plus"></i> Chẩn đoán của Y tế (Tra cứu ICD-10 trực tuyến)</label>
+		    <input type="text" id="edit-sick-diagnosis" placeholder="Nhập mã ICD-10 (A90, B08.4...) hoặc tên bệnh..." autocomplete="off" style="width: 100%; padding: 10px; border-radius: 8px; border: 1.5px solid #ef4444;" oninput="searchICD10Online(this.value, 'icd-suggest-modal', 'edit-sick-diagnosis')">
+		    <div id="icd-suggest-modal" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #cbd5e1; border-radius:8px; max-height:200px; overflow-y:auto; z-index:11000; box-shadow:0 10px 20px rgba(0,0,0,0.2); margin-top:4px;"></div>
+		</div>
 
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
             <button onclick="closeEditSickModal()" class="btn" style="background: #e2e8f0; color: #475569;">Đóng</button>

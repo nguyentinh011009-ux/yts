@@ -1042,7 +1042,9 @@ async function translateMedicalText(text, fromLang = 'en', toLang = 'vi') {
             const data = await res.json();
             if (data && data[0] && data[0][0] && data[0][0][0]) {
                 let result = data[0][0][0];
-                result = result.replace(/^(Tình trạng y tế|Bệnh lý|Chẩn đoán y khoa|Tình trạng bệnh|Triệu chứng y tế):\s*/i, '');
+                
+                result = result.replace(/^(Tình trạng bệnh lý|Tình trạng y tế|Tình trạng bệnh|Bệnh lý|Chẩn đoán y khoa|Chẩn đoán y tế|Chẩn đoán bệnh|Triệu chứng y tế|Bệnh)\s*[:：\-]\s*/i, '');
+                
                 return result.trim();
             }
         }

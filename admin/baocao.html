@@ -1011,27 +1011,38 @@ window.addEventListener('load', () => {
         setTimeout(() => openEditSickModal(editSickId), 800);
     }
 });
+// =========================================================================
+// HỆ THỐNG TRA CỨU ICD-10 ĐA BỆNH & TỰ ĐỘNG DỊCH TIẾNG VIỆT QUA API
+// =========================================================================
 let icdDebounceTimer = null;
-const POPULAR_VN_ICD10 = [
-    { code: "A90", nameVi: "Sốt xuất huyết Dengue", nameEn: "Dengue fever" },
-    { code: "B08.4", nameVi: "Bệnh Tay chân miệng", nameEn: "Enteroviral vesicular stomatitis with exanthem" },
-    { code: "B01.9", nameVi: "Thủy đậu (Trái rạ)", nameEn: "Varicella without complication" },
-    { code: "B26.9", nameVi: "Quai bị", nameEn: "Mumps without complication" },
-    { code: "J10.1", nameVi: "Cúm mùa (Cảm cúm siêu vi)", nameEn: "Influenza with other respiratory manifestations" },
-    { code: "B30.9", nameVi: "Đau mắt đỏ (Viêm kết mạc)", nameEn: "Viral conjunctivitis, unspecified" },
-    { code: "A09", nameVi: "Viêm dạ dày - ruột / Tiêu chảy cấp", nameEn: "Infectious gastroenteritis and colitis" },
-    { code: "J02.9", nameVi: "Viêm họng cấp", nameEn: "Acute pharyngitis, unspecified" },
-    { code: "J03.9", nameVi: "Viêm amidan cấp", nameEn: "Acute tonsillitis, unspecified" },
-    { code: "R50.9", nameVi: "Sốt không rõ nguyên nhân", nameEn: "Fever, unspecified" },
-    { code: "K29.7", nameVi: "Viêm dạ dày", nameEn: "Gastritis, unspecified" }
-];
 
-async function searchICD10Online(query, boxId, targetInputId) {
+// Hàm dịch tự động trực tuyến (Google Translation API mở)
+async function translateText(text, fromLang = 'en', toLang = 'vi') {
+    if (!text || !text.trim()) return text;
+    try {
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${toLang}&dt=t&q=${encodeURIComponent(text)}`;
+        const res = await fetch(url);
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data[0] && data[0][0] && data[0][0][0]) {
+                return data[0][0][0];
+            }
+        }
+    } catch (e) {
+        console.warn("Lỗi dịch API:", e);
+    }
+    return text;
+}
+
+async function searchICD10Online(fullInputValue, boxId, targetInputId) {
     const box = document.getElementById(boxId);
     if (!box) return;
 
-    const val = (query || "").trim();
-    if (val.length < 2) {
+    // 1. HỖ TRỢ NHIỀU BỆNH: Chỉ lấy từ khóa sau dấu phẩy (,) hoặc dấu chấm phẩy (;) cuối cùng
+    const parts = fullInputValue.split(/[,;]/);
+    const activeQuery = parts[parts.length - 1].trim();
+
+    if (activeQuery.length < 2) {
         box.style.display = 'none';
         box.innerHTML = '';
         return;
@@ -1041,78 +1052,88 @@ async function searchICD10Online(query, boxId, targetInputId) {
 
     icdDebounceTimer = setTimeout(async () => {
         box.style.display = 'block';
-        box.innerHTML = '<div style="padding:10px 14px; color:#64748b; font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> Đang tra cứu cơ sở dữ liệu ICD-10...</div>';
+        box.innerHTML = '<div style="padding:10px 14px; color:#64748b; font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> Đang tìm kiếm mã bệnh chuẩn Tiếng Việt...</div>';
 
         try {
-            const cleanVal = removeVietnameseTones(val).toLowerCase();
-            
-            // 1. Quét đối chiếu từ danh mục tiếng Việt phổ biến
-            const localMatches = POPULAR_VN_ICD10.filter(item => {
-                const searchStr = `${item.code} ${removeVietnameseTones(item.nameVi)} ${item.nameEn}`.toLowerCase();
-                return searchStr.includes(cleanVal);
-            });
+            let searchTerm = activeQuery;
 
-            // 2. Gọi đồng thời REST API của Viện Y tế Quốc gia Hoa Kỳ (NIH NLM ICD-10 API)
-            const apiUrl = `https://clinicaltables.nlm.nih.gov/api/icd10cm/v3/search?sf=code,name&terms=${encodeURIComponent(val)}&maxList=8`;
-            const res = await fetch(apiUrl);
-            let apiResults = [];
-            
-            if (res.ok) {
-                const data = await res.json();
-                // Response format NIH: [total, codes_array, extra_data, [[code, name], ...]]
-                if (data && data[3] && Array.isArray(data[3])) {
-                    apiResults = data[3].map(item => ({
-                        code: item[0],
-                        nameVi: "",
-                        nameEn: item[1]
-                    }));
-                }
+            // Nếu người dùng gõ Tiếng Việt có dấu -> Dịch sang Tiếng Anh để tra NIH API
+            const isVietnamese = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(activeQuery);
+            if (isVietnamese) {
+                searchTerm = await translateText(activeQuery, 'vi', 'en');
             }
 
-            // Gộp kết quả và loại trừ trùng lặp mã
-            const combined = [...localMatches];
-            apiResults.forEach(apiItem => {
-                if (!combined.some(c => c.code.toLowerCase() === apiItem.code.toLowerCase())) {
-                    combined.push(apiItem);
-                }
-            });
+            // Gọi REST API NIH NLM lấy mã ICD-10
+            const apiUrl = `https://clinicaltables.nlm.nih.gov/api/icd10cm/v3/search?sf=code,name&terms=${encodeURIComponent(searchTerm)}&maxList=8`;
+            const res = await fetch(apiUrl);
+            
+            if (!res.ok) throw new Error("Không thể kết nối máy chủ ICD-10");
+            const data = await res.json();
 
-            if (combined.length === 0) {
-                box.innerHTML = '<div style="padding:10px 14px; color:#ef4444; font-size:0.85rem;">Không tìm thấy mã ICD-10 phù hợp!</div>';
+            let items = [];
+            if (data && data[3] && Array.isArray(data[3])) {
+                items = data[3].map(item => ({ code: item[0], nameEn: item[1] }));
+            }
+
+            if (items.length === 0) {
+                box.innerHTML = '<div style="padding:10px 14px; color:#ef4444; font-size:0.85rem;">Không tìm thấy mã bệnh phù hợp!</div>';
                 return;
             }
 
+            // 2. DỊCH SONG SONG TÊN BỆNH SANG TIẾNG VIỆT
+            const translatedItems = await Promise.all(items.map(async (item) => {
+                const nameVi = await translateText(item.nameEn, 'en', 'vi');
+                return {
+                    code: item.code,
+                    nameVi: nameVi.charAt(0).toUpperCase() + nameVi.slice(1), // Viết hoa chữ đầu
+                    nameEn: item.nameEn
+                };
+            }));
+
+            // 3. RENDER DROPDOWN KẾT QUẢ TIẾNG VIỆT
             let html = '';
-            combined.slice(0, 10).forEach(item => {
-                const displayTitle = item.nameVi ? `${item.nameVi}` : `${item.nameEn}`;
-                const subTitle = item.nameVi ? item.nameEn : '';
-                const formatSelected = item.nameVi ? `${item.nameVi} [${item.code}]` : `${item.nameEn} [${item.code}]`;
+            translatedItems.forEach(item => {
+                const diseaseDisplay = `${item.nameVi} [${item.code}]`;
 
                 html += `
-                    <div onclick="selectICD10Result('${formatSelected.replace(/'/g, "\\'")}', '${boxId}', '${targetInputId}')" 
+                    <div onclick="selectICD10Result('${diseaseDisplay.replace(/'/g, "\\'")}', '${boxId}', '${targetInputId}')" 
                          style="padding:10px 14px; border-bottom:1px solid #f1f5f9; cursor:pointer; transition:0.15s; text-align:left;"
-                         onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='white'">
+                         onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='white'">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <strong style="color:#0f172a; font-size:0.9rem;">${displayTitle}</strong>
+                            <strong style="color:#0f172a; font-size:0.9rem;">${item.nameVi}</strong>
                             <span style="background:#fee2e2; color:#ef4444; font-weight:bold; font-size:0.78rem; padding:2px 6px; border-radius:4px;">${item.code}</span>
                         </div>
-                        ${subTitle ? `<div style="font-size:0.75rem; color:#64748b; margin-top:2px;">${subTitle}</div>` : ''}
+                        <div style="font-size:0.75rem; color:#64748b; margin-top:2px; font-style:italic;">${item.nameEn}</div>
                     </div>
                 `;
             });
 
             box.innerHTML = html;
         } catch (err) {
-            box.innerHTML = `<div style="padding:10px 14px; color:#ef4444; font-size:0.85rem;">Lỗi kết nối tra cứu ICD-10: ${err.message}</div>`;
+            box.innerHTML = `<div style="padding:10px 14px; color:#ef4444; font-size:0.85rem;">Lỗi tra cứu: ${err.message}</div>`;
         }
-    }, 250);
+    }, 300);
 }
 
-function selectICD10Result(fullDiagnosis, boxId, targetInputId) {
+// 4. HÀM CHỌN BỆNH (Tự động nối tiếp nhiều bệnh)
+function selectICD10Result(selectedDisease, boxId, targetInputId) {
     const input = document.getElementById(targetInputId);
     if (input) {
-        input.value = fullDiagnosis;
+        // Tách các bệnh đã có trước đó
+        let parts = input.value.split(/[,;]/).map(p => p.trim()).filter(p => p.length > 0);
+        
+        // Thay thế từ khóa đang gõ dở ở cuối bằng bệnh vừa chọn
+        if (parts.length > 0) {
+            parts[parts.length - 1] = selectedDisease;
+        } else {
+            parts.push(selectedDisease);
+        }
+
+        // Nối các bệnh lại bằng dấu chấm phẩy kèm khoảng trắng để sẵn sàng gõ bệnh tiếp theo
+        input.value = parts.join('; ') + '; ';
+        input.focus();
     }
+
     const box = document.getElementById(boxId);
     if (box) {
         box.style.display = 'none';
@@ -1120,7 +1141,7 @@ function selectICD10Result(fullDiagnosis, boxId, targetInputId) {
     }
 }
 
-// Ẩn bảng gợi ý khi click ra ngoài
+// Ẩn bảng gợi ý khi click chuột ra ngoài
 document.addEventListener('click', function(e) {
     if (!e.target.closest('#dd-diagnosis') && !e.target.closest('#icd-suggest-main')) {
         const box1 = document.getElementById('icd-suggest-main');

@@ -1316,28 +1316,36 @@ function filterStudentTable() {
     const btn = document.getElementById('btn-search-student');
     let originalHTML = '';
 
-    // Tạo hiệu ứng xoay tròn trên nút bấm
     if (btn) {
         originalHTML = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tìm...';
         btn.disabled = true;
     }
 
-    // Trì hoãn nhẹ 250ms để tạo phản hồi thị giác tốt nhất và tránh treo trình duyệt
     setTimeout(() => {
-        const keyword = removeVietnameseTones(document.getElementById('search-student-input').value);
+        const rawInput = document.getElementById('search-student-input').value.trim();
+        const keyword = removeVietnameseTones(rawInput).toLowerCase();
+        const searchTerms = keyword.split(/\s+/).filter(t => t.length > 0);
         
-        currentFilteredStudents = window.allStudents.filter(hs => 
-            hs.name_search.includes(keyword) || 
-            hs.class.toLowerCase().includes(keyword) || 
-            hs.id.toLowerCase().includes(keyword) ||
-            (hs.studentCode || '').toLowerCase().includes(keyword)
-        );
-        
-        displayedStudentCount = 50; // Reset về trang đầu tiên
-        renderStudentTablePage(); // Xuất kết quả ra bảng
+        if (searchTerms.length === 0) {
+            currentFilteredStudents = [...window.allStudents];
+        } else {
+            currentFilteredStudents = window.allStudents.filter(hs => {
+                const nameClean = removeVietnameseTones(hs.name || '').toLowerCase();
+                const classClean = (hs.class || '').toLowerCase();
+                const idClean = (hs.id || '').toLowerCase();
+                const codeClean = (hs.studentCode || '').toLowerCase();
+                const dobClean = (hs.dob || '').toLowerCase();
 
-        // Trả lại trạng thái ban đầu của nút bấm sau khi tìm xong
+                const fullInfo = `${nameClean} ${classClean} ${idClean} ${codeClean} ${dobClean}`;
+                
+                return searchTerms.every(term => fullInfo.includes(term));
+            });
+        }
+        
+        displayedStudentCount = 50;
+        renderStudentTablePage();
+
         if (btn) {
             btn.innerHTML = originalHTML;
             btn.disabled = false;

@@ -1388,12 +1388,17 @@ async function printStudentExamResult(recordId) {
             </div>
 
             <!-- PHẦN CHÂN TRANG (FOOTER) -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1.5px solid #cbd5e1; padding-top: 6px; margin-top: 8px;">
-                <div style="font-size: 7pt; color: #64748b; font-style: italic; line-height: 1.35; width: 72%;">
-                    Dữ liệu được trích xuất tự động từ Hệ thống Y tế số
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1.5px solid #cbd5e1; padding-top: 6px; margin-top: 8px;">
+                <div style="font-size: 7.5pt; color: #64748b; font-style: italic; line-height: 1.4; width: 65%;">
+                    Dữ liệu được trích xuất tự động từ Hệ thống Y tế số<br>
+                    <span style="font-size: 6.5pt; color: #94a3b8;">Trường THPT Võ Thị Sáu - Bà Rịa Vũng Tàu</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 6px; width: 28%; justify-content: flex-end;">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=https://yteso-thptvothisaubrvt.netlify.app/" alt="QR" style="width: 32px; height: 32px;">
+                <div style="display: flex; align-items: center; gap: 8px; width: 35%; justify-content: flex-end;">
+                    <div style="text-align: right; line-height: 1.2;">
+                        <span style="font-size: 6.5pt; font-weight: 700; color: #1e3a8a; text-transform: uppercase; display: block;">Tra cứu hồ sơ</span>
+                        <span style="font-size: 6pt; color: #64748b;">Quét mã QR</span>
+                    </div>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://yteso-thptvothisaubrvt.netlify.app/" alt="QR" style="width: 48px; height: 48px; border-radius: 4px; border: 1px solid #e2e8f0; padding: 2px; background: white;">
                 </div>
             </div>
 
@@ -2106,12 +2111,17 @@ function generateSingleExamResultHtml(r, campaign, stData) {
             </div>
 
             <!-- CHÂN TRANG -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1.5px solid #cbd5e1; padding-top: 6px; margin-top: 8px;">
-                <div style="font-size: 7pt; color: #64748b; font-style: italic; line-height: 1.35; width: 72%;">
-                    Dữ liệu được trích xuất tự động từ Hệ thống Y tế số
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1.5px solid #cbd5e1; padding-top: 6px; margin-top: 8px;">
+                <div style="font-size: 7.5pt; color: #64748b; font-style: italic; line-height: 1.4; width: 65%;">
+                    Dữ liệu được trích xuất tự động từ Hệ thống Y tế số<br>
+                    <span style="font-size: 6.5pt; color: #94a3b8;">Trường THPT Võ Thị Sáu - Bà Rịa Vũng Tàu</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 6px; width: 28%; justify-content: flex-end;">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=https://yteso-thptvothisaubrvt.netlify.app/" alt="QR" style="width: 32px; height: 32px;">
+                <div style="display: flex; align-items: center; gap: 8px; width: 35%; justify-content: flex-end;">
+                    <div style="text-align: right; line-height: 1.2;">
+                        <span style="font-size: 6.5pt; font-weight: 700; color: #1e3a8a; text-transform: uppercase; display: block;">Tra cứu hồ sơ</span>
+                        <span style="font-size: 6pt; color: #64748b;">Quét mã QR</span>
+                    </div>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://yteso-thptvothisaubrvt.netlify.app/" alt="QR" style="width: 48px; height: 48px; border-radius: 4px; border: 1px solid #e2e8f0; padding: 2px; background: white;">
                 </div>
             </div>
 

@@ -1392,20 +1392,18 @@ async function printStudentExamResult(recordId) {
 
                 <div style="width: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; padding: 4px; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.06); text-align: center;">
                     <span style="font-size: 5.5pt; font-weight: 800; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px;">Quét tra cứu</span>
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://yteso-thptvothisaubrvt.netlify.app/" alt="QR" style="width: 56px; height: 56px; display: block;">
-                    <span style="font-size: 5pt; color: #64748b; margin-top: 2px; font-weight: 600;">Y TẾ SỐ VTS</span>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://yteso-thptvothisaubrvt.netlify.app/student" alt="QR" style="width: 56px; height: 56px; display: block;">
                 </div>
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 4px; margin-top: 4px; font-size: 6.5pt; color: #64748b; font-style: italic;">
-                <div>Dữ liệu được trích xuất tự động từ Hệ thống Y tế số - THPT Võ Thị Sáu (Bà Rịa - Vũng Tàu)</div>
-                <div style="font-weight: 600; color: #2563eb;">Phiếu hợp lệ</div>
+                <div>Dữ liệu được lưu trữ bảo mật và xuất tự động từ Hệ thống Y tế số - Trường THPT Võ Thị Sáu- Bà Rịa - Vũng Tàu</div>
+                <div style="font-weight: 600; color: #2563eb;">Hỗ trợ: yte.thptvothisaubrvt@gmail.com</div>
             </div>
 
         </div>
     `;
 
-    // Khởi tạo Iframe in cô lập
     const iframeId = 'silent-print-iframe';
     let iframe = document.getElementById(iframeId);
     if (iframe) {
@@ -2113,18 +2111,16 @@ function generateSingleExamResultHtml(r, campaign, stData) {
                     </table>
                 </div>
 
-                <!-- CỘT PHẢI: KHỐI QR CODE ĐƯỢC THIẾT KẾ ĐẸP VÀ TO HƠN -->
                 <div style="width: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; padding: 4px; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.06); text-align: center;">
                     <span style="font-size: 5.5pt; font-weight: 800; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px;">Quét tra cứu</span>
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://yteso-thptvothisaubrvt.netlify.app/" alt="QR" style="width: 56px; height: 56px; display: block;">
-                    <span style="font-size: 5pt; color: #64748b; margin-top: 2px; font-weight: 600;">Y TẾ SỐ VTS</span>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://yteso-thptvothisaubrvt.netlify.app/student" alt="QR" style="width: 56px; height: 56px; display: block;">
                 </div>
             </div>
 
             <!-- CHÂN TRANG GỌN GÀNG -->
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 4px; margin-top: 4px; font-size: 6.5pt; color: #64748b; font-style: italic;">
-                <div>Dữ liệu được trích xuất tự động từ Hệ thống Y tế số - THPT Võ Thị Sáu (Bà Rịa - Vũng Tàu)</div>
-                <div style="font-weight: 600; color: #2563eb;">Phiếu hợp lệ</div>
+                <div>Dữ liệu được lưu trữ bảo mật và xuất tự động từ Hệ thống Y tế số - Trường THPT Võ Thị Sáu- Bà Rịa - Vũng Tàu</div>
+                <div style="font-weight: 600; color: #2563eb;">Hỗ trợ: yte.thptvothisaubrvt@gmail.com</div>
             </div>
 
         </div>

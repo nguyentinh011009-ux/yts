@@ -1360,46 +1360,46 @@ async function printStudentExamResult(recordId) {
                 </table>
             </div>
 
-            <!-- MỤC 5: TỔNG KẾT (KHỐI BOX MÀU ẤM CAO CẤP, PHÂN TÁCH RÕ RÀNG) -->
-            <div style="margin-bottom: 15px; background: #fffbeb; padding: 10px 12px; border-radius: 8px; border: 1px solid #fef3c7;">
-                <div style="font-size: 8.5pt; font-weight: 800; color: #b45309; border-bottom: 1px solid #fde68a; padding-bottom: 3px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.3px;">5. Tổng kết đánh giá chung</div>
-                <table style="width: 100%; font-size: 8pt; border-collapse: collapse; line-height: 1.4;">
-                    <tr>
-                        <td style="width: 25%; color: #92400e; padding: 2px 0; vertical-align: top;">Phát triển thể chất:</td>
-                        <td style="width: 75%; font-weight: 600; color: #1e293b; padding: 2px 0;">${r.summary.physicalDev || 'Bình thường'}</td>
-                    </tr>
-                    <tr>
-                        <td style="color: #92400e; padding: 2px 0; vertical-align: top;">Tâm thần vận động:</td>
-                        <td style="font-weight: 600; color: #1e293b; padding: 2px 0;">${r.summary.mentalDev || 'Bình thường'}</td>
-                    </tr>
-                    <tr>
-                        <td style="color: #92400e; padding: 2px 0; vertical-align: top;">Sức khỏe chung:</td>
-                        <td style="font-weight: 600; color: #1e293b; padding: 2px 0;">${r.summary.healthStatus || 'Đủ sức khỏe học tập'}</td>
-                    </tr>
-                    <tr>
-                        <td style="color: #b91c1c; padding: 2px 0; vertical-align: top; font-weight: bold;">Bệnh lý lưu ý:</td>
-                        <td style="color: #b91c1c; padding: 2px 0; font-weight: bold;">${r.summary.notes || 'Không phát hiện bất thường'}</td>
-                    </tr>
-                    <tr>
-                        <td style="color: #92400e; padding: 2px 0; vertical-align: top;">Yêu cầu theo dõi:</td>
-                        <td style="font-style: italic; color: #1e293b; padding: 2px 0;">${r.summary.advice || 'Tự theo dõi sức khỏe tại phòng y tế học đường'}</td>
-                    </tr>
-                </table>
+            <!-- MỤC 5: TỔNG KẾT ĐÁNH GIÁ & MÃ QR TRA CỨU (LỒNG NỘI DUNG, TRÁNH TRÀN TRANG) -->
+            <div style="margin-bottom: 6px; background: #fffbeb; padding: 6px 8px; border-radius: 6px; border: 1px solid #fde68a; display: flex; gap: 8px; align-items: center;">
+                
+                <!-- CỘT TRÁI: THÔNG TIN TỔNG KẾT -->
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-size: 8pt; font-weight: 800; color: #b45309; border-bottom: 1px dashed #fcd34d; padding-bottom: 2px; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.3px;">5. Tổng kết đánh giá chung</div>
+                    <table style="width: 100%; font-size: 7.5pt; border-collapse: collapse; line-height: 1.3;">
+                        <tr>
+                            <td style="width: 32%; color: #92400e; padding: 1px 0; vertical-align: top;">Phát triển thể chất:</td>
+                            <td style="width: 68%; font-weight: 600; color: #1e293b; padding: 1px 0;">${r.summary.physicalDev || 'Bình thường'}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #92400e; padding: 1px 0; vertical-align: top;">Tâm thần vận động:</td>
+                            <td style="font-weight: 600; color: #1e293b; padding: 1px 0;">${r.summary.mentalDev || 'Bình thường'}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #92400e; padding: 1px 0; vertical-align: top;">Sức khỏe chung:</td>
+                            <td style="font-weight: 600; color: #1e293b; padding: 1px 0;">${r.summary.healthStatus || 'Đủ sức khỏe học tập'}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #b91c1c; padding: 1px 0; vertical-align: top; font-weight: bold;">Bệnh lý lưu ý:</td>
+                            <td style="color: #b91c1c; padding: 1px 0; font-weight: bold;">${r.summary.notes || 'Không phát hiện bất thường'}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #92400e; padding: 1px 0; vertical-align: top;">Yêu cầu theo dõi:</td>
+                            <td style="font-style: italic; color: #1e293b; padding: 1px 0;">${r.summary.advice || 'Tự theo dõi sức khỏe tại phòng y tế'}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div style="width: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; padding: 4px; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.06); text-align: center;">
+                    <span style="font-size: 5.5pt; font-weight: 800; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px;">Quét tra cứu</span>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://yteso-thptvothisaubrvt.netlify.app/" alt="QR" style="width: 56px; height: 56px; display: block;">
+                    <span style="font-size: 5pt; color: #64748b; margin-top: 2px; font-weight: 600;">Y TẾ SỐ VTS</span>
+                </div>
             </div>
 
-            <!-- PHẦN CHÂN TRANG (FOOTER) -->
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1.5px solid #cbd5e1; padding-top: 6px; margin-top: 8px;">
-                <div style="font-size: 7.5pt; color: #64748b; font-style: italic; line-height: 1.4; width: 65%;">
-                    Dữ liệu được trích xuất tự động từ Hệ thống Y tế số<br>
-                    <span style="font-size: 6.5pt; color: #94a3b8;">Trường THPT Võ Thị Sáu - Bà Rịa Vũng Tàu</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px; width: 35%; justify-content: flex-end;">
-                    <div style="text-align: right; line-height: 1.2;">
-                        <span style="font-size: 6.5pt; font-weight: 700; color: #1e3a8a; text-transform: uppercase; display: block;">Tra cứu hồ sơ</span>
-                        <span style="font-size: 6pt; color: #64748b;">Quét mã QR</span>
-                    </div>
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://yteso-thptvothisaubrvt.netlify.app/" alt="QR" style="width: 48px; height: 48px; border-radius: 4px; border: 1px solid #e2e8f0; padding: 2px; background: white;">
-                </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 4px; margin-top: 4px; font-size: 6.5pt; color: #64748b; font-style: italic;">
+                <div>Dữ liệu được trích xuất tự động từ Hệ thống Y tế số - THPT Võ Thị Sáu (Bà Rịa - Vũng Tàu)</div>
+                <div style="font-weight: 600; color: #2563eb;">Phiếu hợp lệ</div>
             </div>
 
         </div>
@@ -2083,46 +2083,48 @@ function generateSingleExamResultHtml(r, campaign, stData) {
                 </table>
             </div>
 
-            <!-- MỤC 5: TỔNG KẾT ĐÁNH GIÁ CHUNG -->
-            <div style="margin-bottom: 15px; background: #fffbeb; padding: 10px 12px; border-radius: 8px; border: 1px solid #fef3c7;">
-                <div style="font-size: 8.5pt; font-weight: 800; color: #b45309; border-bottom: 1px solid #fde68a; padding-bottom: 3px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.3px;">5. Tổng kết đánh giá chung</div>
-                <table style="width: 100%; font-size: 8pt; border-collapse: collapse; line-height: 1.4;">
-                    <tr>
-                        <td style="width: 25%; color: #92400e; padding: 2px 0; vertical-align: top;">Phát triển thể chất:</td>
-                        <td style="width: 75%; font-weight: 600; color: #1e293b; padding: 2px 0;">${r.summary.physicalDev || 'Bình thường'}</td>
-                    </tr>
-                    <tr>
-                        <td style="color: #92400e; padding: 2px 0; vertical-align: top;">Tâm thần vận động:</td>
-                        <td style="font-weight: 600; color: #1e293b; padding: 2px 0;">${r.summary.mentalDev || 'Bình thường'}</td>
-                    </tr>
-                    <tr>
-                        <td style="color: #92400e; padding: 2px 0; vertical-align: top;">Sức khỏe chung:</td>
-                        <td style="font-weight: 600; color: #1e293b; padding: 2px 0;">${r.summary.healthStatus || 'Đủ sức khỏe học tập'}</td>
-                    </tr>
-                    <tr>
-                        <td style="color: #b91c1c; padding: 2px 0; vertical-align: top; font-weight: bold;">Bệnh lý lưu ý:</td>
-                        <td style="color: #b91c1c; padding: 2px 0; font-weight: bold;">${r.summary.notes || 'Không'}</td>
-                    </tr>
-                    <tr>
-                        <td style="color: #92400e; padding: 2px 0; vertical-align: top;">Yêu cầu theo dõi:</td>
-                        <td style="font-style: italic; color: #1e293b; padding: 2px 0;">${r.summary.advice || 'Tự theo dõi sức khỏe tại phòng y tế học đường'}</td>
-                    </tr>
-                </table>
+            <!-- MỤC 5: TỔNG KẾT ĐÁNH GIÁ & MÃ QR TRA CỨU -->
+            <div style="margin-bottom: 6px; background: #fffbeb; padding: 6px 8px; border-radius: 6px; border: 1px solid #fde68a; display: flex; gap: 8px; align-items: center;">
+                
+                <!-- CỘT TRÁI: THÔNG TIN TỔNG KẾT -->
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-size: 8pt; font-weight: 800; color: #b45309; border-bottom: 1px dashed #fcd34d; padding-bottom: 2px; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.3px;">5. Tổng kết đánh giá chung</div>
+                    <table style="width: 100%; font-size: 7.5pt; border-collapse: collapse; line-height: 1.3;">
+                        <tr>
+                            <td style="width: 32%; color: #92400e; padding: 1px 0; vertical-align: top;">Phát triển thể chất:</td>
+                            <td style="width: 68%; font-weight: 600; color: #1e293b; padding: 1px 0;">${r.summary.physicalDev || 'Bình thường'}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #92400e; padding: 1px 0; vertical-align: top;">Tâm thần vận động:</td>
+                            <td style="font-weight: 600; color: #1e293b; padding: 1px 0;">${r.summary.mentalDev || 'Bình thường'}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #92400e; padding: 1px 0; vertical-align: top;">Sức khỏe chung:</td>
+                            <td style="font-weight: 600; color: #1e293b; padding: 1px 0;">${r.summary.healthStatus || 'Đủ sức khỏe học tập'}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #b91c1c; padding: 1px 0; vertical-align: top; font-weight: bold;">Bệnh lý lưu ý:</td>
+                            <td style="color: #b91c1c; padding: 1px 0; font-weight: bold;">${r.summary.notes || 'Không'}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #92400e; padding: 1px 0; vertical-align: top;">Yêu cầu theo dõi:</td>
+                            <td style="font-style: italic; color: #1e293b; padding: 1px 0;">${r.summary.advice || 'Tự theo dõi sức khỏe tại phòng y tế'}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- CỘT PHẢI: KHỐI QR CODE ĐƯỢC THIẾT KẾ ĐẸP VÀ TO HƠN -->
+                <div style="width: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; padding: 4px; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.06); text-align: center;">
+                    <span style="font-size: 5.5pt; font-weight: 800; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px;">Quét tra cứu</span>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://yteso-thptvothisaubrvt.netlify.app/" alt="QR" style="width: 56px; height: 56px; display: block;">
+                    <span style="font-size: 5pt; color: #64748b; margin-top: 2px; font-weight: 600;">Y TẾ SỐ VTS</span>
+                </div>
             </div>
 
-            <!-- CHÂN TRANG -->
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1.5px solid #cbd5e1; padding-top: 6px; margin-top: 8px;">
-                <div style="font-size: 7.5pt; color: #64748b; font-style: italic; line-height: 1.4; width: 65%;">
-                    Dữ liệu được trích xuất tự động từ Hệ thống Y tế số<br>
-                    <span style="font-size: 6.5pt; color: #94a3b8;">Trường THPT Võ Thị Sáu - Bà Rịa Vũng Tàu</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px; width: 35%; justify-content: flex-end;">
-                    <div style="text-align: right; line-height: 1.2;">
-                        <span style="font-size: 6.5pt; font-weight: 700; color: #1e3a8a; text-transform: uppercase; display: block;">Tra cứu hồ sơ</span>
-                        <span style="font-size: 6pt; color: #64748b;">Quét mã QR</span>
-                    </div>
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://yteso-thptvothisaubrvt.netlify.app/" alt="QR" style="width: 48px; height: 48px; border-radius: 4px; border: 1px solid #e2e8f0; padding: 2px; background: white;">
-                </div>
+            <!-- CHÂN TRANG GỌN GÀNG -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 4px; margin-top: 4px; font-size: 6.5pt; color: #64748b; font-style: italic;">
+                <div>Dữ liệu được trích xuất tự động từ Hệ thống Y tế số - THPT Võ Thị Sáu (Bà Rịa - Vũng Tàu)</div>
+                <div style="font-weight: 600; color: #2563eb;">Phiếu hợp lệ</div>
             </div>
 
         </div>

@@ -707,10 +707,11 @@ async function fetchBaseData() {
                         
                         // Phân tích thống kê bệnh cho cuối tháng
                         if(r.diagnosis && r.type === 'Nghỉ') {
-                            if(r.diagnosis === 'Sốt xuất huyết') statBenh["Sốt xuất huyết"]++;
-                            else if(r.diagnosis === 'Tay chân miệng') statBenh["Tay chân miệng"]++;
-                            else if(r.diagnosis !== '0') statBenh["Khác"]++;
-                        }
+						    const diag = r.diagnosis.toLowerCase();
+						    if(diag.includes('sốt xuất huyết') || diag.includes('a90') || diag.includes('a91')) statBenh["Sốt xuất huyết"]++;
+						    else if(diag.includes('tay chân miệng') || diag.includes('b08.4')) statBenh["Tay chân miệng"]++;
+						    else if(r.diagnosis !== '0') statBenh["Khác"]++;
+						}
 
                         tbody += `<tr>
                             <td>${idx+1}</td>
@@ -788,9 +789,12 @@ async function fetchBaseData() {
                     }
 
                     // Thống kê
-                    if(statBenh[ep.diagnosis] !== undefined) statBenh[ep.diagnosis]++;
-                    else statBenh["Khác"]++;
-
+                    const diagLower = (ep.diagnosis || '').toLowerCase();
+					if(diagLower.includes('sốt xuất huyết') || diagLower.includes('a90') || diagLower.includes('a91')) statBenh["Sốt xuất huyết"]++;
+					else if(diagLower.includes('tay chân miệng') || diagLower.includes('b08.4')) statBenh["Tay chân miệng"]++;
+					else if(diagLower.includes('thủy đậu') || diagLower.includes('b01')) statBenh["Thủy đậu"]++;
+					else if(diagLower.includes('quai bị') || diagLower.includes('b26')) statBenh["Quai bị"]++;
+					else statBenh["Khác"]++;
                     tbody += `<tr>
                         <td>${idx+1}</td>
                         <td class="txt-left">${hs.name || 'Không rõ'}</td>
@@ -1043,7 +1047,7 @@ async function translateMedicalText(text, fromLang = 'en', toLang = 'vi') {
             if (data && data[0] && data[0][0] && data[0][0][0]) {
                 let result = data[0][0][0];
                 
-                result = result.replace(/^Tình trạng bệnh lý|Tình trạng y tế|Tình trạng bệnh|Bệnh lý|Chẩn đoán y khoa|Chẩn đoán y tế|Chẩn đoán bệnh|Triệu chứng y tế|Bệnh|Bệnh trạng)\s*[:：\-]\s*/i, '');
+                result = result.replace(/^(Tình trạng bệnh lý|Tình trạng y tế|Tình trạng bệnh|Bệnh lý|Chẩn đoán y khoa|Chẩn đoán y tế|Chẩn đoán bệnh|Triệu chứng y tế|Bệnh|Bệnh trạng)\s*[:：\-]\s*/i, '');
                 
                 return result.trim();
             }

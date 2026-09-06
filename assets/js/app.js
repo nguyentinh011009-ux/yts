@@ -3990,6 +3990,12 @@ function openAdminNotiDetail(notiId) {
     document.getElementById('admin-detail-noti-title').innerText = noti.title;
     document.getElementById('admin-detail-noti-content').innerText = noti.content;
     
+    // Gán link mở trong tab mới
+    const openTabBtn = document.getElementById('btn-admin-open-tab');
+    if (openTabBtn) {
+        openTabBtn.href = `../view_noti.html?id=${notiId}`;
+    }
+
     const btn = document.getElementById('btn-admin-read-inside');
     btn.onclick = () => {
         markAdminNotiAsRead(notiId);
@@ -4002,7 +4008,6 @@ function openAdminNotiDetail(notiId) {
         sickActionBtn.id = 'btn-goto-sick-diagnosis';
         sickActionBtn.className = 'btn';
         sickActionBtn.style.cssText = 'background: #ef4444; color: white; text-decoration: none; font-weight: bold; padding: 8px 16px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; margin-right: 10px; font-size: 0.9rem;';
-        // Chèn vào cạnh nút Đã đọc trong modal
         btn.parentNode.insertBefore(sickActionBtn, btn);
     }
 

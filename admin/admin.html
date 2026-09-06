@@ -1797,14 +1797,20 @@
 
 <!-- POPUP: CHI TIẾT THÔNG BÁO -->
 <div id="admin-noti-detail-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 10005; align-items: center; justify-content: center; padding: 20px;">
-    <div class="form-card fade-in" style="width: 100%; max-width: 450px; position: relative; padding: 30px 20px;">
+    <div class="form-card fade-in" style="width: 100%; max-width: 480px; position: relative; padding: 30px 24px; border-radius: 18px;">
         <button onclick="document.getElementById('admin-noti-detail-modal').style.display='none'" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer;">&times;</button>
         <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 8px;" id="admin-detail-noti-sender"></div>
         <h3 style="margin: 0 0 15px; color: #0062ff; font-size: 1.3rem;" id="admin-detail-noti-title"></h3>
-        <div style="font-size: 0.95rem; color: #334155; line-height: 1.6; background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; white-space: pre-wrap;" id="admin-detail-noti-content"></div>
-        <button id="btn-admin-read-inside" class="btn btn-primary" style="width: 100%; margin-top: 20px; justify-content: center;">
-            <i class="fas fa-check-circle"></i> Đã hiểu và Bỏ qua
-        </button>
+        <div style="font-size: 0.95rem; color: #334155; line-height: 1.6; background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; white-space: pre-wrap; max-height: 300px; overflow-y: auto;" id="admin-detail-noti-content"></div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <a id="btn-admin-open-tab" href="#" target="_blank" class="btn" style="flex: 1; justify-content: center; background: #f1f5f9; color: #0284c7; border: 1px solid #cbd5e1; font-weight: 600; text-decoration: none; border-radius: 10px; padding: 10px 14px;">
+                <i class="fas fa-external-link-alt"></i> Mở trong tab
+            </a>
+            <button id="btn-admin-read-inside" class="btn btn-primary" style="flex: 1.2; justify-content: center; border-radius: 10px; padding: 10px 14px;">
+                <i class="fas fa-check-circle"></i> Đã đọc
+            </button>
+        </div>
     </div>
 </div>
 <!-- === POPUP: XEM CHI TIẾT YÊU CẦU VÀ TRẢ LỜI HỌC SINH === -->

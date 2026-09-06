@@ -446,38 +446,46 @@ window.loadSavedAIPredictionsHistory = function() {
 
     db.collection('yt_ai_predictions')
         .orderBy('timestamp', 'desc')
-        .limit(10)
+        .limit(6)
         .onSnapshot(snap => {
             if (snap.empty) {
-                container.innerHTML = `<div style="text-align: center; padding: 25px; color: #94a3b8; background: #f8fafc; border-radius: 10px; border: 1px dashed #cbd5e1;">Chưa có bản dự báo nào. Nhấn nút "Phân tích & Dự báo ngay" để khởi tạo.</div>`;
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 25px; color: #94a3b8; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1; font-size: 0.88rem;">
+                        <i class="fas fa-info-circle"></i> Chưa có bản dự báo nào. Nhấn <strong>"Phân tích ngay"</strong> để kích hoạt AI.
+                    </div>`;
                 return;
             }
 
             let html = '';
             snap.forEach(doc => {
                 const d = doc.data();
-                const timeStr = d.timestamp ? new Date(d.timestamp.seconds * 1000).toLocaleString('vi-VN') : 'Vừa xong';
+                const timeStr = d.timestamp ? new Date(d.timestamp.seconds * 1000).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : 'Vừa xong';
                 const isAutoBadge = d.isAutoRun 
-                    ? `<span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold;"><i class="fas fa-robot"></i> Tự động</span>` 
-                    : `<span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold;"><i class="fas fa-user-shield"></i> Admin</span>`;
+                    ? `<span style="background: #f1f5f9; color: #475569; padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700;"><i class="fas fa-robot"></i> Tự động</span>` 
+                    : `<span style="background: #e0f2fe; color: #0284c7; padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700;"><i class="fas fa-user-shield"></i> Thủ công</span>`;
 
                 html += `
-                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; transition: 0.2s;" onmouseover="this.style.borderColor='#0284c7'" onmouseout="this.style.borderColor='#e2e8f0'">
-                        <div>
-                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
-                                <strong style="color: #0284c7; font-size: 0.98rem;">📅 Dữ liệu: ${d.rangeText}</strong>
-                                ${isAutoBadge}
+                    <div class="ai-history-row">
+                        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                            <div style="width: 38px; height: 38px; border-radius: 10px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+                                <i class="fas fa-file-medical-alt"></i>
                             </div>
-                            <div style="font-size: 0.82rem; color: #64748b;">
-                                Khám tại trường: <strong>${d.totalVisits}</strong> ca | Nghỉ bệnh: <strong>${d.sickAbsences || 0}</strong> HS | Lúc: ${timeStr}
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+                                    <strong style="color: #1e293b; font-size: 0.92rem;">Giai đoạn: ${d.rangeText}</strong>
+                                    ${isAutoBadge}
+                                </div>
+                                <div style="font-size: 0.8rem; color: #64748b;">
+                                    Tiếp nhận: <strong>${d.totalVisits}</strong> ca &bull; Nghỉ bệnh: <strong>${d.sickAbsences || 0}</strong> HS &bull; Thực hiện lúc: ${timeStr}
+                                </div>
                             </div>
                         </div>
 
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <button onclick="openAIPredictionDetailModal('${doc.id}')" class="btn btn-sm" style="background: #0284c7; color: white; padding: 7px 14px; border-radius: 8px; font-weight: bold; font-size: 0.82rem;">
-                                <i class="fas fa-eye"></i> Xem Chi Tiết
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <button onclick="openAIPredictionDetailModal('${doc.id}')" class="btn btn-sm" style="background: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; padding: 6px 14px; border-radius: 8px; font-weight: 700; font-size: 0.8rem;">
+                                <i class="fas fa-eye"></i> Xem báo cáo
                             </button>
-                            <button onclick="deleteAIPredictionDoc('${doc.id}')" class="btn btn-sm" style="background: #fef2f2; color: #ef4444; border: 1px solid #fca5a5; padding: 7px 10px; border-radius: 8px; font-size: 0.82rem;" title="Xóa bản ghi này">
+                            <button onclick="deleteAIPredictionDoc('${doc.id}')" class="btn btn-sm" style="background: #fff1f2; color: #ef4444; border: 1px solid #fecdd3; padding: 6px 10px; border-radius: 8px; font-size: 0.8rem;" title="Xóa bản ghi">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>

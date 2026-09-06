@@ -177,7 +177,9 @@
         function closeNoteEditor() {
             document.getElementById('note-modal').style.display = 'none';
         }
-
+        function editNote(id) {
+            openNoteEditor(id);
+        }
         // 3. Lưu dữ liệu
         async function saveAINote() {
             const id = document.getElementById('edit-note-id').value;

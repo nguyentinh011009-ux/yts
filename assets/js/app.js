@@ -4160,9 +4160,8 @@ async function runDailyStatisticAggregation() {
                 .where('timestamp', '<', endOfYesterday)
                 .get(),
             db.collection('yt_attendance')
-                .where('date', '>=', startOfMonthStr)
-                .where('reason', '==', 'B')
-                .get(),
+			    .where('date', '>=', startOfMonthStr)
+			    .get(),
             fetchCurrentWeatherData()
         ]);
 

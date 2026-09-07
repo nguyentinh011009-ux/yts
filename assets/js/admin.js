@@ -143,7 +143,7 @@ async function gatherEpidemicData(rangeDays) {
     const startStr = startDate.toISOString().split('T')[0];
     const endStr = endDate.toISOString().split('T')[0];
 
-    const [visitsSnap, attSnap, weatherTimeSeries] = await Promise.all([
+    const [visitsSnap, attSnap, weatherTimeSeries, externalAlerts] = await Promise.all([
         db.collection('yt_visits')
             .where('timestamp', '>=', startDate)
             .where('timestamp', '<=', endDate)
@@ -154,9 +154,9 @@ async function gatherEpidemicData(rangeDays) {
             .where('date', '<=', endStr)
             .get(),
             
-        typeof fetchDatDoWeatherTimeSeries === 'function' 
-            ? fetchDatDoWeatherTimeSeries(rangeDays) 
-            : Promise.resolve({ summary: "Chưa có dữ liệu thời tiết" })
+        fetchDatDoWeatherTimeSeries(rangeDays),
+        
+        getExternalEpidemiologicalSignals()
     ]);
 
     let visitSymptoms = {};
@@ -164,21 +164,21 @@ async function gatherEpidemicData(rangeDays) {
     let totalVisits = visitsSnap.size;
 
     visitsSnap.forEach(doc => {
-    const v = doc.data();
-    const rawSymptom = v.symptom ? (typeof decryptField === 'function' ? decryptField(v.symptom) : v.symptom) : '';
-    const rawClass = v.class ? (typeof decryptField === 'function' ? decryptField(v.class) : v.class) : '';
-    
-    if (rawSymptom) {
-        let symps = rawSymptom.toLowerCase().split(/[,+\/]+|\s+và\s+/g);
-        symps.forEach(s => {
-            let clean = s.trim();
-            if (clean) visitSymptoms[clean] = (visitSymptoms[clean] || 0) + 1;
-        });
-    }
-    if (rawClass) {
-        visitClasses[rawClass] = (visitClasses[rawClass] || 0) + 1;
-    }
-});
+        const v = doc.data();
+        const rawSymptom = v.symptom ? (typeof decryptField === 'function' ? decryptField(v.symptom) : v.symptom) : '';
+        const rawClass = v.class ? (typeof decryptField === 'function' ? decryptField(v.class) : v.class) : '';
+        
+        if (rawSymptom) {
+            let symps = rawSymptom.toLowerCase().split(/[,+\/]+|\s+và\s+/g);
+            symps.forEach(s => {
+                let clean = s.trim();
+                if (clean) visitSymptoms[clean] = (visitSymptoms[clean] || 0) + 1;
+            });
+        }
+        if (rawClass) {
+            visitClasses[rawClass] = (visitClasses[rawClass] || 0) + 1;
+        }
+    });
 
     let sickAbsences = 0;
     let sickDiagnoses = {};
@@ -194,10 +194,6 @@ async function gatherEpidemicData(rangeDays) {
         }
     });
 
-    const externalAlerts = typeof getExternalEpidemiologicalSignals === 'function' 
-        ? getExternalEpidemiologicalSignals() 
-        : { nationalAlerts: "Không có", regionalSignals: "Không có", whoGuidelines: "Không có" };
-
     return {
         startDateText: startDate.toLocaleDateString('vi-VN'),
         endDateText: endDate.toLocaleDateString('vi-VN'),
@@ -211,41 +207,72 @@ async function gatherEpidemicData(rangeDays) {
         externalAlerts
     };
 }
-// 1. Lấy dữ liệu chuỗi thời tiết thực tế tại Đất Đỏ qua Open-Meteo API (Miễn phí, không cần API Key)
 async function fetchDatDoWeatherTimeSeries(rangeDays) {
     try {
-        // Tọa độ Đất Đỏ: Vĩ độ 10.4905, Kinh độ 107.2762
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=10.4905&longitude=107.2762&daily=temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean,precipitation_sum&past_days=${rangeDays}&forecast_days=3&timezone=Asia%2FBangkok`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("Không thể tải thời tiết");
-        const data = await res.json();
+        const AI_SERVER_URL = "https://vts-health-ai.yte-thptvothisaubrvt.workers.dev";
         
-        const d = data.daily;
-        const count = d.time.length;
-        const avgTemp = (d.temperature_2m_max.reduce((a, b) => a + b, 0) / count).toFixed(1);
-        const avgHumidity = (d.relative_humidity_2m_mean.reduce((a, b) => a + b, 0) / count).toFixed(1);
-        const totalRain = d.precipitation_sum.reduce((a, b) => a + b, 0).toFixed(1);
-        const rainyDays = d.precipitation_sum.filter(r => r > 0.5).length;
+        const res = await fetch(`${AI_SERVER_URL}/get-weather`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                location: "Dat Do",
+                rangeDays: rangeDays
+            })
+        });
+
+        if (!res.ok) throw new Error("Không thể tải dữ liệu thời tiết");
+        const data = await res.json();
 
         return {
-            summary: `Nhiệt độ TB: ${avgTemp}°C, Độ ẩm TB: ${avgHumidity}%, Tổng mưa: ${totalRain}mm (${rainyDays}/${count} ngày có mưa). Xu hướng 3 ngày tới: ${d.temperature_2m_max.slice(-3).join(', ')}°C`,
-            avgHumidity,
-            totalRain,
-            rainyDays
+            summary: data.summary,
+            avgHumidity: data.avgHumidity,
+            totalRain: data.totalRain,
+            rainyDays: data.rainyDays
         };
     } catch (e) {
-        console.warn("Lỗi lấy thời tiết Đất Đỏ:", e);
-        return { summary: "Dữ liệu thời tiết ngoại tuyến: Nóng ẩm cục bộ, chuyển mưa rải rác." };
+        console.warn("Lỗi kết nối thời tiết:", e);
+        return { 
+            summary: "Không có dữ liệu thời tiết",
+            avgHumidity: "N/A",
+            totalRain: "N/A",
+            rainyDays: "N/A"
+        };
     }
 }
 
-// 2. Định nghĩa bối cảnh dịch tễ bên ngoài (WHO, Cục Y tế Dự phòng, Bộ Y tế, HCDC)
-function getExternalEpidemiologicalSignals() {
-    return {
-        nationalAlerts: "Bộ Y tế & Cục Y tế dự phòng phát cảnh báo giám sát chủ động: Sốt xuất huyết gia tăng tại phía Nam; các chùm ca bệnh Cúm/Hô hấp tại trường học; cảnh báo dịch Tay chân miệng và Đau mắt đỏ cục bộ.",
-        regionalSignals: "HCDC & Sở Y tế TP.HCM / Đông Nam Bộ ghi nhận chỉ số muỗi/lăng quăng cao sau các đợt mưa; tỷ lệ ca nhiễm hợp bào hô hấp (RSV) và Adenovirus ở học sinh phổ thông có xu hướng tăng.",
-        whoGuidelines: "WHO khuyến cáo áp dụng can thiệp sớm tại cụm trường học khi có từ 2-3 ca sốt/nghỉ bệnh cùng lớp trong 3-5 ngày."
-    };
+// MỚI: Tự động gửi từ khóa lên Cloudflare Worker để Google Search dữ liệu mới nhất
+async function getExternalEpidemiologicalSignals() {
+    try {
+        const AI_SERVER_URL = "https://vts-health-ai.yte-thptvothisaubrvt.workers.dev";
+
+        const res = await fetch(`${AI_SERVER_URL}/search-epidemic`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                queries: [
+                    "Cảnh báo dịch bệnh Cục Y tế Dự phòng Bộ Y tế mới nhất",
+                    "Tình hình dịch bệnh HCDC Sở Y tế TP HCM Đông Nam Bộ",
+                    "WHO disease outbreak news school health"
+                ]
+            })
+        });
+
+        if (!res.ok) throw new Error("Lỗi tìm kiếm dịch tễ Google");
+        const results = await res.json();
+
+        return {
+            nationalAlerts: results.nationalAlerts || "Đang duy trì giám sát dịch thường quy từ Bộ Y tế.",
+            regionalSignals: results.regionalSignals || "Không ghi nhận ổ dịch bất thường diện rộng tại khu vực lân cận.",
+            whoGuidelines: results.whoGuidelines || "Khuyến nghị theo dõi sát các chùm ca sốt trong trường học."
+        };
+    } catch (e) {
+        console.warn("Lỗi tìm kiếm Google từ Worker:", e);
+        return {
+            nationalAlerts: "Không có dữ liệu cảnh báo từ Bộ Y tế.",
+            regionalSignals: "Không có dữ liệu dịch tễ từ HCDC/Khu vực.",
+            whoGuidelines: "Không có dữ liệu khuyến cáo từ WHO."
+        };
+    }
 }
 function buildSocraticPrompt(data, seasonInfo) {
     const sympText = Object.keys(data.visitSymptoms).map(k => `${k}: ${data.visitSymptoms[k]} ca`).join(", ") || "Không có";

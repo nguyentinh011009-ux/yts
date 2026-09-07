@@ -298,7 +298,7 @@ Hãy thực hiện quy trình suy luận bằng PHƯƠNG PHÁP SOCRATIC (Liên t
    - Bộ Y tế/Cục Y tế DP: ${extNational}
    - HCDC/Sở Y Tế: ${extRegional}
    - Khuyến cáo WHO: ${extWHO}
-
+6. Do đây là Trường THPT nên Bệnh Tay Chân Miệng sẽ ít xuất hiện hơn.
 === NGHỆ THUẬT PHÂN TÍCH (LẦN LƯỢT TRẢ LỜI 5 CÂU HỎI TRUY VẤN) ===
 - Q1: Sự kết hợp giữa triệu chứng nội bộ và số liệu vắng mặt có khớp với các cảnh báo dịch tễ từ Bộ Y tế/HCDC bên ngoài không?
 - Q2: Có sự xuất hiện chùm ca bệnh (cluster) tại lớp/khối cụ thể nào không? Tốc độ lây đang diễn ra thế nào?

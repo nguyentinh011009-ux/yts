@@ -1657,6 +1657,21 @@
                 return alert("Vui lòng nhập triệu chứng báo bệnh!");
             }
 
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const [selY, selM, selD] = date.split('-').map(Number);
+            const targetDate = new Date(selY, selM - 1, selD);
+            targetDate.setHours(0, 0, 0, 0);
+            
+            const diffDays = Math.round((today - targetDate) / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) {
+                return alert("⚠️ Không thể điểm danh cho ngày trong tương lai!");
+            }
+            if (diffDays > 2) {
+                return alert("⚠️ Chỉ được phép điểm danh cho ngày hiện tại và 2 ngày liền kề trước.\nĐể cập nhật điểm danh từ ngày thứ 3 trở lên, vui lòng liên hệ Phòng Y tế!");
+            }
+
             const btn = document.getElementById('btn-save');
             const orgHtml = btn.innerHTML;
             btn.disabled = true;
@@ -1825,18 +1840,25 @@
         }
 
         // 11. XỬ LÝ NGÀY THÁNG VÀ ĐIỀU HƯỚNG
-        function initDate() {
+        function getTodayStr() {
             const today = new Date();
             const yyyy = today.getFullYear();
             const mm = String(today.getMonth() + 1).padStart(2, '0');
             const dd = String(today.getDate()).padStart(2, '0');
-            const dateStr = `${yyyy}-${mm}-${dd}`;
-            document.getElementById('att-date-input').value = dateStr;
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function initDate() {
+            const dateStr = getTodayStr();
+            const input = document.getElementById('att-date-input');
+            input.value = dateStr;
+            input.max = dateStr;
             updateDateText(dateStr);
         }
 
         function openDatePicker() {
             const input = document.getElementById('att-date-input');
+            input.max = getTodayStr();
             if (input.showPicker) {
                 input.showPicker();
             } else {
@@ -1846,19 +1868,35 @@
 
         function adjustDate(days) {
             const input = document.getElementById('att-date-input');
+            const todayStr = getTodayStr();
+            
+            if (days > 0 && input.value >= todayStr) {
+                return;
+            }
+
             let d = new Date(input.value);
             d.setDate(d.getDate() + days);
             const yyyy = d.getFullYear();
             const mm = String(d.getMonth() + 1).padStart(2, '0');
             const dd = String(d.getDate()).padStart(2, '0');
-            const dateStr = `${yyyy}-${mm}-${dd}`;
+            let dateStr = `${yyyy}-${mm}-${dd}`;
+
+            if (dateStr > todayStr) dateStr = todayStr;
+
             input.value = dateStr;
             onDateChanged();
         }
 
         function onDateChanged() {
-            const val = document.getElementById('att-date-input').value;
-            updateDateText(val);
+            const input = document.getElementById('att-date-input');
+            const todayStr = getTodayStr();
+            
+            if (input.value > todayStr) {
+                alert("⚠️ Không thể chọn ngày trong tương lai!");
+                input.value = todayStr;
+            }
+
+            updateDateText(input.value);
             clearSelection();
             loadDailyAbsentRecords();
         }
@@ -1910,7 +1948,7 @@
             } else {
                 badge.innerText = 'GVCN';
                 badge.className = 'user-badge badge-gvcn';
-                roleText.innerText = 'Giáo viên chủ nhiệm';
+                roleText.innerText = 'Giáo viên chủ nhiệm/ Lớp trưởng';
                 document.getElementById('prof-classes').innerText = allowedClasses.length > 0 ? allowedClasses.join(', ') : 'Chưa phân công';
             }
 

@@ -307,6 +307,7 @@ Hãy thực hiện quy trình suy luận bằng PHƯƠNG PHÁP SOCRATIC (Liên t
 - Q5: Cần kích hoạt quy trình can thiệp trọng tâm nào theo khuyến cáo của WHO và Bộ Y tế?
 
 === NGUYÊN TẮC TRẢ VỀ KẾT QUẢ ===
+1. Dữ liệu nội bộ chiếm 60% kết quả dự báo cuối cùng, các phần trăm cảnh báo phải được tính toán cẩn thận, chỉ thật sự nằm ở mức đỏ, vàng khi nguồn dữ liệu nội bộ ở mức đáng báo động.
 Chỉ trả về ĐÚNG MÃ HTML thuần túy bọc trong <div class="ai-epidemic-report"> (KHÔNG dùng markdown \`\`\`html):
 
 <div class="ai-epidemic-report" style="line-height: 1.6; font-size: 0.93rem; color: #1e293b;">

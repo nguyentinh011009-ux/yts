@@ -160,6 +160,13 @@
             color: var(--text-main);
             box-shadow: var(--shadow-sm);
             cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-google:disabled {
+            opacity: 0.75;
+            cursor: not-allowed;
+            background: #f8fafc;
         }
 
         /* --- APP HEADER --- */
@@ -864,7 +871,7 @@
             <img src="https://res.cloudinary.com/uq7hr3wp/image/upload/v1787045296/rfhuztp3qiohlvwr4bhf.png" class="auth-logo" alt="Logo">
             <h2 class="auth-title">ĐIỂM DANH HỌC SINH</h2>
             <p class="auth-desc">Dành cho Giáo viên chủ nhiệm, Quản sinh và Ban Quản Trị</p>
-            <button onclick="handleGoogleAuth()" class="btn-google">
+            <button id="btn-google-login" onclick="handleGoogleAuth()" class="btn-google">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="20" alt="G">
                 Đăng nhập tài khoản Google
             </button>
@@ -1253,20 +1260,36 @@
             });
         }
 
-        function handleGoogleAuth() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            ddAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-                .then(() => ddAuth.signInWithPopup(provider))
-                .then(async (res) => {
-                    const roleCheck = await checkUserRole(res.user);
-                    if (roleCheck.valid) {
-                        showAuthStep('step-set-pin');
-                    } else {
-                        alert(roleCheck.message);
-                        ddAuth.signOut();
-                    }
-                })
-                .catch(err => alert("Lỗi đăng nhập: " + err.message));
+        async function handleGoogleAuth() {
+            const btn = document.getElementById('btn-google-login');
+            const originalContent = btn.innerHTML;
+
+            try {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin" style="color: var(--primary); font-size: 1.15rem;"></i> Đang kết nối Google...`;
+
+                const provider = new firebase.auth.GoogleAuthProvider();
+                await ddAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+                
+                const res = await ddAuth.signInWithPopup(provider);
+
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin" style="color: var(--primary); font-size: 1.15rem;"></i> Đang kiểm tra quyền hạn...`;
+                const roleCheck = await checkUserRole(res.user);
+
+                if (roleCheck.valid) {
+                    showAuthStep('step-set-pin');
+                } else {
+                    alert(roleCheck.message);
+                    await ddAuth.signOut();
+                }
+            } catch (err) {
+                if (err.code !== 'auth/popup-closed-by-user') {
+                    alert("Lỗi đăng nhập: " + err.message);
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
         }
 
         function handleSetupPinKey(key) {

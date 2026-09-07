@@ -921,7 +921,7 @@
                     <span id="date-text-display">Hôm nay</span>
                     <input type="date" id="att-date-input" style="opacity:0; width:1px; height:1px; position:absolute; pointer-events:none;" onchange="onDateChanged()">
                 </div>
-                <button type="button" onclick="adjustDate(1)" title="Ngày sau"><i class="fas fa-chevron-right"></i></button>
+                <button type="button" id="btn-next-date" onclick="adjustDate(1)" title="Ngày sau"><i class="fas fa-chevron-right"></i></button>
             </div>
 
             <!-- THANH ĐIỀU HƯỚNG TAB -->
@@ -1258,11 +1258,11 @@
             ddAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
                 .then(() => ddAuth.signInWithPopup(provider))
                 .then(async (res) => {
-                    const valid = await checkUserRole(res.user);
-                    if (valid) {
+                    const roleCheck = await checkUserRole(res.user);
+                    if (roleCheck.valid) {
                         showAuthStep('step-set-pin');
                     } else {
-                        alert("⛔ Tài khoản của bạn không được phân quyền sử dụng App Điểm Danh!");
+                        alert(roleCheck.message);
                         ddAuth.signOut();
                     }
                 })
@@ -1371,10 +1371,10 @@
             } catch(e) {}
         }
 
-        // 5. PHÂN QUYỀN TÀI KHOẢN
+        // 5. PHÂN QUYỀN TÀI KHOẢN & BÁO LỖI CHI TIẾT
         async function checkUserRole(user) {
-            if (!user) return false;
-            const email = user.email.toLowerCase();
+            if (!user) return { valid: false, message: "Không tìm thấy thông tin đăng nhập!" };
+            const email = (user.email || '').toLowerCase();
 
             if (typeof ALLOWED_ADMIN_EMAILS !== 'undefined' && ALLOWED_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email)) {
                 currentUserRole = 'admin';
@@ -1386,49 +1386,67 @@
                     expiryDate: 'Vô thời hạn'
                 };
                 allowedClasses = ['ALL'];
-                return true;
+                return { valid: true };
             }
 
             const snap = await ddDb.collection("yt_collaborators").where("email", "==", email).get();
-            if (!snap.empty) {
-                const data = snap.docs[0].data();
-                const todayStr = new Date().toISOString().split('T')[0];
-
-                if (data.status !== 'active') return false;
-                if (data.expiryDate && data.expiryDate < todayStr) return false;
-
-                currentUserRole = data.role || 'gvcn';
-                currentUser = { 
-                    displayName: data.name || user.displayName, 
-                    email: user.email, 
-                    photoURL: user.photoURL,
-                    phone: data.phone || 'Chưa cập nhật',
-                    expiryDate: data.expiryDate ? new Date(data.expiryDate).toLocaleDateString('vi-VN') : 'Không giới hạn'
-                };
-
-                if (currentUserRole === 'quansinh') {
-                    allowedClasses = ['ALL'];
-                } else {
-                    allowedClasses = data.assignedClasses || (data.class ? [data.class] : []);
-                }
-                return true;
+            if (snap.empty) {
+                return { valid: false, message: "⛔ Tài khoản không hợp lệ hoặc chưa được phân quyền truy cập hệ thống Điểm danh!" };
             }
-            return false;
+
+            const data = snap.docs[0].data();
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            if (data.status !== 'active') {
+                return { valid: false, message: "🔒 Tài khoản của bạn đã bị KHÓA TẠM THỜI!\nVui lòng liên hệ Phòng Y Tế để được hỗ trợ." };
+            }
+
+            if (data.expiryDate && data.expiryDate < todayStr) {
+                const expDateFormatted = new Date(data.expiryDate).toLocaleDateString('vi-VN');
+                return { valid: false, message: `⏳ Tài khoản đã HẾT HẠN chứng chỉ đăng nhập (hạn sử dụng đến ngày ${expDateFormatted})!\nVui lòng liên hệ Phòng Y tế để gia hạn quyền truy cập.` };
+            }
+
+            currentUserRole = data.role || 'gvcn';
+            currentUser = { 
+                displayName: data.name || user.displayName, 
+                email: user.email, 
+                photoURL: user.photoURL,
+                phone: data.phone || 'Chưa cập nhật',
+                expiryDate: data.expiryDate ? new Date(data.expiryDate).toLocaleDateString('vi-VN') : 'Không giới hạn'
+            };
+
+            if (currentUserRole === 'quansinh') {
+                allowedClasses = ['ALL'];
+            } else {
+                allowedClasses = data.assignedClasses || (data.class ? [data.class] : []);
+            }
+            return { valid: true };
         }
 
         async function verifyUserPermission() {
             const user = ddAuth.currentUser;
             if (user) {
-                const valid = await checkUserRole(user);
-                if (valid) {
+                const roleCheck = await checkUserRole(user);
+                if (roleCheck.valid) {
                     initAppUI();
                 } else {
+                    alert(roleCheck.message);
+                    sessionStorage.clear();
+                    ddAuth.signOut();
                     showAuthStep('step-google');
                 }
             } else {
                 ddAuth.onAuthStateChanged(async (u) => {
-                    if (u && await checkUserRole(u)) {
-                        initAppUI();
+                    if (u) {
+                        const roleCheck = await checkUserRole(u);
+                        if (roleCheck.valid) {
+                            initAppUI();
+                        } else {
+                            alert(roleCheck.message);
+                            sessionStorage.clear();
+                            ddAuth.signOut();
+                            showAuthStep('step-google');
+                        }
                     } else {
                         showAuthStep('step-google');
                     }
@@ -1904,10 +1922,16 @@
         function updateDateText(dateStr) {
             const d = new Date(dateStr);
             const today = new Date();
+            const todayStr = getTodayStr();
+
             if (d.toDateString() === today.toDateString()) {
                 document.getElementById('date-text-display').innerText = "Hôm nay (" + d.toLocaleDateString('vi-VN') + ")";
             } else {
                 document.getElementById('date-text-display').innerText = d.toLocaleDateString('vi-VN');
+            }
+            const nextBtn = document.getElementById('btn-next-date');
+            if (nextBtn) {
+                nextBtn.style.visibility = (dateStr >= todayStr) ? 'hidden' : 'visible';
             }
         }
 

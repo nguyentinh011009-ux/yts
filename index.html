@@ -131,8 +131,31 @@
         const AI_SERVER_URL = "https://vts-health-ai.yte-thptvothisaubrvt.workers.dev"; 
         
         function toggleChat() {
-            document.getElementById('chat-window').classList.toggle('active');
+            const chatWindow = document.getElementById('chat-window');
+            chatWindow.classList.toggle('active');
+            if (!chatWindow.classList.contains('active')) {
+                chatWindow.classList.remove('chat-focused');
+            }
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const chatInput = document.getElementById('chat-input');
+            const chatWindow = document.getElementById('chat-window');
+            
+            if (chatInput && chatWindow) {
+                chatInput.addEventListener('focus', () => {
+                    if (window.innerWidth <= 768) {
+                        chatWindow.classList.add('chat-focused');
+                    }
+                });
+
+                chatInput.addEventListener('blur', () => {
+                    if (window.innerWidth <= 768) {
+                        chatWindow.classList.remove('chat-focused');
+                    }
+                });
+            }
+        });
 
         function handleChatEnter(e) {
             if (e.key === 'Enter') sendChatMessage();

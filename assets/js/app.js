@@ -913,8 +913,16 @@ async function startSignatureProcess() {
         signatureListener = null;
     }
 
+    if (currentSignToken) {
+        const oldToken = currentSignToken;
+        db.collection('temp_signatures').doc(oldToken).delete().catch(err => {
+            console.warn("Không thể xóa chữ ký tạm cũ:", err);
+        });
+        currentSignToken = null;
+    }
+
     const token = "SIGN_" + Date.now();
-    currentSignToken = token;
+    currentSignToken = token; 
 
     const qrArea = document.getElementById('qr-area');
     const qrcodeDiv = document.getElementById('qrcode');
@@ -943,7 +951,7 @@ async function startSignatureProcess() {
                 }
                 if (btnFinal) btnFinal.style.display = 'block';
                 if (qrStatus) qrStatus.innerText = "✅ Đã nhận được chữ ký!";
-                qrcodeDiv.style.opacity = "0.3"; // Làm mờ khi đã ký thành công
+                qrcodeDiv.style.opacity = "0.3";
             }
         });
 }

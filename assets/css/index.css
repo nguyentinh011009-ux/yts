@@ -417,8 +417,29 @@ h1, h2, h3, .font-title { font-family: 'Montserrat', sans-serif; font-weight: 70
     .post-card-desc { font-size: 0.75rem !important; line-height: 1.4 !important; height: 2.8em !important; margin-bottom: 12px !important; }
     .post-card-btn { padding: 6px 5px !important; font-size: 0.75rem !important; border-radius: 8px !important; }
 
-    /* Chatbot Mobile */
-    .chat-window { width: 90%; right: 5%; bottom: 90px; height: 450px; }
+    .chat-window { 
+        width: 90%; 
+        right: 5%; 
+        bottom: 90px; 
+        height: 450px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .chat-footer input {
+        font-size: 16px !important;
+    }
+
+    .chat-window.chat-focused {
+        position: fixed !important;
+        top: 10px !important;
+        bottom: 10px !important;
+        left: 10px !important;
+        right: 10px !important;
+        width: calc(100% - 20px) !important;
+        height: calc(100dvh - 20px) !important;
+        transform: scale(1.02) !important;
+        z-index: 99999 !important;
+    }
 }
 
 .search-box-container {

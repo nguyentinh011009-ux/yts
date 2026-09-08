@@ -905,29 +905,45 @@ function updateSuggestHighlight() {
 }
 
 // 2. TẠO MÃ QR VÀ ĐỢI CHỮ KÝ (REALTIME)
+let currentSignToken = null;
+
 async function startSignatureProcess() {
+    if (signatureListener) {
+        signatureListener();
+        signatureListener = null;
+    }
+
     const token = "SIGN_" + Date.now();
+    currentSignToken = token;
+
     const qrArea = document.getElementById('qr-area');
     const qrcodeDiv = document.getElementById('qrcode');
-    const linkInput = document.getElementById('qr-link-input'); // Nơi hiển thị link
-    
+    const linkInput = document.getElementById('qr-link-input');
+    const qrStatus = document.getElementById('qr-status');
+    const sigResult = document.getElementById('signature-result');
+    const btnFinal = document.getElementById('btn-final-save');
+
     qrcodeDiv.innerHTML = "";
-    // Link tới trang ký tên (bạn sẽ tạo file sign.html riêng cho học sinh)
+    qrcodeDiv.style.opacity = "1";
+    if (qrStatus) qrStatus.innerText = "Học sinh vui lòng quét mã để ký (Hiệu lực 5p)";
+    if (sigResult) { sigResult.src = ""; sigResult.style.display = "none"; }
+    if (btnFinal) btnFinal.style.display = "none";
+
     const signUrl = `${window.location.origin}/sign.html?token=${token}`;
     if (linkInput) linkInput.value = signUrl;
     new QRCode(qrcodeDiv, { text: signUrl, width: 150, height: 150 });
     qrArea.style.display = 'block';
 
-    // Lắng nghe chữ ký từ Firebase
-    if (signatureListener) signatureListener();
     signatureListener = db.collection('temp_signatures').doc(token)
         .onSnapshot((doc) => {
             if (doc.exists && doc.data().status === 'done') {
-                document.getElementById('signature-result').src = doc.data().img;
-                document.getElementById('signature-result').style.display = 'block';
-                document.getElementById('btn-final-save').style.display = 'block';
-                document.getElementById('qr-status').innerText = "✅ Đã nhận được chữ ký!";
-                document.getElementById('qrcode').style.opacity = "0.3";
+                if (sigResult) {
+                    sigResult.src = doc.data().img;
+                    sigResult.style.display = 'block';
+                }
+                if (btnFinal) btnFinal.style.display = 'block';
+                if (qrStatus) qrStatus.innerText = "✅ Đã nhận được chữ ký!";
+                qrcodeDiv.style.opacity = "0.3"; // Làm mờ khi đã ký thành công
             }
         });
 }
@@ -1061,6 +1077,13 @@ async function saveVisit(withSign) {
         // 5. THỰC THI TOÀN BỘ DATA LÊN CLOUD
         await mainBatch.commit();
 
+        if (withSign && currentSignToken) {
+            db.collection('temp_signatures').doc(currentSignToken).delete().catch(err => {
+                console.warn("Không thể xóa chữ ký tạm:", err);
+            });
+            currentSignToken = null;
+        }
+
         // Gửi thông báo cho App học sinh
         try {
             await db.collection('yt_notifications').add({
@@ -1099,13 +1122,20 @@ function resetReceptionForm() {
     if (previewBox) previewBox.innerHTML = "Nhập tên và lớp để hệ thống kiểm tra...";
 
     document.getElementById('qr-area').style.display = 'none';
-    document.getElementById('qrcode').innerHTML = "";
+    const qrcodeContainer = document.getElementById('qrcode');
+    if (qrcodeContainer) {
+        qrcodeContainer.innerHTML = "";
+        qrcodeContainer.style.opacity = "1";
+    }
+    const qrStatusEl = document.getElementById('qr-status');
+    if (qrStatusEl) qrStatusEl.innerText = "Học sinh vui lòng quét mã để ký (Hiệu lực 5p)";
     document.getElementById('qr-link-input').value = "";
     const sigResult = document.getElementById('signature-result');
     if (sigResult) { sigResult.src = ""; sigResult.style.display = 'none'; }
     const btnFinal = document.getElementById('btn-final-save');
     if (btnFinal) btnFinal.style.display = 'none';
     if (signatureListener) { signatureListener(); signatureListener = null; }
+    currentSignToken = null;
 
     // RESET PHẦN CẤP THUỐC
     document.getElementById('chk-cap-thuoc').checked = false;

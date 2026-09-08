@@ -1103,12 +1103,11 @@
     <script src="../assets/auth-check.js"></script>
 
     <script>
-        // 👉 TẠO INSTANCE FIREBASE ĐỘC LẬP CHO APP ĐIỂM DANH (Đã bỏ thẻ <script> thừa)
-        const ddApp = firebase.apps.some(a => a.name === "VTS_DiemDanhApp") 
-            ? firebase.app("VTS_DiemDanhApp") 
-            : firebase.initializeApp(firebaseConfig, "VTS_DiemDanhApp");
-        const ddAuth = ddApp.auth();
-        const ddDb = ddApp.firestore();
+        const ddApp = firebase.apps.length > 0 
+            ? firebase.app() 
+            : firebase.initializeApp(firebaseConfig);
+        const ddAuth = firebase.auth();
+        const ddDb = firebase.firestore();
 
         let currentUser = null;
         let currentUserRole = 'none'; // 'admin' | 'quansinh' | 'gvcn'
@@ -1150,21 +1149,29 @@
         async function fetchAndCacheStudents(forceRefresh = false) {
             const CACHE_KEY = 'vts_cached_students_v3';
             const localData = localStorage.getItem(CACHE_KEY);
-
+        
             if (!forceRefresh && localData) {
                 try {
-                    allStudentsCache = JSON.parse(localData);
-                    return;
+                    if (localData.includes("U2FsdGVkX1")) {
+                        localStorage.removeItem(CACHE_KEY);
+                    } else {
+                        allStudentsCache = JSON.parse(localData);
+                        return;
+                    }
                 } catch (e) {
                     localStorage.removeItem(CACHE_KEY);
                 }
             }
-
+        
             try {
+                if (typeof ensureCryptoKeyReady === "function") {
+                    await ensureCryptoKeyReady();
+                }
+        
                 const snap = await ddDb.collection('yt_students').get();
                 allStudentsCache = [];
                 snap.forEach(doc => {
-                    const d = doc.data();
+                    const d = doc.data(); 
                     allStudentsCache.push({
                         id: doc.id,
                         name: d.name || '',
@@ -1173,9 +1180,13 @@
                         phone: d.phone || ''
                     });
                 });
-
+        
                 allStudentsCache.sort(compareVietnameseNames);
-                localStorage.setItem(CACHE_KEY, JSON.stringify(allStudentsCache));
+                
+                const sample = allStudentsCache[0]?.name || '';
+                if (!sample.startsWith("U2FsdGVkX1")) {
+                    localStorage.setItem(CACHE_KEY, JSON.stringify(allStudentsCache));
+                }
             } catch(e) {
                 console.error("Lỗi nạp học sinh:", e);
             }

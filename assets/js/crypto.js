@@ -155,6 +155,11 @@ try {
                 await ensureCryptoKeyReady();
                 return origDocGet.apply(this, args);
             };
+            const origDocSnapshot = firebase.firestore.DocumentReference.prototype.onSnapshot;
+            firebase.firestore.DocumentReference.prototype.onSnapshot = function(...args) {
+                ensureCryptoKeyReady().then(() => scanAndFixDOM());
+                return origDocSnapshot.apply(this, args);
+            };
         }
 
         if (firebase.firestore.Query) {
@@ -162,6 +167,11 @@ try {
             firebase.firestore.Query.prototype.get = async function(...args) {
                 await ensureCryptoKeyReady();
                 return origQueryGet.apply(this, args);
+            };
+            const origQuerySnapshot = firebase.firestore.Query.prototype.onSnapshot;
+            firebase.firestore.Query.prototype.onSnapshot = function(...args) {
+                ensureCryptoKeyReady().then(() => scanAndFixDOM());
+                return origQuerySnapshot.apply(this, args);
             };
         }
 
@@ -189,9 +199,16 @@ window.addEventListener('DOMContentLoaded', () => {
     if (typeof firebase !== 'undefined' && firebase.auth && firebase.apps && firebase.apps.length > 0) {
         firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
-                await ensureCryptoKeyReady();
-            } else {
-                clearMasterKey();
+                if (typeof ensureCryptoKeyReady === 'function') {
+                        await ensureCryptoKeyReady();
+                    }
+                const loadingEl = document.getElementById('hist-auth-loading');
+                const mainEl = document.getElementById('hist-main-container');
+                if (loadingEl) loadingEl.style.display = 'none';
+                if (mainEl) mainEl.style.display = 'block';
+        
+                loadBedsData();
+                loadTodayVisits();
             }
         });
     }

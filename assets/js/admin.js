@@ -183,16 +183,27 @@ async function gatherEpidemicData(rangeDays) {
     let sickAbsences = 0;
     let sickDiagnoses = {};
     let sickClasses = {};
+    let sickCases = [];
 
     attSnap.forEach(doc => {
-        const a = doc.data();
-        if (a.reason === 'B') {
-            sickAbsences++;
-            let diag = (a.diagnosis || 'Sốt/Khác').trim();
-            sickDiagnoses[diag] = (sickDiagnoses[diag] || 0) + 1;
-            if (a.class) sickClasses[a.class] = (sickClasses[a.class] || 0) + 1;
-        }
-    });
+    const a = doc.data();
+    if (a.reason === 'B') { // 'B' = Nghỉ do bệnh
+        sickAbsences++;
+        
+        const className = (decryptField(a.class) || a.class || 'Không rõ lớp').trim();
+        const diagnosis = (decryptField(a.diagnosis) || a.diagnosis || 'Chưa xác định').trim();
+        const symptoms = (decryptField(a.symptoms || a.symptom) || a.symptoms || a.symptom || 'Không ghi nhận').trim();
+
+        sickCases.push({
+            class: className,
+            symptoms: symptoms,
+            diagnosis: diagnosis
+        });
+
+        sickDiagnoses[diagnosis] = (sickDiagnoses[diagnosis] || 0) + 1;
+        sickClasses[className] = (sickClasses[className] || 0) + 1;
+    }
+});
 
     return {
         startDateText: startDate.toLocaleDateString('vi-VN'),
@@ -203,6 +214,7 @@ async function gatherEpidemicData(rangeDays) {
         sickAbsences,
         sickDiagnoses,
         sickClasses,
+        sickCases,
         weatherTimeSeries,
         externalAlerts
     };
@@ -278,8 +290,9 @@ function buildSocraticPrompt(data, seasonInfo) {
     const sympText = Object.keys(data.visitSymptoms).map(k => `${k}: ${data.visitSymptoms[k]} ca`).join(", ") || "Không có";
     const diagText = Object.keys(data.sickDiagnoses).map(k => `${k}: ${data.sickDiagnoses[k]} ca`).join(", ") || "Không có";
     const classClusterText = Object.keys(data.sickClasses).map(k => `Lớp ${k}: ${data.sickClasses[k]} HS nghỉ bệnh`).join(", ") || "Rải rác";
-
-    // Trích xuất an toàn các dữ liệu mới (tránh lỗi nếu API lỗi)
+    const sickDetailText = (data.sickCases && data.sickCases.length > 0)
+    ? data.sickCases.map((c, i) => `     + Ca ${i + 1} (Lớp ${c.class}): Triệu chứng: [${c.symptoms}] | Chẩn đoán sơ bộ: [${c.diagnosis}]`).join("\n")
+    : "     + Không có ca bệnh chi tiết ghi nhận.";
     const weatherSummary = data.weatherTimeSeries?.summary || "Không có dữ liệu thời tiết";
     const extNational = data.externalAlerts?.nationalAlerts || "Bình thường";
     const extRegional = data.externalAlerts?.regionalSignals || "Bình thường";
@@ -291,7 +304,11 @@ Hãy thực hiện quy trình suy luận bằng PHƯƠNG PHÁP SOCRATIC (Liên t
 
 === TỔNG HỢP 5 NGUỒN DỮ LIỆU ĐẦU VÀO (${data.startDateText} - ${data.endDateText}) ===
 1. [Nội bộ] Khám tại trường: ${data.totalVisits} lượt. Triệu chứng: ${sympText}.
-2. [Nội bộ] Nghỉ học do BỆNH: ${data.sickAbsences} lượt. Chẩn đoán: ${diagText}. Phân bố: ${classClusterText}.
+2. [Nội bộ] Nghỉ học do BỆNH: Tổng số ${data.sickAbsences} học sinh nghỉ bệnh.
+   - Thống kê chẩn đoán: ${diagText}.
+   - Phân bố chùm ca: ${classClusterText}.
+   - Chi tiết từng ca bệnh (đã ẩn danh danh tính):
+${sickDetailText}
 3. [Thời tiết Đất Đỏ]: ${weatherSummary}.
 4. [Mùa vụ BR-VT]: ${seasonInfo.seasonText}. Bệnh thường gặp: ${seasonInfo.typicalDiseases}.
 5. [Dịch tễ bên ngoài]:

@@ -10,8 +10,9 @@ firebase.auth().onAuthStateChanged(async (user) => {
         loader.style.display = 'none';
         container.style.display = 'block';
 
-        // 👉 Tải khóa giải mã E2EE trước khi kết xuất thông tin
-        await loadMasterCryptoKey();
+        if (typeof ensureCryptoKeyReady === 'function') {
+            await ensureCryptoKeyReady();
+        }
 
         // Khởi chạy các trình lắng nghe thời gian thực
         listenBedsStatus();
@@ -29,7 +30,10 @@ function listenBedsStatus() {
 
     db.collection('yt_beds').onSnapshot(snap => {
         let bedsData = {};
-        snap.forEach(doc => { bedsData[doc.id] = doc.data(); });
+        snap.forEach(doc => { 
+            const rawData = doc.data();
+            bedsData[doc.id] = (typeof autoDecryptDeep === 'function') ? autoDecryptDeep(rawData) : rawData; 
+        });
 
         bedsRender.innerHTML = '';
         for (let i = 1; i <= 3; i++) {
@@ -87,8 +91,11 @@ function listenTodayVisits() {
         }
 
         let list = [];
-        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
-        // Sắp xếp thời gian mới nhất lên đầu
+        snap.forEach(doc => {
+            const rawData = doc.data();
+            const decryptedData = (typeof autoDecryptDeep === 'function') ? autoDecryptDeep(rawData) : rawData;
+            list.push({ id: doc.id, ...decryptedData });
+        });
         list.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
         list.forEach(v => {
@@ -128,8 +135,9 @@ async function notifyParentMobile(visitId, studentId) {
             if (studentDoc.exists) {
                 const data = studentDoc.data();
                 studentName = data.name || studentName;
-                // 👉 GIẢI MÃ SĐT PHỤ HUYNH TRƯỚC KHI HIỂN THỊ LÊN MOBILE DI ĐỘNG
-                if (data.parentPhone) parentPhone = decryptField(data.parentPhone);
+                if (data.parentPhone) {
+                    parentPhone = (typeof decryptField === 'function') ? decryptField(data.parentPhone) : data.parentPhone;
+                }
             }
         } catch (err) {
             console.error("Lỗi lấy hồ sơ học sinh di động: ", err);

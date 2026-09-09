@@ -15,7 +15,7 @@ function clearMasterKey() {
     sessionStorage.removeItem('vts_students_cache');
 }
 
-let masterKeyPromise = null;
+var masterKeyPromise = window.masterKeyPromise || null;
 
 async function loadMasterCryptoKey() {
     const existingKey = getMasterKey();
@@ -199,16 +199,9 @@ window.addEventListener('DOMContentLoaded', () => {
     if (typeof firebase !== 'undefined' && firebase.auth && firebase.apps && firebase.apps.length > 0) {
         firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
-                if (typeof ensureCryptoKeyReady === 'function') {
-                        await ensureCryptoKeyReady();
-                    }
-                const loadingEl = document.getElementById('hist-auth-loading');
-                const mainEl = document.getElementById('hist-main-container');
-                if (loadingEl) loadingEl.style.display = 'none';
-                if (mainEl) mainEl.style.display = 'block';
-        
-                loadBedsData();
-                loadTodayVisits();
+                await ensureCryptoKeyReady();
+            } else {
+                clearMasterKey();
             }
         });
     }

@@ -137,11 +137,19 @@ function LocalEpidemicSeasonContext() {
 }
 async function gatherEpidemicData(rangeDays) {
     const endDate = new Date();
+    endDate.setHours(23, 59, 59, 999);
+    
     const startDate = new Date();
     startDate.setDate(endDate.getDate() - rangeDays);
-
-    const startStr = startDate.toISOString().split('T')[0];
-    const endStr = endDate.toISOString().split('T')[0];
+    startDate.setHours(0, 0, 0, 0);
+    const formatLocalDate = (d) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+    };
+    const startStr = formatLocalDate(startDate);
+    const endStr = formatLocalDate(endDate);
 
     const [visitsSnap, attSnap, weatherTimeSeries, externalAlerts] = await Promise.all([
         db.collection('yt_visits')
@@ -190,7 +198,11 @@ async function gatherEpidemicData(rangeDays) {
         if (a.reason === 'B') { // 'B' = Nghỉ do bệnh
             sickAbsenceDays++;
 
-            const rawStudentKey = a.studentId || a.student_id || a.id || a.name || doc.id;
+            const resolvedClass = (typeof decryptField === 'function' ? decryptField(a.class) : a.class) || '';
+            const resolvedName = (typeof decryptField === 'function' ? decryptField(a.name) : a.name) || '';
+            const fallbackKey = (resolvedName && resolvedClass) ? `${resolvedClass}_${resolvedName}` : doc.id;
+            
+            const rawStudentKey = a.studentId || a.student_id || a.id || fallbackKey;
             const studentKey = (typeof decryptField === 'function' ? decryptField(rawStudentKey) : rawStudentKey) || doc.id;
             
             if (!studentPseudoMap.has(studentKey)) {
@@ -200,8 +212,9 @@ async function gatherEpidemicData(rangeDays) {
             const pseudoId = studentPseudoMap.get(studentKey);
 
             const className = (typeof decryptField === 'function' ? decryptField(a.class) : a.class) || 'Không rõ lớp';
-            const diagnosis = (typeof decryptField === 'function' ? decryptField(a.diagnosis) : a.diagnosis) || 'Chưa xác định';
-            const symptoms = (typeof decryptField === 'function' ? decryptField(a.symptoms || a.symptom) : (a.symptoms || a.symptom)) || 'Không ghi nhận';
+            const rawDiag = (typeof decryptField === 'function' ? decryptField(a.diagnosis) : a.diagnosis) || '';
+            const rawSymp = (typeof decryptField === 'function' ? decryptField(a.symptoms || a.symptom) : (a.symptoms || a.symptom)) || '';
+        
 
             if (!groupedSickStudents[pseudoId]) {
                 groupedSickStudents[pseudoId] = {
@@ -214,8 +227,12 @@ async function gatherEpidemicData(rangeDays) {
             }
 
             groupedSickStudents[pseudoId].daysCount++;
-            if (diagnosis.trim()) groupedSickStudents[pseudoId].diagnoses.add(diagnosis.trim());
-            if (symptoms.trim()) groupedSickStudents[pseudoId].symptoms.add(symptoms.trim());
+            if (rawDiag.trim() && rawDiag.trim().toLowerCase() !== 'chưa xác định') {
+            groupedSickStudents[pseudoId].diagnoses.add(rawDiag.trim());
+            }
+            if (rawSymp.trim() && rawSymp.trim().toLowerCase() !== 'không ghi nhận') {
+                groupedSickStudents[pseudoId].symptoms.add(rawSymp.trim());
+            }
         }
     });
 
@@ -324,6 +341,7 @@ function buildSocraticPrompt(data, seasonInfo) {
     const sympText = Object.keys(data.visitSymptoms).map(k => `${k}: ${data.visitSymptoms[k]} ca`).join(", ") || "Không có";
     const diagText = Object.keys(data.sickDiagnoses).map(k => `${k}: ${data.sickDiagnoses[k]} ca`).join(", ") || "Không có";
     const classClusterText = Object.keys(data.sickClasses).map(k => `Lớp ${k}: ${data.sickClasses[k]} HS`).join(", ") || "Rải rác";
+    const visitClassText = Object.keys(data.visitClasses || {}).map(k => `Lớp ${k}: ${data.visitClasses[k]} lượt`).join(", ") || "Rải rác";
     const sickDetailText = (data.sickCases && data.sickCases.length > 0)
     ? data.sickCases.map(c => `     + Mã ${c.pseudoId} (Lớp ${c.class}): Nghỉ liên tiếp ${c.daysCount} ngày | Triệu chứng: [${c.symptoms}] | Chẩn đoán sơ bộ: [${c.diagnosis}]`).join("\n")
     : "     + Không có ca bệnh chi tiết ghi nhận.";
@@ -337,7 +355,7 @@ Bạn là Chuyên gia Dịch tễ học Học đường cao cấp thuộc THPT V
 Hãy thực hiện quy trình suy luận bằng PHƯƠNG PHÁP SOCRATIC (Liên tục đặt câu hỏi và tự phản biện) để đánh giá nguy cơ dịch bệnh.
 
 === TỔNG HỢP 5 NGUỒN DỮ LIỆU ĐẦU VÀO (${data.startDateText} - ${data.endDateText}) ===
-1. [Nội bộ] Khám tại trường: ${data.totalVisits} lượt. Triệu chứng: ${sympText}.
+1. [Nội bộ] Khám tại trường: ${data.totalVisits} lượt. Triệu chứng: ${sympText}. Phân bố theo lớp: ${visitClassText}.
 2. [Nội bộ] Nghỉ học do BỆNH: Có ${data.uniqueSickStudentsCount || 0} học sinh bệnh (tương ứng ${data.sickAbsenceDays || 0} lượt ngày nghỉ, một học sinh có thể nghỉ nhiều ngày liên tiếp).
    - Thống kê chẩn đoán: ${diagText}.
    - Phân bố chùm ca: ${classClusterText}.

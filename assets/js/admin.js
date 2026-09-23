@@ -180,30 +180,62 @@ async function gatherEpidemicData(rangeDays) {
         }
     });
 
-    let sickAbsences = 0;
+    let sickAbsenceDays = 0; // Tổng số lượt / ngày nghỉ bệnh
     let sickDiagnoses = {};
     let sickClasses = {};
-    let sickCases = [];
-
+    const studentPseudoMap = new Map();
+    const groupedSickStudents = {};
     attSnap.forEach(doc => {
-    const a = doc.data();
-    if (a.reason === 'B') { // 'B' = Nghỉ do bệnh
-        sickAbsences++;
-        
-        const className = (decryptField(a.class) || a.class || 'Không rõ lớp').trim();
-        const diagnosis = (decryptField(a.diagnosis) || a.diagnosis || 'Chưa xác định').trim();
-        const symptoms = (decryptField(a.symptoms || a.symptom) || a.symptoms || a.symptom || 'Không ghi nhận').trim();
+        const a = doc.data();
+        if (a.reason === 'B') { // 'B' = Nghỉ do bệnh
+            sickAbsenceDays++;
 
-        sickCases.push({
-            class: className,
-            symptoms: symptoms,
-            diagnosis: diagnosis
-        });
+            const rawStudentKey = a.studentId || a.student_id || a.id || a.name || doc.id;
+            const studentKey = (typeof decryptField === 'function' ? decryptField(rawStudentKey) : rawStudentKey) || doc.id;
+            
+            if (!studentPseudoMap.has(studentKey)) {
+                const pseudoId = `HS_${String(studentPseudoMap.size + 1).padStart(2, '0')}`;
+                studentPseudoMap.set(studentKey, pseudoId);
+            }
+            const pseudoId = studentPseudoMap.get(studentKey);
 
-        sickDiagnoses[diagnosis] = (sickDiagnoses[diagnosis] || 0) + 1;
-        sickClasses[className] = (sickClasses[className] || 0) + 1;
-    }
-});
+            const className = (typeof decryptField === 'function' ? decryptField(a.class) : a.class) || 'Không rõ lớp';
+            const diagnosis = (typeof decryptField === 'function' ? decryptField(a.diagnosis) : a.diagnosis) || 'Chưa xác định';
+            const symptoms = (typeof decryptField === 'function' ? decryptField(a.symptoms || a.symptom) : (a.symptoms || a.symptom)) || 'Không ghi nhận';
+
+            if (!groupedSickStudents[pseudoId]) {
+                groupedSickStudents[pseudoId] = {
+                    pseudoId: pseudoId,
+                    class: className.trim(),
+                    daysCount: 0,
+                    diagnoses: new Set(),
+                    symptoms: new Set()
+                };
+            }
+
+            groupedSickStudents[pseudoId].daysCount++;
+            if (diagnosis.trim()) groupedSickStudents[pseudoId].diagnoses.add(diagnosis.trim());
+            if (symptoms.trim()) groupedSickStudents[pseudoId].symptoms.add(symptoms.trim());
+        }
+    });
+
+    const sickCases = Object.values(groupedSickStudents).map(item => {
+        const diagList = Array.from(item.diagnoses).join(' / ') || 'Chưa xác định';
+        const sympList = Array.from(item.symptoms).join('; ') || 'Không ghi nhận';
+
+        sickDiagnoses[diagList] = (sickDiagnoses[diagList] || 0) + 1;
+        sickClasses[item.class] = (sickClasses[item.class] || 0) + 1;
+
+        return {
+            pseudoId: item.pseudoId,
+            class: item.class,
+            daysCount: item.daysCount,
+            symptoms: sympList,
+            diagnosis: diagList
+        };
+    });
+
+    const uniqueSickStudentsCount = studentPseudoMap.size;
 
     return {
         startDateText: startDate.toLocaleDateString('vi-VN'),
@@ -211,7 +243,9 @@ async function gatherEpidemicData(rangeDays) {
         totalVisits,
         visitSymptoms,
         visitClasses,
-        sickAbsences,
+        sickAbsenceDays,
+        uniqueSickStudentsCount,
+        sickAbsences: uniqueSickStudentsCount,
         sickDiagnoses,
         sickClasses,
         sickCases,
@@ -289,9 +323,9 @@ async function getExternalEpidemiologicalSignals() {
 function buildSocraticPrompt(data, seasonInfo) {
     const sympText = Object.keys(data.visitSymptoms).map(k => `${k}: ${data.visitSymptoms[k]} ca`).join(", ") || "Không có";
     const diagText = Object.keys(data.sickDiagnoses).map(k => `${k}: ${data.sickDiagnoses[k]} ca`).join(", ") || "Không có";
-    const classClusterText = Object.keys(data.sickClasses).map(k => `Lớp ${k}: ${data.sickClasses[k]} HS nghỉ bệnh`).join(", ") || "Rải rác";
+    const classClusterText = Object.keys(data.sickClasses).map(k => `Lớp ${k}: ${data.sickClasses[k]} HS`).join(", ") || "Rải rác";
     const sickDetailText = (data.sickCases && data.sickCases.length > 0)
-    ? data.sickCases.map((c, i) => `     + Ca ${i + 1} (Lớp ${c.class}): Triệu chứng: [${c.symptoms}] | Chẩn đoán sơ bộ: [${c.diagnosis}]`).join("\n")
+    ? data.sickCases.map(c => `     + Mã ${c.pseudoId} (Lớp ${c.class}): Nghỉ liên tiếp ${c.daysCount} ngày | Triệu chứng: [${c.symptoms}] | Chẩn đoán sơ bộ: [${c.diagnosis}]`).join("\n")
     : "     + Không có ca bệnh chi tiết ghi nhận.";
     const weatherSummary = data.weatherTimeSeries?.summary || "Không có dữ liệu thời tiết";
     const extNational = data.externalAlerts?.nationalAlerts || "Bình thường";
@@ -304,10 +338,10 @@ Hãy thực hiện quy trình suy luận bằng PHƯƠNG PHÁP SOCRATIC (Liên t
 
 === TỔNG HỢP 5 NGUỒN DỮ LIỆU ĐẦU VÀO (${data.startDateText} - ${data.endDateText}) ===
 1. [Nội bộ] Khám tại trường: ${data.totalVisits} lượt. Triệu chứng: ${sympText}.
-2. [Nội bộ] Nghỉ học do BỆNH: Tổng số ${data.sickAbsences} học sinh nghỉ bệnh.
+2. [Nội bộ] Nghỉ học do BỆNH: Có ${data.uniqueSickStudentsCount || 0} học sinh bệnh (tương ứng ${data.sickAbsenceDays || 0} lượt ngày nghỉ, một học sinh có thể nghỉ nhiều ngày liên tiếp).
    - Thống kê chẩn đoán: ${diagText}.
    - Phân bố chùm ca: ${classClusterText}.
-   - Chi tiết từng ca bệnh (đã ẩn danh danh tính):
+   - Chi tiết từng học sinh (đã ẩn danh định danh theo dõi theo chuỗi ngày):
 ${sickDetailText}
 3. [Thời tiết Đất Đỏ]: ${weatherSummary}.
 4. [Mùa vụ BR-VT]: ${seasonInfo.seasonText}. Bệnh thường gặp: ${seasonInfo.typicalDiseases}.
@@ -594,39 +628,55 @@ window.toggleAutoAIPredict = async function(isEnabled) {
         console.error("Lỗi lưu cấu hình AI:", e);
     }
 };
+let isAutoPredictRunning = false;
+
 async function checkAndRunAutoAIPrediction() {
+    if (isAutoPredictRunning) return;
     try {
         const configDoc = await db.collection('yt_system_config').doc('ai_prediction_config').get();
         if (!configDoc.exists) return;
 
         const config = configDoc.data();
         const chkBox = document.getElementById('chk-auto-ai-predict');
-        if (chkBox) chkBox.checked = config.enableAutoAIPredict || false;
+        if (chkBox) chkBox.checked = Boolean(config.enableAutoAIPredict);
 
-        // Nếu người dùng không bật tính năng tự động -> Bỏ qua
         if (!config.enableAutoAIPredict) return;
 
-        // Kiểm tra thời gian chạy gần nhất
-        const lastRun = config.lastRunTimestamp ? config.lastRunTimestamp.toDate() : new Date(0);
+        let lastRun = new Date(0);
+        if (config.lastRunTimestamp) {
+            if (typeof config.lastRunTimestamp.toDate === 'function') {
+                lastRun = config.lastRunTimestamp.toDate();
+            } else if (config.lastRunTimestamp.seconds) {
+                lastRun = new Date(config.lastRunTimestamp.seconds * 1000);
+            } else {
+                lastRun = new Date(config.lastRunTimestamp);
+            }
+        }
+
         const now = new Date();
         const diffHours = (now - lastRun) / (1000 * 60 * 60);
 
-        // Nếu đã quá 48 giờ (2 ngày) kể từ lần chạy cuối
         if (diffHours >= 48) {
-            console.log(`🤖 AI Auto Scheduler: Đã qua ${diffHours.toFixed(1)} giờ kể từ lần phân tích cuối. Tiến hành tự động phân tích...`);
-            window.executeEpidemicAIPrediction(true); // Gửi cờ isAuto = true
+            isAutoPredictRunning = true;
+            console.log(`🤖 AI Auto Scheduler: Đã qua ${diffHours.toFixed(1)} giờ. Đang phân tích tự động...`);
+            await window.executeEpidemicAIPrediction(true);
+            isAutoPredictRunning = false;
         }
     } catch (e) {
-        console.error("Lỗi kiểm tra Auto AI Predict:", e);
+        isAutoPredictRunning = false;
+        console.warn("Auto AI Predict check skipped:", e.message);
     }
 }
 
-// Khởi chạy khi tải trang
 document.addEventListener("DOMContentLoaded", () => {
-    setTimeout(() => {
-        checkAndRunAutoAIPrediction();
-        if (document.getElementById('ai-predictions-history-container')) {
-            window.loadSavedAIPredictionsHistory();
+    firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+            setTimeout(() => {
+                checkAndRunAutoAIPrediction();
+                if (document.getElementById('ai-predictions-history-container')) {
+                    window.loadSavedAIPredictionsHistory();
+                }
+            }, 2000);
         }
-    }, 1500);
+    });
 });

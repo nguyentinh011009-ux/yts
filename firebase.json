@@ -5,6 +5,13 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "redirects": [
+      {
+        "source": "/:path*",
+        "destination": "https://yteso-thptvothisaubrvt.netlify.app/:path*",
+        "type": 301
+      }
     ]
   }
 }

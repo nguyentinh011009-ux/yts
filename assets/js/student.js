@@ -982,12 +982,11 @@ async function loadSchoolHealthStats() {
         let studentVisits = data.studentVisits || {};
         let myVisitCount = studentVisits[currentStudent.id] || 0;
         
-        // Chuyển Object thành Array để sắp xếp tìm thứ hạng
-        let sortedStudents = Object.keys(studentVisits).map(k => ({id: k, count: studentVisits[k]}));
-        sortedStudents.sort((a, b) => b.count - a.count);
-
-        let myRankIndex = sortedStudents.findIndex(s => s.id === currentStudent.id);
-        let myRank = myRankIndex !== -1 ? myRankIndex + 1 : 0;
+        let myRank = 0;
+        if (myVisitCount > 0) {
+            const strictlyHigherCount = Object.values(studentVisits).filter(count => count > myVisitCount).length;
+            myRank = strictlyHigherCount + 1;
+        }
 
         document.getElementById('st-my-visits').innerText = myVisitCount;
         const rankText = document.getElementById('st-my-rank');

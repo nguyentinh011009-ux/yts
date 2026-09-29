@@ -5270,3 +5270,139 @@ function requestDashboardAIAnalysis() {
 function refreshDashboard(force = false) {
     loadDashboardData(force);
 }
+// =========================================================================
+// TÍNH NĂNG: MÃ HÓA TOÀN BỘ HỒ SƠ HỌC SINH (CHỐNG MÃ HÓA TRÙNG LẶP)
+// =========================================================================
+
+async function encryptAllStudentsProfiles() {
+    // 1. Kiểm tra chìa khóa mã hóa đã nạp chưa
+    if (typeof encryptField !== 'function') {
+        return sysAlert("Chưa tải được mô-đun mã hóa bảo mật!", "error");
+    }
+
+    const isConfirm = await sysConfirm(
+        "Hệ thống sẽ quét toàn bộ hồ sơ trong cơ sở dữ liệu và tự động mã hóa bảo mật (AES) các thông tin nhạy cảm (Tên, Ngày sinh, SĐT, Địa chỉ, Chiều cao, Cân nặng...).\n\nNhững hồ sơ ĐÃ mã hóa rồi sẽ tự động được bỏ qua.\n\nBạn có chắc chắn muốn tiến hành?",
+        "Mã hóa toàn bộ cơ sở dữ liệu",
+        false
+    );
+
+    if (!isConfirm) return;
+
+    sysLoading(true, "Đang quét danh sách hồ sơ...");
+
+    try {
+        const snap = await db.collection('yt_students').get();
+        if (snap.empty) {
+            sysLoading(false);
+            return sysAlert("Không có hồ sơ học sinh nào trong hệ thống!", "warning");
+        }
+
+        const totalDocs = snap.size;
+        let needUpdateCount = 0;
+        let skippedCount = 0;
+
+        // Hàm kiểm tra xem chuỗi đã được mã hóa bằng AES CryptoJS hay chưa
+        // Chuỗi mã hóa AES CryptoJS chuẩn luôn bắt đầu bằng tiền tố Base64 "U2FsdGVkX1" (Salted__)
+        const isAlreadyEncrypted = (str) => {
+            if (!str || typeof str !== 'string') return false;
+            return str.startsWith("U2FsdGVkX1");
+        };
+
+        // Hàm phụ trợ: chỉ mã hóa nếu có giá trị và chưa được mã hóa
+        const safeEncrypt = (val) => {
+            if (val === undefined || val === null || val === '') return '';
+            const strVal = String(val).trim();
+            if (isAlreadyEncrypted(strVal)) return strVal; // Giữ nguyên nếu đã mã hóa
+            return encryptField(strVal);
+        };
+
+        let batches = [];
+        let currentBatch = db.batch();
+        let opCount = 0;
+
+        snap.forEach(doc => {
+            const d = doc.data();
+            let updates = {};
+            let isModified = false;
+
+            // Danh sách các trường nhạy cảm cần mã hóa
+            const sensitiveFields = [
+                'name', 'class', 'dob', 'gender',
+                'height', 'weight', 'phone', 'parentPhone', 'street'
+            ];
+
+            sensitiveFields.forEach(field => {
+                if (d[field] !== undefined && d[field] !== null && d[field] !== '') {
+                    const originalVal = String(d[field]).trim();
+                    if (!isAlreadyEncrypted(originalVal)) {
+                        updates[field] = safeEncrypt(originalVal);
+                        isModified = true;
+                    }
+                }
+            });
+
+            // Cập nhật lại trường name_search nếu tên được mã hóa mới
+            if (updates.name) {
+                // Giải mã tên nếu cần để lấy bản không dấu chuẩn xác
+                const plainName = d.name ? (isAlreadyEncrypted(d.name) ? decryptField(d.name) : d.name) : '';
+                if (plainName) {
+                    updates.name_search = encryptField(removeVietnameseTones(plainName));
+                    isModified = true;
+                }
+            } else if (d.name_search && !isAlreadyEncrypted(d.name_search)) {
+                updates.name_search = encryptField(d.name_search);
+                isModified = true;
+            }
+
+            if (isModified) {
+                currentBatch.update(doc.ref, updates);
+                opCount++;
+                needUpdateCount++;
+
+                if (opCount >= 400) {
+                    batches.push(currentBatch);
+                    currentBatch = db.batch();
+                    opCount = 0;
+                }
+            } else {
+                skippedCount++;
+            }
+        });
+
+        if (opCount > 0) {
+            batches.push(currentBatch);
+        }
+
+        if (needUpdateCount === 0) {
+            sysLoading(false);
+            return sysAlert(`Tất cả ${totalDocs} hồ sơ học sinh đều đã được mã hóa bảo mật trước đó. Không có gì cần thay đổi!`, "success");
+        }
+
+        // Ghi lên Cloud Firestore theo từng batch
+        sysLoading(true, `Đang ghi mã hóa ${needUpdateCount} hồ sơ lên đám mây...`);
+        for (let b of batches) {
+            await b.commit();
+        }
+
+        // Xóa sạch bộ nhớ đệm cache để buộc hệ thống tải lại và giải mã mới
+        sessionStorage.removeItem('vts_students_cache');
+        window.allStudents = [];
+        if (typeof ytStudentsCache !== 'undefined') ytStudentsCache = null;
+
+        // Ghi nhật ký hệ thống
+        if (typeof writeAuditLog === 'function') {
+            writeAuditLog("ENCRYPT_ALL", "yt_students", "bulk_encrypt", `Đã thực hiện mã hóa an toàn ${needUpdateCount} hồ sơ học sinh.`);
+        }
+
+        sysLoading(false);
+        sysAlert(`Hoàn tất!\n- Đã mã hóa mới: ${needUpdateCount} hồ sơ\n- Đã bỏ qua (đã mã hóa từ trước): ${skippedCount} hồ sơ`, "success");
+
+        // Tải lại bảng danh sách học sinh
+        loadStudentData();
+
+    } catch (err) {
+        console.error("Lỗi mã hóa hàng loạt:", err);
+        sysLoading(false);
+        sysAlert("Lỗi trong quá trình mã hóa: " + err.message, "error");
+    }
+}

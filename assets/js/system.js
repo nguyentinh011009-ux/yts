@@ -178,60 +178,75 @@ async function checkAndExecuteAutoBackup() {
     const autoBackupOn = localStorage.getItem('vts_auto_backup_enabled') === 'true';
     if (!autoBackupOn) return;
 
-    const todayStr = new Date().toISOString().slice(0, 10); // Định dạng: YYYY-MM-DD
+    const currentUser = firebase.auth().currentUser;
+    if (!currentUser) return;
+
+    const todayStr = new Date().toISOString().slice(0, 10);
     
-    // 1. KIỂM TRA LỚP 1 (Bộ nhớ máy): Nếu hôm nay máy này đã tự động chạy rồi thì thoát luôn
+    // 1. Kiểm tra cache máy
     const lastLocalBackupDate = localStorage.getItem('vts_last_auto_backup_date');
     if (todayStr === lastLocalBackupDate) {
-        console.log("Hệ thống đã tự động sao lưu trên thiết bị này hôm nay. Bỏ qua.");
         return;
     }
 
     try {
-        // 2. KIỂM TRA LỚP 2 (Đám mây Cloud): Đề phòng trường hợp Admin đổi thiết bị khác sang làm việc
-        const doc = await db.collection('settings').doc('general').get();
-        if (doc.exists && doc.data().last_auto_backup_date === todayStr) {
-            // Đồng bộ bộ nhớ máy và thoát để tránh ghi lặp tệp
-            localStorage.setItem('vts_last_auto_backup_date', todayStr);
-            console.log("Firestore xác nhận hệ thống đã được sao lưu ngày hôm nay. Bỏ qua.");
-            return;
+        // 2. Kiểm tra Firestore settings (bọc riêng tránh crash)
+        try {
+            const doc = await db.collection('settings').doc('general').get();
+            if (doc.exists && doc.data().last_auto_backup_date === todayStr) {
+                localStorage.setItem('vts_last_auto_backup_date', todayStr);
+                return;
+            }
+        } catch (settingsReadErr) {
+            console.warn("Bỏ qua kiểm tra settings/general:", settingsReadErr.message);
         }
 
         console.log("Kích hoạt tiến trình tự động sao lưu ngày mới...");
         
-        // Tiến hành đóng gói toàn bộ 13 Collection hệ thống của bạn
         let fullBackupObject = {
             backup_time: new Date().toISOString(),
-            created_by: "SYSTEM_AUTO_BACKUP",
+            created_by: currentUser.email || "SYSTEM_AUTO_BACKUP",
             collections: {}
         };
 
+        // 3. Quét từng collection - Bọc try/catch riêng cho TỪNG BẢNG
         for (let colName of ALL_SYSTEM_COLLECTIONS) {
-            const snap = await db.collection(colName).get();
-            let records = [];
-            snap.forEach(doc => {
-                records.push({ id: doc.id, ...doc.data() });
-            });
-            fullBackupObject.collections[colName] = records;
+            try {
+                const snap = await db.collection(colName).get();
+                let records = [];
+                snap.forEach(doc => {
+                    records.push({ id: doc.id, ...doc.data() });
+                });
+                fullBackupObject.collections[colName] = records;
+            } catch (colErr) {
+                // In ra tên bảng bị chặn quyền để bạn biết chính xác
+                console.warn(`[AutoBackup] Bảng '${colName}' bị chặn quyền đọc (Rules chặn):`, colErr.message);
+            }
         }
 
-        // Lưu file backup ra máy tính
+        // 4. Lưu file backup
         await saveUnifiedBackupFile(fullBackupObject);
 
-        // 👉 CẬP NHẬT TRẠNG THÁI: Ghi nhận ngày tự động sao lưu thành công lên mây và máy khách
-        await db.collection('settings').doc('general').set({
-            last_backup_time: firebase.firestore.FieldValue.serverTimestamp(),
-            last_backup_by: "SYSTEM_AUTO_BACKUP",
-            last_auto_backup_date: todayStr
-        }, { merge: true });
+        // 5. Ghi nhận mốc thời gian hoàn tất
+        try {
+            await db.collection('settings').doc('general').set({
+                last_backup_time: firebase.firestore.FieldValue.serverTimestamp(),
+                last_backup_by: currentUser.email || "SYSTEM_AUTO_BACKUP",
+                last_auto_backup_date: todayStr
+            }, { merge: true });
+        } catch (settingsWriteErr) {
+            console.warn("Không thể ghi settings/general:", settingsWriteErr.message);
+        }
 
         localStorage.setItem('vts_last_auto_backup_date', todayStr);
         
-        // Ghi nhận nhật ký bảo mật
-        writeAuditLog("AUTO_BACKUP", "yt_database", "full_backup", `Hệ thống thực hiện thành công tiến trình tự động sao lưu dữ liệu ngày mới (${todayStr}).`);
-        
-        // Cập nhật lại nhãn hiển thị
-        loadLastBackupTime();
+        if (typeof writeAuditLog === 'function') {
+            writeAuditLog("AUTO_BACKUP", "yt_database", "full_backup", `Sao lưu tự động ngày mới thành công (${todayStr}).`);
+        }
+
+        if (typeof loadLastBackupTime === 'function') {
+            loadLastBackupTime();
+        }
 
     } catch (e) {
         console.error("Lỗi tự động sao lưu ngày mới: ", e);

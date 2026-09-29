@@ -77,7 +77,9 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 window.userAllowedTabs = ['ALL'];
 
                 await loadMasterCryptoKey();
-                checkAndExecuteAutoBackup();
+                setTimeout(() => {
+				    checkAndExecuteAutoBackup();
+				}, 600);
 
                 if (loginOverlay) loginOverlay.style.display = 'none';
                 if (dashboard) {

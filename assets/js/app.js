@@ -3152,100 +3152,230 @@ async function performAdminFullLookup() {
     }
 }
 
-// Ẩn bảng gợi ý khi click ra ngoài
 document.addEventListener('click', function(e) {
     const suggestBox = document.getElementById('admin-lookup-suggest');
     if (suggestBox && e.target.id !== 'admin-lookup-input') {
         suggestBox.style.display = 'none';
     }
 });
-// ==========================================
-// TÍNH NĂNG ĐĂNG BÀI BẰNG AI GEMINI (THEO FORM MẪU)
-// ==========================================
+// =========================================================================
+// HỆ THỐNG TRỢ LÝ BIÊN TẬP BÀI VIẾT TUYÊN TRUYỀN AI DỰA TRÊN DỊCH TỄ THỰC TẾ
+// =========================================================================
 
-function toggleAIGenerator() {
-    const box = document.getElementById('ai-generator-box');
-    box.style.display = box.style.display === 'none' ? 'block' : 'none';
-}
+let latestEpidemicContextData = null; // Biến lưu tạm báo cáo dịch tễ gần nhất
+const AI_GATEWAY_URL = "https://vts-health-ai.yte-thptvothisaubrvt.workers.dev";
 
-async function generateHTMLwithAI() {
-    const rawContent = document.getElementById('ai-raw-content').value.trim();
-    if (!rawContent) return sysAlert("Vui lòng dán nội dung thô vào ô để AI xử lý!", "warning");
+async function openAIBlogAssistant() {
+    const modal = document.getElementById('ai-blog-assistant-modal');
+    if (!modal) return;
 
-    sysLoading(true, "AI đang phân tích và viết Code...");
+    modal.style.display = 'flex';
+    document.getElementById('ai-blog-init-step').style.display = 'block';
+    document.getElementById('ai-blog-topics-step').style.display = 'none';
+    document.getElementById('ai-blog-loading').style.display = 'none';
+
+    const contextLabel = document.getElementById('ai-blog-context-text');
+    contextLabel.innerText = "Đang kiểm tra báo cáo dịch tễ...";
 
     try {
-        // Link Cloudflare Worker của bạn
-        const AI_SERVER_URL = "https://vts-health-ai.yte-thptvothisaubrvt.workers.dev"; 
+        let snap = await db.collection("yt_ai_predictions")
+            .orderBy("timestamp", "desc")
+            .limit(1)
+            .get();
 
-        const systemPrompt = `Bạn là một chuyên gia lập trình Web HTML. Nhiệm vụ của bạn là nhận nội dung thô, hình ảnh, link Youtube từ người dùng và chuyển nó thành cấu trúc HTML theo ĐÚNG MẪU DƯỚI ĐÂY.
+        if (snap.empty) {
+            snap = await db.collection("yt_epidemic_predictions")
+                .orderBy("timestamp", "desc")
+                .limit(1)
+                .get();
+        }
 
-        QUY TẮC BẮT BUỘC:
-        1. Bắt buộc giữ nguyên toàn bộ thẻ <style> và <div class="sktoandien-container">.
-        2. Phân loại nội dung theo các thẻ:
-           - Tiêu đề bài viết: <h1>
-           - Đoạn tóm tắt: <p class="highlight">
-           - Tiêu đề phụ: <h2>
-           - Đoạn bình thường: <p>
-           - Danh sách: <ul><li>
-           - Ảnh: <img src="URL_ANH">
-           - Link YouTube: <iframe src="https://www.youtube.com/embed/ID_VIDEO" style="width:100%; max-width:1000px; height:450px; border-radius:8px; margin:15px 0;" frameborder="0" allowfullscreen></iframe>
-           - Nguồn/Tài liệu tham khảo: Bọc trong <div class="ref">
+        if (!snap.empty) {
+            latestEpidemicContextData = snap.docs[0].data();
+            const rangeStr = latestEpidemicContextData.rangeText || "Đợt phân tích gần nhất";
+            const visitsCount = latestEpidemicContextData.totalVisits || 0;
+            const sickCount = latestEpidemicContextData.sickAbsences || 0;
+            contextLabel.innerHTML = `Báo cáo giai đoạn <strong>${rangeStr}</strong> (Ghi nhận: <strong>${visitsCount}</strong> ca khám phòng YT, <strong>${sickCount}</strong> HS nghỉ ốm).`;
+        } else {
+            latestEpidemicContextData = null;
+            contextLabel.innerText = "Chưa có bản ghi phân tích dịch tễ chuyên sâu. AI sẽ dùng dữ liệu mùa vụ chung tại Bà Rịa - Vũng Tàu.";
+        }
+    } catch (e) {
+        console.warn("Lỗi đọc dữ liệu dịch tễ:", e);
+        contextLabel.innerText = "Sử dụng dữ liệu mùa bệnh học đường tiêu chuẩn.";
+    }
+}
 
-        MẪU BẮT BUỘC DÙNG:
-        <div class="sktoandien-container">
-            <style>
-                .sktoandien-container { font-family: Arial, Helvetica, sans-serif; line-height: 1.7; color: #333; }
-                .sktoandien-container h1 { color: #27ae60; font-size: clamp(20px, 4vw, 28px); }
-                .sktoandien-container h2 { color: #2c3e50; margin-top: 25px; font-size: clamp(16px, 3vw, 22px); }
-                .sktoandien-container p, .sktoandien-container li { font-size: clamp(14px, 2.5vw, 16px); margin: 10px 0; max-width: 1000px; }
-                .sktoandien-container img { width: 100%; max-width: 1000px; border-radius: 8px; margin: 15px 0; }
-                .sktoandien-container ul { max-width: 1000px; padding-left: 20px; }
-                .sktoandien-container .highlight { background: #e8f8f5; padding: 12px; border-left: 5px solid #1abc9c; border-radius: 5px; max-width: 1000px; }
-                .sktoandien-container .ref { margin-top: 20px; font-size: clamp(13px, 2.3vw, 15px); }
-                .sktoandien-container a { color: #2980b9; text-decoration: none; }
-            </style>
-            <!-- CODE HTML NẰM Ở ĐÂY -->
-        </div>`;
+function closeAIBlogAssistant() {
+    const modal = document.getElementById('ai-blog-assistant-modal');
+    if (modal) modal.style.display = 'none';
+}
 
-        // 👉 ĐÂY LÀ ĐOẠN LỆNH QUAN TRỌNG ĐỂ TẮT KIỂM DUYỆT Y TẾ CỦA GOOGLE
-        const response = await fetch(AI_SERVER_URL, {
+async function fetchAIEditorialTopics() {
+    const initStep = document.getElementById('ai-blog-init-step');
+    const topicsStep = document.getElementById('ai-blog-topics-step');
+    const loadingBox = document.getElementById('ai-blog-loading');
+    const loadingText = document.getElementById('ai-blog-loading-text');
+
+    if (initStep) initStep.style.display = 'none';
+    if (topicsStep) topicsStep.style.display = 'none';
+    if (loadingBox) loadingBox.style.display = 'block';
+    if (loadingText) loadingText.innerText = "AI đang đối chiếu dịch tễ thực tế và gợi ý 3 chủ đề...";
+
+    let contextSummary = "Thời tiết Đông Nam Bộ, mùa học đường THPT.";
+    if (latestEpidemicContextData) {
+        contextSummary = `
+Giai đoạn: ${latestEpidemicContextData.rangeText || 'Gần đây'}
+Tổng lượt tiếp nhận tại trường: ${latestEpidemicContextData.totalVisits || 0} lượt.
+Số học sinh nghỉ học do bệnh: ${latestEpidemicContextData.sickAbsences || 0} học sinh.
+Nội dung phân tích chẩn đoán: ${latestEpidemicContextData.summary || latestEpidemicContextData.aiResultHTML ? 'Đã có phân tích chùm ca' : 'Theo dõi thường quy'}.
+        `.trim();
+    }
+
+    const promptTopic = `Bạn là Chuyên viên Y tế & Truyền thông Học đường tại Trường THPT Võ Thị Sáu (Bà Rịa - Vũng Tàu).
+Dựa trên tình hình dịch tễ thực tế tại trường hiện nay:
+${contextSummary}
+
+HÃY ĐỀ XUẤT ĐÚNG 3 CHỦ ĐỀ TUYÊN TRUYỀN CẤP THIẾT NHẤT CHO HỌC SINH THPT LÚC NÀY.
+Yêu cầu bắt buộc:
+- Tối thiểu 3 và tối đa 3 chủ đề.
+- Mỗi chủ đề gồm: "title" (Tiêu đề hấp dẫn, ngắn gọn, phù hợp học sinh cấp 3), "reason" (Lý do cấp thiết dựa trên thực tế), "focus" (Thông điệp chính).
+- Trả về DUY NHẤT một mảng JSON thuần túy (không kèm markdown, không kèm giải thích ngoài):
+[
+  {"title": "...", "reason": "...", "focus": "..."},
+  {"title": "...", "reason": "...", "focus": "..."},
+  {"title": "...", "reason": "...", "focus": "..."}
+]`;
+
+    try {
+        const response = await fetch(AI_GATEWAY_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: systemPrompt + "\n\nNỘI DUNG THÔ:\n" + rawContent }] }],
-                safetySettings: [
-                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-                    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
-                ]
+                contents: [{ parts: [{ text: promptTopic }] }]
             })
         });
 
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
         const data = await response.json();
 
-        // Bắt lỗi chi tiết
-        if (data.error) {
-            throw new Error(data.error.message);
+        let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || data.choices?.[0]?.message?.content || "";
+        rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+        let topics = [];
+        try {
+            topics = JSON.parse(rawText);
+        } catch(pe) {
+            const matched = rawText.match(/\[[\s\S]*\]/);
+            if (matched) topics = JSON.parse(matched[0]);
+            else throw new Error("AI không trả về cấu trúc danh sách hợp lệ.");
         }
-        if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-            let reason = data.candidates ? data.candidates[0].finishReason : "Lỗi không xác định";
-            throw new Error("AI bị ngắt giữa chừng. Lý do: " + reason);
+
+        topics = topics.slice(0, 3);
+        renderAITopicsList(topics);
+
+        if (loadingBox) loadingBox.style.display = 'none';
+        if (topicsStep) topicsStep.style.display = 'block';
+
+    } catch (err) {
+        console.error("Lỗi lấy gợi ý chủ đề:", err);
+        if (loadingBox) loadingBox.style.display = 'none';
+        if (initStep) initStep.style.display = 'block';
+        sysAlert("Lỗi khi kết nối AI: " + err.message, "error");
+    }
+}
+
+function renderAITopicsList(topics) {
+    const listContainer = document.getElementById('ai-blog-topics-list');
+    if (!listContainer) return;
+
+    let html = '';
+    topics.forEach((t, idx) => {
+        html += `
+            <div class="ai-topic-card" onclick="generateArticleByTopic(${idx})" style="background:#ffffff; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px 16px; cursor:pointer; transition:all 0.2s ease; position:relative;" onmouseover="this.style.borderColor='#0284c7'; this.style.boxShadow='0 4px 12px rgba(2,132,199,0.12)'" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+                    <strong style="color:#0f172a; font-size:1rem; line-height:1.4;">${idx + 1}. ${t.title}</strong>
+                    <span style="background:#e0f2fe; color:#0284c7; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:700; white-space:nowrap; margin-left:8px;">Chọn viết bài <i class="fas fa-arrow-right"></i></span>
+                </div>
+                <div style="font-size:0.83rem; color:#64748b; margin-bottom:4px;">
+                    <i class="fas fa-exclamation-circle" style="color:#f59e0b;"></i> <strong>Lý do cấp thiết:</strong> ${t.reason}
+                </div>
+                <div style="font-size:0.83rem; color:#334155;">
+                    <i class="fas fa-bullseye" style="color:#10b981;"></i> <strong>Trọng tâm:</strong> ${t.focus}
+                </div>
+            </div>
+        `;
+    });
+
+    listContainer.innerHTML = html;
+    window._cachedAITopics = topics; 
+}
+
+async function generateArticleByTopic(index) {
+    const selectedTopic = (window._cachedAITopics || [])[index];
+    if (!selectedTopic) return;
+
+    const topicsStep = document.getElementById('ai-blog-topics-step');
+    const loadingBox = document.getElementById('ai-blog-loading');
+    const loadingText = document.getElementById('ai-blog-loading-text');
+
+    if (topicsStep) topicsStep.style.display = 'none';
+    if (loadingBox) loadingBox.style.display = 'block';
+    if (loadingText) loadingText.innerHTML = `AI đang biên tập bài viết: <strong>"${selectedTopic.title}"</strong> (dưới 500 từ)...`;
+
+    const promptArticle = `Bạn là Chuyên gia Y tế Học đường giàu kinh nghiệm tại THPT Võ Thị Sáu.
+Hãy viết một bài viết tuyên truyền chăm sóc sức khỏe học sinh hoàn chỉnh cho chủ đề sau:
+- TIÊU ĐỀ: "${selectedTopic.title}"
+- TRỌNG TÂM: "${selectedTopic.focus}"
+
+QUY TẮC BẮT BUỘC:
+1. ĐỘ DÀI: TỐI ĐA KHÔNG QUÁ 500 TỪ (ngắn gọn, cô đọng, đi thẳng vào giải pháp, học sinh dễ nhớ).
+2. ĐỐI TƯỢNG ĐỌC: Học sinh cấp 3 (THPT) và Giáo viên. Văn phong gần gũi, tích cực, không dùng từ ngữ gây hoang mang nhưng cần rõ ràng tính khoa học.
+3. CẤU TRÚC ĐỊNH DẠNG: Chỉ trả về nội dung HTML được định dạng gọn gàng để hiển thị trực tiếp trong trình soạn thảo Tiptap Editor (KHÔNG bọc khối code markdown \`\`\`html):
+- Bắt đầu với một hộp tóm tắt thông điệp:
+  <div class="highlight-box">📌 <strong>Thông điệp sức khỏe:</strong> [1-2 câu ngắn cô đọng]</div>
+- Sử dụng các tiêu đề con: <h2>1. Nhận biết sớm dấu hiệu</h2>, <h2>2. Các biện pháp phòng ngừa thiết thực</h2>
+- Dùng danh sách chấm <ul><li> để liệt kê các thói quen/hành động.
+- Dùng hộp cảnh báo nếu có dấu hiệu nặng:
+  <div class="important-box">⚠️ <strong>Lưu ý:</strong> [Khi nào cần đến phòng Y tế trường hoặc cơ sở y tế]</div>
+4. KHÔNG lặp lại thẻ <h1> trong nội dung vì tiêu đề sẽ được điền riêng vào ô tiêu đề bài viết.`;
+
+    try {
+        const response = await fetch(AI_GATEWAY_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: promptArticle }] }]
+            })
+        });
+
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+        const data = await response.json();
+
+        let articleHTML = data.candidates?.[0]?.content?.parts?.[0]?.text || data.choices?.[0]?.message?.content || "";
+        articleHTML = articleHTML.replace(/```html/gi, '').replace(/```/g, '').trim();
+
+        // 1. Tự động điền Tiêu đề vào ô #p-title
+        const titleInput = document.getElementById('p-title');
+        if (titleInput) {
+            titleInput.value = selectedTopic.title.toUpperCase();
         }
 
-        let aiHTML = data.candidates[0].content.parts[0].text;
-		aiHTML = aiHTML.replace(/```html/g, '').replace(/```/g, '').trim();
+        if (typeof setEditorContent === 'function') {
+            setEditorContent(articleHTML);
+        }
 
-		setEditorContent(aiHTML);
+        closeAIBlogAssistant();
+        sysAlert("AI đã biên tập xong nội dung tuyên truyền! Vui lòng xem lại và chỉnh sửa trước khi lưu.", "success");
 
-        sysAlert("Thành công! AI đã tự động điền Code HTML.", "success");
-        toggleAIGenerator(); 
-    } catch (error) {
-        sysAlert("Lỗi AI: " + error.message, "error");
-        console.error(error);
-    } finally {
-        sysLoading(false);
+        const editorContainer = document.querySelector('.word-document-container');
+        if (editorContainer) editorContainer.scrollIntoView({ behavior: 'smooth' });
+
+    } catch (err) {
+        console.error("Lỗi biên tập bài:", err);
+        if (loadingBox) loadingBox.style.display = 'none';
+        if (topicsStep) topicsStep.style.display = 'block';
+        sysAlert("Lỗi khi AI soạn thảo: " + err.message, "error");
     }
 }
 // ==========================================

@@ -1,7 +1,7 @@
         let currentUserEmail = null;
         let currentStudent = null;
-	let allNotificationsCache = [];
-// Hàm bổ trợ phân tích ngày tháng an toàn, chống crash Invalid Date trên iOS/Safari
+		let allNotificationsCache = [];
+		let studentVisitsCache = null;
 function safeParseDate(dateStr) {
     if (!dateStr) return new Date();
     if (dateStr instanceof Date) return dateStr;
@@ -181,14 +181,14 @@ function renderTabInfo() {
             tabInfo.insertAdjacentHTML('beforeend', adminInfoHTML);
         }
         // --- RENDER TAB 2: TIMELINE LỊCH SỬ ---
-// --- RENDER TAB 2: TIMELINE LỊCH SỬ TIẾP NHẬN & KHÁM SỨC KHỎE ĐỊNH KỲ (MỚI NÂNG CẤP) ---
-// --- RENDER TAB 2: TIMELINE LỊCH SỬ TIẾP NHẬN & KHÁM SỨC KHỎE ĐỊNH KỲ (ĐÃ SỬA LỖI SAFARI) ---
 async function loadHistory() {
     const div = document.getElementById('st-history-list');
     div.innerHTML = '<div style="text-align:center; padding:30px; color:#64748b;"><i class="fas fa-spinner fa-spin fa-2x" style="margin-bottom:10px;"></i><br>Đang tải dòng thời gian sức khỏe...</div>';
 
     try {
         const visitsSnap = await db.collection('yt_visits').where('studentId', '==', currentStudent.id).get();
+		studentVisitsCache = [];
+    	visitsSnap.forEach(doc => studentVisitsCache.push(doc.data()));
         const examsSnap = await db.collection('yt_exam_results').where('studentId', '==', currentStudent.id).get();
         
         const campaignsSnap = await db.collection('yt_exam_campaigns').get();
@@ -931,37 +931,54 @@ function listenToNotifications() {
             // Vẽ Barcode
             JsBarcode("#st-barcode", scanData, { format: "CODE128", width: 2, height: 50, displayValue: true });
         }
-// --- RENDER THỐNG KÊ Y TẾ HỌC ĐƯỜNG (TRONG 1 THÁNG QUA) ---
 // --- RENDER THỐNG KÊ Y TẾ HỌC ĐƯỜNG (DỮ LIỆU CHỐT SỔ ĐẾN HÔM QUA) ---
 async function loadSchoolHealthStats() {
     try {
         const today = new Date();
         const currentMonth = today.getMonth() + 1;
         const currentYear = today.getFullYear();
-        const monthId = `${currentMonth.toString().padStart(2, '0')}-${currentYear}`; // VD: "05-2024"
+        const monthId = `${currentMonth.toString().padStart(2, '0')}-${currentYear}`; // VD: "09-2026"
 
-        // Đổi tiêu đề hiển thị tháng hiện tại
         document.getElementById('st-stat-title').innerHTML = `<i class="fas fa-chart-pie" style="color: #8b5cf6;"></i> Bản tin Y tế tháng ${currentMonth}/${currentYear}`;
-
-        // Chỉ đọc ĐÚNG 1 DOCUMENT thống kê của tháng này
-        const docRef = await db.collection('yt_stats').doc(monthId).get();
-
-        if (!docRef.exists) {
-            document.getElementById('st-trending-symptoms').innerHTML = '<div style="font-size:0.9rem; color:#64748b;">Chưa có dữ liệu thống kê cho tháng này.</div>';
-            document.getElementById('st-my-visits').innerText = "0";
-            document.getElementById('st-my-rank').innerText = "N/A";
-            document.getElementById('st-rank-message').innerHTML = '<span style="color:#10b981;">Chưa có dữ liệu xét hạng tháng này.</span>';
-            return;
+		
+        // 1. TÍNH TRỰC TIẾP LƯỢT TIẾP NHẬN TỪ NGUỒN TAB LỊCH SỬ (yt_visits) CỦA HỌC SINH
+        let visitsList = window.studentVisitsCache;
+        if (!visitsList) {
+            const visitsSnap = await db.collection('yt_visits').where('studentId', '==', currentStudent.id).get();
+            visitsList = [];
+            visitsSnap.forEach(doc => visitsList.push(doc.data()));
+            window.studentVisitsCache = visitsList;
         }
 
-        const data = docRef.data();
-        
-        // 1. RENDER BỆNH ĐANG HOT
+        let myVisitCount = 0;
+        visitsList.forEach(data => {
+            let visitDate = null;
+            if (data.timestamp && data.timestamp.toDate) {
+                visitDate = data.timestamp.toDate();
+            } else if (data.timestamp?.seconds) {
+                visitDate = new Date(data.timestamp.seconds * 1000);
+            } else if (data.date) {
+                visitDate = safeParseDate(data.date);
+            }
+
+            // Chỉ đếm nếu đúng trong tháng và năm hiện tại
+            if (visitDate && (visitDate.getMonth() + 1) === currentMonth && visitDate.getFullYear() === currentYear) {
+                myVisitCount++;
+            }
+        });
+
+        // Cập nhật số lượt thực tế lên giao diện
+        document.getElementById('st-my-visits').innerText = myVisitCount;
+
+        // 2. LẤY THÔNG TIN CHUNG TOÀN TRƯỜNG (Bệnh hot & Xếp hạng) TỪ yt_stats
+        const docRef = await db.collection('yt_stats').doc(monthId).get();
+        let statsData = docRef.exists ? docRef.data() : null;
+
+        // Render bệnh đang hot
         let sympHTML = '';
         let colors = ['#ef4444', '#f97316', '#f59e0b']; 
-        
-        if (data.topSymptoms && data.topSymptoms.length > 0) {
-            data.topSymptoms.slice(0, 3).forEach((item, index) => {
+        if (statsData && statsData.topSymptoms && statsData.topSymptoms.length > 0) {
+            statsData.topSymptoms.slice(0, 3).forEach((item, index) => {
                 sympHTML += `
                     <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 8px 12px; border-radius: 8px; margin-bottom: 8px;">
                         <span style="font-size: 0.95rem; color: #1e293b; font-weight: 500;">
@@ -974,21 +991,11 @@ async function loadSchoolHealthStats() {
                 `;
             });
         } else {
-            sympHTML = '<div style="font-size:0.9rem; color:#64748b;">Chưa có thống kê</div>';
+            sympHTML = '<div style="font-size:0.9rem; color:#64748b;">Chưa có dữ liệu triệu chứng tháng này.</div>';
         }
         document.getElementById('st-trending-symptoms').innerHTML = sympHTML;
 
-        // 2. RENDER XẾP HẠNG CÁ NHÂN
-        let studentVisits = data.studentVisits || {};
-        let myVisitCount = studentVisits[currentStudent.id] || 0;
-        
-        let myRank = 0;
-        if (myVisitCount > 0) {
-            const strictlyHigherCount = Object.values(studentVisits).filter(count => count > myVisitCount).length;
-            myRank = strictlyHigherCount + 1;
-        }
-
-        document.getElementById('st-my-visits').innerText = myVisitCount;
+        // 3. XỬ LÝ XẾP HẠNG DỰA TRÊN SỐ LƯỢT THỰC TẾ VỪA TÍNH
         const rankText = document.getElementById('st-my-rank');
         const rankMsg = document.getElementById('st-rank-message');
 
@@ -996,6 +1003,12 @@ async function loadSchoolHealthStats() {
             rankText.innerText = "N/A";
             rankMsg.innerHTML = '<span style="color:#10b981;">🎉 Tháng này bạn chưa phải xuống phòng Y tế lần nào!</span>';
         } else {
+            // So sánh số lượt thực tế của học sinh với danh sách các bạn khác trong trường
+            let studentVisits = (statsData && statsData.studentVisits) ? statsData.studentVisits : {};
+            let strictlyHigherCount = Object.entries(studentVisits)
+                .filter(([id, count]) => id !== currentStudent.id && count > myVisitCount).length;
+            let myRank = strictlyHigherCount + 1;
+
             rankText.innerText = "TOP " + myRank;
             if (myRank === 1) {
                 rankMsg.innerHTML = '<span style="color:#dc2626;"><i class="fas fa-exclamation-triangle"></i> Bạn bị bệnh nhiều nhất tháng. Hãy chú ý sức khỏe nhé!</span>';
@@ -1010,12 +1023,13 @@ async function loadSchoolHealthStats() {
             }
         }
 
-        // Hiển thị ngày và giờ cập nhật cuối cùng
-const lastUpdatedDateTime = data.lastUpdated.toDate().toLocaleString('vi-VN', {
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-    day: '2-digit', month: '2-digit', year: 'numeric'
-});
-rankMsg.innerHTML += `<div style="margin-top: 8px; font-size: 0.75rem; color: #94a3b8;"><i class="fas fa-clock"></i> Cập nhật đến: ${lastUpdatedDateTime}</div>`;
+        if (statsData && statsData.lastUpdated) {
+            const lastUpdatedDateTime = statsData.lastUpdated.toDate().toLocaleString('vi-VN', {
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                day: '2-digit', month: '2-digit', year: 'numeric'
+            });
+            rankMsg.innerHTML += `<div style="margin-top: 8px; font-size: 0.75rem; color: #94a3b8;"><i class="fas fa-clock"></i> Cập nhật đến: ${lastUpdatedDateTime}</div>`;
+        }
 
     } catch (error) {
         console.error("Lỗi lấy dữ liệu thống kê: ", error);

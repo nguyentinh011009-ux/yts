@@ -719,3 +719,347 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
+// =========================================================================
+// QUẢN LÝ CHỈNH SỬA & XÓA TOÀN DIỆN LƯỢT KHÁM
+// =========================================================================
+let editVisitOriginalMedicines = []; 
+let editVisitCurrentMedicines = [];
+
+function closeEditVisitModal() {
+    const modal = document.getElementById('edit-visit-modal');
+    if (modal) modal.style.display = 'none';
+    const suggest = document.getElementById('edit-med-suggest-box');
+    if (suggest) suggest.style.display = 'none';
+}
+
+async function openEditVisitModal(visitId) {
+    sysLoading(true, "Đang tải chi tiết lượt khám...");
+    try {
+        const doc = await db.collection('yt_visits').doc(visitId).get();
+        if (!doc.exists) {
+            sysAlert("Không tìm thấy lượt khám này!", "error");
+            return;
+        }
+
+        const data = doc.data();
+
+        const visitTimeMs = data.timestamp ? (data.timestamp.seconds ? data.timestamp.seconds * 1000 : new Date(data.timestamp).getTime()) : 0;
+        if ((Date.now() - visitTimeMs) > (30 * 24 * 60 * 60 * 1000)) {
+            sysAlert("⛔ Lượt khám này đã quá 30 ngày, hệ thống đã khóa không cho phép sửa/xóa!", "error");
+            return;
+        }
+
+        document.getElementById('edit-visit-id').value = visitId;
+        document.getElementById('edit-visit-student-id').value = data.studentId || '';
+        document.getElementById('edit-visit-original-timestamp').value = JSON.stringify(data.timestamp || null);
+        document.getElementById('edit-visit-signature').value = data.sign || '';
+
+        const decName = data.name ? decryptField(data.name) : '';
+        const decClass = data.class ? decryptField(data.class) : '';
+        document.getElementById('edit-visit-student-name').innerText = decName;
+        document.getElementById('edit-visit-student-class').innerText = decClass;
+
+        const timeStr = data.timestamp ? new Date(visitTimeMs).toLocaleString('vi-VN') : '--';
+        document.getElementById('edit-visit-time-display').innerText = timeStr;
+
+        document.getElementById('edit-visit-symptom').value = data.symptom ? decryptField(data.symptom) : '';
+        document.getElementById('edit-visit-treatment').value = data.treatment ? decryptField(data.treatment) : '';
+        document.getElementById('edit-visit-note').value = data.note ? decryptField(data.note) : '';
+
+        editVisitOriginalMedicines = [];
+        const txSnap = await db.collection('yt_pharmacy_transactions')
+            .where('type', '==', 'export')
+            .where('notes', '==', `Kèm theo Lượt khám Y tế số ${visitId}`)
+            .get();
+
+        if (!txSnap.empty) {
+            const txData = txSnap.docs[0].data();
+            editVisitOriginalMedicines = JSON.parse(JSON.stringify(txData.items || []));
+        }
+
+        editVisitCurrentMedicines = JSON.parse(JSON.stringify(editVisitOriginalMedicines));
+        renderEditVisitMedicines();
+
+        document.getElementById('edit-visit-modal').style.display = 'flex';
+    } catch (err) {
+        sysAlert("Lỗi tải lượt khám: " + err.message, "error");
+    } finally {
+        sysLoading(false);
+    }
+}
+
+function searchMedicineForEditVisit(val) {
+    const box = document.getElementById('edit-med-suggest-box');
+    if (!val || val.trim().length < 2) { box.style.display = 'none'; return; }
+
+    const keyword = removeVietnameseTones(val.trim());
+    const matched = ytPharmacyCache.filter(item => {
+        const hasStock = item.batches && item.batches.some(b => parseFloat(b.qty) > 0);
+        return hasStock && removeVietnameseTones(item.name).includes(keyword);
+    });
+
+    box.innerHTML = '';
+    if (matched.length === 0) {
+        box.innerHTML = '<div style="padding:10px; color:#ef4444; font-size:0.85rem; text-align:center;">Không tìm thấy thuốc còn hàng!</div>';
+    } else {
+        matched.forEach(d => {
+            const el = document.createElement('div');
+            el.className = 'suggest-item';
+            el.innerHTML = `<strong>${d.name}</strong> <span style="font-size:0.8rem; color:#64748b;">(${d.unit})</span>`;
+            el.onclick = () => selectMedicineForEditVisit(d);
+            box.appendChild(el);
+        });
+    }
+    box.style.display = 'block';
+}
+
+function selectMedicineForEditVisit(item) {
+    document.getElementById('edit-med-search').value = item.name;
+    document.getElementById('edit-med-selected-id').value = item.id;
+    document.getElementById('edit-med-selected-name').value = item.name;
+    document.getElementById('edit-med-selected-unit').value = item.unit;
+    document.getElementById('edit-med-suggest-box').style.display = 'none';
+
+    const batchSelect = document.getElementById('edit-med-batch-select');
+    batchSelect.innerHTML = '<option value="">-- Chọn Lô --</option>';
+    if (item.batches) {
+        item.batches.forEach((b, index) => {
+            if (parseFloat(b.qty) > 0) {
+                batchSelect.innerHTML += `<option value="${index}">Lô ${b.lot} (Tồn: ${b.qty}) - HSD: ${b.expiry || 'K'}</option>`;
+            }
+        });
+    }
+}
+
+function addMedicineToEditVisit() {
+    const id = document.getElementById('edit-med-selected-id').value;
+    const name = document.getElementById('edit-med-selected-name').value;
+    const unit = document.getElementById('edit-med-selected-unit').value;
+    const batchIndex = document.getElementById('edit-med-batch-select').value;
+    const qty = parseFloat(document.getElementById('edit-med-qty').value);
+
+    if (!id || batchIndex === "" || isNaN(qty) || qty <= 0) {
+        return sysAlert("Vui lòng chọn thuốc, lô và số lượng hợp lệ!", "warning");
+    }
+
+    const item = ytPharmacyCache.find(i => i.id === id);
+    const batch = item.batches[batchIndex];
+
+    editVisitCurrentMedicines.push({
+        itemId: id,
+        itemName: name,
+        batchIndex: parseInt(batchIndex),
+        lot: batch.lot,
+        qty: qty,
+        unit: unit || batch.unit
+    });
+
+    renderEditVisitMedicines();
+
+    document.getElementById('edit-med-search').value = '';
+    document.getElementById('edit-med-selected-id').value = '';
+    document.getElementById('edit-med-batch-select').innerHTML = '<option value="">-- Trống --</option>';
+    document.getElementById('edit-med-qty').value = 1;
+}
+
+function renderEditVisitMedicines() {
+    const list = document.getElementById('edit-visit-med-list');
+    if (!list) return;
+
+    if (editVisitCurrentMedicines.length === 0) {
+        list.innerHTML = '<div style="font-size:0.85rem; color:#94a3b8; text-align:center; padding:10px;">Không cấp thuốc cho lượt này.</div>';
+        return;
+    }
+
+    let html = '';
+    editVisitCurrentMedicines.forEach((med, idx) => {
+        html += `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.85rem;">
+                <div><strong style="color:#0f172a;">${med.itemName}</strong> <span style="color:#64748b;">(Lô: ${med.lot})</span></div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <strong style="color:#10b981;">${med.qty} ${med.unit}</strong>
+                    <i class="fas fa-trash-alt" style="color:#ef4444; cursor:pointer;" onclick="removeEditVisitMed(${idx})" title="Xóa thuốc"></i>
+                </div>
+            </div>
+        `;
+    });
+    list.innerHTML = html;
+}
+
+function removeEditVisitMed(idx) {
+    editVisitCurrentMedicines.splice(idx, 1);
+    renderEditVisitMedicines();
+}
+
+async function saveEditVisit() {
+    const visitId = document.getElementById('edit-visit-id').value;
+    const studentName = document.getElementById('edit-visit-student-name').innerText;
+    const studentClass = document.getElementById('edit-visit-student-class').innerText;
+    const symptom = document.getElementById('edit-visit-symptom').value.trim();
+    const treatment = document.getElementById('edit-visit-treatment').value.trim();
+    const note = document.getElementById('edit-visit-note').value.trim();
+
+    if (!symptom || !treatment) {
+        return sysAlert("Triệu chứng và Xử trí không được để trống!", "warning");
+    }
+
+    sysLoading(true, "Đang cân đối kho dược và cập nhật lượt khám...");
+
+    try {
+        const batch = db.batch();
+
+        const itemIdsNeeded = new Set([
+            ...editVisitOriginalMedicines.map(m => m.itemId),
+            ...editVisitCurrentMedicines.map(m => m.itemId)
+        ]);
+
+        const itemsDocs = {};
+        for (const itemId of itemIdsNeeded) {
+            const doc = await db.collection('yt_pharmacy_items').doc(itemId).get();
+            if (doc.exists) {
+                itemsDocs[itemId] = doc.data();
+            }
+        }
+
+        editVisitOriginalMedicines.forEach(oldMed => {
+            if (itemsDocs[oldMed.itemId] && itemsDocs[oldMed.itemId].batches) {
+                const batchObj = itemsDocs[oldMed.itemId].batches.find(b => b.lot === oldMed.lot);
+                if (batchObj) {
+                    batchObj.qty = parseFloat(batchObj.qty) + parseFloat(oldMed.qty);
+                }
+            }
+        });
+
+        for (const newMed of editVisitCurrentMedicines) {
+            if (!itemsDocs[newMed.itemId] || !itemsDocs[newMed.itemId].batches) {
+                throw new Error(`Mặt hàng ${newMed.itemName} không còn tồn tại trong kho!`);
+            }
+            const batchObj = itemsDocs[newMed.itemId].batches.find(b => b.lot === newMed.lot);
+            if (!batchObj) {
+                throw new Error(`Lô ${newMed.lot} của thuốc ${newMed.itemName} không tìm thấy!`);
+            }
+            if (parseFloat(batchObj.qty) < parseFloat(newMed.qty)) {
+                throw new Error(`Kho không đủ hàng! Lô ${newMed.lot} của thuốc ${newMed.itemName} chỉ còn ${batchObj.qty} ${newMed.unit}.`);
+            }
+            batchObj.qty = parseFloat(batchObj.qty) - parseFloat(newMed.qty);
+        }
+
+        for (const itemId of itemIdsNeeded) {
+            if (itemsDocs[itemId]) {
+                batch.update(db.collection('yt_pharmacy_items').doc(itemId), {
+                    batches: itemsDocs[itemId].batches
+                });
+            }
+        }
+
+        const oldTxSnap = await db.collection('yt_pharmacy_transactions')
+            .where('type', '==', 'export')
+            .where('notes', '==', `Kèm theo Lượt khám Y tế số ${visitId}`)
+            .get();
+        oldTxSnap.forEach(d => batch.delete(d.ref));
+
+        if (editVisitCurrentMedicines.length > 0) {
+            const newTxId = "XK-" + Date.now().toString().slice(-6);
+            const activeUser = firebase.auth().currentUser;
+            const newTxRef = db.collection('yt_pharmacy_transactions').doc(newTxId);
+            batch.set(newTxRef, {
+                id: newTxId,
+                type: 'export',
+                receiver: `${studentName} (${studentClass})`,
+                reason: "Cấp phát y tế tại phòng (Chỉnh sửa)",
+                notes: `Kèm theo Lượt khám Y tế số ${visitId}`,
+                items: editVisitCurrentMedicines,
+                user: activeUser ? (activeUser.displayName || activeUser.email) : 'Quản trị viên',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+
+        const visitRef = db.collection('yt_visits').doc(visitId);
+        batch.update(visitRef, {
+            symptom: encryptField(symptom),
+            treatment: encryptField(treatment),
+            note: encryptField(note),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp() // Chỉ lưu vết cập nhật, không đổi timestamp gốc
+        });
+
+        await batch.commit();
+
+        sysAlert("Đã cập nhật lượt khám và đồng bộ kho dược thành công!", "success");
+        closeEditVisitModal();
+
+    } catch (err) {
+        sysAlert("Lỗi khi cập nhật lượt khám: " + err.message, "error");
+    } finally {
+        sysLoading(false);
+    }
+}
+
+async function deleteCompleteVisit(visitId, studentName) {
+    const visitDoc = await db.collection('yt_visits').doc(visitId).get();
+    if (!visitDoc.exists) return sysAlert("Lượt khám không tồn tại!", "error");
+
+    const vData = visitDoc.data();
+    const visitTimeMs = vData.timestamp ? (vData.timestamp.seconds ? vData.timestamp.seconds * 1000 : new Date(vData.timestamp).getTime()) : 0;
+    if ((Date.now() - visitTimeMs) > (30 * 24 * 60 * 60 * 1000)) {
+        return sysAlert("⛔ Lượt khám này đã quá 30 ngày, hệ thống đã khóa không cho phép sửa/xóa!", "error");
+    }
+
+    const isConfirm = await sysConfirm(
+        `Bạn có chắc chắn muốn XÓA TOÀN DIỆN lượt khám của học sinh ${studentName}?\n\n- Thuốc đã cấp (nếu có) sẽ được HOÀN TRẢ VÀO KHO.\n- Phiếu xuất kho liên quan sẽ bị hủy.\n- Giường bệnh (nếu đang nằm) sẽ được giải phóng.\n- Thông báo liên quan gửi học sinh sẽ bị thu hồi.`,
+        "Xóa toàn diện lượt khám",
+        true
+    );
+
+    if (!isConfirm) return;
+
+    sysLoading(true, "Đang xóa lượt khám và hoàn kho thuốc...");
+
+    try {
+        const batch = db.batch();
+
+        const txSnap = await db.collection('yt_pharmacy_transactions')
+            .where('type', '==', 'export')
+            .where('notes', '==', `Kèm theo Lượt khám Y tế số ${visitId}`)
+            .get();
+
+        if (!txSnap.empty) {
+            for (const tDoc of txSnap.docs) {
+                const txData = tDoc.data();
+                if (txData.items && Array.isArray(txData.items)) {
+                    for (const med of txData.items) {
+                        const itemDoc = await db.collection('yt_pharmacy_items').doc(med.itemId).get();
+                        if (itemDoc.exists) {
+                            const itemData = itemDoc.data();
+                            if (itemData.batches) {
+                                const bObj = itemData.batches.find(b => b.lot === med.lot);
+                                if (bObj) {
+                                    bObj.qty = parseFloat(bObj.qty) + parseFloat(med.qty);
+                                    batch.update(itemDoc.ref, { batches: itemData.batches });
+                                }
+                            }
+                        }
+                    }
+                }
+                batch.delete(tDoc.ref);
+            }
+        }
+
+        const bedsSnap = await db.collection('yt_beds').where('visitId', '==', visitId).get();
+        bedsSnap.forEach(b => batch.delete(b.ref));
+
+        const notiSnap = await db.collection('yt_notifications').where('relatedVisitId', '==', visitId).get();
+        notiSnap.forEach(n => batch.delete(n.ref));
+
+        batch.delete(visitDoc.ref);
+
+        await batch.commit();
+
+        sysAlert("Đã xóa hoàn toàn lượt khám và hoàn trả kho dược thành công!", "success");
+        loadBeds(); // Tải lại danh sách giường và bảng
+
+    } catch (err) {
+        sysAlert("Lỗi khi xóa lượt khám: " + err.message, "error");
+    } finally {
+        sysLoading(false);
+    }
+}

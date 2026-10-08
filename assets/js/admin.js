@@ -831,6 +831,36 @@ function selectMedicineForEditVisit(item) {
     }
 }
 
+function syncMedicinesToTreatmentField(oldMedRemoved = null, newMedAdded = null) {
+    const treatmentInput = document.getElementById('edit-visit-symptom') ? document.getElementById('edit-visit-treatment') : null;
+    if (!treatmentInput) return;
+
+    let currentText = treatmentInput.value.trim();
+
+    if (oldMedRemoved) {
+        const patternStr = `(?:,\\s*)?Cấp:\\s*${escapeRegExp(oldMedRemoved.itemName)}\\s*\\(${oldMedRemoved.qty}\\s*${escapeRegExp(oldMedRemoved.unit)}\\)`;
+        const regex = new RegExp(patternStr, 'gi');
+        currentText = currentText.replace(regex, '').trim();
+
+        currentText = currentText.replace(/^,\s*/, '').replace(/,\s*$/, '').trim();
+    }
+
+    if (newMedAdded) {
+        const textToAdd = `Cấp: ${newMedAdded.itemName} (${newMedAdded.qty} ${newMedAdded.unit})`;
+        if (currentText === "") {
+            currentText = textToAdd;
+        } else if (!currentText.includes(textToAdd)) {
+            currentText = currentText + ", " + textToAdd;
+        }
+    }
+
+    treatmentInput.value = currentText;
+}
+
+function escapeRegExp(string) {
+    return (string || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function addMedicineToEditVisit() {
     const id = document.getElementById('edit-med-selected-id').value;
     const name = document.getElementById('edit-med-selected-name').value;
@@ -845,21 +875,34 @@ function addMedicineToEditVisit() {
     const item = ytPharmacyCache.find(i => i.id === id);
     const batch = item.batches[batchIndex];
 
-    editVisitCurrentMedicines.push({
+    const newMed = {
         itemId: id,
         itemName: name,
         batchIndex: parseInt(batchIndex),
         lot: batch.lot,
         qty: qty,
         unit: unit || batch.unit
-    });
+    };
 
+    editVisitCurrentMedicines.push(newMed);
     renderEditVisitMedicines();
+
+    syncMedicinesToTreatmentField(null, newMed);
 
     document.getElementById('edit-med-search').value = '';
     document.getElementById('edit-med-selected-id').value = '';
     document.getElementById('edit-med-batch-select').innerHTML = '<option value="">-- Trống --</option>';
     document.getElementById('edit-med-qty').value = 1;
+}
+
+function removeEditVisitMed(idx) {
+    const removedMed = editVisitCurrentMedicines[idx];
+    editVisitCurrentMedicines.splice(idx, 1);
+    renderEditVisitMedicines();
+
+    if (removedMed) {
+        syncMedicinesToTreatmentField(removedMed, null);
+    }
 }
 
 function renderEditVisitMedicines() {
@@ -884,11 +927,6 @@ function renderEditVisitMedicines() {
         `;
     });
     list.innerHTML = html;
-}
-
-function removeEditVisitMed(idx) {
-    editVisitCurrentMedicines.splice(idx, 1);
-    renderEditVisitMedicines();
 }
 
 async function saveEditVisit() {

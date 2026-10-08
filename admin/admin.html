@@ -879,20 +879,110 @@
     <h3 style="margin: 20px 0 10px; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">1. Trạng thái Giường bệnh</h3>
     <div id="bed-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;"></div>
 
-    <h3 style="margin: 20px 0 10px; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">2. Danh sách tiếp nhận hôm nay</h3>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin: 25px 0 10px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+        <h3 style="margin: 0; color: #1e293b;">2. Danh sách tiếp nhận theo ngày</h3>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <label style="font-size: 0.9rem; font-weight: bold; color: #475569;"><i class="fas fa-calendar-day"></i> Ngày xem:</label>
+            <input type="date" id="visit-filter-date" onchange="loadBedsBySelectedDate()" style="padding: 6px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 600; outline: none;">
+            <button onclick="setVisitDateToToday()" class="btn-sm" style="background: #0284c7; color: white; border: none; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: bold;">Hôm nay</button>
+        </div>
+    </div>
+
     <table class="admin-table">
         <thead>
             <tr>
                 <th>Thời gian</th>
                 <th>Họ tên (Lớp)</th>
                 <th>Triệu chứng</th>
-                <th>Xử lý</th>
-                <th style="text-align: right;">Báo Phụ Huynh</th>
+                <th>Xử lý & Cấp thuốc</th>
+                <th>Báo Phụ Huynh</th>
+                <th style="text-align: right; width: 140px;">Thao tác</th>
             </tr>
         </thead>
         <tbody id="today-visits-list"></tbody>
     </table>
 </section>
+
+<!-- POPUP CHỈNH SỬA LƯỢT TIẾP NHẬN & CẬP NHẬT KHO DƯỢC -->
+<div id="edit-visit-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 10025; align-items: center; justify-content: center; padding: 20px;">
+    <div class="form-card fade-in" style="width: 100%; max-width: 750px; max-height: 90vh; overflow-y: auto; position: relative; padding: 30px; border-radius: 16px; border-top: 6px solid #0284c7; background: #ffffff;">
+        <button onclick="closeEditVisitModal()" style="position:absolute; top:20px; right:20px; border:none; background:#f1f5f9; width:35px; height:35px; border-radius:50%; font-size:1.5rem; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;">&times;</button>
+        
+        <h3 style="color: #0284c7; margin-top: 0; margin-bottom: 20px; font-size: 1.35rem;"><i class="fas fa-edit"></i> Chỉnh Sửa Lượt Tiếp Nhận</h3>
+
+        <input type="hidden" id="edit-visit-id">
+        <input type="hidden" id="edit-visit-student-id">
+        <input type="hidden" id="edit-visit-original-timestamp">
+        <input type="hidden" id="edit-visit-signature">
+
+        <div style="background: #f8fafc; padding: 12px 18px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                Học sinh: <strong id="edit-visit-student-name" style="color: #1e293b; font-size: 1.05rem;">--</strong> 
+                (<span id="edit-visit-student-class" style="color: #0284c7; font-weight: bold;">--</span>)
+            </div>
+            <div style="font-size: 0.85rem; color: #64748b;">
+                <i class="fas fa-clock"></i> Thời gian gốc: <span id="edit-visit-time-display" style="font-weight: bold; color: #0f172a;">--</span>
+            </div>
+        </div>
+
+        <div class="input-group" style="margin-bottom: 15px;">
+            <label style="font-weight: bold; color: #1e293b;">Triệu chứng</label>
+            <input type="text" id="edit-visit-symptom" placeholder="Nhập triệu chứng...">
+        </div>
+
+        <div class="input-group" style="margin-bottom: 15px;">
+            <label style="font-weight: bold; color: #1e293b;">Hướng xử trí / Ghi nhận</label>
+            <input type="text" id="edit-visit-treatment" placeholder="Cách xử lý...">
+        </div>
+
+        <div class="input-group" style="margin-bottom: 20px;">
+            <label style="font-weight: bold; color: #1e293b;">Ghi chú thêm</label>
+            <input type="text" id="edit-visit-note" placeholder="Ghi chú lâm sàng nếu có...">
+        </div>
+
+        <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 12px; padding: 18px; margin-bottom: 25px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <label style="font-weight:bold; color:#15803d; margin:0; display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-pills"></i> Danh sách Thuốc/Vật tư cấp phát
+                </label>
+                <span style="font-size:0.75rem; color:#166534; font-style:italic;">*Hệ thống tự hoàn lại kho cũ và trừ theo số lượng mới</span>
+            </div>
+
+            <div style="display:flex; gap:8px; align-items:flex-end; margin-bottom:12px;">
+                <div style="flex:2; position:relative;">
+                    <label style="font-size:0.8rem; color:#166534;">Tìm thuốc/Vật tư</label>
+                    <input type="text" id="edit-med-search" placeholder="Gõ tên thuốc..." oninput="searchMedicineForEditVisit(this.value)" autocomplete="off" style="padding:8px 12px;">
+                    <input type="hidden" id="edit-med-selected-id">
+                    <input type="hidden" id="edit-med-selected-name">
+                    <input type="hidden" id="edit-med-selected-unit">
+                    <div id="edit-med-suggest-box" class="suggest-box" style="top:100%; border-radius:8px;"></div>
+                </div>
+                <div style="flex:1.5;">
+                    <label style="font-size:0.8rem; color:#166534;">Lô (HSD)</label>
+                    <select id="edit-med-batch-select" style="padding:8px 10px; width:100%;"><option value="">-- Trống --</option></select>
+                </div>
+                <div style="width:75px;">
+                    <label style="font-size:0.8rem; color:#166534;">Số lượng</label>
+                    <input type="number" id="edit-med-qty" min="1" value="1" style="padding:8px 10px;">
+                </div>
+                <button type="button" class="btn btn-primary" style="background:#10b981; border:none; height:40px; padding:0 15px;" onclick="addMedicineToEditVisit()">
+                    <i class="fas fa-plus"></i> Thêm
+                </button>
+            </div>
+
+            <div id="edit-visit-med-list" style="display:flex; flex-direction:column; gap:8px; max-height:160px; overflow-y:auto;">
+                <div style="font-size:0.85rem; color:#94a3b8; text-align:center; padding:10px;">Không cấp thuốc cho lượt này.</div>
+            </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:12px;">
+            <button onclick="closeEditVisitModal()" class="btn" style="background:#e2e8f0; color:#475569;">Hủy bỏ</button>
+            <button onclick="saveEditVisit()" class="btn btn-primary" style="background:#0284c7; font-weight:bold; padding:10px 24px;">
+                <i class="fas fa-save"></i> Cập nhật Lượt Khám & Kho Dược
+            </button>
+        </div>
+    </div>
+</div>
 <section id="tab-yte-dulieu" class="tab-pane" style="display:none;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
         <h2>Hồ sơ Y tế Học sinh</h2>

@@ -940,37 +940,44 @@
             <input type="text" id="edit-visit-note" placeholder="Ghi chú lâm sàng nếu có...">
         </div>
 
-        <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 12px; padding: 18px; margin-bottom: 25px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <label style="font-weight:bold; color:#15803d; margin:0; display:flex; align-items:center; gap:8px;">
+        <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 12px; padding: 18px 20px; margin-bottom: 25px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+                <label style="font-weight:bold; color:#15803d; margin:0; display:flex; align-items:center; gap:8px; font-size: 0.95rem;">
                     <i class="fas fa-pills"></i> Danh sách Thuốc/Vật tư cấp phát
                 </label>
-                <span style="font-size:0.75rem; color:#166534; font-style:italic;">*Hệ thống tự hoàn lại kho cũ và trừ theo số lượng mới</span>
+                <span style="font-size:0.78rem; color:#166534; font-style:italic;">*Tự động đồng bộ vào ô "Hướng xử trí" và trừ/hoàn kho dược</span>
             </div>
 
-            <div style="display:flex; gap:8px; align-items:flex-end; margin-bottom:12px;">
-                <div style="flex:2; position:relative;">
-                    <label style="font-size:0.8rem; color:#166534;">Tìm thuốc/Vật tư</label>
-                    <input type="text" id="edit-med-search" placeholder="Gõ tên thuốc..." oninput="searchMedicineForEditVisit(this.value)" autocomplete="off" style="padding:8px 12px;">
+            <div style="display:grid; grid-template-columns: 2fr 1.6fr 90px auto; gap:10px; align-items:flex-end; margin-bottom:14px;">
+                <div style="position:relative;">
+                    <label style="font-size:0.8rem; font-weight:bold; color:#166534; display:block; margin-bottom:4px;">Tìm thuốc/Vật tư</label>
+                    <input type="text" id="edit-med-search" placeholder="Gõ tên thuốc..." oninput="searchMedicineForEditVisit(this.value)" autocomplete="off" style="width:100%; height:42px; padding:0 12px; border-radius:8px; border:1px solid #cbd5e1; outline:none; box-sizing:border-box;">
                     <input type="hidden" id="edit-med-selected-id">
                     <input type="hidden" id="edit-med-selected-name">
                     <input type="hidden" id="edit-med-selected-unit">
-                    <div id="edit-med-suggest-box" class="suggest-box" style="top:100%; border-radius:8px;"></div>
+                    <div id="edit-med-suggest-box" class="suggest-box" style="top:100%; border-radius:8px; max-height:220px; overflow-y:auto; z-index:20;"></div>
                 </div>
-                <div style="flex:1.5;">
-                    <label style="font-size:0.8rem; color:#166534;">Lô (HSD)</label>
-                    <select id="edit-med-batch-select" style="padding:8px 10px; width:100%;"><option value="">-- Trống --</option></select>
+
+                <div>
+                    <label style="font-size:0.8rem; font-weight:bold; color:#166534; display:block; margin-bottom:4px;">Lô (HSD)</label>
+                    <select id="edit-med-batch-select" style="width:100%; height:42px; padding:0 10px; border-radius:8px; border:1px solid #cbd5e1; outline:none; background:white; box-sizing:border-box;">
+                        <option value="">-- Trống --</option>
+                    </select>
                 </div>
-                <div style="width:75px;">
-                    <label style="font-size:0.8rem; color:#166534;">Số lượng</label>
-                    <input type="number" id="edit-med-qty" min="1" value="1" style="padding:8px 10px;">
+
+                <div>
+                    <label style="font-size:0.8rem; font-weight:bold; color:#166534; display:block; margin-bottom:4px;">Số lượng</label>
+                    <input type="number" id="edit-med-qty" min="1" value="1" style="width:100%; height:42px; padding:0 10px; border-radius:8px; border:1px solid #cbd5e1; outline:none; text-align:center; box-sizing:border-box;">
                 </div>
-                <button type="button" class="btn btn-primary" style="background:#10b981; border:none; height:40px; padding:0 15px;" onclick="addMedicineToEditVisit()">
-                    <i class="fas fa-plus"></i> Thêm
-                </button>
+
+                <div>
+                    <button type="button" class="btn btn-primary" style="background:#10b981; border:none; height:42px; padding:0 18px; border-radius:8px; font-weight:bold; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; cursor:pointer;" onclick="addMedicineToEditVisit()">
+                        <i class="fas fa-plus"></i> Thêm
+                    </button>
+                </div>
             </div>
 
-            <div id="edit-visit-med-list" style="display:flex; flex-direction:column; gap:8px; max-height:160px; overflow-y:auto;">
+            <div id="edit-visit-med-list" style="display:flex; flex-direction:column; gap:8px; max-height:160px; overflow-y:auto; padding-right:4px;">
                 <div style="font-size:0.85rem; color:#94a3b8; text-align:center; padding:10px;">Không cấp thuốc cho lượt này.</div>
             </div>
         </div>

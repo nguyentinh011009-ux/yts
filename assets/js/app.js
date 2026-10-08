@@ -1992,17 +1992,31 @@ async function checkStudentHistory() {
         previewBox.innerHTML = "<span style='color:red;'>Lỗi tải dữ liệu: " + err.message + "</span>"; 
     }
 }
-// ==========================================
-// QUẢN LÝ GIƯỜNG & DANH SÁCH TRONG NGÀY
-// ==========================================
+// QUẢN LÝ GIƯỜNG & DANH SÁCH TIẾP NHẬN THEO NGÀY
+let visitsDayListener = null;
+
+function setVisitDateToToday() {
+    const dateInput = document.getElementById('visit-filter-date');
+    if (dateInput) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+        loadBedsBySelectedDate();
+    }
+}
+
+function loadBedsBySelectedDate() {
+    const dateInput = document.getElementById('visit-filter-date');
+    if (dateInput && dateInput.value) {
+        loadVisitsForDate(dateInput.value);
+    }
+}
+
 async function loadBeds() {
-    // 1. Load Giường
     const container = document.getElementById('bed-container');
-    if(container) {
+    if (container) {
         container.innerHTML = '';
-        for(let i=1; i<=3; i++) {
-            const doc = await db.collection('yt_beds').doc('bed_'+i).get();
-            if(doc.exists) {
+        for (let i = 1; i <= 3; i++) {
+            const doc = await db.collection('yt_beds').doc('bed_' + i).get();
+            if (doc.exists) {
                 const d = doc.data();
                 container.innerHTML += `<div class="form-card" style="border-left: 5px solid #ef4444; background: #fff1f2; margin-bottom:0; padding: 20px;"><h3 style="color:#ef4444; margin:0 0 10px;">🛏️ Giường ${i}</h3><p><strong>${d.name}</strong> (${d.class})</p><button onclick="clearBed(${i})" class="btn btn-danger" style="margin-top:10px; width:100%; padding:8px;">Trả giường</button></div>`;
             } else {
@@ -2011,48 +2025,85 @@ async function loadBeds() {
         }
     }
 
-    // 2. Load danh sách tiếp nhận HÔM NAY
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Bắt đầu từ 0h sáng nay
-
-    db.collection('yt_visits').where('timestamp', '>=', today).orderBy('timestamp', 'desc').onSnapshot(snap => {
-        const list = document.getElementById('today-visits-list');
-        if (!list) return;
-        list.innerHTML = '';
-        
-        if(snap.empty) {
-            list.innerHTML = '<tr><td colspan="5" style="text-align:center;">Hôm nay chưa có lượt tiếp nhận nào.</td></tr>';
-            return;
-        }
-
-        snap.forEach(doc => {
-            const rawV = doc.data();
-            const v = {
-                ...rawV,
-                name: rawV.name ? decryptField(rawV.name) : '',
-                class: rawV.class ? decryptField(rawV.class) : '',
-                symptom: rawV.symptom ? decryptField(rawV.symptom) : '',
-                treatment: rawV.treatment ? decryptField(rawV.treatment) : ''
-            };
-            const time = v.timestamp ? new Date(v.timestamp.seconds * 1000).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) : '';
-            
-            let btnPH = `<button onclick="notifyParent('${doc.id}', '${v.studentId}')" class="btn" style="background:#fef3c7; color:#d97706; padding: 6px 12px; font-size: 0.85rem; font-weight: bold;"><i class="fas fa-phone-volume"></i> Gọi Phụ Huynh</button>`;
-            if (v.notifiedParentAt) {
-                const notiTime = new Date(v.notifiedParentAt.seconds * 1000).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
-                btnPH = `<span style="color:#10b981; font-weight:bold; font-size:0.85rem;"><i class="fas fa-check-circle"></i> Đã báo lúc ${notiTime}</span>`;
-            }
-
-            list.innerHTML += `<tr>
-                <td style="color:#64748b; font-weight:bold;">${time}</td>
-                <td><strong>${v.name}</strong><br><span style="font-size:0.85rem; color:#64748b;">Lớp ${v.class}</span></td>
-                <td>${v.symptom}</td>
-                <td style="color:#059669;">${v.treatment}</td>
-                <td style="text-align: right;">${btnPH}</td>
-            </tr>`;
-        });
-    });
+    const dateInput = document.getElementById('visit-filter-date');
+    if (dateInput && !dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+    const selectedDate = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
+    loadVisitsForDate(selectedDate);
 }
 
+function loadVisitsForDate(dateStr) {
+    const list = document.getElementById('today-visits-list');
+    if (!list) return;
+
+    list.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:25px;"><i class="fas fa-spinner fa-spin"></i> Đang tải danh sách tiếp nhận...</td></tr>';
+
+    const start = new Date(dateStr + "T00:00:00");
+    const end = new Date(dateStr + "T23:59:59.999");
+
+    if (visitsDayListener) visitsDayListener();
+
+    visitsDayListener = db.collection('yt_visits')
+        .where('timestamp', '>=', start)
+        .where('timestamp', '<=', end)
+        .orderBy('timestamp', 'desc')
+        .onSnapshot(snap => {
+            list.innerHTML = '';
+            if (snap.empty) {
+                list.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:25px; color:#64748b;">Không có lượt tiếp nhận nào vào ngày ${new Date(dateStr).toLocaleDateString('vi-VN')}.</td></tr>`;
+                return;
+            }
+
+            const now = Date.now();
+            const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+            snap.forEach(doc => {
+                const rawV = doc.data();
+                const v = {
+                    ...rawV,
+                    name: rawV.name ? decryptField(rawV.name) : '',
+                    class: rawV.class ? decryptField(rawV.class) : '',
+                    symptom: rawV.symptom ? decryptField(rawV.symptom) : '',
+                    treatment: rawV.treatment ? decryptField(rawV.treatment) : '',
+                    note: rawV.note ? decryptField(rawV.note) : ''
+                };
+
+                const visitTimestampMs = v.timestamp ? (v.timestamp.seconds ? v.timestamp.seconds * 1000 : new Date(v.timestamp).getTime()) : 0;
+                const isWithin30Days = (now - visitTimestampMs) <= THIRTY_DAYS_MS;
+
+                const time = v.timestamp ? new Date(visitTimestampMs).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) : '--';
+
+                let btnPH = `<button onclick="notifyParent('${doc.id}', '${v.studentId}')" class="btn" style="background:#fef3c7; color:#d97706; padding: 6px 10px; font-size: 0.8rem; font-weight: bold;"><i class="fas fa-phone-volume"></i> Gọi PH</button>`;
+                if (v.notifiedParentAt) {
+                    const notiTime = new Date(v.notifiedParentAt.seconds * 1000).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+                    btnPH = `<span style="color:#10b981; font-weight:bold; font-size:0.8rem;"><i class="fas fa-check-circle"></i> Đã báo ${notiTime}</span>`;
+                }
+
+                let actionButtons = '';
+                if (isWithin30Days) {
+                    actionButtons = `
+                        <button onclick="openEditVisitModal('${doc.id}')" class="btn-sm" style="background:#e0f2fe; color:#0284c7; border:none; padding:6px 10px; border-radius:6px; cursor:pointer;" title="Chỉnh sửa lượt khám"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteCompleteVisit('${doc.id}', '${v.name}')" class="btn-sm" style="background:#fee2e2; color:#ef4444; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; margin-left:5px;" title="Xóa toàn diện lượt khám"><i class="fas fa-trash-alt"></i></button>
+                    `;
+                } else {
+                    actionButtons = `<span style="font-size:0.75rem; color:#94a3b8; font-style:italic;" title="Đã qua 30 ngày - Không thể sửa/xóa"><i class="fas fa-lock"></i> Khóa (&gt;30n)</span>`;
+                }
+
+                list.innerHTML += `<tr>
+                    <td style="color:#64748b; font-weight:bold;">${time}</td>
+                    <td><strong>${v.name}</strong><br><span style="font-size:0.82rem; color:#0284c7; font-weight:bold;">Lớp ${v.class}</span></td>
+                    <td>${v.symptom}</td>
+                    <td style="color:#059669; font-weight:500;">
+                        ${v.treatment}
+                        ${v.note ? `<div style="font-size:0.8rem; color:#64748b; margin-top:2px;"><em>Ghi chú: ${v.note}</em></div>` : ''}
+                    </td>
+                    <td>${btnPH}</td>
+                    <td style="text-align: right; white-space: nowrap;">${actionButtons}</td>
+                </tr>`;
+            });
+        });
+}
 async function notifyParent(visitId, studentId) {
     let parentPhone = "Chưa cập nhật SĐT";
     let studentName = "Học sinh";

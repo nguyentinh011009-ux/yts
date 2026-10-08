@@ -375,10 +375,26 @@ async function editItem(id) {
             } catch(e) { alert("Lỗi hệ thống: " + e.message); }
         }
         async function deleteItem(id) {
-            if(confirm("CẢNH BÁO: Xóa sản phẩm sẽ xóa luôn toàn bộ số lượng tồn kho của nó. Có tiếp tục?")) {
-                await db.collection('yt_pharmacy_items').doc(id).delete();
-            }
-        }
+		    const item = catalogData.find(i => i.id === id);
+		    const itemName = item ? item.name : 'sản phẩm này';
+		    
+		    // Kiểm tra xem sản phẩm có phát sinh giao dịch nào không
+		    const hasHistory = allTransactions.some(tx => (tx.items || []).some(it => it.itemId === id));
+		    let warnMsg = `⚠️ CẢNH BÁO: Xóa [${itemName}] sẽ xóa toàn bộ số lượng tồn kho của sản phẩm này.`;
+		    if (hasHistory) {
+		        warnMsg += `\n\nLƯU Ý: Sản phẩm này ĐÃ CÓ lịch sử xuất/nhập kho. Việc xóa hoàn toàn có thể làm gián đoạn việc xuất Báo Cáo định kỳ trừ khi các phiếu liên quan cũng được dọn sạch.`;
+		    }
+		    warnMsg += `\n\nBạn có chắc chắn muốn xóa vĩnh viễn không?`;
+		
+		    if (confirm(warnMsg)) {
+		        try {
+		            await db.collection('yt_pharmacy_items').doc(id).delete();
+		            alert(`Đã xóa vĩnh viễn [${itemName}] khỏi hệ thống!`);
+		        } catch (e) {
+		            alert("Lỗi khi xóa: " + e.message);
+		        }
+		    }
+		}
 
         // --- 4. TẠO LỆNH XUẤT KHO ---
         function openExportModal() {
@@ -685,22 +701,111 @@ async function generateReportPDF() {
                 const snapshot = await db.collection('yt_pharmacy_transactions').where('timestamp', '<=', endOfMonth).get();
                 let reportMap = {}; 
 
-                catalogData.forEach(item => {
-                    (item.batches || []).forEach(b => {
-                        let key = item.id + "|||" + b.lot;
-                        reportMap[key] = { name: item.name, unit: b.unit, lot: b.lot, nsx: b.mfgDate || '', hsd: b.expiry || '', tonCu: 0, nhap: 0, xuatDung: 0, xuatHong: 0, tonCuoi: 0 };
-                    });
-                });
-
-                snapshot.forEach(doc => {
-                    const tx = doc.data();
-                    const txDate = tx.timestamp.toDate();
-                    const isBefore = txDate < startOfMonth;
-
-                    tx.items.forEach(item => {
-                        let key = item.itemId + "|||" + item.lot;
-                        if (!reportMap[key]) reportMap[key] = { name: item.itemName, unit: item.unit, lot: item.lot, nsx: item.mfgDate || '', hsd: item.expiry || '', tonCu: 0, nhap: 0, xuatDung: 0, xuatHong: 0, tonCuoi: 0 };
-                        let row = reportMap[key];
+				// 1. TẬP HỢP CÁC SẢN PHẨM HIỆN CÓ TRONG DANH MỤC
+				const validItemMap = new Map();
+				catalogData.forEach(item => {
+				    validItemMap.set(item.id, item);
+				});
+				
+				// 2. DUYỆT CÁC GIAO DỊCH ĐỂ KIỂM TOÁN VÀ ĐỐI SOÁT
+				const importedItemIds = new Set();
+				let orphanImportItems = new Set(); // Chứa các SP có phiếu nhập nhưng đã bị xóa khỏi Danh mục
+				
+				snapshot.forEach(doc => {
+				    const tx = doc.data();
+				    if (tx.type === 'import') {
+				        (tx.items || []).forEach(it => {
+				            importedItemIds.add(it.itemId);
+				            if (!validItemMap.has(it.itemId)) {
+				                orphanImportItems.add(it.itemName || `ID: ${it.itemId}`);
+				            }
+				        });
+				    }
+				});
+				
+				// 3. KIỂM TRA ĐIỀU KIỆN 1: Có phiếu nhập nhưng không tồn tại trong danh mục
+				if (orphanImportItems.size > 0) {
+				    const orphanList = Array.from(orphanImportItems).slice(0, 5).join(', ');
+				    alert(`❌ LỖI ĐỐI SOÁT DỮ LIỆU: Phát hiện phiếu nhập chứa sản phẩm không tồn tại trong Danh mục hiện tại:\n👉 ${orphanList}${orphanImportItems.size > 5 ? '...' : ''}\n\nHệ thống từ chối xuất báo cáo để tránh sai lệch tồn kho!`);
+				    printArea.style.display = 'none';
+				    return;
+				}
+				
+				// 4. KIỂM TRA ĐIỀU KIỆN 2: Có trong danh mục nhưng chưa từng có phiếu nhập
+				let catalogWithoutImport = [];
+				catalogData.forEach(item => {
+				    if (!importedItemIds.has(item.id)) {
+				        catalogWithoutImport.push(item.name);
+				    }
+				});
+				
+				if (catalogWithoutImport.length > 0) {
+				    const missingList = catalogWithoutImport.slice(0, 5).join(', ');
+				    alert(`❌ LỖI ĐỐI SOÁT DỮ LIỆU: Các sản phẩm sau có trong Danh mục nhưng chưa từng có Phiếu Nhập Kho hợp lệ:\n👉 ${missingList}${catalogWithoutImport.length > 5 ? '...' : ''}\n\nVui lòng tạo Phiếu Nhập hoặc xóa sản phẩm rác trước khi xuất báo cáo!`);
+				    printArea.style.display = 'none';
+				    return;
+				}
+				
+				// 5. KHỞI TẠO BẢNG TÍNH BÁO CÁO (CHỈ DUYỆT SẢN PHẨM CÒN TỒN TẠI TRÊN HỆ THỐNG)
+				let reportMap = {};
+				catalogData.forEach(item => {
+				    (item.batches || []).forEach(b => {
+				        let key = item.id + "|||" + (b.lot || "").trim();
+				        reportMap[key] = { 
+				            name: item.name, 
+				            unit: b.unit || item.unit, 
+				            lot: b.lot || "-", 
+				            nsx: b.mfgDate || '', 
+				            hsd: b.expiry || '', 
+				            tonCu: 0, nhap: 0, xuatDung: 0, xuatHong: 0, tonCuoi: 0 
+				        };
+				    });
+				});
+				
+				// 6. TÍNH TOÁN DỮ LIỆU TỪ LỊCH SỬ GIAO DỊCH
+				snapshot.forEach(doc => {
+				    const tx = doc.data();
+				    const txDate = tx.timestamp.toDate();
+				    const isBefore = txDate < startOfMonth;
+				
+				    (tx.items || []).forEach(item => {
+				        // CHỈ XỬ LÝ NẾU SẢN PHẨM VẪN CÒN TRONG DANH MỤC
+				        if (!validItemMap.has(item.itemId)) return;
+				
+				        let key = item.itemId + "|||" + (item.lot || "").trim();
+				        if (!reportMap[key]) {
+				            reportMap[key] = { 
+				                name: item.itemName, 
+				                unit: item.unit, 
+				                lot: item.lot || "-", 
+				                nsx: item.mfgDate || '', 
+				                hsd: item.expiry || '', 
+				                tonCu: 0, nhap: 0, xuatDung: 0, xuatHong: 0, tonCuoi: 0 
+				            };
+				        }
+				        let row = reportMap[key];
+				
+				        if (tx.type === 'import') {
+				            if (isBefore) row.tonCu += item.qty; else row.nhap += item.qty;
+				        } else if (tx.type === 'export') {
+				            let isHong = tx.isDamaged || /hỏng|hết hạn|hủy|vứt/i.test(tx.reason || '');
+				            if (isBefore) row.tonCu -= item.qty;
+				            else {
+				                if (isHong) row.xuatHong += item.qty; else row.xuatDung += item.qty;
+				            }
+				        } else if (tx.type === 'adjust') {
+				            let isHong = tx.isDamaged || /hỏng|hết hạn|hủy|vứt/i.test(tx.reason || '');
+				            let diff = item.diff || 0;
+				            if (isBefore) row.tonCu += diff;
+				            else {
+				                if (diff > 0) row.nhap += diff;
+				                else {
+				                    if (isHong) row.xuatHong += Math.abs(diff); else row.xuatDung += Math.abs(diff);
+				                }
+				            }
+				        }
+				    });
+				});
 
                         if (tx.type === 'import') {
                             if (isBefore) row.tonCu += item.qty; else row.nhap += item.qty;
@@ -1051,27 +1156,58 @@ async function deleteTransaction(transactionId) {
                     const productRefs = tx.items.map(item => db.collection('yt_pharmacy_items').doc(item.itemId));
                     const productDocs = await Promise.all(productRefs.map(ref => transaction.get(ref)));
 
-                    // GIAI ĐOẠN 2: XỬ LÝ DỮ LIỆU VÀ GHI VÀO DATABASE
-                    for (let i = 0; i < tx.items.length; i++) {
-                        const itemToReverse = tx.items[i];
-                        const productRef = productRefs[i];
-                        const productDoc = productDocs[i];
+					for (let i = 0; i < tx.items.length; i++) {
+					    const itemToReverse = tx.items[i];
+					    const productRef = productRefs[i];
+					    const productDoc = productDocs[i];
+					
+					    if (!productDoc.exists) {
+					        continue;
+					    }
+					
+					    let productData = productDoc.data();
+					    let newBatches = JSON.parse(JSON.stringify(productData.batches || []));
+					
+					    let batchIndex = newBatches.findIndex(b => 
+					        (b.lot || "").toString().trim() === (itemToReverse.lot || "").toString().trim()
+					    );
+					
+					    if (tx.type === 'export' || tx.type === 'adjust') { 
+					        if (tx.type === 'export') {
+					            if (batchIndex > -1) {
+					                newBatches[batchIndex].qty += itemToReverse.qty;
+					            } else {
+					                newBatches.push({ 
+					                    lot: itemToReverse.lot, 
+					                    mfgDate: itemToReverse.mfgDate || "",
+					                    expiry: itemToReverse.expiry || "", 
+					                    qty: itemToReverse.qty, 
+					                    unit: itemToReverse.unit 
+					                });
+					            }
+					        } else { 
+					            if (batchIndex > -1) {
+					                newBatches[batchIndex].qty = itemToReverse.oldQty;
+					            }
+					        }
+					    } else {
+					        if (batchIndex > -1) {
+					            newBatches[batchIndex].qty -= itemToReverse.qty;
+					            if (newBatches[batchIndex].qty <= 0) {
+					                newBatches.splice(batchIndex, 1);
+					            }
+					        }
+					    }
+					    
+					    transaction.update(productRef, { batches: newBatches });
+					}
 
-                        if (!productDoc.exists) {
-                            throw new Error(`Sản phẩm "${itemToReverse.itemName}" không còn tồn tại trong danh mục.`);
-                        }
-
-                        let productData = productDoc.data();
-                        let newBatches = JSON.parse(JSON.stringify(productData.batches || []));
-
-                        // Tìm lô hàng tương ứng để cập nhật
-                        // Tìm lô hàng tương ứng để cập nhật (CHỈ SO SÁNH ĐÚNG SỐ LÔ)
                         let batchIndex = newBatches.findIndex(b => 
                             (b.lot || "").toString().trim() === (itemToReverse.lot || "").toString().trim()
                         );
 
-                        if (tx.type === 'export' || tx.type === 'adjust') { // HỦY PHIẾU XUẤT/ĐIỀU CHỈNH => HOÀN TRẢ LẠI KHO
-                            if(tx.type === 'export') { // Phiếu xuất thì cộng trả
+                        if (tx.type === 'export' || tx.type === 'adjust') { 
+                            if(tx.type === 'export') { 
                                 if (batchIndex > -1) {
                                     newBatches[batchIndex].qty += itemToReverse.qty;
                                 } else {
@@ -1083,7 +1219,7 @@ async function deleteTransaction(transactionId) {
                                         unit: itemToReverse.unit 
                                     });
                                 }
-                            } else { // Phiếu điều chỉnh thì trả về số lượng cũ
+                            } else { 
                                 if(batchIndex > -1) {
                                     newBatches[batchIndex].qty = itemToReverse.oldQty;
                                 } else {
@@ -1091,7 +1227,7 @@ async function deleteTransaction(transactionId) {
                                 }
                             }
 
-                        } else { // HỦY PHIẾU NHẬP => TRỪ ĐI LƯỢNG ĐÃ NHẬP
+                        } else {
                             if (batchIndex === -1) {
                                 throw new Error(`Không tìm thấy lô "${itemToReverse.lot}" của sản phẩm "${itemToReverse.itemName}" để hủy.`);
                             }
@@ -1100,23 +1236,19 @@ async function deleteTransaction(transactionId) {
                             }
                             newBatches[batchIndex].qty -= itemToReverse.qty;
                             
-                            // Nếu trừ đi mà lô hết hàng thì xóa luôn lô đó
                             if (newBatches[batchIndex].qty <= 0) {
                                 newBatches.splice(batchIndex, 1);
                             }
                         }
                         
-                        // Lệnh GHI: Cập nhật lại danh sách lô hàng cho sản phẩm
                         transaction.update(productRef, { batches: newBatches });
                     }
                     
-                    // Lệnh GHI cuối cùng: Xóa phiếu giao dịch
                     const txRef = db.collection('yt_pharmacy_transactions').doc(transactionId);
                     transaction.delete(txRef);
                 });
 
                 alert(`✅ Đã hủy phiếu [${tx.id}] và cập nhật lại kho thành công!`);
-                // Giao diện sẽ tự động cập nhật nhờ onSnapshot
             } catch (error) {
                 console.error("Lỗi hủy phiếu:", error);
                 alert("❌ Đã xảy ra lỗi:\n" + error.message);

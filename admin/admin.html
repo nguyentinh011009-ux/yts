@@ -935,9 +935,19 @@
             <input type="text" id="edit-visit-treatment" placeholder="Cách xử lý...">
         </div>
 
-        <div class="input-group" style="margin-bottom: 20px;">
+        <div class="input-group" style="margin-bottom: 15px;">
             <label style="font-weight: bold; color: #1e293b;">Ghi chú thêm</label>
             <input type="text" id="edit-visit-note" placeholder="Ghi chú lâm sàng nếu có...">
+        </div>
+
+        <div class="input-group" style="margin-bottom: 20px;">
+            <label style="font-weight: bold; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-user-md" style="color: #0284c7;"></i> Cán bộ tiếp nhận & Xuất kho
+            </label>
+            <select id="edit-visit-staff-select" style="width: 100%; height: 42px; padding: 0 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; background: #ffffff; font-weight: 500;">
+                <option value="__CURRENT_USER__">Mặc định (Tài khoản đang đăng nhập)</option>
+                <option value="Nguyễn Thị Xuân Đồng">Nguyễn Thị Xuân Đồng</option>
+            </select>
         </div>
 
         <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 12px; padding: 18px 20px; margin-bottom: 25px;">

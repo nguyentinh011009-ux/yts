@@ -667,8 +667,8 @@ function addImportRow() {
                 </div>
             `;
         }
-        // --- 8. IN BÁO CÁO KHO THEO KỲ ---
-async function generateReportPDF() {
+// --- 8. IN BÁO CÁO KHO THEO KỲ ---
+        async function generateReportPDF() {
             const monthVal = document.getElementById('rpt-month').value;
             const yearVal = document.getElementById('rpt-year').value;
             if(!yearVal) return alert("Vui lòng nhập năm!");
@@ -699,118 +699,94 @@ async function generateReportPDF() {
                 }
 
                 const snapshot = await db.collection('yt_pharmacy_transactions').where('timestamp', '<=', endOfMonth).get();
-                let reportMap = {}; 
 
-				// 1. TẬP HỢP CÁC SẢN PHẨM HIỆN CÓ TRONG DANH MỤC
-				const validItemMap = new Map();
-				catalogData.forEach(item => {
-				    validItemMap.set(item.id, item);
-				});
-				
-				// 2. DUYỆT CÁC GIAO DỊCH ĐỂ KIỂM TOÁN VÀ ĐỐI SOÁT
-				const importedItemIds = new Set();
-				let orphanImportItems = new Set(); // Chứa các SP có phiếu nhập nhưng đã bị xóa khỏi Danh mục
-				
-				snapshot.forEach(doc => {
-				    const tx = doc.data();
-				    if (tx.type === 'import') {
-				        (tx.items || []).forEach(it => {
-				            importedItemIds.add(it.itemId);
-				            if (!validItemMap.has(it.itemId)) {
-				                orphanImportItems.add(it.itemName || `ID: ${it.itemId}`);
-				            }
-				        });
-				    }
-				});
-				
-				// 3. KIỂM TRA ĐIỀU KIỆN 1: Có phiếu nhập nhưng không tồn tại trong danh mục
-				if (orphanImportItems.size > 0) {
-				    const orphanList = Array.from(orphanImportItems).slice(0, 5).join(', ');
-				    alert(`❌ LỖI ĐỐI SOÁT DỮ LIỆU: Phát hiện phiếu nhập chứa sản phẩm không tồn tại trong Danh mục hiện tại:\n👉 ${orphanList}${orphanImportItems.size > 5 ? '...' : ''}\n\nHệ thống từ chối xuất báo cáo để tránh sai lệch tồn kho!`);
-				    printArea.style.display = 'none';
-				    return;
-				}
-				
-				// 4. KIỂM TRA ĐIỀU KIỆN 2: Có trong danh mục nhưng chưa từng có phiếu nhập
-				let catalogWithoutImport = [];
-				catalogData.forEach(item => {
-				    if (!importedItemIds.has(item.id)) {
-				        catalogWithoutImport.push(item.name);
-				    }
-				});
-				
-				if (catalogWithoutImport.length > 0) {
-				    const missingList = catalogWithoutImport.slice(0, 5).join(', ');
-				    alert(`❌ LỖI ĐỐI SOÁT DỮ LIỆU: Các sản phẩm sau có trong Danh mục nhưng chưa từng có Phiếu Nhập Kho hợp lệ:\n👉 ${missingList}${catalogWithoutImport.length > 5 ? '...' : ''}\n\nVui lòng tạo Phiếu Nhập hoặc xóa sản phẩm rác trước khi xuất báo cáo!`);
-				    printArea.style.display = 'none';
-				    return;
-				}
-				
-				// 5. KHỞI TẠO BẢNG TÍNH BÁO CÁO (CHỈ DUYỆT SẢN PHẨM CÒN TỒN TẠI TRÊN HỆ THỐNG)
-				let reportMap = {};
-				catalogData.forEach(item => {
-				    (item.batches || []).forEach(b => {
-				        let key = item.id + "|||" + (b.lot || "").trim();
-				        reportMap[key] = { 
-				            name: item.name, 
-				            unit: b.unit || item.unit, 
-				            lot: b.lot || "-", 
-				            nsx: b.mfgDate || '', 
-				            hsd: b.expiry || '', 
-				            tonCu: 0, nhap: 0, xuatDung: 0, xuatHong: 0, tonCuoi: 0 
-				        };
-				    });
-				});
-				
-				// 6. TÍNH TOÁN DỮ LIỆU TỪ LỊCH SỬ GIAO DỊCH
-				snapshot.forEach(doc => {
-				    const tx = doc.data();
-				    const txDate = tx.timestamp.toDate();
-				    const isBefore = txDate < startOfMonth;
-				
-				    (tx.items || []).forEach(item => {
-				        // CHỈ XỬ LÝ NẾU SẢN PHẨM VẪN CÒN TRONG DANH MỤC
-				        if (!validItemMap.has(item.itemId)) return;
-				
-				        let key = item.itemId + "|||" + (item.lot || "").trim();
-				        if (!reportMap[key]) {
-				            reportMap[key] = { 
-				                name: item.itemName, 
-				                unit: item.unit, 
-				                lot: item.lot || "-", 
-				                nsx: item.mfgDate || '', 
-				                hsd: item.expiry || '', 
-				                tonCu: 0, nhap: 0, xuatDung: 0, xuatHong: 0, tonCuoi: 0 
-				            };
-				        }
-				        let row = reportMap[key];
-				
-				        if (tx.type === 'import') {
-				            if (isBefore) row.tonCu += item.qty; else row.nhap += item.qty;
-				        } else if (tx.type === 'export') {
-				            let isHong = tx.isDamaged || /hỏng|hết hạn|hủy|vứt/i.test(tx.reason || '');
-				            if (isBefore) row.tonCu -= item.qty;
-				            else {
-				                if (isHong) row.xuatHong += item.qty; else row.xuatDung += item.qty;
-				            }
-				        } else if (tx.type === 'adjust') {
-				            let isHong = tx.isDamaged || /hỏng|hết hạn|hủy|vứt/i.test(tx.reason || '');
-				            let diff = item.diff || 0;
-				            if (isBefore) row.tonCu += diff;
-				            else {
-				                if (diff > 0) row.nhap += diff;
-				                else {
-				                    if (isHong) row.xuatHong += Math.abs(diff); else row.xuatDung += Math.abs(diff);
-				                }
-				            }
-				        }
-				    });
-				});
-
+                // 1. TẬP HỢP CÁC SẢN PHẨM HIỆN CÓ TRONG DANH MỤC
+                const validItemMap = new Map();
+                catalogData.forEach(item => {
+                    validItemMap.set(item.id, item);
+                });
+                
+                // 2. DUYỆT CÁC GIAO DỊCH ĐỂ KIỂM TOÁN VÀ ĐỐI SOÁT
+                const importedItemIds = new Set();
+                let orphanImportItems = new Set(); // Chứa các SP có phiếu nhập nhưng đã bị xóa khỏi Danh mục
+                
+                snapshot.forEach(doc => {
+                    const tx = doc.data();
+                    if (tx.type === 'import') {
+                        (tx.items || []).forEach(it => {
+                            importedItemIds.add(it.itemId);
+                            if (!validItemMap.has(it.itemId)) {
+                                orphanImportItems.add(it.itemName || `ID: ${it.itemId}`);
+                            }
+                        });
+                    }
+                });
+                
+                // 3. KIỂM TRA ĐIỀU KIỆN 1: Có phiếu nhập nhưng không tồn tại trong danh mục
+                if (orphanImportItems.size > 0) {
+                    const orphanList = Array.from(orphanImportItems).slice(0, 5).join(', ');
+                    alert(`❌ LỖI ĐỐI SOÁT DỮ LIỆU: Phát hiện phiếu nhập chứa sản phẩm không tồn tại trong Danh mục hiện tại:\n👉 ${orphanList}${orphanImportItems.size > 5 ? '...' : ''}\n\nHệ thống từ chối xuất báo cáo để tránh sai lệch tồn kho!`);
+                    printArea.style.display = 'none';
+                    return;
+                }
+                
+                // 4. KIỂM TRA ĐIỀU KIỆN 2: Có trong danh mục nhưng chưa từng có phiếu nhập
+                let catalogWithoutImport = [];
+                catalogData.forEach(item => {
+                    if (!importedItemIds.has(item.id)) {
+                        catalogWithoutImport.push(item.name);
+                    }
+                });
+                
+                if (catalogWithoutImport.length > 0) {
+                    const missingList = catalogWithoutImport.slice(0, 5).join(', ');
+                    alert(`❌ LỖI ĐỐI SOÁT DỮ LIỆU: Các sản phẩm sau có trong Danh mục nhưng chưa từng có Phiếu Nhập Kho hợp lệ:\n👉 ${missingList}${catalogWithoutImport.length > 5 ? '...' : ''}\n\nVui lòng tạo Phiếu Nhập hoặc xóa sản phẩm rác trước khi xuất báo cáo!`);
+                    printArea.style.display = 'none';
+                    return;
+                }
+                
+                // 5. KHỞI TẠO BẢNG TÍNH BÁO CÁO (CHỈ DUYỆT SẢN PHẨM CÒN TỒN TẠI TRÊN HỆ THỐNG)
+                let reportMap = {};
+                catalogData.forEach(item => {
+                    (item.batches || []).forEach(b => {
+                        let key = item.id + "|||" + (b.lot || "").trim();
+                        reportMap[key] = { 
+                            name: item.name, 
+                            unit: b.unit || item.unit, 
+                            lot: b.lot || "-", 
+                            nsx: b.mfgDate || '', 
+                            hsd: b.expiry || '', 
+                            tonCu: 0, nhap: 0, xuatDung: 0, xuatHong: 0, tonCuoi: 0 
+                        };
+                    });
+                });
+                
+                // 6. TÍNH TOÁN DỮ LIỆU TỪ LỊCH SỬ GIAO DỊCH
+                snapshot.forEach(doc => {
+                    const tx = doc.data();
+                    const txDate = tx.timestamp.toDate();
+                    const isBefore = txDate < startOfMonth;
+                
+                    (tx.items || []).forEach(item => {
+                        // CHỈ XỬ LÝ NẾU SẢN PHẨM VẪN CÒN TRONG DANH MỤC
+                        if (!validItemMap.has(item.itemId)) return;
+                
+                        let key = item.itemId + "|||" + (item.lot || "").trim();
+                        if (!reportMap[key]) {
+                            reportMap[key] = { 
+                                name: item.itemName, 
+                                unit: item.unit, 
+                                lot: item.lot || "-", 
+                                nsx: item.mfgDate || '', 
+                                hsd: item.expiry || '', 
+                                tonCu: 0, nhap: 0, xuatDung: 0, xuatHong: 0, tonCuoi: 0 
+                            };
+                        }
+                        let row = reportMap[key];
+                
                         if (tx.type === 'import') {
                             if (isBefore) row.tonCu += item.qty; else row.nhap += item.qty;
                         } else if (tx.type === 'export') {
-                            // ĐÃ NÂNG CẤP: Dùng cờ isDamaged từ checkbox
                             let isHong = tx.isDamaged || /hỏng|hết hạn|hủy|vứt/i.test(tx.reason || '');
                             if (isBefore) row.tonCu -= item.qty;
                             else {
@@ -818,7 +794,7 @@ async function generateReportPDF() {
                             }
                         } else if (tx.type === 'adjust') {
                             let isHong = tx.isDamaged || /hỏng|hết hạn|hủy|vứt/i.test(tx.reason || '');
-                            let diff = item.diff;
+                            let diff = item.diff || 0;
                             if (isBefore) row.tonCu += diff;
                             else {
                                 if (diff > 0) row.nhap += diff;
@@ -836,7 +812,7 @@ async function generateReportPDF() {
                     if (row.tonCu === 0 && row.nhap === 0 && row.xuatDung === 0 && row.xuatHong === 0 && row.tonCuoi === 0) return;
 
                     let nsxFormat = formatDisplayDate(row.nsx);
-		    let hsdFormat = formatDisplayDate(row.hsd);
+                    let hsdFormat = formatDisplayDate(row.hsd);
                     let dateCell = nsxFormat ? `${nsxFormat}<br>${hsdFormat}` : hsdFormat;
                     if (!dateCell) dateCell = "-";
 
@@ -859,7 +835,6 @@ async function generateReportPDF() {
 
                 if(tableHtml === '') tableHtml = '<tr><td colspan="11" style="text-align:center; padding: 10px;">Không có dữ liệu trong kỳ.</td></tr>';
 
-                // TẠO LỆNH CSS ÉP NÉN SIÊU GỌN CHO BẢN IN NÀY (Bỏ qua CSS cũ ở thẻ style)
                 const style = document.createElement('style');
                 style.id = 'ultra-compact-print';
                 style.innerHTML = `
@@ -870,12 +845,9 @@ async function generateReportPDF() {
                     .report-title-area { text-align: center; margin-bottom: 15px; }
                     .report-title-area h1 { font-size: 14pt; margin: 0 0 5px 0; font-weight: bold; }
                     .report-title-area p { font-size: 11pt; margin: 0; }
-                    
-                    /* Ép bảng cực nhỏ và khít */
                     .report-table { width: 100%; border-collapse: collapse; font-size: 11pt; }
                     .report-table th, .report-table td { border: 1px solid black; padding: 3px 2px; text-align: center; vertical-align: middle; }
                     .report-table th { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; font-weight: bold; }
-                    
                     .report-footer { margin-top: 15px; font-size: 11pt; }
                     .report-signatures { display: grid; grid-template-columns: 1fr 1fr; text-align: center; margin-top: 5px; page-break-inside: avoid; }
                     .report-bot { font-style: italic; font-size: 9pt; margin-top: 20px; }
@@ -920,9 +892,7 @@ async function generateReportPDF() {
 
                         <div class="report-footer">
                             <div class="report-signatures">
-                                <div>
-                                    <p style="font-weight:bold;">HIỆU TRƯỞNG</p>
-                                </div>
+                                <div><p style="font-weight:bold;">HIỆU TRƯỞNG</p></div>
                                 <div>
                                     <p style="font-weight:bold; margin-bottom: 50px;">PHỤ TRÁCH Y TẾ</p>
                                     <p>${currentUser ? (currentUser.displayName || currentUser.email) : ''}</p>
@@ -1138,122 +1108,81 @@ async function generateReportPDF() {
                 console.error(error);
             }
         }
-// --- TÍNH NĂNG MỚI: HỦY PHIẾU VÀ TỰ ĐỘNG CẬP NHẬT LẠI KHO ---
+// --- HỦY PHIẾU VÀ TỰ ĐỘNG CẬP NHẬT LẠI KHO ---
 async function deleteTransaction(transactionId) {
-            const tx = allTransactions.find(t => t.id === transactionId);
-            if (!tx) return alert("Lỗi: Không tìm thấy thông tin phiếu!");
+    const tx = allTransactions.find(t => t.id === transactionId);
+    if (!tx) return alert("Lỗi: Không tìm thấy thông tin phiếu!");
 
-            const action = tx.type === 'export' ? 'HOÀN TRẢ' : 'TRỪ LẠI';
-            if (!confirm(`⚠️ CẢNH BÁO AN TOÀN DỮ LIỆU:\n\nBạn có chắc chắn muốn HỦY phiếu [${tx.id}] không?\nHành động này sẽ tự động ${action} số lượng sản phẩm tương ứng vào kho.\n\nHành động này KHÔNG THỂ hoàn tác!`)) {
-                return;
-            }
+    const action = tx.type === 'export' ? 'HOÀN TRẢ' : 'TRỪ LẠI';
+    if (!confirm(`⚠️ CẢNH BÁO AN TOÀN DỮ LIỆU:\n\nBạn có chắc chắn muốn HỦY phiếu [${tx.id}] không?\nHành động này sẽ tự động ${action} số lượng sản phẩm tương ứng vào kho.\n\nHành động này KHÔNG THỂ hoàn tác!`)) {
+        return;
+    }
 
-            try {
-                // SỬA LỖI: Cấu trúc lại giao dịch theo đúng quy tắc ĐỌC trước, GHI sau.
-                await db.runTransaction(async (transaction) => {
-                    
-                    // GIAI ĐOẠN 1: ĐỌC TẤT CẢ DỮ LIỆU CẦN THIẾT TRƯỚC
-                    const productRefs = tx.items.map(item => db.collection('yt_pharmacy_items').doc(item.itemId));
-                    const productDocs = await Promise.all(productRefs.map(ref => transaction.get(ref)));
+    try {
+        await db.runTransaction(async (transaction) => {
+            // GIAI ĐOẠN 1: ĐỌC TẤT CẢ DỮ LIỆU CẦN THIẾT TRƯỚC
+            const productRefs = tx.items.map(item => db.collection('yt_pharmacy_items').doc(item.itemId));
+            const productDocs = await Promise.all(productRefs.map(ref => transaction.get(ref)));
 
-					for (let i = 0; i < tx.items.length; i++) {
-					    const itemToReverse = tx.items[i];
-					    const productRef = productRefs[i];
-					    const productDoc = productDocs[i];
-					
-					    if (!productDoc.exists) {
-					        continue;
-					    }
-					
-					    let productData = productDoc.data();
-					    let newBatches = JSON.parse(JSON.stringify(productData.batches || []));
-					
-					    let batchIndex = newBatches.findIndex(b => 
-					        (b.lot || "").toString().trim() === (itemToReverse.lot || "").toString().trim()
-					    );
-					
-					    if (tx.type === 'export' || tx.type === 'adjust') { 
-					        if (tx.type === 'export') {
-					            if (batchIndex > -1) {
-					                newBatches[batchIndex].qty += itemToReverse.qty;
-					            } else {
-					                newBatches.push({ 
-					                    lot: itemToReverse.lot, 
-					                    mfgDate: itemToReverse.mfgDate || "",
-					                    expiry: itemToReverse.expiry || "", 
-					                    qty: itemToReverse.qty, 
-					                    unit: itemToReverse.unit 
-					                });
-					            }
-					        } else { 
-					            if (batchIndex > -1) {
-					                newBatches[batchIndex].qty = itemToReverse.oldQty;
-					            }
-					        }
-					    } else {
-					        if (batchIndex > -1) {
-					            newBatches[batchIndex].qty -= itemToReverse.qty;
-					            if (newBatches[batchIndex].qty <= 0) {
-					                newBatches.splice(batchIndex, 1);
-					            }
-					        }
-					    }
-					    
-					    transaction.update(productRef, { batches: newBatches });
-					}
+            // GIAI ĐOẠN 2: XỬ LÝ CẬP NHẬT LÔ HÀNG
+            for (let i = 0; i < tx.items.length; i++) {
+                const itemToReverse = tx.items[i];
+                const productRef = productRefs[i];
+                const productDoc = productDocs[i];
 
-                        let batchIndex = newBatches.findIndex(b => 
-                            (b.lot || "").toString().trim() === (itemToReverse.lot || "").toString().trim()
-                        );
+                // Nếu SP đã bị xóa khỏi danh mục: Bỏ qua cập nhật tồn, vẫn cho xóa phiếu
+                if (!productDoc.exists) {
+                    continue;
+                }
 
-                        if (tx.type === 'export' || tx.type === 'adjust') { 
-                            if(tx.type === 'export') { 
-                                if (batchIndex > -1) {
-                                    newBatches[batchIndex].qty += itemToReverse.qty;
-                                } else {
-                                    newBatches.push({ 
-                                        lot: itemToReverse.lot, 
-                                        mfgDate: itemToReverse.mfgDate || "",
-                                        expiry: itemToReverse.expiry || "", 
-                                        qty: itemToReverse.qty, 
-                                        unit: itemToReverse.unit 
-                                    });
-                                }
-                            } else { 
-                                if(batchIndex > -1) {
-                                    newBatches[batchIndex].qty = itemToReverse.oldQty;
-                                } else {
-                                     throw new Error(`Không tìm thấy lô "${itemToReverse.lot}" để hoàn tác điều chỉnh.`);
-                                }
-                            }
+                let productData = productDoc.data();
+                let newBatches = JSON.parse(JSON.stringify(productData.batches || []));
 
+                let batchIndex = newBatches.findIndex(b => 
+                    (b.lot || "").toString().trim() === (itemToReverse.lot || "").toString().trim()
+                );
+
+                if (tx.type === 'export' || tx.type === 'adjust') { 
+                    if (tx.type === 'export') {
+                        if (batchIndex > -1) {
+                            newBatches[batchIndex].qty += itemToReverse.qty;
                         } else {
-                            if (batchIndex === -1) {
-                                throw new Error(`Không tìm thấy lô "${itemToReverse.lot}" của sản phẩm "${itemToReverse.itemName}" để hủy.`);
-                            }
-                            if (newBatches[batchIndex].qty < itemToReverse.qty) {
-                                throw new Error(`Không thể hủy phiếu nhập! Số lượng tồn kho của lô "${itemToReverse.lot}" (${newBatches[batchIndex].qty}) không đủ để trừ đi lượng đã nhập (${itemToReverse.qty}). Có thể nó đã được xuất đi.`);
-                            }
-                            newBatches[batchIndex].qty -= itemToReverse.qty;
-                            
-                            if (newBatches[batchIndex].qty <= 0) {
-                                newBatches.splice(batchIndex, 1);
-                            }
+                            newBatches.push({ 
+                                lot: itemToReverse.lot, 
+                                mfgDate: itemToReverse.mfgDate || "",
+                                expiry: itemToReverse.expiry || "", 
+                                qty: itemToReverse.qty, 
+                                unit: itemToReverse.unit 
+                            });
                         }
-                        
-                        transaction.update(productRef, { batches: newBatches });
+                    } else { 
+                        if (batchIndex > -1) {
+                            newBatches[batchIndex].qty = itemToReverse.oldQty;
+                        }
                     }
-                    
-                    const txRef = db.collection('yt_pharmacy_transactions').doc(transactionId);
-                    transaction.delete(txRef);
-                });
-
-                alert(`✅ Đã hủy phiếu [${tx.id}] và cập nhật lại kho thành công!`);
-            } catch (error) {
-                console.error("Lỗi hủy phiếu:", error);
-                alert("❌ Đã xảy ra lỗi:\n" + error.message);
+                } else { // Loại 'import'
+                    if (batchIndex > -1) {
+                        newBatches[batchIndex].qty -= itemToReverse.qty;
+                        if (newBatches[batchIndex].qty <= 0) {
+                            newBatches.splice(batchIndex, 1);
+                        }
+                    }
+                }
+                
+                transaction.update(productRef, { batches: newBatches });
             }
-        }
+            
+            // Xóa phiếu
+            const txRef = db.collection('yt_pharmacy_transactions').doc(transactionId);
+            transaction.delete(txRef);
+        });
+
+        alert(`✅ Đã hủy phiếu [${tx.id}] và cập nhật lại kho thành công!`);
+    } catch (error) {
+        console.error("Lỗi hủy phiếu:", error);
+        alert("❌ Đã xảy ra lỗi:\n" + error.message);
+    }
+}
 // --- TẠO PHIẾU ĐIỀU CHỈNH KHO (KIỂM KHO) ---
         function openAdjustModal() {
             document.getElementById('adj-reason').value = '';

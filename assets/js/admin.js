@@ -766,6 +766,14 @@ async function openEditVisitModal(visitId) {
         document.getElementById('edit-visit-treatment').value = data.treatment ? decryptField(data.treatment) : '';
         document.getElementById('edit-visit-note').value = data.note ? decryptField(data.note) : '';
 
+        const staffSelect = document.getElementById('edit-visit-staff-select');
+        if (staffSelect) {
+            staffSelect.value = '__CURRENT_USER__';
+            if (data.doctor === 'Nguyễn Thị Xuân Đồng') {
+                staffSelect.value = 'Nguyễn Thị Xuân Đồng';
+            }
+        }
+
         editVisitOriginalMedicines = [];
         const txSnap = await db.collection('yt_pharmacy_transactions')
             .where('type', '==', 'export')
@@ -990,6 +998,11 @@ async function saveEditVisit() {
             }
         }
 
+        const staffSelectVal = document.getElementById('edit-visit-staff-select') ? document.getElementById('edit-visit-staff-select').value : '__CURRENT_USER__';
+        const activeUser = firebase.auth().currentUser;
+        const currentUserName = activeUser ? (activeUser.displayName || activeUser.email || 'Cán bộ y tế') : 'Cán bộ y tế';
+        const finalStaffName = (staffSelectVal === '__CURRENT_USER__') ? currentUserName : staffSelectVal;
+
         const oldTxSnap = await db.collection('yt_pharmacy_transactions')
             .where('type', '==', 'export')
             .where('notes', '==', `Kèm theo Lượt khám Y tế số ${visitId}`)
@@ -998,7 +1011,6 @@ async function saveEditVisit() {
 
         if (editVisitCurrentMedicines.length > 0) {
             const newTxId = "XK-" + Date.now().toString().slice(-6);
-            const activeUser = firebase.auth().currentUser;
             const newTxRef = db.collection('yt_pharmacy_transactions').doc(newTxId);
             batch.set(newTxRef, {
                 id: newTxId,
@@ -1007,13 +1019,14 @@ async function saveEditVisit() {
                 reason: "Cấp phát y tế tại phòng (Chỉnh sửa)",
                 notes: `Kèm theo Lượt khám Y tế số ${visitId}`,
                 items: editVisitCurrentMedicines,
-                user: activeUser ? (activeUser.displayName || activeUser.email) : 'Quản trị viên',
+                user: finalStaffName, // Tên cán bộ tiếp nhận hiển thị trên phiếu xuất kho
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
         }
 
         const visitRef = db.collection('yt_visits').doc(visitId);
         batch.update(visitRef, {
+            doctor: finalStaffName,
             symptom: encryptField(symptom),
             treatment: encryptField(treatment),
             note: encryptField(note),

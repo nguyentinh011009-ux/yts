@@ -700,116 +700,121 @@ function addImportRow() {
 
                 const snapshot = await db.collection('yt_pharmacy_transactions').where('timestamp', '<=', endOfMonth).get();
 
-                // 1. TẬP HỢP CÁC SẢN PHẨM HIỆN CÓ TRONG DANH MỤC
-                const validItemMap = new Map();
-                catalogData.forEach(item => {
-                    validItemMap.set(item.id, item);
-                });
-                
-                // 2. DUYỆT CÁC GIAO DỊCH ĐỂ KIỂM TOÁN VÀ ĐỐI SOÁT
-                const importedItemIds = new Set();
-                let orphanImportItems = new Set(); // Chứa các SP có phiếu nhập nhưng đã bị xóa khỏi Danh mục
-                
-                snapshot.forEach(doc => {
-                    const tx = doc.data();
-                    if (tx.type === 'import') {
-                        (tx.items || []).forEach(it => {
-                            importedItemIds.add(it.itemId);
-                            if (!validItemMap.has(it.itemId)) {
-                                orphanImportItems.add(it.itemName || `ID: ${it.itemId}`);
-                            }
-                        });
-                    }
-                });
-                
-                // 3. KIỂM TRA ĐIỀU KIỆN 1: Có phiếu nhập nhưng không tồn tại trong danh mục
-                if (orphanImportItems.size > 0) {
-                    const orphanList = Array.from(orphanImportItems).slice(0, 5).join(', ');
-                    alert(`❌ LỖI ĐỐI SOÁT DỮ LIỆU: Phát hiện phiếu nhập chứa sản phẩm không tồn tại trong Danh mục hiện tại:\n👉 ${orphanList}${orphanImportItems.size > 5 ? '...' : ''}\n\nHệ thống từ chối xuất báo cáo để tránh sai lệch tồn kho!`);
-                    printArea.style.display = 'none';
-                    return;
-                }
-                
-                // 4. KIỂM TRA ĐIỀU KIỆN 2: Có trong danh mục nhưng chưa từng có phiếu nhập
-                let catalogWithoutImport = [];
-                catalogData.forEach(item => {
-                    if (!importedItemIds.has(item.id)) {
-                        catalogWithoutImport.push(item.name);
-                    }
-                });
-                
-                if (catalogWithoutImport.length > 0) {
-                    const missingList = catalogWithoutImport.slice(0, 5).join(', ');
-                    alert(`❌ LỖI ĐỐI SOÁT DỮ LIỆU: Các sản phẩm sau có trong Danh mục nhưng chưa từng có Phiếu Nhập Kho hợp lệ:\n👉 ${missingList}${catalogWithoutImport.length > 5 ? '...' : ''}\n\nVui lòng tạo Phiếu Nhập hoặc xóa sản phẩm rác trước khi xuất báo cáo!`);
-                    printArea.style.display = 'none';
-                    return;
-                }
-                
-                // 5. KHỞI TẠO BẢNG TÍNH BÁO CÁO (CHỈ DUYỆT SẢN PHẨM CÒN TỒN TẠI TRÊN HỆ THỐNG)
-                let reportMap = {};
-                catalogData.forEach(item => {
-                    (item.batches || []).forEach(b => {
-                        let key = item.id + "|||" + (b.lot || "").trim();
-                        reportMap[key] = { 
-                            name: item.name, 
-                            unit: b.unit || item.unit, 
-                            lot: b.lot || "-", 
-                            nsx: b.mfgDate || '', 
-                            hsd: b.expiry || '', 
-                            tonCu: 0, nhap: 0, xuatDung: 0, xuatHong: 0, tonCuoi: 0 
-                        };
-                    });
-                });
-                
-                // 6. TÍNH TOÁN DỮ LIỆU TỪ LỊCH SỬ GIAO DỊCH
-                snapshot.forEach(doc => {
-                    const tx = doc.data();
-                    const txDate = tx.timestamp.toDate();
-                    const isBefore = txDate < startOfMonth;
-                
-                    (tx.items || []).forEach(item => {
-                        // CHỈ XỬ LÝ NẾU SẢN PHẨM VẪN CÒN TRONG DANH MỤC
-                        if (!validItemMap.has(item.itemId)) return;
-                
-                        let key = item.itemId + "|||" + (item.lot || "").trim();
-                        if (!reportMap[key]) {
-                            reportMap[key] = { 
-                                name: item.itemName, 
-                                unit: item.unit, 
-                                lot: item.lot || "-", 
-                                nsx: item.mfgDate || '', 
-                                hsd: item.expiry || '', 
-                                tonCu: 0, nhap: 0, xuatDung: 0, xuatHong: 0, tonCuoi: 0 
-                            };
-                        }
-                        let row = reportMap[key];
-                
-                        if (tx.type === 'import') {
-                            if (isBefore) row.tonCu += item.qty; else row.nhap += item.qty;
-                        } else if (tx.type === 'export') {
-                            let isHong = tx.isDamaged || /hỏng|hết hạn|hủy|vứt/i.test(tx.reason || '');
-                            if (isBefore) row.tonCu -= item.qty;
-                            else {
-                                if (isHong) row.xuatHong += item.qty; else row.xuatDung += item.qty;
-                            }
-                        } else if (tx.type === 'adjust') {
-                            let isHong = tx.isDamaged || /hỏng|hết hạn|hủy|vứt/i.test(tx.reason || '');
-                            let diff = item.diff || 0;
-                            if (isBefore) row.tonCu += diff;
-                            else {
-                                if (diff > 0) row.nhap += diff;
-                                else {
-                                    if (isHong) row.xuatHong += Math.abs(diff); else row.xuatDung += Math.abs(diff);
-                                }
-                            }
-                        }
-                    });
-                });
+                // 1. CHUẨN HÓA DANH MỤC HIỆN TẠI (ĐỐI SOÁT THEO CẢ ID LẪN TÊN CHUẨN)
+				const normalizeKey = str => (str || '').toString().toLowerCase().trim().replace(/\s+/g, ' ');
+
+				const validIds = new Set(catalogData.map(i => i.id));
+				const validNames = new Set(catalogData.map(i => normalizeKey(i.name)));
+
+				// 2. DUYỆT CÁC GIAO DỊCH ĐỂ ĐỐI SOÁT CHẶT CHẼ
+				const importedNames = new Set();
+				let orphanImportItems = new Set();
+
+				snapshot.forEach(doc => {
+				    const tx = doc.data();
+				    if (tx.type === 'import') {
+				        (tx.items || []).forEach(it => {
+				            const normName = normalizeKey(it.itemName);
+				            importedNames.add(normName);
+
+				            // Nếu SP không khớp cả ID lẫn Tên trong Danh mục hiện có
+				            const existsInCatalog = validIds.has(it.itemId) || validNames.has(normName);
+				            if (!existsInCatalog) {
+				                orphanImportItems.add(it.itemName || `ID: ${it.itemId}`);
+				            }
+				        });
+				    }
+				});
+
+				// 3. KIỂM TRA ĐIỀU KIỆN 1: Phiếu nhập mồ côi (SP đã bị xóa khỏi danh mục)
+				if (orphanImportItems.size > 0) {
+				    const orphanList = Array.from(orphanImportItems).slice(0, 5).join(', ');
+				    alert(`❌ LỖI ĐỐI SOÁT: Phát hiện phiếu nhập chứa sản phẩm đã bị xóa khỏi Danh mục:\n👉 ${orphanList}${orphanImportItems.size > 5 ? '...' : ''}\n\nVui lòng hủy các phiếu nhập liên quan trước khi xuất báo cáo!`);
+				    printArea.style.display = 'none';
+				    return;
+				}
+
+				// 4. KIỂM TRA ĐIỀU KIỆN 2: Có trong danh mục nhưng chưa từng có phiếu nhập
+				let catalogWithoutImport = [];
+				catalogData.forEach(item => {
+				    const normName = normalizeKey(item.name);
+				    if (!importedNames.has(normName)) {
+				        catalogWithoutImport.push(item.name);
+				    }
+				});
+
+				if (catalogWithoutImport.length > 0) {
+				    const missingList = catalogWithoutImport.slice(0, 5).join(', ');
+				    alert(`❌ LỖI ĐỐI SOÁT: Các sản phẩm sau có trong Danh mục nhưng chưa từng có Phiếu Nhập Kho:\n👉 ${missingList}${catalogWithoutImport.length > 5 ? '...' : ''}\n\nVui lòng tạo Phiếu Nhập hoặc xóa sản phẩm rác trước khi xuất báo cáo!`);
+				    printArea.style.display = 'none';
+				    return;
+				}
+
+				// 5. KHỞI TẠO BẢNG TÍNH: CHỈ KHỞI TẠO CÁC SẢN PHẨM HIỆN CÓ TRONG DANH MỤC
+				let reportMap = {};
+				catalogData.forEach(item => {
+				    const normName = normalizeKey(item.name);
+				    (item.batches || []).forEach(b => {
+				        const normLot = (b.lot || '').toString().trim();
+				        const key = normName + '|||' + normLot;
+				        reportMap[key] = { 
+				            name: item.name, 
+				            unit: b.unit || item.unit, 
+				            lot: b.lot || "-", 
+				            nsx: b.mfgDate || '', 
+				            hsd: b.expiry || '', 
+				            tonCu: 0, nhap: 0, xuatDung: 0, xuatHong: 0, tonCuoi: 0 
+				        };
+				    });
+				});
+
+				// 6. TÍNH TOÁN TỪ LỊCH SỬ GIAO DỊCH: TUYỆT ĐỐI KHÔNG TỰ TẠO DÒNG MỚI
+				snapshot.forEach(doc => {
+				    const tx = doc.data();
+				    const txDate = tx.timestamp.toDate();
+				    const isBefore = txDate < startOfMonth;
+
+				    (tx.items || []).forEach(item => {
+				        const normName = normalizeKey(item.itemName);
+				        const normLot = (item.lot || '').toString().trim();
+				        let key = normName + '|||' + normLot;
+
+				        let row = reportMap[key];
+				        if (!row) {
+				            const fallbackKey = Object.keys(reportMap).find(k => k.startsWith(normName + '|||'));
+				            if (fallbackKey) row = reportMap[fallbackKey];
+				            else return; 
+				        }
+
+				        if (tx.type === 'import') {
+				            if (isBefore) row.tonCu += item.qty; else row.nhap += item.qty;
+				        } else if (tx.type === 'export') {
+				            let isHong = tx.isDamaged || /hỏng|hết hạn|hủy|vứt/i.test(tx.reason || '');
+				            if (isBefore) row.tonCu -= item.qty;
+				            else {
+				                if (isHong) row.xuatHong += item.qty; else row.xuatDung += item.qty;
+				            }
+				        } else if (tx.type === 'adjust') {
+				            let isHong = tx.isDamaged || /hỏng|hết hạn|hủy|vứt/i.test(tx.reason || '');
+				            let diff = item.diff || 0;
+				            if (isBefore) row.tonCu += diff;
+				            else {
+				                if (diff > 0) row.nhap += diff;
+				                else {
+				                    if (isHong) row.xuatHong += Math.abs(diff); else row.xuatDung += Math.abs(diff);
+				                }
+				            }
+				        }
+				    });
+				});
 
                 let tableHtml = ''; let stt = 1;
                 Object.values(reportMap).forEach(row => {
-                    row.tonCuoi = row.tonCu + row.nhap - row.xuatDung - row.xuatHong;
-                    if (row.tonCu === 0 && row.nhap === 0 && row.xuatDung === 0 && row.xuatHong === 0 && row.tonCuoi === 0) return;
+				    if (row.tonCu < 0) row.tonCu = 0;
+				    row.tonCuoi = row.tonCu + row.nhap - row.xuatDung - row.xuatHong;
+				    if (row.tonCuoi < 0) row.tonCuoi = 0;
+				
+				    if (row.tonCu === 0 && row.nhap === 0 && row.xuatDung === 0 && row.xuatHong === 0 && row.tonCuoi === 0) return;
 
                     let nsxFormat = formatDisplayDate(row.nsx);
                     let hsdFormat = formatDisplayDate(row.hsd);

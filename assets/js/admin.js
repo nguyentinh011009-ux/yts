@@ -1012,15 +1012,28 @@ async function saveEditVisit() {
         if (editVisitCurrentMedicines.length > 0) {
             const newTxId = "XK-" + Date.now().toString().slice(-6);
             const newTxRef = db.collection('yt_pharmacy_transactions').doc(newTxId);
+
+            let originalTimestamp = null;
+            try {
+                const rawTs = JSON.parse(document.getElementById('edit-visit-original-timestamp').value);
+                if (rawTs && rawTs.seconds) {
+                    originalTimestamp = new firebase.firestore.Timestamp(rawTs.seconds, rawTs.nanoseconds || 0);
+                } else if (rawTs) {
+                    originalTimestamp = new Date(rawTs);
+                }
+            } catch (e) {
+                originalTimestamp = new Date();
+            }
+
             batch.set(newTxRef, {
                 id: newTxId,
                 type: 'export',
                 receiver: `${studentName} (${studentClass})`,
-                reason: "Cấp phát y tế tại phòng (Chỉnh sửa)",
+                reason: "Cấp phát y tế tại phòng",
                 notes: `Kèm theo Lượt khám Y tế số ${visitId}`,
                 items: editVisitCurrentMedicines,
-                user: finalStaffName, // Tên cán bộ tiếp nhận hiển thị trên phiếu xuất kho
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                user: finalStaffName,
+                timestamp: originalTimestamp || firebase.firestore.FieldValue.serverTimestamp()
             });
         }
 

@@ -3,186 +3,972 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tra cứu Hồ sơ Y tế - THPT Võ Thị Sáu</title>
+    <title>Tra cứu mã Y tế</title>
     <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png">
     <link rel="icon" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" sizes="32x32" type="image/png">
     <link rel="stylesheet" href="../assets/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
     <style>
+        :root {
+            --primary-blue: #0284c7;
+            --primary-blue-dark: #0369a1;
+            --accent-orange: #f97316;
+            --accent-orange-hover: #ea580c;
+            --gradient-dynamic: linear-gradient(135deg, #0284c7 0%, #38bdf8 50%, #f97316 100%);
+            --bg-gradient: radial-gradient(circle at top left, #f0fdf4 0%, #f8fafc 40%, #fff7ed 100%);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
         body {
-            background: var(--bg-light);
+            background: var(--bg-gradient);
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
+            padding: 24px 16px;
+            margin: 0;
+            position: relative;
+            overflow-x: hidden;
         }
-        .lookup-container {
+
+        /* Hiệu ứng đồ họa chuyển động nền */
+        .ambient-shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.45;
+            animation: pulse-ambient 10s ease-in-out infinite alternate;
+        }
+        .shape-1 {
+            width: 320px;
+            height: 320px;
+            background: #38bdf8;
+            top: -60px;
+            left: -60px;
+        }
+        .shape-2 {
+            width: 350px;
+            height: 350px;
+            background: #fdba74;
+            bottom: -80px;
+            right: -80px;
+            animation-duration: 8s;
+        }
+        @keyframes pulse-ambient {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.15) translate(30px, 20px); }
+        }
+
+        .portal-wrapper {
             width: 100%;
-            max-width: 500px;
+            max-width: 540px;
+            position: relative;
+            z-index: 1;
         }
-        .back-link {
-            display: inline-block;
+
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
-            color: var(--text-gray);
-            text-decoration: none;
-            font-weight: 500;
-            transition: 0.3s;
         }
-        .back-link:hover { color: var(--primary); transform: translateX(-5px); }
+
+        .back-home {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: #475569;
+            font-size: 0.92rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
+            padding: 8px 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            transition: all 0.25s ease;
+        }
+        .back-home:hover {
+            color: var(--primary-blue);
+            transform: translateX(-4px);
+            border-color: var(--primary-blue);
+        }
+
+        .lookup-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 28px;
+            padding: 36px 30px;
+            box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.1), 0 8px 20px rgba(249, 115, 22, 0.08);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .lookup-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: var(--gradient-dynamic);
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .logo-wrap {
+            width: 82px;
+            height: 82px;
+            margin: 0 auto 16px;
+            padding: 4px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 8px 20px rgba(2, 132, 199, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 20px;
+        }
+
+        .header-section h2 {
+            margin: 0;
+            font-size: 1.55rem;
+            color: #0f172a;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .header-section p {
+            margin: 8px 0 0;
+            color: #64748b;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* Thanh quy trình bước (Steps Progress) */
+        .stepper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        .step-dot {
+            width: 32px;
+            height: 8px;
+            border-radius: 8px;
+            background: #e2e8f0;
+            transition: all 0.3s ease;
+        }
+        .step-dot.active {
+            background: linear-gradient(90deg, #0284c7, #f97316);
+            width: 46px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        .input-with-icon {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .input-with-icon i {
+            position: absolute;
+            left: 15px;
+            color: #94a3b8;
+            font-size: 1rem;
+            pointer-events: none;
+            transition: color 0.2s;
+        }
+        .input-with-icon input, .input-with-icon select {
+            width: 100%;
+            padding: 13px 15px 13px 44px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 14px;
+            font-size: 0.95rem;
+            outline: none;
+            background: #f8fafc;
+            color: #0f172a;
+            transition: all 0.25s ease;
+        }
+        .input-with-icon input:focus, .input-with-icon select:focus {
+            border-color: var(--primary-blue);
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12);
+        }
+        .input-with-icon input:focus + i {
+            color: var(--primary-blue);
+        }
+
+        .input-hint {
+            font-size: 0.78rem;
+            color: #64748b;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .recaptcha-wrapper {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .btn-action {
+            width: 100%;
+            height: 52px;
+            background: var(--gradient-dynamic);
+            background-size: 180% auto;
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 10px 22px rgba(249, 115, 22, 0.25);
+            transition: all 0.3s ease;
+        }
+        .btn-action:hover:not(:disabled) {
+            background-position: right center;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 26px rgba(2, 132, 199, 0.3);
+        }
+        .btn-action:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Danh sách ứng viên tìm kiếm */
+        .candidate-card {
+            border: 1.5px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .candidate-card:hover {
+            border-color: var(--primary-blue);
+            background: #f0f9ff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(2, 132, 199, 0.1);
+        }
+
+        /* Khung kết quả hiển thị thông tin */
+        .result-box {
+            background: linear-gradient(145deg, #0f172a, #1e293b);
+            border-radius: 20px;
+            padding: 24px;
+            color: white;
+            box-shadow: 0 15px 30px rgba(15, 23, 42, 0.25);
+            position: relative;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .result-box::after {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 140px;
+            height: 140px;
+            background: linear-gradient(135deg, rgba(249,115,22,0.3), rgba(2,132,199,0.3));
+            border-radius: 50%;
+            filter: blur(25px);
+        }
+
+        .security-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.76rem;
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.12);
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.12);
+        }
+        .data-row:last-child {
+            border-bottom: none;
+        }
+        .data-label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+        .data-value {
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: white;
+            text-align: right;
+            user-select: all;
+        }
+        .data-value.highlight-code {
+            color: #fb923c;
+            font-size: 1.25rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* Màn hình khóa an ninh */
+        .lockout-box {
+            text-align: center;
+            padding: 20px 10px;
+        }
+        .lockout-icon {
+            width: 72px;
+            height: 72px;
+            background: #fee2e2;
+            color: #ef4444;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 16px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid #cbd5e1;
+            color: #475569;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 12px;
+            transition: all 0.2s;
+        }
+        .btn-outline:hover {
+            border-color: #94a3b8;
+            background: #f1f5f9;
+        }
+
+        .shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        /* CSS Chân trang hỗ trợ trực tuyến */
+        .portal-footer {
+            margin-top: 24px;
+            text-align: center;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 18px;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            transition: all 0.3s ease;
+        }
+        .portal-footer:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(2, 132, 199, 0.08);
+            border-color: rgba(2, 132, 199, 0.3);
+        }
+        .footer-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #ea580c;
+            background: #fff7ed;
+            border: 1px solid #ffedd5;
+            padding: 3px 10px;
+            border-radius: 999px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .footer-text {
+            margin: 0;
+            font-size: 0.86rem;
+            color: #64748b;
+            line-height: 1.6;
+        }
+        .footer-email-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--primary-blue);
+            font-weight: 700;
+            text-decoration: none;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: rgba(2, 132, 199, 0.06);
+            transition: all 0.2s ease;
+            margin-left: 4px;
+        }
+        .footer-email-link:hover {
+            color: #ffffff;
+            background: var(--primary-blue);
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
 
-    <div class="lookup-container">
-        <a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i> Quay lại trang chủ</a>
-        
-        <div class="form-card fade-in" style="padding: 40px 30px;">
-            <div style="text-align: center; margin-bottom: 30px;">
-                <img src="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" alt="Logo Y Tế" style="width: 80px; height: 80px; object-fit: cover; border-radius: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 15px;">
-                <h2 style="color: var(--text-dark);">Cổng Tra Cứu Y Tế</h2>
-                <p style="color: var(--text-gray); font-size: 0.9rem; margin-top: 5px;">Hệ thống Y tế số THPT Võ Thị Sáu- Bà Rịa- Vũng Tàu</p>
+    <div class="ambient-shape shape-1"></div>
+    <div class="ambient-shape shape-2"></div>
+
+    <div class="portal-wrapper">
+        <div class="top-nav">
+            <a href="../index.html" class="back-home"><i class="fas fa-arrow-left"></i> Trang chủ</a>
+            <span style="font-size: 0.8rem; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 4px 12px; border-radius: 20px;">
+            </span>
+        </div>
+
+        <div class="lookup-card" id="main-card">
+            <div class="header-section">
+                <div class="logo-wrap">
+                    <img src="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" alt="Logo Y Tế">
+                </div>
+                <h2>Tra cứu Mã Y Tế & Mã Học Sinh</h2>
+                <p>Xác thực dữ liệu chính xác để lấy thông tin đăng nhập Cổng Học Sinh</p>
             </div>
 
-            <!-- PHẦN NHẬP LIỆU -->
-            <div id="lookup-form">
-                <div class="input-group">
+            <div class="stepper" id="step-indicators">
+                <div class="step-dot active" id="dot-1"></div>
+                <div class="step-dot" id="dot-2"></div>
+                <div class="step-dot" id="dot-3"></div>
+            </div>
+
+            <!-- ================= GIAI ĐOẠN 1: TÌM THEO TÊN + LỚP + RECAPTCHA ================= -->
+            <div id="step-1-container">
+                <div class="form-group">
                     <label>Họ và tên học sinh</label>
-                    <input type="text" id="lookup-name" placeholder="Nhập chính xác họ tên có dấu...">
+                    <div class="input-with-icon">
+                        <input type="text" id="input-fullname" placeholder="Nhập đầy đủ họ và tên có dấu..." autocomplete="off">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <span class="input-hint">Không phân biệt chữ hoa, chữ thường (VD: Nguyễn Văn An)</span>
                 </div>
-                <div class="input-group">
-                    <label>Mật khẩu (Mã Y Tế)</label>
-                    <input type="password" id="lookup-id" placeholder="VD: YT-12345">
+
+                <div class="form-group">
+                    <label>Lớp học</label>
+                    <div class="input-with-icon">
+                        <input type="text" id="input-class" placeholder="VD: 10A1, 11A3, 12A4..." autocomplete="off" maxlength="6">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <span class="input-hint">Định dạng Số Khối + Chữ Cái (A) + Số Thứ Tự</span>
                 </div>
-                <button onclick="performLookup()" class="btn btn-primary" style="width: 100%; justify-content: center; height: 50px; font-size: 1.1rem; margin-top: 10px;">
-                    <i class="fas fa-search"></i> Xem hồ sơ ngay
+
+                <!-- Google reCAPTCHA v2 (Thay thế sitekey production của bạn) -->
+                <div class="recaptcha-wrapper">
+                    <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
+                </div>
+
+                <button class="btn-action" id="btn-step-1" onclick="handleStep1Search()">
+                    <i class="fas fa-search"></i> Tìm kiếm
                 </button>
             </div>
 
-            <!-- PHẦN HIỂN THỊ KẾT QUẢ -->
-            <div id="lookup-result" style="display: none;">
-                <!-- JS sẽ render kết quả vào đây -->
+            <!-- ================= GIAI ĐOẠN 2: CHỌN HỌC SINH (NẾU CÓ TRÙNG LẬP) ================= -->
+            <div id="step-2-container" style="display: none;">
+                <p style="font-size: 0.9rem; color: #475569; margin-bottom: 15px;">
+                    Tìm thấy <strong id="candidate-count" style="color: var(--primary-blue);">0</strong> học sinh phù hợp. Vui lòng bấm chọn hồ sơ của bạn:
+                </p>
+                <div id="candidates-list" style="max-height: 250px; overflow-y: auto; margin-bottom: 15px;"></div>
+                <button class="btn-outline" onclick="backToStep(1)"><i class="fas fa-arrow-left"></i> Nhập lại họ tên & lớp</button>
             </div>
+
+            <!-- ================= GIAI ĐOẠN 3: XÁC THỰC MẬT (NGÀY SINH + PHƯỜNG/XÃ) ================= -->
+            <div id="step-3-container" style="display: none;">
+                <div style="background: #f8fafc; border-left: 4px solid var(--accent-orange); padding: 12px 14px; border-radius: 8px; margin-bottom: 20px;">
+                    <div style="font-size: 0.82rem; color: #64748b;">Đang xác minh hồ sơ cho:</div>
+                    <div style="font-weight: 800; color: #0f172a; font-size: 1.05rem;" id="verifying-name-display">--</div>
+                    <div style="font-size: 0.85rem; color: #0284c7; font-weight: 600;" id="verifying-class-display">--</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Ngày tháng năm sinh</label>
+                    <div class="input-with-icon">
+                        <input type="date" id="verify-dob">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <span class="input-hint">Chọn đúng ngày/tháng/năm sinh</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Phường / Xã cư trú</label>
+                    <div class="input-with-icon">
+                        <input type="text" id="verify-ward" placeholder="VD: Xã Đất Đỏ, Phường Phước Hưng..." autocomplete="off">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <span class="input-hint">Nhập đúng Phường/Xã</span>
+                </div>
+
+                <button class="btn-action" id="btn-verify-secret" onclick="handleStep3Verify()">
+                    <i class="fas fa-key"></i> Xác thực & Nhận thông tin
+                </button>
+                <button class="btn-outline" onclick="backToStep(1)">Hủy & Quay lại</button>
+            </div>
+
+            <div id="step-4-container" style="display: none;">
+                <div class="result-box">
+                    <div class="security-badge">
+                        <i class="fas fa-shield-check"></i> Xác minh bảo mật thành công
+                    </div>
+                    
+                    <div class="data-row">
+                        <span class="data-label">Họ và tên:</span>
+                        <span class="data-value" id="res-name">--</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Lớp:</span>
+                        <span class="data-value" id="res-class">--</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Mã Học Sinh:</span>
+                        <span class="data-value highlight-code" id="res-student-code">--</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Mã Y Tế (Mật khẩu):</span>
+                        <span class="data-value highlight-code" style="color:#38bdf8;" id="res-medical-id">--</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; text-align: center;">
+                    <a href="https://yteso-thptvothisaubrvt.netlify.app/student" target="_blank" class="btn-action" style="text-decoration:none;">
+                        <i class="fas fa-sign-in-alt"></i> Đăng nhập Cổng Học Sinh
+                    </a>
+                    <button class="btn-outline" onclick="resetAllPortal()"><i class="fas fa-redo"></i> Tra cứu mới</button>
+                </div>
+            </div>
+
+            <!-- ================= GIAI ĐOẠN 5: BỊ KHÓA DO VƯỢT QUÁ SỐ LẦN ================= -->
+            <div id="step-locked-container" style="display: none;">
+                <div class="lockout-box">
+                    <div class="lockout-icon">
+                        <i class="fas fa-user-lock"></i>
+                    </div>
+                    <h3 style="color:#ef4444; margin: 0 0 10px;">Cảnh Báo An Ninh: Tạm Khóa Tra Cứu</h3>
+                    <p style="color:#475569; font-size: 0.9rem; line-height: 1.6; margin-bottom: 20px;">
+                        Bạn hoặc ai đó trên mạng/thiết bị này đã thực hiện quá <strong>3 lần tra cứu</strong> trong vòng <strong>72 giờ</strong> qua. Nhằm bảo vệ bí mật thông tin y tế học đường, chức năng tự tra cứu hiện đã bị vô hiệu hóa.
+                    </p>
+                    <div style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 14px; padding: 15px; font-size: 0.88rem; color: #334155; line-height: 1.6;">
+                        📌 <strong>Hướng dẫn mở khóa / Hỗ trợ:</strong><br>
+                        Vui lòng đến trực tiếp <strong>Phòng Y Tế Nhà Trường</strong> hoặc gửi email kèm minh chứng học sinh về:<br>
+                        <a href="mailto:yte.thptvothisaubrvt@gmail.com" style="color: #0284c7; font-weight: 700; text-decoration: none;">
+                            yte.thptvothisaubrvt@gmail.com
+                        </a>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
-
+    <footer class="portal-footer">
+            <div class="footer-badge">
+                <i class="fas fa-headset"></i> Hỗ trợ trực tuyến 24/7
+            </div>
+            <p class="footer-text">
+                Mọi thắc mắc về tài khoản & thông tin y tế, vui lòng liên hệ:
+                <a href="mailto:yte.thptvothisaubrvt@gmail.com" class="footer-email-link">
+                    <i class="fas fa-envelope"></i> yte.thptvothisaubrvt@gmail.com
+                </a>
+            </p>
+        </footer>
+    <!-- Firebase SDK 8.10.0 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="../assets/config.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="../assets/js/crypto.js"></script>
-    <script>
-        async function performLookup() {
-            const nameInput = document.getElementById('lookup-name').value.trim();
-            const idInput = document.getElementById('lookup-id').value.trim().toUpperCase(); 
-            const resultDiv = document.getElementById('lookup-result');
-            const formDiv = document.getElementById('lookup-form');
 
-            if (!nameInput || !idInput) {
-                return alert("Vui lòng nhập đầy đủ Họ tên và Mã Y tế!");
+    <script>
+        // ==========================================
+        // KHỞI TẠO LOGIC BẢO MẬT & ĐIỀU PHỐI (PORTAL LOGIC)
+        // ==========================================
+        const RATE_LIMIT_MAX = 3;
+        const RATE_LIMIT_HOURS = 72;
+        let clientIpAddress = 'UNKNOWN_IP';
+        let matchedStudentsList = [];
+        let targetedStudentObj = null;
+
+        // Chuẩn hóa loại bỏ dấu tiếng Việt (Đồng bộ thuật toán từ app.js)
+        function removeVietnameseTones(str) {
+            if (!str) return "";
+            str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+            str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+            str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+            str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+            str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+            str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+            str = str.replace(/đ/g, "d");
+            str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+            str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+            str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+            str = str.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+            str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+            str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+            str = str.replace(/Đ/g, "D");
+            return str.toLowerCase().trim();
+        }
+
+        // Lấy IP của thiết bị khi tải trang
+        async function fetchClientIP() {
+            try {
+                const res = await fetch('https://api64.ipify.org?format=json');
+                const data = await res.json();
+                clientIpAddress = data.ip;
+            } catch(e) {
+                clientIpAddress = 'CLIENT_' + (navigator.userAgent.replace(/[^a-zA-Z0-9]/g, '').slice(0, 24));
+            }
+        }
+
+        // Kiểm tra số lần truy cập trong 72 giờ qua
+        async function checkRateLimit() {
+            await fetchClientIP();
+            const now = Date.now();
+            const expireThreshold = now - (RATE_LIMIT_HOURS * 60 * 60 * 1000);
+
+            // Kiểm tra mức 1: LocalStorage thiết bị
+            let localRecords = JSON.parse(localStorage.getItem('vts_lookup_history') || '[]');
+            localRecords = localRecords.filter(t => t > expireThreshold);
+            localStorage.setItem('vts_lookup_history', JSON.stringify(localRecords));
+
+            if (localRecords.length >= RATE_LIMIT_MAX) {
+                showLockoutScreen();
+                return false;
             }
 
-            formDiv.style.display = 'none';
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = '<div style="text-align:center; padding: 40px;"><i class="fas fa-spinner fa-spin fa-3x" style="color:var(--primary);"></i><p style="margin-top:15px; color: var(--text-gray);">Đang tìm kiếm trong cơ sở dữ liệu...</p></div>';
+            // Kiểm tra mức 2: Cloud Firestore (Chống người dùng xóa cache trình duyệt)
+            try {
+                const ipDoc = await db.collection('yt_security_rate_limits').doc(clientIpAddress.replace(/[\.\:]/g, '_')).get();
+                if (ipDoc.exists) {
+                    const attempts = (ipDoc.data().timestamps || []).filter(t => t > expireThreshold);
+                    if (attempts.length >= RATE_LIMIT_MAX) {
+                        showLockoutScreen();
+                        return false;
+                    }
+                }
+            } catch (err) {
+                console.warn("[RateLimitCheck] Cloud pass bypass:", err);
+            }
+
+            return true;
+        }
+
+        // Ghi nhận một lần thực hiện tra cứu
+        async function recordLookupAttempt() {
+            const now = Date.now();
+            // Cập nhật LocalStorage
+            let localRecords = JSON.parse(localStorage.getItem('vts_lookup_history') || '[]');
+            localRecords.push(now);
+            localStorage.setItem('vts_lookup_history', JSON.stringify(localRecords));
+
+            // Cập nhật Cloud Firestore
+            try {
+                const docRef = db.collection('yt_security_rate_limits').doc(clientIpAddress.replace(/[\.\:]/g, '_'));
+                await docRef.set({
+                    ip: clientIpAddress,
+                    timestamps: firebase.firestore.FieldValue.arrayUnion(now),
+                    lastAttemptAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            } catch (e) {
+                console.warn("[RateLimitRecord] Error:", e);
+            }
+        }
+
+        function showLockoutScreen() {
+            document.getElementById('step-1-container').style.display = 'none';
+            document.getElementById('step-2-container').style.display = 'none';
+            document.getElementById('step-3-container').style.display = 'none';
+            document.getElementById('step-4-container').style.display = 'none';
+            document.getElementById('step-indicators').style.display = 'none';
+            document.getElementById('step-locked-container').style.display = 'block';
+        }
+
+        function switchStepDot(stepIndex) {
+            document.querySelectorAll('.step-dot').forEach((dot, idx) => {
+                if (idx + 1 === stepIndex) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active');
+                }
+            });
+        }
+
+        // ==========================================
+        // BƯỚC 1: TÌM THEO TÊN + LỚP + RECAPTCHA
+        // ==========================================
+        async function handleStep1Search() {
+            // 1. Kiểm tra an ninh Rate limit trước
+            const isAllowed = await checkRateLimit();
+            if (!isAllowed) return;
+
+            const nameInput = document.getElementById('input-fullname').value.trim();
+            const classInput = document.getElementById('input-class').value.trim().toUpperCase();
+            const btn = document.getElementById('btn-step-1');
+
+            // 2. Validate dữ liệu đầu vào
+            if (!nameInput) {
+                shakeCard();
+                return alert("Vui lòng nhập chính xác Họ và Tên học sinh!");
+            }
+
+            // Regex kiểm tra định dạng lớp: Ví dụ 10A1, 11A12, 12A4
+            const classRegex = /^[0-9]{1,2}[A-Za-z][0-9]{1,2}$/;
+            if (!classRegex.test(classInput)) {
+                shakeCard();
+                return alert("Định dạng tên lớp không hợp lệ! Vui lòng nhập đúng cú pháp (VD: 10A1, 12A4).");
+            }
+
+            // 3. Xác thực reCAPTCHA
+            const recaptchaResponse = grecaptcha.getResponse();
+            if (!recaptchaResponse) {
+                shakeCard();
+                return alert("Vui lòng xác thực 'Tôi không phải là người máy' (reCAPTCHA)!");
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang truy vấn an toàn...';
 
             try {
-                if (typeof loadMasterCryptoKey === 'function') await loadMasterCryptoKey();
+                if (typeof loadMasterCryptoKey === 'function') {
+                    await loadMasterCryptoKey();
+                }
 
-                const studentDoc = await db.collection('yt_students').doc(idInput).get();
-                const rawData = studentDoc.exists ? studentDoc.data() : null;
-                const studentName = rawData && typeof decryptField === 'function' ? decryptField(rawData.name) : (rawData?.name || '');
+                // Quét danh sách học sinh
+                const snapshot = await db.collection('yt_students').get();
+                matchedStudentsList = [];
 
-                if (!studentDoc.exists || studentName.trim().toLowerCase() !== nameInput.trim().toLowerCase()) {
-                    resultDiv.innerHTML = `
-                        <div style="text-align: center; padding: 20px;">
-                            <i class="fas fa-exclamation-triangle fa-3x" style="color: #ef4444; margin-bottom: 15px;"></i>
-                            <h3 style="color: #ef4444; margin-bottom: 10px;">Không tìm thấy hồ sơ!</h3>
-                            <p style="color: var(--text-gray);">Họ tên hoặc Mã Y tế không khớp. Vui lòng kiểm tra lại.</p>
-                            <button onclick="resetForm()" class="btn" style="margin-top: 25px; background: #f1f5f9; width:100%; justify-content:center;">Tra cứu lại</button>
-                        </div>
-                    `;
+                const cleanSearchName = removeVietnameseTones(nameInput);
+                const cleanSearchClass = classInput.toLowerCase();
+
+                snapshot.forEach(doc => {
+                    const raw = doc.data();
+                    const decryptedName = raw.name && typeof decryptField === 'function' ? decryptField(raw.name) : (raw.name || '');
+                    const decryptedClass = raw.class && typeof decryptField === 'function' ? decryptField(raw.class) : (raw.class || '');
+
+                    const normalizedDbName = removeVietnameseTones(decryptedName);
+                    const normalizedDbClass = decryptedClass.toLowerCase();
+
+                    if (normalizedDbName === cleanSearchName && normalizedDbClass === cleanSearchClass) {
+                        matchedStudentsList.push({
+                            id: doc.id,
+                            studentCode: raw.studentCode || 'Chưa cấp',
+                            name: decryptedName,
+                            class: decryptedClass,
+                            dob: raw.dob && typeof decryptField === 'function' ? decryptField(raw.dob) : (raw.dob || ''),
+                            ward: raw.ward || '',
+                            rawObj: raw
+                        });
+                    }
+                });
+
+                if (matchedStudentsList.length === 0) {
+                    alert("Không tìm thấy học sinh nào khớp với Họ tên và Lớp đã cung cấp! Vui lòng kiểm tra lại chính tả.");
+                    grecaptcha.reset();
                     return;
                 }
 
-                const student = {
-                    ...rawData,
-                    name: studentName,
-                    class: typeof decryptField === 'function' ? decryptField(rawData.class) : rawData.class,
-                    height: typeof decryptField === 'function' ? decryptField(rawData.height) : rawData.height,
-                    weight: typeof decryptField === 'function' ? decryptField(rawData.weight) : rawData.weight
-                };
-
-                // 2. Lấy lịch sử khám bệnh
-                const visitsSnap = await db.collection('yt_visits').where('studentId', '==', idInput).get();
-                let visits = [];
-                visitsSnap.forEach(doc => visits.push(doc.data()));
-                visits.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-
-                // 3. Hiển thị Giao diện Kết quả
-                let html = `
-                    <div style="background: var(--success-grad); color: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
-                        <h3 style="margin-bottom: 8px; font-size: 1.3rem;"><i class="fas fa-user-check"></i> ${student.name}</h3>
-                        <p style="margin: 0; opacity: 0.9; font-size: 0.95rem;">Lớp: ${student.class} | Mã YT: ${student.id}</p>
-                        <div style="margin-top: 12px; font-size: 0.9rem; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 12px;">
-                            Chiều cao: <strong>${student.height || '--'} cm</strong> &nbsp;|&nbsp; Cân nặng: <strong>${student.weight || '--'} kg</strong>
-                        </div>
-                    </div>
-                    
-                    <h4 style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; color: var(--text-dark); border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
-                        Lịch sử khám <span style="background: #e0e7ff; color: #4338ca; padding: 3px 12px; border-radius: 20px; font-size: 0.8rem;">${visits.length} lượt</span>
-                    </h4>
-                    
-                    <div style="max-height: 350px; overflow-y: auto; padding-right: 5px;">
-                `;
-
-                if (visits.length === 0) {
-                    html += '<div style="text-align:center; padding: 30px; background: #f8fafc; border-radius: 10px; color: var(--text-gray);">Học sinh này chưa có lịch sử khám bệnh tại phòng Y tế.</div>';
+                // Nếu chỉ có 1 học sinh khớp
+                if (matchedStudentsList.length === 1) {
+                    chooseCandidate(0);
                 } else {
-                    visits.forEach(v => {
-                        const date = v.timestamp ? new Date(v.timestamp.seconds * 1000).toLocaleString('vi-VN') : 'Mới cập nhật';
-                        const noteHtml = v.note ? `<div style="margin-top:8px; padding-top:8px; border-top:1px dashed #cbd5e1; font-size:0.85rem; color:#64748b;"><i class="fas fa-pen"></i> Ghi chú: ${v.note}</div>` : '';
-                        
-                        html += `
-                            <div style="background: white; padding: 18px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 15px; border-left: 4px solid var(--primary); box-shadow: var(--shadow-sm);">
-                                <div style="font-weight: 600; color: #0f172a; margin-bottom: 10px; font-size: 0.9rem;">
-                                    <i class="far fa-clock" style="color: var(--text-gray);"></i> ${date}
-                                </div>
-                                <div style="font-size: 0.95rem; line-height: 1.6;">
-                                    <div><strong style="color: #ef4444;">Triệu chứng:</strong> ${v.symptom}</div>
-                                    <div style="margin-top: 5px;"><strong style="color: #10b981;">Xử lý:</strong> ${v.treatment}</div>
-                                    ${noteHtml}
-                                </div>
-                            </div>
-                        `;
-                    });
+                    // Nếu trùng tên cùng lớp -> Render danh sách chọn ở Bước 2
+                    renderCandidates(matchedStudentsList);
+                    document.getElementById('step-1-container').style.display = 'none';
+                    document.getElementById('step-2-container').style.display = 'block';
+                    switchStepDot(2);
                 }
-                // Thêm banner khuyến cáo đăng nhập
-                html += `
-                    <div style="margin-top: 25px; padding: 15px; background: #eff6ff; border: 1px dashed #3b82f6; border-radius: 10px; text-align: center;">
-                        <i class="fas fa-info-circle" style="color: #3b82f6; font-size: 1.5rem; margin-bottom: 10px;"></i>
-                        <p style="color: #1e293b; font-size: 0.9rem; margin-bottom: 10px;">Để xem hồ sơ y tế đầy đủ, thông tin hành chính chi tiết và gửi yêu cầu hỗ trợ, vui lòng đăng nhập vào Cổng Học Sinh.</p>
-                        <a href="https://yteso-thptvothisaubrvt.netlify.app/student" target="_blank" class="btn" style="background: #3b82f6; color: white; text-decoration: none; display: inline-flex; justify-content: center; font-size: 0.85rem; padding: 8px 15px;"><i class="fas fa-sign-in-alt"></i> Tới Cổng Học Sinh</a>
-                    </div>
-                </div>
-                <button onclick="resetForm()" class="btn" style="width: 100%; margin-top: 15px; background: #f1f5f9; color: var(--text-dark); justify-content: center; height: 45px;"><i class="fas fa-redo"></i> Tra cứu hồ sơ khác</button>
-                `;
-                
-                resultDiv.innerHTML = html;
 
             } catch (err) {
-                resultDiv.innerHTML = `<div style="color: red; text-align: center; padding: 20px;">Lỗi kết nối CSDL: ${err.message}</div>
-                <button onclick="resetForm()" class="btn" style="margin-top: 20px; background: #f1f5f9; width:100%; justify-content:center;">Thử lại</button>`;
+                console.error(err);
+                alert("Lỗi truy xuất hệ thống: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-search"></i> Tìm kiếm danh tính';
             }
         }
 
-        function resetForm() {
-            document.getElementById('lookup-form').style.display = 'block';
-            document.getElementById('lookup-result').style.display = 'none';
-            document.getElementById('lookup-name').value = '';
-            document.getElementById('lookup-id').value = '';
+        // Hiển thị danh sách các học sinh trùng tên và lớp (ẩn danh tính bảo mật)
+        function renderCandidates(candidates) {
+            const listDiv = document.getElementById('candidates-list');
+            document.getElementById('candidate-count').innerText = candidates.length;
+            listDiv.innerHTML = '';
+
+            candidates.forEach((c, idx) => {
+                // Che mờ 1 phần tên để chống đánh cắp thông tin
+                const maskedId = c.id.slice(0, 3) + '***';
+                listDiv.innerHTML += `
+                    <div class="candidate-card" onclick="chooseCandidate(${idx})">
+                        <div>
+                            <strong style="color:#0f172a; font-size: 1rem;"><i class="fas fa-user-circle"></i> ${c.name}</strong>
+                            <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">Lớp: ${c.class} | Hồ sơ ID: ${maskedId}</div>
+                        </div>
+                        <span style="color:var(--primary-blue); font-weight:700; font-size:0.85rem;">Chọn <i class="fas fa-chevron-right"></i></span>
+                    </div>
+                `;
+            });
         }
+
+        // Chọn hồ sơ và chuyển qua Bước 3 (Xác thực thông tin bí mật)
+        function chooseCandidate(index) {
+            targetedStudentObj = matchedStudentsList[index];
+            document.getElementById('verifying-name-display').innerText = targetedStudentObj.name;
+            document.getElementById('verifying-class-display').innerText = `Lớp: ${targetedStudentObj.class}`;
+
+            document.getElementById('verify-dob').value = '';
+            document.getElementById('verify-ward').value = '';
+
+            document.getElementById('step-1-container').style.display = 'none';
+            document.getElementById('step-2-container').style.display = 'none';
+            document.getElementById('step-3-container').style.display = 'block';
+            switchStepDot(3);
+        }
+
+        // ==========================================
+        // BƯỚC 3: XÁC THỰC MẬT (NGÀY SINH + PHƯỜNG/XÃ)
+        // ==========================================
+        async function handleStep3Verify() {
+            if (!targetedStudentObj) return;
+
+            const inputDob = document.getElementById('verify-dob').value.trim(); // YYYY-MM-DD
+            const inputWard = document.getElementById('verify-ward').value.trim();
+            const btn = document.getElementById('btn-verify-secret');
+
+            if (!inputDob || !inputWard) {
+                shakeCard();
+                return alert("Vui lòng nhập đầy đủ Ngày tháng năm sinh và Phường/Xã!");
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đối chiếu an ninh...';
+
+            try {
+                // 1. Chuẩn hóa so khớp Ngày sinh
+                const studentDob = (targetedStudentObj.dob || '').trim(); // dạng YYYY-MM-DD
+                let isDobValid = false;
+
+                if (studentDob === inputDob) {
+                    isDobValid = true;
+                } else if (studentDob) {
+                    // Xử lý các dạng khác nếu có
+                    const formattedDb = new Date(studentDob).toISOString().split('T')[0];
+                    if (formattedDb === inputDob) isDobValid = true;
+                }
+
+                // 2. Chuẩn hóa so khớp Phường / Xã
+                const studentWard = removeVietnameseTones(targetedStudentObj.ward || '');
+                const cleanInputWard = removeVietnameseTones(inputWard);
+
+                const isWardValid = studentWard.length > 0 && 
+                    (studentWard.includes(cleanInputWard) || cleanInputWard.includes(studentWard));
+
+                // Ghi nhận lần tra cứu vào bảo mật
+                await recordLookupAttempt();
+
+                if (!isDobValid || !isWardValid) {
+                    shakeCard();
+                    alert("Thông tin xác thực (Ngày sinh hoặc Phường/Xã) KHÔNG CHÍNH XÁC!\n\nHệ thống đã ghi lại lần nhập sai này.");
+                    return;
+                }
+
+                // 3. XÁC THỰC THÀNH CÔNG -> ĐỔ KẾT QUẢ RA GIAO DIỆN
+                document.getElementById('res-name').innerText = targetedStudentObj.name;
+                document.getElementById('res-class').innerText = targetedStudentObj.class;
+                document.getElementById('res-student-code').innerText = targetedStudentObj.studentCode || 'Chưa cập nhật';
+                document.getElementById('res-medical-id').innerText = targetedStudentObj.id;
+
+                document.getElementById('step-3-container').style.display = 'none';
+                document.getElementById('step-4-container').style.display = 'block';
+
+            } catch (err) {
+                console.error(err);
+                alert("Lỗi kiểm tra: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-key"></i> Xác thực & Nhận thông tin';
+            }
+        }
+
+        // Quay lại bước trước
+        function backToStep(step) {
+            if (step === 1) {
+                document.getElementById('step-2-container').style.display = 'none';
+                document.getElementById('step-3-container').style.display = 'none';
+                document.getElementById('step-4-container').style.display = 'none';
+                document.getElementById('step-1-container').style.display = 'block';
+                switchStepDot(1);
+                grecaptcha.reset();
+            }
+        }
+
+        // Reset toàn bộ form tra cứu
+        function resetAllPortal() {
+            document.getElementById('input-fullname').value = '';
+            document.getElementById('input-class').value = '';
+            document.getElementById('verify-dob').value = '';
+            document.getElementById('verify-ward').value = '';
+            matchedStudentsList = [];
+            targetedStudentObj = null;
+            backToStep(1);
+        }
+
+        function shakeCard() {
+            const card = document.getElementById('main-card');
+            card.classList.add('shake');
+            setTimeout(() => card.classList.remove('shake'), 450);
+        }
+
+        // Khởi động kiểm tra an ninh ban đầu khi nạp trang
+        window.addEventListener('DOMContentLoaded', () => {
+            checkRateLimit();
+        });
     </script>
 </body>
 </html>

@@ -3,140 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tra cứu mã Y tế</title>
+    <title>Tra cứu Mã Định Danh Y Tế - THPT Võ Thị Sáu</title>
     <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png">
     <link rel="icon" href="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" sizes="32x32" type="image/png">
-    <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
     <style>
         :root {
-            --primary-blue: #0284c7;
-            --primary-blue-dark: #0369a1;
-            --accent-orange: #f97316;
-            --accent-orange-hover: #ea580c;
-            --gradient-dynamic: linear-gradient(135deg, #0284c7 0%, #38bdf8 50%, #f97316 100%);
-            --bg-gradient: radial-gradient(circle at top left, #f0fdf4 0%, #f8fafc 40%, #fff7ed 100%);
+            --brand-primary: #026aa7;
+            --brand-primary-hover: #055a8c;
+            --brand-accent: #ea580c;
+            --brand-accent-hover: #c2410c;
+            --bg-page: #f4f5f7;
+            --surface-card: #ffffff;
+            --text-main: #172b4d;
+            --text-sub: #5e6c84;
+            --border-color: #dfe1e6;
+            --border-focus: #4c9aff;
+            --radius-md: 10px;
+            --radius-lg: 14px;
         }
 
         * {
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
         }
 
         body {
-            background: var(--bg-gradient);
+            background-color: var(--bg-page);
+            color: var(--text-main);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 24px 16px;
-            margin: 0;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        /* Hiệu ứng đồ họa chuyển động nền */
-        .ambient-shape {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            z-index: 0;
-            pointer-events: none;
-            opacity: 0.45;
-            animation: pulse-ambient 10s ease-in-out infinite alternate;
-        }
-        .shape-1 {
-            width: 320px;
-            height: 320px;
-            background: #38bdf8;
-            top: -60px;
-            left: -60px;
-        }
-        .shape-2 {
-            width: 350px;
-            height: 350px;
-            background: #fdba74;
-            bottom: -80px;
-            right: -80px;
-            animation-duration: 8s;
-        }
-        @keyframes pulse-ambient {
-            0% { transform: scale(1) translate(0, 0); }
-            100% { transform: scale(1.15) translate(30px, 20px); }
+            padding: 32px 16px;
         }
 
         .portal-wrapper {
             width: 100%;
-            max-width: 540px;
-            position: relative;
-            z-index: 1;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
         .top-nav {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            padding: 0 4px;
         }
 
         .back-home {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             text-decoration: none;
-            color: #475569;
-            font-size: 0.92rem;
-            font-weight: 600;
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(8px);
-            padding: 8px 16px;
-            border-radius: 999px;
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            transition: all 0.25s ease;
+            color: var(--text-sub);
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: color 0.15s ease;
         }
         .back-home:hover {
-            color: var(--primary-blue);
-            transform: translateX(-4px);
-            border-color: var(--primary-blue);
+            color: var(--brand-primary);
         }
 
+        .system-tag {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--brand-primary);
+            background: #deebff;
+            padding: 4px 10px;
+            border-radius: 6px;
+            letter-spacing: 0.3px;
+        }
+
+        /* Thẻ nội dung chính */
         .lookup-card {
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            border-radius: 28px;
-            padding: 36px 30px;
-            box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.1), 0 8px 20px rgba(249, 115, 22, 0.08);
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .lookup-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 6px;
-            background: var(--gradient-dynamic);
+            background: var(--surface-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 32px 28px;
+            box-shadow: 0 4px 12px rgba(9, 30, 66, 0.06);
         }
 
         .header-section {
             text-align: center;
-            margin-bottom: 28px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #ebecf0;
+            padding-bottom: 20px;
         }
 
         .logo-wrap {
-            width: 82px;
-            height: 82px;
-            margin: 0 auto 16px;
-            padding: 4px;
-            background: white;
-            border-radius: 24px;
-            box-shadow: 0 8px 20px rgba(2, 132, 199, 0.15);
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 12px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -145,480 +110,421 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: 20px;
+            border-radius: 12px;
+            border: 1px solid #ebecf0;
         }
 
         .header-section h2 {
-            margin: 0;
-            font-size: 1.55rem;
-            color: #0f172a;
-            font-weight: 800;
-            letter-spacing: -0.5px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 6px;
+            letter-spacing: -0.2px;
         }
 
         .header-section p {
-            margin: 8px 0 0;
-            color: #64748b;
-            font-size: 0.9rem;
-            line-height: 1.5;
+            color: var(--text-sub);
+            font-size: 0.85rem;
+            line-height: 1.4;
         }
 
-        /* Thanh quy trình bước (Steps Progress) */
-        .stepper {
+        /* Stepper đơn giản, dạng Text + Line tinh gọn */
+        .stepper-bar {
             display: flex;
-            justify-content: center;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 25px;
+            justify-content: space-between;
+            margin-bottom: 22px;
+            padding: 0 2px;
         }
-        .step-dot {
-            width: 32px;
-            height: 8px;
-            border-radius: 8px;
-            background: #e2e8f0;
-            transition: all 0.3s ease;
+        .step-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
         }
-        .step-dot.active {
-            background: linear-gradient(90deg, #0284c7, #f97316);
-            width: 46px;
+        .step-indicator {
+            display: flex;
+            gap: 6px;
+        }
+        .step-pill {
+            width: 24px;
+            height: 4px;
+            background: #ebecf0;
+            border-radius: 2px;
+            transition: background 0.2s ease;
+        }
+        .step-pill.active {
+            background: var(--brand-primary);
         }
 
+        /* Form elements */
         .form-group {
-            margin-bottom: 18px;
-            position: relative;
+            margin-bottom: 16px;
         }
 
         .form-group label {
             display: block;
             margin-bottom: 6px;
-            font-size: 0.88rem;
-            font-weight: 700;
-            color: #334155;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #344563;
         }
 
-        .input-with-icon {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-        .input-with-icon i {
-            position: absolute;
-            left: 15px;
-            color: #94a3b8;
-            font-size: 1rem;
-            pointer-events: none;
-            transition: color 0.2s;
-        }
-        .input-with-icon input, .input-with-icon select {
+        .input-control {
             width: 100%;
-            padding: 13px 15px 13px 44px;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 14px;
-            font-size: 0.95rem;
+            height: 42px;
+            padding: 0 12px;
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.92rem;
+            color: var(--text-main);
+            background: #fafbfc;
             outline: none;
-            background: #f8fafc;
-            color: #0f172a;
-            transition: all 0.25s ease;
+            transition: all 0.15s ease;
         }
-        .input-with-icon input:focus, .input-with-icon select:focus {
-            border-color: var(--primary-blue);
+        .input-control:focus {
             background: #ffffff;
-            box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12);
-        }
-        .input-with-icon input:focus + i {
-            color: var(--primary-blue);
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(76, 154, 255, 0.2);
         }
 
         .input-hint {
-            font-size: 0.78rem;
-            color: #64748b;
+            font-size: 0.75rem;
+            color: var(--text-sub);
             margin-top: 5px;
             display: block;
+            line-height: 1.3;
         }
 
         .recaptcha-wrapper {
-            margin: 20px 0;
+            margin: 18px 0;
             display: flex;
             justify-content: center;
         }
 
-        .btn-action {
+        /* Nút bấm tiêu chuẩn */
+        .btn-primary {
             width: 100%;
-            height: 52px;
-            background: var(--gradient-dynamic);
-            background-size: 180% auto;
-            color: white;
+            height: 42px;
+            background-color: var(--brand-primary);
+            color: #ffffff;
             border: none;
-            border-radius: 16px;
-            font-size: 1.05rem;
-            font-weight: 700;
+            border-radius: var(--radius-md);
+            font-size: 0.92rem;
+            font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            box-shadow: 0 10px 22px rgba(249, 115, 22, 0.25);
-            transition: all 0.3s ease;
+            gap: 8px;
+            transition: background-color 0.15s ease;
         }
-        .btn-action:hover:not(:disabled) {
-            background-position: right center;
-            transform: translateY(-2px);
-            box-shadow: 0 12px 26px rgba(2, 132, 199, 0.3);
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--brand-primary-hover);
         }
-        .btn-action:disabled {
-            opacity: 0.6;
+        .btn-primary:disabled {
+            background-color: #a5b2c6;
             cursor: not-allowed;
-            transform: none;
         }
 
-        /* Danh sách ứng viên tìm kiếm */
-        .candidate-card {
-            border: 1.5px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 14px 16px;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: white;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .candidate-card:hover {
-            border-color: var(--primary-blue);
-            background: #f0f9ff;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(2, 132, 199, 0.1);
-        }
-
-        /* Khung kết quả hiển thị thông tin */
-        .result-box {
-            background: linear-gradient(145deg, #0f172a, #1e293b);
-            border-radius: 20px;
-            padding: 24px;
-            color: white;
-            box-shadow: 0 15px 30px rgba(15, 23, 42, 0.25);
-            position: relative;
-            overflow: hidden;
-            margin-top: 10px;
-        }
-        .result-box::after {
-            content: '';
-            position: absolute;
-            top: -40px;
-            right: -40px;
-            width: 140px;
-            height: 140px;
-            background: linear-gradient(135deg, rgba(249,115,22,0.3), rgba(2,132,199,0.3));
-            border-radius: 50%;
-            filter: blur(25px);
-        }
-
-        .security-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.76rem;
-            color: #38bdf8;
-            background: rgba(56, 189, 248, 0.12);
-            padding: 4px 12px;
-            border-radius: 20px;
-            margin-bottom: 15px;
+        .btn-secondary {
+            width: 100%;
+            height: 38px;
+            background-color: transparent;
+            color: var(--text-sub);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
             font-weight: 600;
-        }
-
-        .data-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px dashed rgba(255, 255, 255, 0.12);
-        }
-        .data-row:last-child {
-            border-bottom: none;
-        }
-        .data-label {
-            color: #94a3b8;
-            font-size: 0.9rem;
-        }
-        .data-value {
-            font-weight: 700;
-            font-size: 1.05rem;
-            color: white;
-            text-align: right;
-            user-select: all;
-        }
-        .data-value.highlight-code {
-            color: #fb923c;
-            font-size: 1.25rem;
-            letter-spacing: 0.5px;
-        }
-
-        /* Màn hình khóa an ninh */
-        .lockout-box {
-            text-align: center;
-            padding: 20px 10px;
-        }
-        .lockout-icon {
-            width: 72px;
-            height: 72px;
-            background: #fee2e2;
-            color: #ef4444;
-            border-radius: 50%;
+            cursor: pointer;
+            margin-top: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
-            margin: 0 auto 16px;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1.5px solid #cbd5e1;
-            color: #475569;
-            padding: 12px 20px;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 12px;
-            transition: all 0.2s;
-        }
-        .btn-outline:hover {
-            border-color: #94a3b8;
-            background: #f1f5f9;
-        }
-
-        .shake {
-            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
-        }
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-1px, 0, 0); }
-            20%, 80% { transform: translate3d(2px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-            40%, 60% { transform: translate3d(4px, 0, 0); }
-        }
-        /* CSS Chân trang hỗ trợ trực tuyến */
-        .portal-footer {
-            margin-top: 24px;
-            text-align: center;
-            padding: 16px 20px;
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(10px);
-            border-radius: 18px;
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
-            transition: all 0.3s ease;
-        }
-        .portal-footer:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(2, 132, 199, 0.08);
-            border-color: rgba(2, 132, 199, 0.3);
-        }
-        .footer-badge {
-            display: inline-flex;
-            align-items: center;
             gap: 6px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: #ea580c;
-            background: #fff7ed;
-            border: 1px solid #ffedd5;
-            padding: 3px 10px;
-            border-radius: 999px;
+            transition: all 0.15s ease;
+        }
+        .btn-secondary:hover {
+            background-color: #ebecf0;
+            color: var(--text-main);
+        }
+
+        /* Gợi ý danh sách học sinh trùng lặp */
+        .candidate-item {
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
             margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fafbfc;
+            cursor: pointer;
+            transition: all 0.15s ease;
         }
-        .footer-text {
-            margin: 0;
-            font-size: 0.86rem;
-            color: #64748b;
-            line-height: 1.6;
+        .candidate-item:hover {
+            border-color: var(--brand-primary);
+            background: #ffffff;
+            box-shadow: 0 2px 6px rgba(9, 30, 66, 0.08);
         }
-        .footer-email-link {
+
+        /* Khung thông báo xác minh hồ sơ */
+        .info-panel {
+            background: #f4f5f7;
+            border-left: 3px solid var(--brand-accent);
+            padding: 10px 14px;
+            border-radius: 4px;
+            margin-bottom: 18px;
+        }
+        .info-panel-title {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin-bottom: 2px;
+        }
+        .info-panel-body {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        /* Hộp Kết Quả (Result Box) chuyên nghiệp */
+        .result-card {
+            background: #091e42;
+            border-radius: var(--radius-md);
+            padding: 20px;
+            color: #ffffff;
+            margin-bottom: 16px;
+        }
+        .result-badge {
             display: inline-flex;
             align-items: center;
             gap: 5px;
-            color: var(--primary-blue);
+            font-size: 0.72rem;
             font-weight: 700;
-            text-decoration: none;
-            padding: 2px 8px;
-            border-radius: 6px;
-            background: rgba(2, 132, 199, 0.06);
-            transition: all 0.2s ease;
-            margin-left: 4px;
+            color: #36b37e;
+            background: rgba(54, 179, 126, 0.15);
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-bottom: 14px;
+            text-transform: uppercase;
         }
-        .footer-email-link:hover {
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.88rem;
+        }
+        .result-row:last-child {
+            border-bottom: none;
+        }
+        .result-label {
+            color: #97a0af;
+        }
+        .result-val {
+            font-weight: 600;
             color: #ffffff;
-            background: var(--primary-blue);
+        }
+        .result-val.highlight {
+            color: #ffab00;
+            font-size: 1.05rem;
+            font-family: monospace;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        /* Hộp khóa tài khoản (Rate Limit) */
+        .lockout-alert {
+            text-align: center;
+            padding: 10px 0;
+        }
+        .lockout-icon {
+            font-size: 2.2rem;
+            color: #de350b;
+            margin-bottom: 12px;
+        }
+        .lockout-desc {
+            font-size: 0.88rem;
+            color: var(--text-sub);
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+        .lockout-support {
+            background: #fff0b3;
+            border: 1px solid #ffe380;
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            font-size: 0.82rem;
+            color: #172b4d;
+            text-align: left;
+            line-height: 1.5;
+        }
+
+        /* Footer chuẩn chỉnh, nằm đồng bộ với Wrapper */
+        .portal-footer {
+            text-align: center;
+            padding: 12px 16px;
+            font-size: 0.82rem;
+            color: var(--text-sub);
+            border-top: 1px solid var(--border-color);
+            margin-top: 4px;
+        }
+        .portal-footer a {
+            color: var(--brand-primary);
             text-decoration: none;
+            font-weight: 600;
+        }
+        .portal-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .shake {
+            animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            40%, 60% { transform: translate3d(-3px, 0, 0); }
         }
     </style>
 </head>
 <body>
 
-    <div class="ambient-shape shape-1"></div>
-    <div class="ambient-shape shape-2"></div>
-
     <div class="portal-wrapper">
         <div class="top-nav">
             <a href="../index.html" class="back-home"><i class="fas fa-arrow-left"></i> Trang chủ</a>
-            <span style="font-size: 0.8rem; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 4px 12px; border-radius: 20px;">
-            </span>
+            <span class="system-tag">Hệ Thống Y Tế Số</span>
         </div>
 
         <div class="lookup-card" id="main-card">
             <div class="header-section">
                 <div class="logo-wrap">
-                    <img src="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" alt="Logo Y Tế">
+                    <img src="https://res.cloudinary.com/dsnlbzjby/image/upload/q_auto/f_auto/v1775563762/Gemini_Generated_Image_1l7lw31l7lw31l7l_owwg7q.png" alt="Logo THPT Võ Thị Sáu">
                 </div>
-                <h2>Tra cứu Mã Y Tế & Mã Học Sinh</h2>
-                <p>Xác thực dữ liệu chính xác để lấy thông tin đăng nhập Cổng Học Sinh</p>
+                <h2>Tra Cứu</h2>
+                <p>Xác thực danh tính học sinh để lấy Mã Y Tế & Mã Học Sinh</p>
             </div>
 
-            <div class="stepper" id="step-indicators">
-                <div class="step-dot active" id="dot-1"></div>
-                <div class="step-dot" id="dot-2"></div>
-                <div class="step-dot" id="dot-3"></div>
+            <!-- Stepper tinh gọn -->
+            <div class="stepper-bar" id="stepper-box">
+                <span class="step-label" id="step-name-display">Bước 1: Tìm kiếm</span>
+                <div class="step-indicator">
+                    <div class="step-pill active" id="pill-1"></div>
+                    <div class="step-pill" id="pill-2"></div>
+                    <div class="step-pill" id="pill-3"></div>
+                </div>
             </div>
 
-            <!-- ================= GIAI ĐOẠN 1: TÌM THEO TÊN + LỚP + RECAPTCHA ================= -->
+            <!-- ================= BƯỚC 1: HỌ TÊN + LỚP + RECAPTCHA ================= -->
             <div id="step-1-container">
                 <div class="form-group">
-                    <label>Họ và tên học sinh</label>
-                    <div class="input-with-icon">
-                        <input type="text" id="input-fullname" placeholder="Nhập đầy đủ họ và tên có dấu..." autocomplete="off">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <span class="input-hint">Không phân biệt chữ hoa, chữ thường (VD: Nguyễn Văn An)</span>
+                    <label for="input-fullname">Họ và tên học sinh</label>
+                    <input type="text" id="input-fullname" class="input-control" placeholder="Ví dụ: Nguyễn Văn An" autocomplete="off">
+                    <span class="input-hint">Nhập đầy đủ họ và tên có dấu tiếng Việt.</span>
                 </div>
 
                 <div class="form-group">
-                    <label>Lớp học</label>
-                    <div class="input-with-icon">
-                        <input type="text" id="input-class" placeholder="VD: 10A1, 11A3, 12A4..." autocomplete="off" maxlength="6">
-                        <i class="fas fa-graduation-cap"></i>
-                    </div>
-                    <span class="input-hint">Định dạng Số Khối + Chữ Cái (A) + Số Thứ Tự</span>
+                    <label for="input-class">Lớp học</label>
+                    <input type="text" id="input-class" class="input-control" placeholder="Ví dụ: 10A1, 11A3, 12A4" autocomplete="off" maxlength="6">
+                    <span class="input-hint">Định dạng số khối và lớp (viết liền nhau).</span>
                 </div>
 
-                <!-- Google reCAPTCHA v2 (Thay thế sitekey production của bạn) -->
                 <div class="recaptcha-wrapper">
                     <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
                 </div>
 
-                <button class="btn-action" id="btn-step-1" onclick="handleStep1Search()">
-                    <i class="fas fa-search"></i> Tìm kiếm
+                <button class="btn-primary" id="btn-step-1" onclick="handleStep1Search()">
+                    <i class="fas fa-search"></i> Kiểm tra
                 </button>
             </div>
 
-            <!-- ================= GIAI ĐOẠN 2: CHỌN HỌC SINH (NẾU CÓ TRÙNG LẬP) ================= -->
+            <!-- ================= BƯỚC 2: CHỌN DANH TÍNH (NẾU TRÙNG TÊN) ================= -->
             <div id="step-2-container" style="display: none;">
-                <p style="font-size: 0.9rem; color: #475569; margin-bottom: 15px;">
-                    Tìm thấy <strong id="candidate-count" style="color: var(--primary-blue);">0</strong> học sinh phù hợp. Vui lòng bấm chọn hồ sơ của bạn:
+                <p style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 12px;">
+                    Tìm thấy <strong id="candidate-count" style="color: var(--brand-primary);">0</strong> học sinh có thông tin tương ứng. Vui lòng chọn đúng tài khoản của bạn:
                 </p>
-                <div id="candidates-list" style="max-height: 250px; overflow-y: auto; margin-bottom: 15px;"></div>
-                <button class="btn-outline" onclick="backToStep(1)"><i class="fas fa-arrow-left"></i> Nhập lại họ tên & lớp</button>
+                <div id="candidates-list" style="max-height: 220px; overflow-y: auto; margin-bottom: 12px;"></div>
+                <button class="btn-secondary" onclick="backToStep(1)"><i class="fas fa-arrow-left"></i> Nhập lại thông tin</button>
             </div>
 
-            <!-- ================= GIAI ĐOẠN 3: XÁC THỰC MẬT (NGÀY SINH + PHƯỜNG/XÃ) ================= -->
+            <!-- ================= BƯỚC 3: XÁC THỰC MẬT (NGÀY SINH + PHƯỜNG/XÃ) ================= -->
             <div id="step-3-container" style="display: none;">
-                <div style="background: #f8fafc; border-left: 4px solid var(--accent-orange); padding: 12px 14px; border-radius: 8px; margin-bottom: 20px;">
-                    <div style="font-size: 0.82rem; color: #64748b;">Đang xác minh hồ sơ cho:</div>
-                    <div style="font-weight: 800; color: #0f172a; font-size: 1.05rem;" id="verifying-name-display">--</div>
-                    <div style="font-size: 0.85rem; color: #0284c7; font-weight: 600;" id="verifying-class-display">--</div>
+                <div class="info-panel">
+                    <div class="info-panel-title">Hồ sơ đang xác minh:</div>
+                    <div class="info-panel-body" id="verifying-info-display">--</div>
                 </div>
 
                 <div class="form-group">
-                    <label>Ngày tháng năm sinh</label>
-                    <div class="input-with-icon">
-                        <input type="date" id="verify-dob">
-                        <i class="fas fa-calendar-alt"></i>
-                    </div>
-                    <span class="input-hint">Chọn đúng ngày/tháng/năm sinh</span>
+                    <label for="verify-dob">Ngày tháng năm sinh</label>
+                    <input type="date" id="verify-dob" class="input-control">
+                    <span class="input-hint">Chọn đúng ngày/tháng/năm sinh.</span>
                 </div>
 
                 <div class="form-group">
-                    <label>Phường / Xã cư trú</label>
-                    <div class="input-with-icon">
-                        <input type="text" id="verify-ward" placeholder="VD: Xã Đất Đỏ, Phường Phước Hưng..." autocomplete="off">
-                        <i class="fas fa-map-marker-alt"></i>
-                    </div>
-                    <span class="input-hint">Nhập đúng Phường/Xã</span>
+                    <label for="verify-ward">Phường / Xã </label>
+                    <input type="text" id="verify-ward" class="input-control" placeholder="Ví dụ: Xã Đất Đỏ, Phường Phước Hưng..." autocomplete="off">
+                    <span class="input-hint">Nhập đúng tên Phường/Xã.</span>
                 </div>
 
-                <button class="btn-action" id="btn-verify-secret" onclick="handleStep3Verify()">
-                    <i class="fas fa-key"></i> Xác thực & Nhận thông tin
+                <button class="btn-primary" id="btn-verify-secret" onclick="handleStep3Verify()">
+                    <i class="fas fa-check-circle"></i> Xác thực
                 </button>
-                <button class="btn-outline" onclick="backToStep(1)">Hủy & Quay lại</button>
+                <button class="btn-secondary" onclick="backToStep(1)">Hủy bỏ</button>
             </div>
 
+            <!-- ================= BƯỚC 4: KẾT QUẢ ================= -->
             <div id="step-4-container" style="display: none;">
-                <div class="result-box">
-                    <div class="security-badge">
-                        <i class="fas fa-shield-check"></i> Xác minh bảo mật thành công
+                <div class="result-card">
+                    <div class="result-badge"><i class="fas fa-shield-alt"></i> Xác thực hoàn tất</div>
+                    <div class="result-row">
+                        <span class="result-label">Họ và tên:</span>
+                        <span class="result-val" id="res-name">--</span>
                     </div>
-                    
-                    <div class="data-row">
-                        <span class="data-label">Họ và tên:</span>
-                        <span class="data-value" id="res-name">--</span>
+                    <div class="result-row">
+                        <span class="result-label">Lớp:</span>
+                        <span class="result-val" id="res-class">--</span>
                     </div>
-                    <div class="data-row">
-                        <span class="data-label">Lớp:</span>
-                        <span class="data-value" id="res-class">--</span>
+                    <div class="result-row">
+                        <span class="result-label">Mã Học Sinh:</span>
+                        <span class="result-val highlight" id="res-student-code">--</span>
                     </div>
-                    <div class="data-row">
-                        <span class="data-label">Mã Học Sinh:</span>
-                        <span class="data-value highlight-code" id="res-student-code">--</span>
-                    </div>
-                    <div class="data-row">
-                        <span class="data-label">Mã Y Tế (Mật khẩu):</span>
-                        <span class="data-value highlight-code" style="color:#38bdf8;" id="res-medical-id">--</span>
+                    <div class="result-row">
+                        <span class="result-label">Mã Y Tế:</span>
+                        <span class="result-val highlight" style="color: #4c9aff;" id="res-medical-id">--</span>
                     </div>
                 </div>
 
-                <div style="margin-top: 20px; text-align: center;">
-                    <a href="https://yteso-thptvothisaubrvt.netlify.app/student" target="_blank" class="btn-action" style="text-decoration:none;">
-                        <i class="fas fa-sign-in-alt"></i> Đăng nhập Cổng Học Sinh
-                    </a>
-                    <button class="btn-outline" onclick="resetAllPortal()"><i class="fas fa-redo"></i> Tra cứu mới</button>
-                </div>
+                <a href="https://yteso-thptvothisaubrvt.netlify.app/student" target="_blank" class="btn-primary" style="text-decoration:none; margin-bottom: 8px;">
+                    <i class="fas fa-sign-in-alt"></i> Đến Cổng Học Sinh
+                </a>
+                <button class="btn-secondary" onclick="resetAllPortal()"><i class="fas fa-redo"></i> Tra cứu tài khoản khác</button>
             </div>
 
-            <!-- ================= GIAI ĐOẠN 5: BỊ KHÓA DO VƯỢT QUÁ SỐ LẦN ================= -->
+            <!-- ================= BƯỚC 5: MÀN HÌNH KHÓA AN NINH ================= -->
             <div id="step-locked-container" style="display: none;">
-                <div class="lockout-box">
-                    <div class="lockout-icon">
-                        <i class="fas fa-user-lock"></i>
-                    </div>
-                    <h3 style="color:#ef4444; margin: 0 0 10px;">Cảnh Báo An Ninh: Tạm Khóa Tra Cứu</h3>
-                    <p style="color:#475569; font-size: 0.9rem; line-height: 1.6; margin-bottom: 20px;">
-                        Bạn hoặc ai đó trên mạng/thiết bị này đã thực hiện quá <strong>3 lần tra cứu</strong> trong vòng <strong>72 giờ</strong> qua. Nhằm bảo vệ bí mật thông tin y tế học đường, chức năng tự tra cứu hiện đã bị vô hiệu hóa.
+                <div class="lockout-alert">
+                    <div class="lockout-icon"><i class="fas fa-shield-virus"></i></div>
+                    <h3 style="font-size: 1.15rem; color: #de350b; margin-bottom: 8px;">Tạm Khóa Tính Năng Tra Cứu</h3>
+                    <p class="lockout-desc">
+                        Hệ thống phát hiện thiết bị hoặc mạng này đã thực hiện tra cứu quá <strong>3 lần trong vòng 72 giờ</strong>.
                     </p>
-                    <div style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 14px; padding: 15px; font-size: 0.88rem; color: #334155; line-height: 1.6;">
-                        📌 <strong>Hướng dẫn mở khóa / Hỗ trợ:</strong><br>
-                        Vui lòng đến trực tiếp <strong>Phòng Y Tế Nhà Trường</strong> hoặc gửi email kèm minh chứng học sinh về:<br>
-                        <a href="mailto:yte.thptvothisaubrvt@gmail.com" style="color: #0284c7; font-weight: 700; text-decoration: none;">
-                            yte.thptvothisaubrvt@gmail.com
-                        </a>
+                    <div class="lockout-support">
+                        <strong><i class="fas fa-info-circle"></i> Cần hỗ trợ cấp lại mã?</strong><br>
+                        Vui lòng đến trực tiếp <strong>Phòng Y Tế Nhà Trường</strong> hoặc gửi email về:<br>
+                        <a href="mailto:yte.thptvothisaubrvt@gmail.com" style="color: var(--brand-primary); font-weight: 700;">yte.thptvothisaubrvt@gmail.com</a>
                     </div>
                 </div>
             </div>
 
         </div>
-    </div>
-    <footer class="portal-footer">
-            <div class="footer-badge">
-                <i class="fas fa-headset"></i> Hỗ trợ trực tuyến 24/7
-            </div>
-            <p class="footer-text">
-                Mọi thắc mắc về tài khoản & thông tin y tế, vui lòng liên hệ:
-                <a href="mailto:yte.thptvothisaubrvt@gmail.com" class="footer-email-link">
-                    <i class="fas fa-envelope"></i> yte.thptvothisaubrvt@gmail.com
-                </a>
-            </p>
+
+        <!-- Chân trang đơn giản, tinh gọn, không lệch flex -->
+        <footer class="portal-footer">
+            Bộ phận Y tế học đường &bull; THPT Võ Thị Sáu - Bà Rịa - Vũng Tàu &bull; Hỗ trợ: <a href="mailto:yte.thptvothisaubrvt@gmail.com">yte.thptvothisaubrvt@gmail.com</a>
         </footer>
+    </div>
+
     <!-- Firebase SDK 8.10.0 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
@@ -628,16 +534,12 @@
     <script src="../assets/js/crypto.js"></script>
 
     <script>
-        // ==========================================
-        // KHỞI TẠO LOGIC BẢO MẬT & ĐIỀU PHỐI (PORTAL LOGIC)
-        // ==========================================
         const RATE_LIMIT_MAX = 3;
         const RATE_LIMIT_HOURS = 72;
         let clientIpAddress = 'UNKNOWN_IP';
         let matchedStudentsList = [];
         let targetedStudentObj = null;
 
-        // Chuẩn hóa loại bỏ dấu tiếng Việt (Đồng bộ thuật toán từ app.js)
         function removeVietnameseTones(str) {
             if (!str) return "";
             str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
@@ -657,7 +559,6 @@
             return str.toLowerCase().trim();
         }
 
-        // Lấy IP của thiết bị khi tải trang
         async function fetchClientIP() {
             try {
                 const res = await fetch('https://api64.ipify.org?format=json');
@@ -668,13 +569,11 @@
             }
         }
 
-        // Kiểm tra số lần truy cập trong 72 giờ qua
         async function checkRateLimit() {
             await fetchClientIP();
             const now = Date.now();
             const expireThreshold = now - (RATE_LIMIT_HOURS * 60 * 60 * 1000);
 
-            // Kiểm tra mức 1: LocalStorage thiết bị
             let localRecords = JSON.parse(localStorage.getItem('vts_lookup_history') || '[]');
             localRecords = localRecords.filter(t => t > expireThreshold);
             localStorage.setItem('vts_lookup_history', JSON.stringify(localRecords));
@@ -684,7 +583,6 @@
                 return false;
             }
 
-            // Kiểm tra mức 2: Cloud Firestore (Chống người dùng xóa cache trình duyệt)
             try {
                 const ipDoc = await db.collection('yt_security_rate_limits').doc(clientIpAddress.replace(/[\.\:]/g, '_')).get();
                 if (ipDoc.exists) {
@@ -695,21 +593,18 @@
                     }
                 }
             } catch (err) {
-                console.warn("[RateLimitCheck] Cloud pass bypass:", err);
+                console.warn("[RateLimitCheck] Bypass:", err);
             }
 
             return true;
         }
 
-        // Ghi nhận một lần thực hiện tra cứu
         async function recordLookupAttempt() {
             const now = Date.now();
-            // Cập nhật LocalStorage
             let localRecords = JSON.parse(localStorage.getItem('vts_lookup_history') || '[]');
             localRecords.push(now);
             localStorage.setItem('vts_lookup_history', JSON.stringify(localRecords));
 
-            // Cập nhật Cloud Firestore
             try {
                 const docRef = db.collection('yt_security_rate_limits').doc(clientIpAddress.replace(/[\.\:]/g, '_'));
                 await docRef.set({
@@ -727,25 +622,23 @@
             document.getElementById('step-2-container').style.display = 'none';
             document.getElementById('step-3-container').style.display = 'none';
             document.getElementById('step-4-container').style.display = 'none';
-            document.getElementById('step-indicators').style.display = 'none';
+            document.getElementById('stepper-box').style.display = 'none';
             document.getElementById('step-locked-container').style.display = 'block';
         }
 
-        function switchStepDot(stepIndex) {
-            document.querySelectorAll('.step-dot').forEach((dot, idx) => {
-                if (idx + 1 === stepIndex) {
-                    dot.classList.add('active');
+        function updateStepView(step, title) {
+            document.getElementById('step-name-display').innerText = `Bước ${step}: ${title}`;
+            for (let i = 1; i <= 3; i++) {
+                const pill = document.getElementById(`pill-${i}`);
+                if (i <= step) {
+                    pill.classList.add('active');
                 } else {
-                    dot.classList.remove('active');
+                    pill.classList.remove('active');
                 }
-            });
+            }
         }
 
-        // ==========================================
-        // BƯỚC 1: TÌM THEO TÊN + LỚP + RECAPTCHA
-        // ==========================================
         async function handleStep1Search() {
-            // 1. Kiểm tra an ninh Rate limit trước
             const isAllowed = await checkRateLimit();
             if (!isAllowed) return;
 
@@ -753,35 +646,31 @@
             const classInput = document.getElementById('input-class').value.trim().toUpperCase();
             const btn = document.getElementById('btn-step-1');
 
-            // 2. Validate dữ liệu đầu vào
             if (!nameInput) {
                 shakeCard();
-                return alert("Vui lòng nhập chính xác Họ và Tên học sinh!");
+                return alert("Vui lòng nhập Họ và Tên học sinh!");
             }
 
-            // Regex kiểm tra định dạng lớp: Ví dụ 10A1, 11A12, 12A4
             const classRegex = /^[0-9]{1,2}[A-Za-z][0-9]{1,2}$/;
             if (!classRegex.test(classInput)) {
                 shakeCard();
-                return alert("Định dạng tên lớp không hợp lệ! Vui lòng nhập đúng cú pháp (VD: 10A1, 12A4).");
+                return alert("Tên lớp không đúng định dạng. Ví dụ hợp lệ: 10A1, 11A3, 12A4.");
             }
 
-            // 3. Xác thực reCAPTCHA
             const recaptchaResponse = grecaptcha.getResponse();
             if (!recaptchaResponse) {
                 shakeCard();
-                return alert("Vui lòng xác thực 'Tôi không phải là người máy' (reCAPTCHA)!");
+                return alert("Vui lòng hoàn thành xác thực reCAPTCHA!");
             }
 
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang truy vấn an toàn...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tìm kiếm...';
 
             try {
                 if (typeof loadMasterCryptoKey === 'function') {
                     await loadMasterCryptoKey();
                 }
 
-                // Quét danh sách học sinh
                 const snapshot = await db.collection('yt_students').get();
                 matchedStudentsList = [];
 
@@ -803,122 +692,106 @@
                             name: decryptedName,
                             class: decryptedClass,
                             dob: raw.dob && typeof decryptField === 'function' ? decryptField(raw.dob) : (raw.dob || ''),
-                            ward: raw.ward || '',
-                            rawObj: raw
+                            ward: raw.ward || ''
                         });
                     }
                 });
 
                 if (matchedStudentsList.length === 0) {
-                    alert("Không tìm thấy học sinh nào khớp với Họ tên và Lớp đã cung cấp! Vui lòng kiểm tra lại chính tả.");
+                    alert("Không tìm thấy học sinh nào khớp với Họ tên và Lớp đã cung cấp!");
                     grecaptcha.reset();
                     return;
                 }
 
-                // Nếu chỉ có 1 học sinh khớp
                 if (matchedStudentsList.length === 1) {
                     chooseCandidate(0);
                 } else {
-                    // Nếu trùng tên cùng lớp -> Render danh sách chọn ở Bước 2
                     renderCandidates(matchedStudentsList);
                     document.getElementById('step-1-container').style.display = 'none';
                     document.getElementById('step-2-container').style.display = 'block';
-                    switchStepDot(2);
+                    updateStepView(2, "Chọn tài khoản");
                 }
 
             } catch (err) {
                 console.error(err);
-                alert("Lỗi truy xuất hệ thống: " + err.message);
+                alert("Lỗi kết nối cơ sở dữ liệu: " + err.message);
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-search"></i> Tìm kiếm danh tính';
+                btn.innerHTML = '<i class="fas fa-search"></i> Kiểm tra danh tính';
             }
         }
 
-        // Hiển thị danh sách các học sinh trùng tên và lớp (ẩn danh tính bảo mật)
         function renderCandidates(candidates) {
             const listDiv = document.getElementById('candidates-list');
             document.getElementById('candidate-count').innerText = candidates.length;
             listDiv.innerHTML = '';
 
             candidates.forEach((c, idx) => {
-                // Che mờ 1 phần tên để chống đánh cắp thông tin
                 const maskedId = c.id.slice(0, 3) + '***';
                 listDiv.innerHTML += `
-                    <div class="candidate-card" onclick="chooseCandidate(${idx})">
+                    <div class="candidate-item" onclick="chooseCandidate(${idx})">
                         <div>
-                            <strong style="color:#0f172a; font-size: 1rem;"><i class="fas fa-user-circle"></i> ${c.name}</strong>
-                            <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">Lớp: ${c.class} | Hồ sơ ID: ${maskedId}</div>
+                            <strong style="color:var(--text-main); font-size: 0.92rem;">${c.name}</strong>
+                            <div style="font-size:0.78rem; color:var(--text-sub); margin-top:2px;">Lớp: ${c.class} &bull; Mã bảo mật: ${maskedId}</div>
                         </div>
-                        <span style="color:var(--primary-blue); font-weight:700; font-size:0.85rem;">Chọn <i class="fas fa-chevron-right"></i></span>
+                        <span style="color:var(--brand-primary); font-weight:600; font-size:0.8rem;">Chọn <i class="fas fa-chevron-right"></i></span>
                     </div>
                 `;
             });
         }
 
-        // Chọn hồ sơ và chuyển qua Bước 3 (Xác thực thông tin bí mật)
         function chooseCandidate(index) {
             targetedStudentObj = matchedStudentsList[index];
-            document.getElementById('verifying-name-display').innerText = targetedStudentObj.name;
-            document.getElementById('verifying-class-display').innerText = `Lớp: ${targetedStudentObj.class}`;
-
+            document.getElementById('verifying-info-display').innerText = `${targetedStudentObj.name} - Lớp ${targetedStudentObj.class}`;
             document.getElementById('verify-dob').value = '';
             document.getElementById('verify-ward').value = '';
 
             document.getElementById('step-1-container').style.display = 'none';
             document.getElementById('step-2-container').style.display = 'none';
             document.getElementById('step-3-container').style.display = 'block';
-            switchStepDot(3);
+            updateStepView(3, "Xác thực bí mật");
         }
 
-        // ==========================================
-        // BƯỚC 3: XÁC THỰC MẬT (NGÀY SINH + PHƯỜNG/XÃ)
-        // ==========================================
         async function handleStep3Verify() {
             if (!targetedStudentObj) return;
 
-            const inputDob = document.getElementById('verify-dob').value.trim(); // YYYY-MM-DD
+            const inputDob = document.getElementById('verify-dob').value.trim();
             const inputWard = document.getElementById('verify-ward').value.trim();
             const btn = document.getElementById('btn-verify-secret');
 
             if (!inputDob || !inputWard) {
                 shakeCard();
-                return alert("Vui lòng nhập đầy đủ Ngày tháng năm sinh và Phường/Xã!");
+                return alert("Vui lòng điền đầy đủ Ngày tháng năm sinh và Phường/Xã!");
             }
 
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đối chiếu an ninh...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xác thực...';
 
             try {
-                // 1. Chuẩn hóa so khớp Ngày sinh
-                const studentDob = (targetedStudentObj.dob || '').trim(); // dạng YYYY-MM-DD
+                const studentDob = (targetedStudentObj.dob || '').trim();
                 let isDobValid = false;
 
                 if (studentDob === inputDob) {
                     isDobValid = true;
                 } else if (studentDob) {
-                    // Xử lý các dạng khác nếu có
                     const formattedDb = new Date(studentDob).toISOString().split('T')[0];
                     if (formattedDb === inputDob) isDobValid = true;
                 }
 
-                // 2. Chuẩn hóa so khớp Phường / Xã
                 const studentWard = removeVietnameseTones(targetedStudentObj.ward || '');
                 const cleanInputWard = removeVietnameseTones(inputWard);
 
                 const isWardValid = studentWard.length > 0 && 
                     (studentWard.includes(cleanInputWard) || cleanInputWard.includes(studentWard));
 
-                // Ghi nhận lần tra cứu vào bảo mật
                 await recordLookupAttempt();
 
                 if (!isDobValid || !isWardValid) {
                     shakeCard();
-                    alert("Thông tin xác thực (Ngày sinh hoặc Phường/Xã) KHÔNG CHÍNH XÁC!\n\nHệ thống đã ghi lại lần nhập sai này.");
+                    alert("Thông tin Ngày sinh hoặc Phường/Xã không khớp với hồ sơ học sinh!");
                     return;
                 }
 
-                // 3. XÁC THỰC THÀNH CÔNG -> ĐỔ KẾT QUẢ RA GIAO DIỆN
                 document.getElementById('res-name').innerText = targetedStudentObj.name;
                 document.getElementById('res-class').innerText = targetedStudentObj.class;
                 document.getElementById('res-student-code').innerText = targetedStudentObj.studentCode || 'Chưa cập nhật';
@@ -926,29 +799,29 @@
 
                 document.getElementById('step-3-container').style.display = 'none';
                 document.getElementById('step-4-container').style.display = 'block';
+                document.getElementById('stepper-box').style.display = 'none';
 
             } catch (err) {
                 console.error(err);
-                alert("Lỗi kiểm tra: " + err.message);
+                alert("Lỗi xác thực: " + err.message);
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-key"></i> Xác thực & Nhận thông tin';
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Xác thực & Nhận mã';
             }
         }
 
-        // Quay lại bước trước
         function backToStep(step) {
             if (step === 1) {
                 document.getElementById('step-2-container').style.display = 'none';
                 document.getElementById('step-3-container').style.display = 'none';
                 document.getElementById('step-4-container').style.display = 'none';
                 document.getElementById('step-1-container').style.display = 'block';
-                switchStepDot(1);
+                document.getElementById('stepper-box').style.display = 'flex';
+                updateStepView(1, "Tìm kiếm");
                 grecaptcha.reset();
             }
         }
 
-        // Reset toàn bộ form tra cứu
         function resetAllPortal() {
             document.getElementById('input-fullname').value = '';
             document.getElementById('input-class').value = '';
@@ -962,10 +835,9 @@
         function shakeCard() {
             const card = document.getElementById('main-card');
             card.classList.add('shake');
-            setTimeout(() => card.classList.remove('shake'), 450);
+            setTimeout(() => card.classList.remove('shake'), 350);
         }
 
-        // Khởi động kiểm tra an ninh ban đầu khi nạp trang
         window.addEventListener('DOMContentLoaded', () => {
             checkRateLimit();
         });

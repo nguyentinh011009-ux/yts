@@ -671,38 +671,32 @@
                     await loadMasterCryptoKey();
                 }
 
-                const snapshot = await db.collection('yt_students').get();
-                matchedStudentsList = [];
-
-                const cleanSearchName = removeVietnameseTones(nameInput);
-                const cleanSearchClass = classInput.toLowerCase();
-
-                snapshot.forEach(doc => {
-                    const raw = doc.data();
-                    const decryptedName = raw.name && typeof decryptField === 'function' ? decryptField(raw.name) : (raw.name || '');
-                    const decryptedClass = raw.class && typeof decryptField === 'function' ? decryptField(raw.class) : (raw.class || '');
-
-                    const normalizedDbName = removeVietnameseTones(decryptedName);
-                    const normalizedDbClass = decryptedClass.toLowerCase();
-
-                    if (normalizedDbName === cleanSearchName && normalizedDbClass === cleanSearchClass) {
-                        matchedStudentsList.push({
-                            id: doc.id,
-                            studentCode: raw.studentCode || 'Chưa cấp',
-                            name: decryptedName,
-                            class: decryptedClass,
-                            dob: raw.dob && typeof decryptField === 'function' ? decryptField(raw.dob) : (raw.dob || ''),
-                            ward: raw.ward || ''
-                        });
-                    }
+                const response = await fetch('/.netlify/functions/lookup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'search',
+                        name: nameInput,
+                        className: classInput,
+                        recaptchaToken: recaptchaResponse
+                    })
                 });
-
+                
+                const resData = await response.json();
+                if (!response.ok) {
+                    shakeCard();
+                    grecaptcha.reset();
+                    return alert(resData.error || "Tìm kiếm thất bại!");
+                }
+                
+                matchedStudentsList = resData.candidates;
+                
                 if (matchedStudentsList.length === 0) {
                     alert("Không tìm thấy học sinh nào khớp với Họ tên và Lớp đã cung cấp!");
                     grecaptcha.reset();
                     return;
                 }
-
+                
                 if (matchedStudentsList.length === 1) {
                     chooseCandidate(0);
                 } else {
@@ -754,59 +748,60 @@
 
         async function handleStep3Verify() {
             if (!targetedStudentObj) return;
-
+        
             const inputDob = document.getElementById('verify-dob').value.trim();
             const inputWard = document.getElementById('verify-ward').value.trim();
             const btn = document.getElementById('btn-verify-secret');
-
+        
             if (!inputDob || !inputWard) {
                 shakeCard();
                 return alert("Vui lòng điền đầy đủ Ngày tháng năm sinh và Phường/Xã!");
             }
-
+        
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xác thực...';
-
+        
             try {
-                const studentDob = (targetedStudentObj.dob || '').trim();
-                let isDobValid = false;
-
-                if (studentDob === inputDob) {
-                    isDobValid = true;
-                } else if (studentDob) {
-                    const formattedDb = new Date(studentDob).toISOString().split('T')[0];
-                    if (formattedDb === inputDob) isDobValid = true;
-                }
-
-                const studentWard = removeVietnameseTones(targetedStudentObj.ward || '');
-                const cleanInputWard = removeVietnameseTones(inputWard);
-
-                const isWardValid = studentWard.length > 0 && 
-                    (studentWard.includes(cleanInputWard) || cleanInputWard.includes(studentWard));
-
+                // Gửi lên Netlify Function để máy chủ tự giải mã và so khớp ngày sinh/phường xã
+                const response = await fetch('/.netlify/functions/lookup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'verify',
+                        studentId: targetedStudentObj.id,
+                        dob: inputDob,
+                        ward: inputWard
+                    })
+                });
+        
+                const resData = await response.json();
+        
+                // Ghi lại số lần thử tra cứu để chống spam (Rate Limit)
                 await recordLookupAttempt();
-
-                if (!isDobValid || !isWardValid) {
+        
+                if (!response.ok) {
                     shakeCard();
-                    alert("Thông tin Ngày sinh hoặc Phường/Xã không khớp với hồ sơ học sinh!");
-                    return;
+                    return alert(resData.error || "Thông tin Ngày sinh hoặc Phường/Xã không khớp!");
                 }
-
-                document.getElementById('res-name').innerText = targetedStudentObj.name;
-                document.getElementById('res-class').innerText = targetedStudentObj.class;
-                document.getElementById('res-student-code').innerText = targetedStudentObj.studentCode || 'Chưa cập nhật';
-                document.getElementById('res-medical-id').innerText = targetedStudentObj.id;
-
+        
+                // Nhận dữ liệu chính thức sau khi xác thực thành công từ server
+                document.getElementById('res-name').innerText = resData.data.name;
+                document.getElementById('res-class').innerText = resData.data.class;
+                document.getElementById('res-student-code').innerText = resData.data.studentCode || 'Chưa cập nhật';
+                document.getElementById('res-medical-id').innerText = resData.data.medicalId;
+        
+                // Chuyển sang màn hình hiển thị kết quả
                 document.getElementById('step-3-container').style.display = 'none';
                 document.getElementById('step-4-container').style.display = 'block';
                 document.getElementById('stepper-box').style.display = 'none';
-
+        
             } catch (err) {
                 console.error(err);
-                alert("Lỗi xác thực: " + err.message);
+                shakeCard();
+                alert("Lỗi kết nối máy chủ xác thực: " + err.message);
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-check-circle"></i> Xác thực & Nhận mã';
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Xác thực';
             }
         }
 

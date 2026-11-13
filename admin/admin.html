@@ -1138,8 +1138,12 @@
     <!-- THANH CÔNG CỤ ĐẦU TRANG -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #cbd5e1; padding-bottom: 15px;">
         <h2 style="margin: 0; color: #1e293b;"><i class="fas fa-file-medical"></i> Khám Sức Khỏe Định Kỳ</h2>
-        <div style="display: flex; gap: 12px;">
-            <button onclick="downloadExcelTemplateExam()" class="btn btn-secondary" style="background:#e2e8f0; font-weight: bold;"><i class="fas fa-download"></i> Tải file Excel mẫu</button>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <select id="exam-template-download-type" class="pharma-input" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 600;">
+                <option value="legacy">Mẫu 2025)</option>
+                <option value="2026">Mẫu 2026</option>
+            </select>
+            <button onclick="downloadExcelTemplateByChoice()" class="btn btn-secondary" style="background:#e2e8f0; font-weight: bold;"><i class="fas fa-download"></i> Tải file Excel mẫu</button>
             <button onclick="openCreateCampaignModal()" class="btn btn-primary" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); font-weight: bold;"><i class="fas fa-plus-circle"></i> Bắt đầu đợt khám mới</button>
         </div>
     </div>
@@ -1167,8 +1171,10 @@
             <div class="input-group" style="margin-bottom: 25px;">
                 <label>Chọn phương thức nhập liệu ban đầu</label>
                 <select id="exam-new-method" class="pharma-input" style="width:100%; padding:12px;">
-                    <option value="manual">⌨ Nhập thủ công từng học sinh</option>
-                    <option value="excel">📊 Nhập hàng loạt từ file Excel của Bộ/Sở</option>
+                    <option value="manual_legacy">⌨ Nhập thủ công (Mẫu cũ)</option>
+                    <option value="manual_2026">⌨ Nhập thủ công (Mẫu mới - 2026)</option>
+                    <option value="excel_legacy">📊 Nhập hàng loạt từ Excel (Mẫu cũ)</option>
+                    <option value="excel_2026">📊 Nhập hàng loạt từ Excel (Mẫu mới - 2026)</option>
                 </select>
             </div>
             <button onclick="createNewExamCampaign()" class="btn btn-primary" style="width: 100%; justify-content: center; height: 50px; font-weight: bold; font-size: 1.05rem;"><i class="fas fa-check-circle"></i> Xác nhận & Bắt đầu</button>
@@ -1204,13 +1210,17 @@
                     <input type="text" id="exam-search-input" placeholder="Tìm tên hoặc lớp học sinh đã khám..." style="padding: 10px 15px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; flex: 1;">
                     <button onclick="searchExamResults()" class="btn btn-primary" style="padding: 10px 20px; background: #2563eb;"><i class="fas fa-search"></i> Tìm</button>
                 </div>
-                <!-- Nhóm 2: Hai nút thêm -->
-<div style="display: flex; gap: 10px; flex-shrink: 0;">
-    <button id="btn-excel-upload-trigger" onclick="triggerExcelExamUpload()" class="btn btn-secondary" style="background:#8b5cf6; color:white;"><i class="fas fa-file-excel"></i> Nhập từ Excel</button>
-    <input type="file" id="excel-exam-upload-direct" accept=".xlsx, .xls" style="display:none;" onchange="handleExcelExamUpload(event)">
-    <button onclick="openManualEntryModal()" class="btn btn-success" style="background:#10b981; color:white;"><i class="fas fa-plus"></i> Nhập thủ công</button>
-</div>
+                <!-- Nhóm 2: Chọn mẫu nhập Excel & Nhập thủ công -->
+            <div style="display: flex; gap: 8px; flex-shrink: 0; align-items: center; flex-wrap: wrap;">
+                <select id="exam-excel-import-template" style="padding: 9px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 600; background: white;">
+                    <option value="legacy">Excel: Mẫu cũ</option>
+                    <option value="2026">Excel: Mẫu mới 2026</option>
+                </select>
+                <button id="btn-excel-upload-trigger" onclick="triggerExcelExamUpload()" class="btn btn-secondary" style="background:#8b5cf6; color:white;"><i class="fas fa-file-excel"></i> Nhập từ Excel</button>
+                <input type="file" id="excel-exam-upload-direct" accept=".xlsx, .xls" style="display:none;" onchange="handleExcelExamUploadByChoice(event)">
+                <button onclick="openManualEntryModal()" class="btn btn-success" style="background:#10b981; color:white;"><i class="fas fa-plus"></i> Nhập thủ công</button>
             </div>
+     </div>
 
             <!-- DANH SÁCH HỌC SÌNH ĐÃ KHÁM -->
             <div style="flex: 1; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px;">
@@ -1238,7 +1248,14 @@
     <div id="manual-entry-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 10008; align-items: center; justify-content: center; padding: 20px;">
         <div class="form-card fade-in" style="width: 100%; max-width: 900px; max-height: 90vh; overflow-y: auto; position: relative; padding: 30px; border-top: 6px solid #10b981; border-radius: 16px;">
             <button onclick="closeManualEntryModal()" style="position:absolute; top:20px; right:20px; border:none; background:#f1f5f9; width:35px; height:35px; border-radius:50%; font-size:1.5rem; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;">&times;</button>
-            <h3 id="manual-entry-title" style="color: #10b981; margin-top: 0; margin-bottom: 25px;"><i class="fas fa-keyboard"></i> Nhập phiếu khám sức khỏe</h3>
+            <h3 id="manual-entry-title" style="color: #10b981; margin-top: 0; margin-bottom: 15px;"><i class="fas fa-keyboard"></i> Nhập phiếu khám sức khỏe</h3>
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px 15px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 15px;">
+                <label style="font-weight: bold; color: #166534; margin: 0;"><i class="fas fa-layer-group"></i> Chọn mẫu phiếu nhập:</label>
+                <select id="ex-template-type" onchange="toggleManualExamTemplate()" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #86efac; font-weight: bold; color: #15803d; background: white; min-width: 240px;">
+                    <option value="legacy">Mẫu cũ</option>
+                    <option value="2026">Mẫu mới</option>
+                </select>
+            </div>
             
             <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; margin-bottom:20px; position:relative;">
                 <div class="input-group">
@@ -1415,7 +1432,33 @@
 <div class="ai-section-divider">
     <span><i class="fas fa-chart-bar"></i> Thống Kê Dữ Liệu Khám Thủ Công & Bộ Lọc</span>
 </div>
-
+<!-- [POPUP 6]: BÁO CÁO LỖI CHI TIẾT KHI IMPORT EXCEL MẪU 2026 -->
+    <div id="exam-import-error-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 10015; align-items: center; justify-content: center; padding: 20px;">
+        <div class="form-card fade-in" style="width: 100%; max-width: 900px; max-height: 85vh; position: relative; padding: 25px; border-radius: 16px; border-top: 6px solid #ef4444; display: flex; flex-direction: column; background: white;">
+            <button onclick="document.getElementById('exam-import-error-modal').style.display='none'" style="position:absolute; top:18px; right:18px; border:none; background:#f1f5f9; width:34px; height:34px; border-radius:50%; font-size:1.3rem; cursor:pointer; color:#64748b;">&times;</button>
+            <h3 style="color: #ef4444; margin: 0 0 8px 0;"><i class="fas fa-exclamation-triangle"></i> Chi tiết kết quả & Các trường hợp không khớp dữ liệu</h3>
+            <p id="exam-import-error-summary" style="color: #475569; font-size: 0.92rem; margin-bottom: 15px;"></p>
+            <div style="flex: 1; overflow-y: auto; border: 1px solid #fecaca; border-radius: 10px;">
+                <table class="admin-table" style="margin: 0;">
+                    <thead style="position: sticky; top: 0; background: #fef2f2; z-index: 2;">
+                        <tr>
+                            <th>Dòng / STT</th>
+                            <th>Họ và tên trẻ</th>
+                            <th>Lớp</th>
+                            <th>Giới tính</th>
+                            <th>Ngày sinh</th>
+                            <th>Phường/Xã</th>
+                            <th>Chi tiết lỗi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="exam-import-error-tbody"></tbody>
+                </table>
+            </div>
+            <div style="margin-top: 15px; text-align: right;">
+                <button onclick="document.getElementById('exam-import-error-modal').style.display='none'" class="btn btn-primary" style="background: #475569;">Đóng</button>
+            </div>
+        </div>
+    </div>
 <!-- ========================================================================= -->
 <!-- POPUP CHI TIẾT BẢN DỰ BÁO AI (DRILL-DOWN MODAL) -->
 <!-- ========================================================================= -->

@@ -102,67 +102,119 @@ async function searchStudentForExam(val) {
                 document.getElementById('exam-selected-sid').value = st.id;
                 box.style.display = 'none';
                 
-                if(st.height) document.getElementById('ex-height').value = decryptField(st.height);
-				if(st.weight) document.getElementById('ex-weight').value = decryptField(st.weight);
+                const decH = st.height ? decryptField(st.height) : '';
+                const decW = st.weight ? decryptField(st.weight) : '';
+                if (decH) {
+                    document.getElementById('ex-height').value = decH;
+                    if (document.getElementById('ex26-height')) document.getElementById('ex26-height').value = decH;
+                }
+                if (decW) {
+                    document.getElementById('ex-weight').value = decW;
+                    if (document.getElementById('ex26-weight')) document.getElementById('ex26-weight').value = decW;
+                }
+                if (st.ward && document.getElementById('ex26-ward')) {
+                    document.getElementById('ex26-ward').value = decryptField(st.ward);
+                }
             };
             box.appendChild(item);
         });
     }
     box.style.display = 'block';
 }
+function toggleManualExamTemplate() {
+    const type = document.getElementById('ex-template-type').value;
+    document.getElementById('manual-form-legacy').style.display = (type === '2026') ? 'none' : 'block';
+    document.getElementById('manual-form-2026').style.display = (type === '2026') ? 'block' : 'none';
+}
 // 3. LƯU PHIẾU KHÁM THỦ CÔNG
 async function saveManualPhysicalExam() {
     const sid = document.getElementById('exam-selected-sid').value;
     const name = document.getElementById('exam-student-search').value.trim();
     const className = document.getElementById('exam-student-class').value;
+    const templateType = document.getElementById('ex-template-type')?.value || 'legacy';
 
     if (!activeCampaignId) return alert("Vui lòng chọn đợt khám!");
     if (!sid) return alert("Vui lòng tìm chọn một học sinh trong hệ thống!");
 
-    const height = document.getElementById('ex-height').value.trim();
-    const weight = document.getElementById('ex-weight').value.trim();
+    let payload = {};
+    let height = '';
+    let weight = '';
+    let ward = '';
 
-    const payload = {
-        campaignId: activeCampaignId,
-        studentId: sid,
-        name: encryptField(name),
-        class: encryptField(className),
-        facility: document.getElementById('ex-facility').value.trim(),
-	    height: height ? encryptField(height) : '',
-	    weight: weight ? encryptField(weight) : '',
-        examDate: document.getElementById('ex-date').value,
-        reportDate: document.getElementById('ex-report-date').value,
-        mentalHealth: document.getElementById('ex-mental').value,
-        internalMedicine: document.getElementById('ex-internal').value,
-        ent: document.getElementById('ex-ent').value,
-        surgery: document.getElementById('ex-surgery').value,
-        eyes: document.getElementById('ex-eyes').value,
-        dental: document.getElementById('ex-dental').value,
-        summary: {
-            physicalDev: document.getElementById('ex-sum-phys').value.trim(),
-            mentalDev: document.getElementById('ex-sum-ment').value.trim(),
-            healthStatus: document.getElementById('ex-sum-status').value.trim(),
-            notes: document.getElementById('ex-sum-notes').value.trim(),
-            advice: document.getElementById('ex-sum-advice').value.trim()
-        }
-    };
+    if (templateType === '2026') {
+        height = document.getElementById('ex26-height').value.trim();
+        weight = document.getElementById('ex26-weight').value.trim();
+        ward = document.getElementById('ex26-ward').value.trim();
+
+        payload = {
+            templateType: '2026',
+            campaignId: activeCampaignId,
+            studentId: sid,
+            name: encryptField(name),
+            class: encryptField(className),
+            facility: document.getElementById('ex26-facility').value.trim(),
+            examDate: document.getElementById('ex26-date').value,
+            ward: ward ? encryptField(ward) : '',
+            height: height ? encryptField(height) : '',
+            weight: weight ? encryptField(weight) : '',
+            pulse: document.getElementById('ex26-pulse').value.trim(),
+            bloodPressure: document.getElementById('ex26-bp').value.trim(),
+            respiratoryRate: document.getElementById('ex26-resp').value.trim(),
+            healthStatus: document.getElementById('ex26-health-status').value.trim(),
+            preliminaryDiagnosis: document.getElementById('ex26-prelim-icd').value.trim(),
+            confirmedDiagnosis: document.getElementById('ex26-confirm-icd').value.trim(),
+            healthClassification: document.getElementById('ex26-classification').value.trim(),
+            advice: document.getElementById('ex26-advice').value.trim(),
+            otherNotes: document.getElementById('ex26-other').value.trim()
+        };
+    } else {
+        height = document.getElementById('ex-height').value.trim();
+        weight = document.getElementById('ex-weight').value.trim();
+
+        payload = {
+            templateType: 'legacy',
+            campaignId: activeCampaignId,
+            studentId: sid,
+            name: encryptField(name),
+            class: encryptField(className),
+            facility: document.getElementById('ex-facility').value.trim(),
+            height: height ? encryptField(height) : '',
+            weight: weight ? encryptField(weight) : '',
+            examDate: document.getElementById('ex-date').value,
+            reportDate: document.getElementById('ex-report-date').value,
+            mentalHealth: document.getElementById('ex-mental').value,
+            internalMedicine: document.getElementById('ex-internal').value,
+            ent: document.getElementById('ex-ent').value,
+            surgery: document.getElementById('ex-surgery').value,
+            eyes: document.getElementById('ex-eyes').value,
+            dental: document.getElementById('ex-dental').value,
+            summary: {
+                physicalDev: document.getElementById('ex-sum-phys').value.trim(),
+                mentalDev: document.getElementById('ex-sum-ment').value.trim(),
+                healthStatus: document.getElementById('ex-sum-status').value.trim(),
+                notes: document.getElementById('ex-sum-notes').value.trim(),
+                advice: document.getElementById('ex-sum-advice').value.trim()
+            }
+        };
+    }
 
     try {
         const batch = db.batch();
         const recordId = `${activeCampaignId}_${sid}`;
         batch.set(db.collection('yt_exam_results').doc(recordId), payload);
 
-        if (height || weight) {
-		    let updateObj = {};
-		    if (height) updateObj.height = encryptField(height);
-		    if (weight) updateObj.weight = encryptField(weight);
-		    batch.update(db.collection('yt_students').doc(sid), updateObj);
-		}
+        let updateObj = {};
+        if (height) updateObj.height = encryptField(height);
+        if (weight) updateObj.weight = encryptField(weight);
+        if (Object.keys(updateObj).length > 0) {
+            batch.update(db.collection('yt_students').doc(sid), updateObj);
+        }
 
         await batch.commit();
         alert("✅ Đã lưu phiếu khám và cập nhật thể trạng học sinh gốc thành công!");
         resetManualExamForm();
-        examStudentCache = null; 
+        closeManualEntryModal();
+        examStudentCache = null;
     } catch (e) {
         alert("Lỗi khi lưu phiếu khám: " + e.message);
     }
@@ -179,6 +231,10 @@ function resetManualExamForm() {
     document.getElementById('ex-sum-status').value = '';
     document.getElementById('ex-sum-notes').value = '';
     document.getElementById('ex-sum-advice').value = '';
+	 ['ex26-facility','ex26-date','ex26-ward','ex26-height','ex26-weight','ex26-pulse','ex26-bp','ex26-resp','ex26-health-status','ex26-prelim-icd','ex26-confirm-icd','ex26-classification','ex26-advice','ex26-other'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
 }
 
 // 4. THUẬT TOÁN ĐỊNH VỊ CỘT THÔNG MINH (DYNAMIC COLUMN MAPPING)
@@ -577,7 +633,338 @@ async function handleExcelExamUpload(event) {
     };
     reader.readAsArrayBuffer(file);
 }
+function handleExcelExamUploadByChoice(event) {
+    const mode = document.getElementById('exam-excel-import-template')?.value || 'legacy';
+    if (mode === '2026') {
+        handleExcelExamUpload2026(event);
+    } else {
+        handleExcelExamUpload(event); // Giữ nguyên hàm mẫu cũ
+    }
+}
 
+// Ánh xạ 19 cột theo tiêu đề Mẫu 2026 (kèm fallback theo đúng thứ tự 0..18)
+function buildColumnMapping2026(headerRow) {
+    const map = {
+        stt: -1, facility: -1, examDate: -1, name: -1, gender: -1,
+        dob: -1, ward: -1, class: -1, height: -1, weight: -1,
+        pulse: -1, bp: -1, resp: -1, healthStatus: -1,
+        prelimICD: -1, confirmICD: -1, classification: -1, advice: -1, other: -1
+    };
+    (headerRow || []).forEach((cell, idx) => {
+        const h = String(cell || '').trim().toLowerCase();
+        if (h === 'stt' || h.includes('stt')) map.stt = idx;
+        else if (h.includes('đơn vị khám')) map.facility = idx;
+        else if (h.includes('ngày khám')) map.examDate = idx;
+        else if (h.includes('họ và tên') || h.includes('họ tên')) map.name = idx;
+        else if (h.includes('giới tính')) map.gender = idx;
+        else if (h.includes('ngày sinh')) map.dob = idx;
+        else if (h.includes('phường') || h.includes('xã')) map.ward = idx;
+        else if (h === 'lớp' || h.includes('lớp')) map.class = idx;
+        else if (h.includes('chiều cao')) map.height = idx;
+        else if (h.includes('cân nặng')) map.weight = idx;
+        else if (h.includes('mạch')) map.pulse = idx;
+        else if (h.includes('huyết áp')) map.bp = idx;
+        else if (h.includes('nhịp thở')) map.resp = idx;
+        else if (h.includes('tình trạng sức khỏe')) map.healthStatus = idx;
+        else if (h.includes('chẩn đoán sơ bộ')) map.prelimICD = idx;
+        else if (h.includes('chẩn đoán xác định')) map.confirmICD = idx;
+        else if (h.includes('phân loại sức khỏe')) map.classification = idx;
+        else if (h.includes('đề nghị') || h.includes('tư vấn')) map.advice = idx;
+        else if (h.includes('khác')) map.other = idx;
+    });
+
+    // Fallback theo thứ tự 19 cột chuẩn 2026
+    const defaults = {
+        stt: 0, facility: 1, examDate: 2, name: 3, gender: 4,
+        dob: 5, ward: 6, class: 7, height: 8, weight: 9,
+        pulse: 10, bp: 11, resp: 12, healthStatus: 13,
+        prelimICD: 14, confirmICD: 15, classification: 16, advice: 17, other: 18
+    };
+    Object.keys(defaults).forEach(k => { if (map[k] === -1) map[k] = defaults[k]; });
+    return map;
+}
+
+// Chuẩn hóa chuỗi ngày tháng Excel -> YYYY-MM-DD
+function normalizeExcelDate2026(cellVal) {
+    if (!cellVal && cellVal !== 0) return '';
+    if (cellVal instanceof Date && !isNaN(cellVal.getTime())) {
+        // Bù 12 tiếng tránh lệch múi giờ UTC
+        const d = new Date(cellVal.getTime() + 12 * 3600 * 1000);
+        return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+    }
+    if (typeof cellVal === 'number' && cellVal > 25569) {
+        const utcDays = Math.floor(cellVal - 25569);
+        const d = new Date(utcDays * 86400 * 1000);
+        return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+    }
+    const str = String(cellVal).trim();
+    const parts = str.split(/[\/\-]/);
+    if (parts.length === 3) {
+        if (parts[0].length === 4) {
+            return `${parts[0]}-${String(parts[1]).padStart(2, '0')}-${String(parts[2]).padStart(2, '0')}`;
+        }
+        let y = parts[2];
+        if (y.length === 2) y = '20' + y;
+        return `${y}-${String(parts[1]).padStart(2, '0')}-${String(parts[0]).padStart(2, '0')}`;
+    }
+    return str;
+}
+
+// Hàm chuẩn hóa chuỗi so khớp
+function normStr2026(val) {
+    return String(val || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+async function handleExcelExamUpload2026(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!activeCampaignId) {
+        event.target.value = '';
+        return alert("Vui lòng chọn hoặc tạo đợt khám trước khi nạp dữ liệu!");
+    }
+    event.target.value = '';
+
+    const btn = document.getElementById('btn-excel-upload-trigger');
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang phân tích mẫu 2026...';
+        btn.disabled = true;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async function (e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rawJson = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+            if (rawJson.length < 2) throw new Error("Tệp Excel trống hoặc không đúng định dạng mẫu 2026!");
+
+            const map = buildColumnMapping2026(rawJson[0]);
+
+            if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tải danh sách học sinh...';
+            const studentsList = await getStudentsListCached();
+
+            // Chuẩn bị dữ liệu học sinh đã giải mã sẵn trong RAM để so khớp nhanh & chính xác
+            const normalizedStudents = studentsList.map(st => {
+                const decName = st.name ? decryptField(st.name) : '';
+                const decClass = st.class ? decryptField(st.class) : '';
+                const decGender = st.gender ? decryptField(st.gender) : '';
+                const decDob = st.dob ? normalizeExcelDate2026(decryptField(st.dob)) : '';
+                const decWard = st.ward ? decryptField(st.ward) : '';
+                return {
+                    raw: st,
+                    nName: normStr2026(decName),
+                    nClass: normStr2026(decClass),
+                    nGender: normStr2026(decGender),
+                    nDob: decDob,
+                    nWard: normStr2026(decWard)
+                };
+            });
+
+            let batches = [];
+            let currentBatch = db.batch();
+            let opCount = 0;
+            let successCount = 0;
+            let errors = [];
+
+            for (let r = 1; r < rawJson.length; r++) {
+                const row = rawJson[r];
+                if (!row || row.every(c => String(c || '').trim() === '')) continue;
+
+                const stt = String(row[map.stt] || (r)).trim();
+                const facility = String(row[map.facility] || '').trim();
+                const examDate = normalizeExcelDate2026(row[map.examDate]);
+                const name = String(row[map.name] || '').trim();
+                const gender = String(row[map.gender] || '').trim();
+                const dob = normalizeExcelDate2026(row[map.dob]);
+                const ward = String(row[map.ward] || '').trim();
+                const className = String(row[map.class] || '').trim().toUpperCase();
+
+                if (!name) {
+                    errors.push({ rowNum: r + 1, stt, name: '(Trống)', className, gender, dob, ward, reason: 'Thiếu Họ và tên trẻ' });
+                    continue;
+                }
+
+                const nName = normStr2026(name);
+                const nClass = normStr2026(className);
+                const nGender = normStr2026(gender);
+                const nDob = dob;
+                const nWard = normStr2026(ward);
+
+                // --- QUÁ TRÌNH SO KHỚP 3 LẦN ---
+                // Lần 1: Họ tên (không phân biệt hoa/thường) + Lớp + Giới tính + Ngày sinh
+                let matched = normalizedStudents.find(s =>
+                    s.nName === nName && s.nClass === nClass && s.nGender === nGender && s.nDob === nDob &&
+                    nClass !== '' && nGender !== '' && nDob !== ''
+                );
+
+                // Lần 2: Họ tên + Giới tính + Xã/Phường + Ngày sinh
+                if (!matched) {
+                    matched = normalizedStudents.find(s =>
+                        s.nName === nName && s.nGender === nGender && s.nWard === nWard && s.nDob === nDob &&
+                        nGender !== '' && nWard !== '' && nDob !== ''
+                    );
+                }
+
+                // Lần 3: Họ tên + Giới tính + Xã/Phường
+                if (!matched) {
+                    matched = normalizedStudents.find(s =>
+                        s.nName === nName && s.nGender === nGender && s.nWard === nWard &&
+                        nGender !== '' && nWard !== ''
+                    );
+                }
+
+                if (!matched) {
+                    errors.push({
+                        rowNum: r + 1, stt, name, className, gender, dob, ward,
+                        reason: 'Không tìm thấy học sinh khớp trong hệ thống sau 3 lần đối chiếu (Tên+Lớp+GT+NS / Tên+GT+Xã+NS / Tên+GT+Xã)'
+                    });
+                    continue;
+                }
+
+                const student = matched.raw;
+                const height = String(row[map.height] || '').trim();
+                const weight = String(row[map.weight] || '').trim();
+                const pulse = String(row[map.pulse] || '').trim();
+                const bloodPressure = String(row[map.bp] || '').trim();
+                const respiratoryRate = String(row[map.resp] || '').trim();
+                const healthStatus = String(row[map.healthStatus] || '').trim();
+                const preliminaryDiagnosis = String(row[map.prelimICD] || '').trim();
+                const confirmedDiagnosis = String(row[map.confirmICD] || '').trim();
+                const healthClassification = String(row[map.classification] || '').trim();
+                const advice = String(row[map.advice] || '').trim();
+                const otherNotes = String(row[map.other] || '').trim();
+
+                const recordId = `${activeCampaignId}_${student.id}`;
+                const refResult = db.collection('yt_exam_results').doc(recordId);
+
+                // Khóa bảo mật các trường cá nhân & sinh trắc học tương tự mẫu cũ
+                currentBatch.set(refResult, {
+                    templateType: '2026',
+                    campaignId: activeCampaignId,
+                    studentId: student.id,
+                    name: encryptField(student.name ? decryptField(student.name) : name),
+                    class: encryptField(student.class ? decryptField(student.class) : className),
+                    dob: dob ? encryptField(dob) : '',
+                    gender: gender || student.gender || '',
+                    ward: ward ? encryptField(ward) : '',
+                    facility,
+                    examDate,
+                    height: height ? encryptField(height) : '',
+                    weight: weight ? encryptField(weight) : '',
+                    pulse,
+                    bloodPressure,
+                    respiratoryRate,
+                    healthStatus,
+                    preliminaryDiagnosis,
+                    confirmedDiagnosis,
+                    healthClassification,
+                    advice,
+                    otherNotes
+                });
+                opCount++;
+
+                // Cập nhật hồ sơ gốc nếu có chiều cao / cân nặng / ngày sinh còn thiếu
+                let updatePayload = {};
+                if (height) updatePayload.height = encryptField(height);
+                if (weight) updatePayload.weight = encryptField(weight);
+                if (!student.dob && dob) updatePayload.dob = encryptField(dob);
+                if (!student.ward && ward) updatePayload.ward = ward;
+                if (!student.gender && gender) updatePayload.gender = gender;
+
+                if (Object.keys(updatePayload).length > 0) {
+                    currentBatch.update(db.collection('yt_students').doc(student.id), updatePayload);
+                    opCount++;
+                }
+
+                successCount++;
+                if (opCount >= 400) {
+                    batches.push(currentBatch);
+                    currentBatch = db.batch();
+                    opCount = 0;
+                }
+            }
+
+            if (opCount > 0) batches.push(currentBatch);
+            if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu dữ liệu lên hệ thống...';
+            for (const b of batches) await b.commit();
+
+            if (btn) {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+            if (typeof writeAuditLog === 'function') {
+                writeAuditLog("IMPORT_EXAM_2026", "yt_exam_results", activeCampaignId, `Nhập Excel mẫu 2026: ${successCount} thành công, ${errors.length} lỗi.`);
+            }
+            examStudentCache = null;
+
+            if (errors.length > 0) {
+                showImportExamErrorsModal(successCount, errors);
+            } else {
+                alert(`✅ Nhập dữ liệu Mẫu 2026 thành công!\n- Số lượng phiếu cập nhật: ${successCount} học sinh (0 lỗi).`);
+            }
+        } catch (err) {
+            if (btn) {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+            alert("Lỗi khi đọc file Excel Mẫu 2026: " + err.message);
+            console.error(err);
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function showImportExamErrorsModal(successCount, errors) {
+    const summaryEl = document.getElementById('exam-import-error-summary');
+    const tbody = document.getElementById('exam-import-error-tbody');
+    summaryEl.innerHTML = `Đã nạp thành công <strong style="color:#10b981;">${successCount}</strong> học sinh. Có <strong style="color:#ef4444;">${errors.length}</strong> trường hợp bị bỏ qua do không khớp học sinh trong hệ thống:`;
+    tbody.innerHTML = errors.map(er => `
+        <tr>
+            <td>Dòng ${er.rowNum} (STT: ${er.stt})</td>
+            <td><strong>${er.name}</strong></td>
+            <td>${er.className || '--'}</td>
+            <td>${er.gender || '--'}</td>
+            <td>${er.dob || '--'}</td>
+            <td>${er.ward || '--'}</td>
+            <td style="color:#b91c1c; font-size:0.85rem;">${er.reason}</td>
+        </tr>
+    `).join('');
+    document.getElementById('exam-import-error-modal').style.display = 'flex';
+}
+function downloadExcelTemplateByChoice() {
+    const type = document.getElementById('exam-template-download-type')?.value || 'legacy';
+    if (type === '2026') {
+        downloadExcelTemplateExam2026();
+    } else {
+        downloadExcelTemplateExam(); // Giữ nguyên hàm mẫu cũ
+    }
+}
+
+function downloadExcelTemplateExam2026() {
+    const headers = [
+        "STT", "Đơn vị khám", "Ngày khám", "Họ và tên trẻ", "Giới tính",
+        "Ngày sinh", "Phường/Xã", "Lớp", "Chiều cao (cm)", "Cân nặng (kg)",
+        "Mạch (lần/phút)", "Huyết áp (mmHg)", "Nhịp thở (lần/phút)",
+        "Tình trạng sức khỏe", "Chẩn đoán sơ bộ - ICD", "Chẩn đoán xác định - ICD",
+        "Phân loại sức khỏe", "Đề nghị/tư vấn", "Khác - ghi rõ"
+    ];
+
+    const sampleRow = [
+        1, "Trung tâm Y tế khu vực Long Đất", "15/09/2026", "Nguyễn Văn An", "Nam",
+        "12/05/2010", "Xã Đất Đỏ", "11A1", "168", "56",
+        "78", "110/70", "18",
+        "Bình thường", "Không", "Không",
+        "Loại I", "Duy trì chế độ dinh dưỡng và vận động", ""
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, sampleRow]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Mau_KSK_2026");
+    XLSX.writeFile(wb, "Mau_File_Kham_Suc_Khoe_Moi_2026.xlsx");
+}
 // 6. XUẤT TẤT CẢ FILE MẪU CHUẨN SỞ GD&ĐT
 function downloadExcelTemplateExam() {
     const row0 = [
@@ -682,6 +1069,7 @@ function loadExamResultsForCampaign(cid, searchQuery = "") {
 					    name: d.name ? decryptField(d.name) : '',
 					    class: d.class ? decryptField(d.class) : '',
 					    dob: d.dob ? decryptField(d.dob) : '',
+					    ward: d.ward ? decryptField(d.ward) : '',
 					    height: d.height ? decryptField(d.height) : '',
 					    weight: d.weight ? decryptField(d.weight) : ''
 					});
@@ -755,10 +1143,11 @@ function closeCreateCampaignModal() {
     document.getElementById('create-campaign-modal').style.display = 'none';
 }
 
-function openManualEntryModal(studentId = null) {
+function openManualEntryModal(studentId = null, defaultTemplate = 'legacy') {
     resetManualExamForm();
     const title = document.getElementById('manual-entry-title');
     const searchInput = document.getElementById('exam-student-search');
+    const tplSelect = document.getElementById('ex-template-type');
 
     if (studentId) {
         title.innerHTML = '<i class="fas fa-user-edit"></i> Cập nhật phiếu khám học sinh';
@@ -767,33 +1156,56 @@ function openManualEntryModal(studentId = null) {
 
         const record = activeCampaignResults.find(r => r.studentId === studentId);
         if (record) {
+            const is2026 = record.templateType === '2026' || record.healthClassification !== undefined;
+            tplSelect.value = is2026 ? '2026' : 'legacy';
+            toggleManualExamTemplate();
+
             document.getElementById('exam-selected-sid').value = record.studentId;
             document.getElementById('exam-student-search').value = record.name;
             document.getElementById('exam-student-class').value = record.class;
-            document.getElementById('ex-facility').value = record.facility || '';
-            document.getElementById('ex-height').value = record.height || '';
-            document.getElementById('ex-weight').value = record.weight || '';
-            document.getElementById('ex-date').value = record.examDate || '';
-            document.getElementById('ex-report-date').value = record.reportDate || '';
-            document.getElementById('ex-mental').value = record.mentalHealth || 'Bình thường';
-            document.getElementById('ex-internal').value = record.internalMedicine || 'Bình thường';
-            document.getElementById('ex-ent').value = record.ent || 'Bình thường';
-            document.getElementById('ex-surgery').value = record.surgery || 'Bình thường';
-            document.getElementById('ex-eyes').value = record.eyes || 'Bình thường';
-            document.getElementById('ex-dental').value = record.dental || 'Bình thường';
-            
-            if (record.summary) {
-                document.getElementById('ex-sum-phys').value = record.summary.physicalDev || '';
-                document.getElementById('ex-sum-ment').value = record.summary.mentalDev || '';
-                document.getElementById('ex-sum-status').value = record.summary.healthStatus || '';
-                document.getElementById('ex-sum-notes').value = record.summary.notes || '';
-                document.getElementById('ex-sum-advice').value = record.summary.advice || '';
+
+            if (is2026) {
+                document.getElementById('ex26-facility').value = record.facility || '';
+                document.getElementById('ex26-date').value = record.examDate || '';
+                document.getElementById('ex26-ward').value = record.ward ? decryptField(record.ward) : '';
+                document.getElementById('ex26-height').value = record.height || '';
+                document.getElementById('ex26-weight').value = record.weight || '';
+                document.getElementById('ex26-pulse').value = record.pulse || '';
+                document.getElementById('ex26-bp').value = record.bloodPressure || '';
+                document.getElementById('ex26-resp').value = record.respiratoryRate || '';
+                document.getElementById('ex26-health-status').value = record.healthStatus || '';
+                document.getElementById('ex26-prelim-icd').value = record.preliminaryDiagnosis || '';
+                document.getElementById('ex26-confirm-icd').value = record.confirmedDiagnosis || '';
+                document.getElementById('ex26-classification').value = record.healthClassification || '';
+                document.getElementById('ex26-advice').value = record.advice || '';
+                document.getElementById('ex26-other').value = record.otherNotes || '';
+            } else {
+                document.getElementById('ex-facility').value = record.facility || '';
+                document.getElementById('ex-height').value = record.height || '';
+                document.getElementById('ex-weight').value = record.weight || '';
+                document.getElementById('ex-date').value = record.examDate || '';
+                document.getElementById('ex-report-date').value = record.reportDate || '';
+                document.getElementById('ex-mental').value = record.mentalHealth || 'Bình thường';
+                document.getElementById('ex-internal').value = record.internalMedicine || 'Bình thường';
+                document.getElementById('ex-ent').value = record.ent || 'Bình thường';
+                document.getElementById('ex-surgery').value = record.surgery || 'Bình thường';
+                document.getElementById('ex-eyes').value = record.eyes || 'Bình thường';
+                document.getElementById('ex-dental').value = record.dental || 'Bình thường';
+                if (record.summary) {
+                    document.getElementById('ex-sum-phys').value = record.summary.physicalDev || '';
+                    document.getElementById('ex-sum-ment').value = record.summary.mentalDev || '';
+                    document.getElementById('ex-sum-status').value = record.summary.healthStatus || '';
+                    document.getElementById('ex-sum-notes').value = record.summary.notes || '';
+                    document.getElementById('ex-sum-advice').value = record.summary.advice || '';
+                }
             }
         }
     } else {
         title.innerHTML = '<i class="fas fa-keyboard"></i> Nhập phiếu khám sức khỏe thủ công';
         searchInput.disabled = false;
         searchInput.style.background = "white";
+        tplSelect.value = defaultTemplate || 'legacy';
+        toggleManualExamTemplate();
     }
     document.getElementById('manual-entry-modal').style.display = 'flex';
 }
@@ -805,7 +1217,60 @@ function closeManualEntryModal() {
 function viewStudentExamDetail(recordId) {
     const r = activeCampaignResults.find(item => item.id === recordId);
     if (!r) return;
+	const is2026 = r.templateType === '2026' || r.healthClassification !== undefined;
 
+    if (is2026) {
+        content.innerHTML = `
+            <div style="background: #f8fafc; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; gap: 20px;">
+                <div>
+                    <span style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px; color: #0284c7; font-weight: bold;">Hồ sơ khám sức khỏe (Mẫu mới 2026)</span>
+                    <h3 style="margin: 4px 0 6px 0; color: #1e293b; font-size: 1.5rem; font-weight: 700;">${r.name}</h3>
+                    <div style="font-size: 0.9rem; color: #475569; display: flex; gap: 15px; flex-wrap: wrap;">
+                        <span>Mã YT: <strong style="color: #0f172a;">${r.studentId}</strong></span>
+                        <span>|</span>
+                        <span>Lớp: <strong style="color: #0062ff;">${r.class}</strong></span>
+                        <span>|</span>
+                        <span>Phường/Xã: <strong>${r.ward || 'Chưa ghi nhận'}</strong></span>
+                    </div>
+                </div>
+                <div style="text-align: right; font-size: 0.85rem; color: #64748b;">
+                    <div>Đơn vị khám: <strong style="color: #1e293b;">${r.facility || 'Chưa ghi nhận'}</strong></div>
+                    <div>Ngày khám: <strong style="color: #1e293b;">${r.examDate ? new Date(r.examDate).toLocaleDateString('vi-VN') : 'Chưa ghi nhận'}</strong></div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 10px;">
+                <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <h4 style="color: #0f172a; margin: 0 0 15px 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Thể lực & Sinh hiệu</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.95rem;">
+                        <div><span style="color:#64748b; font-size:0.8rem; display:block;">Chiều cao</span><strong>${r.height ? r.height + ' cm' : '--'}</strong></div>
+                        <div><span style="color:#64748b; font-size:0.8rem; display:block;">Cân nặng</span><strong>${r.weight ? r.weight + ' kg' : '--'}</strong></div>
+                        <div><span style="color:#64748b; font-size:0.8rem; display:block;">Mạch</span><strong>${r.pulse ? r.pulse + ' lần/phút' : '--'}</strong></div>
+                        <div><span style="color:#64748b; font-size:0.8rem; display:block;">Huyết áp</span><strong>${r.bloodPressure ? r.bloodPressure + ' mmHg' : '--'}</strong></div>
+                        <div><span style="color:#64748b; font-size:0.8rem; display:block;">Nhịp thở</span><strong>${r.respiratoryRate ? r.respiratoryRate + ' lần/phút' : '--'}</strong></div>
+                        <div><span style="color:#64748b; font-size:0.8rem; display:block;">Phân loại sức khỏe</span><strong style="color:#059669;">${r.healthClassification || '--'}</strong></div>
+                    </div>
+                </div>
+
+                <div style="background: #fffbeb; padding: 20px; border-radius: 12px; border: 1px solid #fde68a; display: flex; flex-direction: column; gap: 12px;">
+                    <h4 style="color: #b45309; margin: 0; border-bottom: 1px solid #fde68a; padding-bottom: 10px;">Chẩn đoán & Tư vấn</h4>
+                    <div><span style="color:#92400e; font-size:0.8rem; font-weight:bold; display:block;">Tình trạng sức khỏe</span><strong>${r.healthStatus || 'Bình thường'}</strong></div>
+                    <div><span style="color:#92400e; font-size:0.8rem; font-weight:bold; display:block;">Chẩn đoán sơ bộ (ICD)</span><strong>${r.preliminaryDiagnosis || 'Không'}</strong></div>
+                    <div><span style="color:#b91c1c; font-size:0.8rem; font-weight:bold; display:block;">Chẩn đoán xác định (ICD)</span><strong style="color:#b91c1c;">${r.confirmedDiagnosis || 'Không'}</strong></div>
+                    <div><span style="color:#92400e; font-size:0.8rem; font-weight:bold; display:block;">Đề nghị / Tư vấn</span><span>${r.advice || 'Không'}</span></div>
+                    <div><span style="color:#92400e; font-size:0.8rem; font-weight:bold; display:block;">Khác (ghi rõ)</span><span>${r.otherNotes || 'Không'}</span></div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; text-align: right; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                <button onclick="printStudentExamResult('${r.id}')" class="btn" style="background: #10b981; color: white; border: none; font-weight: bold; padding: 10px 22px; border-radius: 8px; cursor: pointer;">
+                    <i class="fas fa-print"></i> In phiếu kết quả (Khổ A5)
+                </button>
+            </div>
+        `;
+        document.getElementById('view-exam-detail-modal').style.display = 'flex';
+        return;
+    }
     const content = document.getElementById('view-exam-content');
     content.innerHTML = `
         <!-- Khối Thông Tin Chung -->
@@ -952,9 +1417,15 @@ async function createNewExamCampaign() {
         closeCreateCampaignModal();
         await openCampaignDetail(cid);
 
-        if (selectedMethod === 'manual') {
-            openManualEntryModal();
+        if (selectedMethod === 'manual_2026') {
+            openManualEntryModal(null, '2026');
+        } else if (selectedMethod === 'manual_legacy' || selectedMethod === 'manual') {
+            openManualEntryModal(null, 'legacy');
+        } else if (selectedMethod === 'excel_2026') {
+            document.getElementById('exam-excel-import-template').value = '2026';
+            triggerExcelExamUpload();
         } else {
+            document.getElementById('exam-excel-import-template').value = 'legacy';
             triggerExcelExamUpload();
         }
 
@@ -1914,7 +2385,6 @@ async function executeBulkPrintSubmit() {
         iframe.contentWindow.print();
     }, 1500);
 }
-// 10. Hàm cấu trúc dữ liệu hiển thị phiếu A5 dọc (Đảm bảo chính xác 100% so với bản đơn)
 // 10. Hàm cấu trúc dữ liệu hiển thị phiếu A5 dọc (Đồng bộ cấu trúc in đơn lẻ)
 function generateSingleExamResultHtml(r, campaign, stData) {
     let gender = "Chưa xác định";
@@ -2125,6 +2595,143 @@ function generateSingleExamResultHtml(r, campaign, stData) {
 
         </div>
     `;
+	const is2026 = r.templateType === '2026' || r.healthClassification !== undefined;
+    if (is2026) {
+        const decWard = r.ward ? (typeof decryptField === 'function' ? decryptField(r.ward) : r.ward) : (stData?.ward || '--');
+        return `
+        <div style="width: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.35; box-sizing: border-box; background: white;">
+            <div style="height: 4px; background: #2563eb; width: 100%; border-radius: 2px; margin-bottom: 12px;"></div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 6px;">
+                <div style="line-height: 1.3;">
+                    <div style="font-size: 8pt; font-weight: 800; color: #1e293b; text-transform: uppercase;">Trường THPT Võ Thị Sáu- BRVT</div>
+                    <div style="font-size: 7pt; font-weight: 600; color: #64748b; text-transform: uppercase;">Phòng Y Tế</div>
+                </div>
+                <div style="text-align: right; line-height: 1.3;">
+                    <div style="font-size: 8pt; font-weight: bold; color: #2563eb; font-family: monospace;">MÃ PHIẾU: ${r.id}</div>
+                    <img src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${r.id}&scale=2&height=6&includetext=false" alt="Barcode" style="height: 18px; max-width: 150px; opacity: 0.85;">
+                </div>
+            </div>
+            <div style="text-align: center; margin-bottom: 12px;">
+                <h1 style="margin: 0; font-size: 13pt; font-weight: 800; color: #1e3a8a;">PHIẾU KẾT QUẢ KHÁM SỨC KHỎE</h1>
+            </div>
+
+            <!-- 1. THÔNG TIN ĐỢT KHÁM -->
+            <div style="margin-bottom: 8px;">
+                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 4px; text-transform: uppercase;">1. Thông tin đợt khám</div>
+                <table style="width: 100%; font-size: 8pt; border-collapse: collapse;">
+                    <tr>
+                        <td style="width: 18%; color: #64748b; padding: 2px 0;">Đợt khám:</td>
+                        <td style="width: 47%; font-weight: 600;">${campaign ? campaign.name : 'Khám sức khỏe học sinh'}</td>
+                        <td style="width: 15%; color: #64748b;">Ngày khám:</td>
+                        <td style="width: 20%; font-weight: 600;">${r.examDate ? new Date(r.examDate).toLocaleDateString('vi-VN') : '--'}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #64748b; padding: 2px 0;">Đơn vị khám:</td>
+                        <td colspan="3" style="font-weight: 600;">${r.facility || '--'}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- 2. THÔNG TIN HỌC SINH -->
+            <div style="margin-bottom: 8px;">
+                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 4px; text-transform: uppercase;">2. Thông tin học sinh</div>
+                <table style="width: 100%; font-size: 8pt; border-collapse: collapse;">
+                    <tr>
+                        <td style="width: 18%; color: #64748b; padding: 2px 0;">Họ và tên:</td>
+                        <td style="width: 47%; font-weight: 700; font-size: 9.5pt; color: #1e3a8a;">${r.name}</td>
+                        <td style="width: 15%; color: #64748b;">Lớp:</td>
+                        <td style="width: 20%; font-weight: 700; color: #2563eb;">${r.class}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #64748b; padding: 2px 0;">Giới tính:</td>
+                        <td style="font-weight: 600;">${r.gender || gender}</td>
+                        <td style="color: #64748b;">Tuổi:</td>
+                        <td style="font-weight: 600;">${age}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #64748b; padding: 2px 0;">Phường/Xã:</td>
+                        <td style="font-weight: 600;">${decWard}</td>
+                        <td style="color: #64748b;">Mã HS / YT:</td>
+                        <td style="font-weight: 600; font-family: monospace;">${studentCode} / ${r.studentId}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- 3. THÔNG TIN THỂ LỰC & SINH HIỆU -->
+            <div style="margin-bottom: 8px;">
+                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 4px; text-transform: uppercase;">3. Thể lực & Chỉ số sinh hiệu</div>
+                <table style="width: 100%; font-size: 8pt; border-collapse: collapse;">
+                    <tr>
+                        <td style="width: 18%; color: #64748b; padding: 2px 0;">Chiều cao:</td>
+                        <td style="width: 32%; font-weight: 600;">${r.height ? r.height + ' cm' : '--'}</td>
+                        <td style="width: 18%; color: #64748b;">Cân nặng:</td>
+                        <td style="width: 32%; font-weight: 600;">${r.weight ? r.weight + ' kg' : '--'}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #64748b; padding: 2px 0;">Chỉ số BMI:</td>
+                        <td style="font-weight: 600;">${bmiVal} (<span style="color:${bmiColor}; font-weight:700;">${bmiClass}</span>)</td>
+                        <td style="color: #64748b;">Mạch:</td>
+                        <td style="font-weight: 600;">${r.pulse ? r.pulse + ' lần/phút' : '--'}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #64748b; padding: 2px 0;">Huyết áp:</td>
+                        <td style="font-weight: 600;">${r.bloodPressure ? r.bloodPressure + ' mmHg' : '--'}</td>
+                        <td style="color: #64748b;">Nhịp thở:</td>
+                        <td style="font-weight: 600;">${r.respiratoryRate ? r.respiratoryRate + ' lần/phút' : '--'}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- 4. KẾT QUẢ KHÁM & CHẨN ĐOÁN ICD -->
+            <div style="margin-bottom: 8px;">
+                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 4px; text-transform: uppercase;">4. Tình trạng sức khỏe & Chẩn đoán</div>
+                <table style="width: 100%; font-size: 8pt; border-collapse: collapse; border: 1px solid #e2e8f0;">
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="width: 35%; border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Tình trạng sức khỏe</td>
+                        <td style="padding: 4px 6px;">${r.healthStatus || 'Bình thường'}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Chẩn đoán sơ bộ - ICD</td>
+                        <td style="padding: 4px 6px;">${r.preliminaryDiagnosis || 'Không'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Chẩn đoán xác định - ICD</td>
+                        <td style="padding: 4px 6px; font-weight: 600; color: #b91c1c;">${r.confirmedDiagnosis || 'Không'}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- 5. TỔNG KẾT & MÃ QR -->
+            <div style="margin-bottom: 6px; background: #fffbeb; padding: 6px 8px; border-radius: 6px; border: 1px solid #fde68a; display: flex; gap: 8px; align-items: center;">
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-size: 8pt; font-weight: 800; color: #b45309; border-bottom: 1px dashed #fcd34d; padding-bottom: 2px; margin-bottom: 3px; text-transform: uppercase;">5. Phân loại & Tư vấn</div>
+                    <table style="width: 100%; font-size: 7.5pt; border-collapse: collapse; line-height: 1.3;">
+                        <tr>
+                            <td style="width: 30%; color: #92400e; padding: 1px 0; vertical-align: top;">Phân loại sức khỏe:</td>
+                            <td style="width: 70%; font-weight: 700; color: #1e293b;">${r.healthClassification || '--'}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #92400e; padding: 1px 0; vertical-align: top;">Đề nghị / Tư vấn:</td>
+                            <td style="font-style: italic; color: #1e293b;">${r.advice || 'Tự theo dõi sức khỏe tại phòng y tế'}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #92400e; padding: 1px 0; vertical-align: top;">Khác (ghi rõ):</td>
+                            <td style="color: #1e293b;">${r.otherNotes || 'Không'}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="width: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; padding: 4px; border-radius: 6px; border: 1px solid #cbd5e1; text-align: center;">
+                    <span style="font-size: 5.5pt; font-weight: 800; color: #1e3a8a; text-transform: uppercase; margin-bottom: 2px;">Quét tra cứu</span>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://yteso-thptvothisaubrvt.netlify.app/student" alt="QR" style="width: 56px; height: 56px; display: block;">
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 4px; margin-top: 4px; font-size: 6.5pt; color: #64748b; font-style: italic;">
+                <div>Dữ liệu được lưu trữ bảo mật và xuất tự động từ Hệ thống Y tế số - Trường THPT Võ Thị Sáu- Bà Rịa - Vũng Tàu</div>
+                <div style="font-weight: 600; color: #2563eb;">Hỗ trợ: yte.thptvothisaubrvt@gmail.com</div>
+            </div>
+        </div>`;
+    }
 }
 // Hàm phụ trợ tách tên tiếng Việt: Trích xuất tên chính và phần họ đệm riêng biệt
 function getVietnameseNameParts(fullName) {

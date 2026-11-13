@@ -746,15 +746,28 @@ async function handleExcelExamUpload2026(event) {
             if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tải danh sách học sinh...';
             const studentsList = await getStudentsListCached();
 
+            const safeDec = (v) => {
+                if (!v) return '';
+                if (typeof decryptField !== 'function') return String(v);
+                try {
+                    const out = decryptField(v);
+                    return out ? String(out) : String(v);
+                } catch (err) {
+                    return String(v);
+                }
+            };
+
             // Chuẩn bị dữ liệu học sinh đã giải mã sẵn trong RAM để so khớp nhanh & chính xác
             const normalizedStudents = studentsList.map(st => {
-                const decName = st.name ? decryptField(st.name) : '';
-                const decClass = st.class ? decryptField(st.class) : '';
-                const decGender = st.gender ? decryptField(st.gender) : '';
-                const decDob = st.dob ? normalizeExcelDate2026(decryptField(st.dob)) : '';
-                const decWard = st.ward ? decryptField(st.ward) : '';
+                const decName = safeDec(st.name);
+                const decClass = safeDec(st.class);
+                const decGender = safeDec(st.gender);
+                const decDob = st.dob ? normalizeExcelDate2026(safeDec(st.dob)) : '';
+                const decWard = safeDec(st.ward);
                 return {
                     raw: st,
+                    decName,
+                    decClass,
                     nName: normStr2026(decName),
                     nClass: normStr2026(decClass),
                     nGender: normStr2026(decGender),
@@ -1061,19 +1074,19 @@ function loadExamResultsForCampaign(cid, searchQuery = "") {
 	        .where('campaignId', '==', cid)
 	        .onSnapshot(snap => {
 	            activeCampaignResults = [];
-	            snap.forEach(doc => { 
-	                const d = doc.data();
-	                activeCampaignResults.push({ 
-					    id: doc.id, 
-					    ...d,
-					    name: d.name ? decryptField(d.name) : '',
-					    class: d.class ? decryptField(d.class) : '',
-					    dob: d.dob ? decryptField(d.dob) : '',
-					    ward: d.ward ? decryptField(d.ward) : '',
-					    height: d.height ? decryptField(d.height) : '',
-					    weight: d.weight ? decryptField(d.weight) : ''
-					});
-	            });
+	            snap.forEach(doc => {
+                const v = doc.data();
+                results.push({
+                    id: doc.id,
+                    ...v,
+                    name: v.name ? decryptField(v.name) : '',
+                    class: v.class ? decryptField(v.class) : '',
+                    dob: v.dob ? decryptField(v.dob) : '',
+                    ward: v.ward ? decryptField(v.ward) : '',
+                    height: v.height ? decryptField(v.height) : '',
+                    weight: v.weight ? decryptField(v.weight) : ''
+                });
+            });
 	            renderCampaignStudentsTable(searchQuery);
 	        });
 }
@@ -1135,7 +1148,7 @@ function triggerExcelExamUpload() {
 function openCreateCampaignModal() {
     document.getElementById('exam-new-name').value = '';
     document.getElementById('exam-new-id').value = '';
-    document.getElementById('exam-new-method').value = 'manual';
+    document.getElementById('exam-new-method').value = 'manual_legacy';
     document.getElementById('create-campaign-modal').style.display = 'flex';
 }
 
@@ -1167,7 +1180,7 @@ function openManualEntryModal(studentId = null, defaultTemplate = 'legacy') {
             if (is2026) {
                 document.getElementById('ex26-facility').value = record.facility || '';
                 document.getElementById('ex26-date').value = record.examDate || '';
-                document.getElementById('ex26-ward').value = record.ward ? decryptField(record.ward) : '';
+                document.getElementById('ex26-ward').value = record.ward || '';
                 document.getElementById('ex26-height').value = record.height || '';
                 document.getElementById('ex26-weight').value = record.weight || '';
                 document.getElementById('ex26-pulse').value = record.pulse || '';
@@ -1217,7 +1230,8 @@ function closeManualEntryModal() {
 function viewStudentExamDetail(recordId) {
     const r = activeCampaignResults.find(item => item.id === recordId);
     if (!r) return;
-	const is2026 = r.templateType === '2026' || r.healthClassification !== undefined;
+    const content = document.getElementById('view-exam-content');
+    const is2026 = r.templateType === '2026' || r.healthClassification !== undefined;
 
     if (is2026) {
         content.innerHTML = `
@@ -1271,7 +1285,6 @@ function viewStudentExamDetail(recordId) {
         document.getElementById('view-exam-detail-modal').style.display = 'flex';
         return;
     }
-    const content = document.getElementById('view-exam-content');
     content.innerHTML = `
         <!-- Khối Thông Tin Chung -->
         <div style="background: #f8fafc; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; gap: 20px;">
@@ -1510,7 +1523,25 @@ async function viewCampaignStats(cid, event) {
         let bmiStats = { underweight: 0, normal: 0, overweight: 0, obese: 0 };
         let diseaseStats = { eyes: 0, dental: 0, mental: 0, ent: 0, surgery: 0, internal: 0 };
 
+        // Thống kê dành cho Mẫu mới 2026
+        let stats2026 = {
+            total2026: 0,
+            class1: 0,       // Loại I
+            class2: 0,       // Loại II
+            class3Plus: 0,   // Loại III, IV, V hoặc phân loại khác
+            abnormalStatus: 0, // Tình trạng sức khỏe khác "Bình thường"
+            hasPrelimICD: 0,   // Có chẩn đoán sơ bộ ICD
+            hasConfirmICD: 0   // Có chẩn đoán xác định ICD
+        };
+
+        const isRecord2026 = (v) => v.templateType === '2026' || v.healthClassification !== undefined;
+        const hasValue = (val) => {
+            const s = String(val || '').trim().toLowerCase();
+            return s !== '' && s !== 'không' && s !== 'bình thường' && s !== 'none' && s !== '--';
+        };
+
         results.forEach(v => {
+            // 1. Thống kê BMI (dùng chung cho cả mẫu cũ và mẫu 2026)
             if (v.height && v.weight) {
                 const h = parseFloat(v.height) / 100;
                 const w = parseFloat(v.weight);
@@ -1522,78 +1553,119 @@ async function viewCampaignStats(cid, event) {
                     else bmiStats.obese++;
                 }
             }
-            if (v.eyes && v.eyes !== "Bình thường") diseaseStats.eyes++;
-            if (v.dental && v.dental !== "Bình thường") diseaseStats.dental++;
-            if (v.mentalHealth && v.mentalHealth !== "Bình thường") diseaseStats.mental++;
-            if (v.ent && v.ent !== "Bình thường") diseaseStats.ent++;
-            if (v.surgery && v.surgery !== "Bình thường") diseaseStats.surgery++;
-            if (v.internalMedicine && v.internalMedicine !== "Bình thường") diseaseStats.internal++;
-        });
-        const getPercent = (count) => total > 0 ? ((count / total) * 100).toFixed(1) : "0.0";
 
-        // Tạo ra các biến lưu phần trăm để vẽ biểu đồ thanh (bar charts)
+            // 2. Phân tách thống kê chuyên khoa (Mẫu cũ) vs Phân loại & ICD (Mẫu 2026)
+            if (isRecord2026(v)) {
+                stats2026.total2026++;
+                const cls = String(v.healthClassification || '').trim().toLowerCase();
+                if (cls === 'loại i' || cls === 'loại 1' || cls === 'i' || cls === '1') {
+                    stats2026.class1++;
+                } else if (cls === 'loại ii' || cls === 'loại 2' || cls === 'ii' || cls === '2') {
+                    stats2026.class2++;
+                } else if (cls !== '') {
+                    stats2026.class3Plus++;
+                }
+
+                const hStatus = String(v.healthStatus || '').trim().toLowerCase();
+                if (hStatus !== '' && hStatus !== 'bình thường' && hStatus !== 'đủ sức khỏe') {
+                    stats2026.abnormalStatus++;
+                }
+                if (hasValue(v.preliminaryDiagnosis)) stats2026.hasPrelimICD++;
+                if (hasValue(v.confirmedDiagnosis)) stats2026.hasConfirmICD++;
+            } else {
+                if (v.eyes && v.eyes !== "Bình thường") diseaseStats.eyes++;
+                if (v.dental && v.dental !== "Bình thường") diseaseStats.dental++;
+                if (v.mentalHealth && v.mentalHealth !== "Bình thường") diseaseStats.mental++;
+                if (v.ent && v.ent !== "Bình thường") diseaseStats.ent++;
+                if (v.surgery && v.surgery !== "Bình thường") diseaseStats.surgery++;
+                if (v.internalMedicine && v.internalMedicine !== "Bình thường") diseaseStats.internal++;
+            }
+        });
+
+        const getPercent = (count, base = total) => base > 0 ? ((count / base) * 100).toFixed(1) : "0.0";
+
         const pctNormal = getPercent(bmiStats.normal);
         const pctUnder = getPercent(bmiStats.underweight);
         const pctOver = getPercent(bmiStats.overweight);
         const pctObese = getPercent(bmiStats.obese);
 
-        const pctEyes = getPercent(diseaseStats.eyes);
-        const pctDental = getPercent(diseaseStats.dental);
-        const pctMental = getPercent(diseaseStats.mental);
-        const pctEnt = getPercent(diseaseStats.ent);
-        const pctSurgery = getPercent(diseaseStats.surgery);
+        const totalLegacy = total - stats2026.total2026;
+        const pctEyes = getPercent(diseaseStats.eyes, totalLegacy || total);
+        const pctDental = getPercent(diseaseStats.dental, totalLegacy || total);
+        const pctMental = getPercent(diseaseStats.mental, totalLegacy || total);
+        const pctEnt = getPercent(diseaseStats.ent, totalLegacy || total);
+        const pctSurgery = getPercent(diseaseStats.surgery, totalLegacy || total);
 
-        grid.innerHTML = `
-            <!-- CỘT 1: PHÂN TÍCH PHÂN PHỐI THỂ TRẠNG BMI (CỘT TRÁI) -->
+        // Dựng nội dung Cột 2 tùy theo loại mẫu của đợt khám
+        let col2Html = '';
+        if (stats2026.total2026 > 0 && totalLegacy === 0) {
+            // Đợt khám hoàn toàn dùng Mẫu mới 2026
+            const base26 = stats2026.total2026;
+            const pC1 = getPercent(stats2026.class1, base26);
+            const pC2 = getPercent(stats2026.class2, base26);
+            const pC3 = getPercent(stats2026.class3Plus, base26);
+            const pAbn = getPercent(stats2026.abnormalStatus, base26);
+            const pPre = getPercent(stats2026.hasPrelimICD, base26);
+            const pConf = getPercent(stats2026.hasConfirmICD, base26);
+
+            col2Html = `
             <div style="background: white; border: 1px solid #e2e8f0; padding: 26px; border-radius: 12px;">
-                <h4 style="color: #0f172a; margin-top: 0; margin-bottom: 6px; font-size: 1.1rem; font-weight: 700;">Chỉ số thể trạng BMI</h4>
-                <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 20px 0;">Tổng số học sinh được đo: ${total} học sinh</p>
-                
-                <!-- Thanh tiến trình gộp phân bổ liên tục -->
-                <div style="display: flex; height: 16px; border-radius: 8px; overflow: hidden; background: #f1f5f9; margin-bottom: 24px;">
-                    <div style="width: ${pctNormal}%; background: #10b981; transition: width 0.5s;" title="Bình thường: ${pctNormal}%"></div>
-                    <div style="width: ${pctUnder}%; background: #3b82f6; transition: width 0.5s;" title="Thiếu cân: ${pctUnder}%"></div>
-                    <div style="width: ${pctOver}%; background: #f59e0b; transition: width 0.5s;" title="Thừa cân: ${pctOver}%"></div>
-                    <div style="width: ${pctObese}%; background: #ef4444; transition: width 0.5s;" title="Béo phì: ${pctObese}%"></div>
-                </div>
+                <h4 style="color: #0f172a; margin-top: 0; margin-bottom: 6px; font-size: 1.1rem; font-weight: 700;">Phân loại sức khỏe & Bệnh lý ICD (Mẫu 2026)</h4>
+                <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 20px 0;">Tổng hợp trên ${base26} học sinh (bấm vào từng dòng để xem chi tiết)</p>
 
-                <!-- Danh sách chi tiết thể trạng có thể tương tác -->
                 <div style="display: flex; flex-direction: column; gap: 14px;">
-                    <div onclick="showDrilldownStudents('bmi_normal', 'Danh sách Học sinh có Thể trạng Bình thường')" style="cursor: pointer; padding: 6px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
-                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px;">
-                            <span style="font-weight: 600; color: #1e293b;">Bình thường</span>
-                            <span style="color: #475569;">${bmiStats.normal} học sinh (${pctNormal}%)</span>
+                    <div onclick="showDrilldownStudents('2026_class1', 'Học sinh Phân loại sức khỏe: Loại I')" style="cursor: pointer; padding: 8px; border-radius: 8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
+                            <span style="font-weight: 600; color: #1e293b;">Phân loại sức khỏe: Loại I</span>
+                            <span style="font-weight: bold; color: #10b981;">${stats2026.class1} HS (${pC1}%)</span>
                         </div>
-                        <div style="height: 6px; background: #f1f5f9; border-radius: 3px;"><div style="width: ${pctNormal}%; height: 100%; background: #10b981; border-radius: 3px;"></div></div>
-                    </div>
-                    
-                    <div onclick="showDrilldownStudents('bmi_underweight', 'Danh sách Học sinh Thiếu cân')" style="cursor: pointer; padding: 6px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
-                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px;">
-                            <span style="font-weight: 600; color: #1e293b;">Thiếu cân</span>
-                            <span style="color: #475569;">${bmiStats.underweight} học sinh (${pctUnder}%)</span>
-                        </div>
-                        <div style="height: 6px; background: #f1f5f9; border-radius: 3px;"><div style="width: ${pctUnder}%; height: 100%; background: #3b82f6; border-radius: 3px;"></div></div>
+                        <div style="height: 10px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pC1}%; height: 100%; background: #10b981; border-radius: 5px;"></div></div>
                     </div>
 
-                    <div onclick="showDrilldownStudents('bmi_overweight', 'Danh sách Học sinh Thừa cân')" style="cursor: pointer; padding: 6px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
-                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px;">
-                            <span style="font-weight: 600; color: #1e293b;">Thừa cân</span>
-                            <span style="color: #475569;">${bmiStats.overweight} học sinh (${pctOver}%)</span>
+                    <div onclick="showDrilldownStudents('2026_class2', 'Học sinh Phân loại sức khỏe: Loại II')" style="cursor: pointer; padding: 8px; border-radius: 8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
+                            <span style="font-weight: 600; color: #1e293b;">Phân loại sức khỏe: Loại II</span>
+                            <span style="font-weight: bold; color: #3b82f6;">${stats2026.class2} HS (${pC2}%)</span>
                         </div>
-                        <div style="height: 6px; background: #f1f5f9; border-radius: 3px;"><div style="width: ${pctOver}%; height: 100%; background: #f59e0b; border-radius: 3px;"></div></div>
+                        <div style="height: 10px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pC2}%; height: 100%; background: #3b82f6; border-radius: 5px;"></div></div>
                     </div>
 
-                    <div onclick="showDrilldownStudents('bmi_obese', 'Danh sách Học sinh Béo phì')" style="cursor: pointer; padding: 6px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
-                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px;">
-                            <span style="font-weight: 600; color: #1e293b;">Béo phì</span>
-                            <span style="color: #475569;">${bmiStats.obese} học sinh (${pctObese}%)</span>
+                    <div onclick="showDrilldownStudents('2026_class3plus', 'Học sinh Phân loại: Loại III trở lên / Khác')" style="cursor: pointer; padding: 8px; border-radius: 8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
+                            <span style="font-weight: 600; color: #1e293b;">Phân loại: Loại III trở lên / Khác</span>
+                            <span style="font-weight: bold; color: #f59e0b;">${stats2026.class3Plus} HS (${pC3}%)</span>
                         </div>
-                        <div style="height: 6px; background: #f1f5f9; border-radius: 3px;"><div style="width: ${pctObese}%; height: 100%; background: #ef4444; border-radius: 3px;"></div></div>
+                        <div style="height: 10px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pC3}%; height: 100%; background: #f59e0b; border-radius: 5px;"></div></div>
+                    </div>
+
+                    <div onclick="showDrilldownStudents('2026_abnormal', 'Học sinh có Tình trạng sức khỏe cần lưu ý')" style="cursor: pointer; padding: 8px; border-radius: 8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
+                            <span style="font-weight: 600; color: #1e293b;">Tình trạng sức khỏe bất thường</span>
+                            <span style="font-weight: bold; color: #8b5cf6;">${stats2026.abnormalStatus} ca (${pAbn}%)</span>
+                        </div>
+                        <div style="height: 10px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pAbn}%; height: 100%; background: #8b5cf6; border-radius: 5px;"></div></div>
+                    </div>
+
+                    <div onclick="showDrilldownStudents('2026_prelim_icd', 'Danh sách có Chẩn đoán sơ bộ - ICD')" style="cursor: pointer; padding: 8px; border-radius: 8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
+                            <span style="font-weight: 600; color: #1e293b;">Có Chẩn đoán sơ bộ (ICD)</span>
+                            <span style="font-weight: bold; color: #ea580c;">${stats2026.hasPrelimICD} ca (${pPre}%)</span>
+                        </div>
+                        <div style="height: 10px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pPre}%; height: 100%; background: #ea580c; border-radius: 5px;"></div></div>
+                    </div>
+
+                    <div onclick="showDrilldownStudents('2026_confirm_icd', 'Danh sách có Chẩn đoán xác định - ICD')" style="cursor: pointer; padding: 8px; border-radius: 8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
+                            <span style="font-weight: 600; color: #1e293b;">Có Chẩn đoán xác định (ICD)</span>
+                            <span style="font-weight: bold; color: #ef4444;">${stats2026.hasConfirmICD} ca (${pConf}%)</span>
+                        </div>
+                        <div style="height: 10px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pConf}%; height: 100%; background: #ef4444; border-radius: 5px;"></div></div>
                     </div>
                 </div>
-            </div>
-
-            <!-- CÔT 2: BIỂU ĐỒ BỆNH LÝ PHÁT HIỆN (CỘT PHẢI) -->
+            </div>`;
+        } else {
+            // Đợt khám Mẫu cũ (hoặc trộn: hiển thị biểu đồ mẫu cũ + ghi chú nếu có phiếu 2026)
+            col2Html = `
             <div style="background: white; border: 1px solid #e2e8f0; padding: 26px; border-radius: 12px;">
                 <h4 style="color: #0f172a; margin-top: 0; margin-bottom: 6px; font-size: 1.1rem; font-weight: 700;">Biểu đồ bệnh lý phát hiện</h4>
                 <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 20px 0;">Tỷ lệ xuất hiện bất thường lâm sàng tại các chuyên khoa</p>
@@ -1649,6 +1721,58 @@ async function viewCampaignStats(cid, event) {
                         </div>
                     </div>
                 </div>
+                ${stats2026.total2026 > 0 ? `<div onclick="showDrilldownStudents('2026_confirm_icd', 'Phiếu Mẫu 2026 có Chẩn đoán xác định ICD')" style="margin-top:15px; padding:10px; background:#eff6ff; border:1px dashed #93c5fd; border-radius:8px; font-size:0.85rem; color:#1d4ed8; cursor:pointer;">ℹ️ Có thêm <strong>${stats2026.total2026}</strong> phiếu Mẫu 2026 (trong đó <strong>${stats2026.hasConfirmICD}</strong> ca có chẩn đoán xác định ICD — bấm để xem).</div>` : ''}
+            </div>`;
+        }
+
+        grid.innerHTML = `
+            <!-- CỘT 1: PHÂN TÍCH PHÂN PHỐI THỂ TRẠNG BMI (GIỮ NGUYÊN) -->
+            <div style="background: white; border: 1px solid #e2e8f0; padding: 26px; border-radius: 12px;">
+                <h4 style="color: #0f172a; margin-top: 0; margin-bottom: 6px; font-size: 1.1rem; font-weight: 700;">Chỉ số thể trạng BMI</h4>
+                <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 20px 0;">Tổng số học sinh được đo: ${total} học sinh</p>
+                
+                <div style="display: flex; height: 16px; border-radius: 8px; overflow: hidden; background: #f1f5f9; margin-bottom: 24px;">
+                    <div style="width: ${pctNormal}%; background: #10b981; transition: width 0.5s;" title="Bình thường: ${pctNormal}%"></div>
+                    <div style="width: ${pctUnder}%; background: #3b82f6; transition: width 0.5s;" title="Thiếu cân: ${pctUnder}%"></div>
+                    <div style="width: ${pctOver}%; background: #f59e0b; transition: width 0.5s;" title="Thừa cân: ${pctOver}%"></div>
+                    <div style="width: ${pctObese}%; background: #ef4444; transition: width 0.5s;" title="Béo phì: ${pctObese}%"></div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 14px;">
+                    <div onclick="showDrilldownStudents('bmi_normal', 'Danh sách Học sinh có Thể trạng Bình thường')" style="cursor: pointer; padding: 6px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px;">
+                            <span style="font-weight: 600; color: #1e293b;">Bình thường</span>
+                            <span style="color: #475569;">${bmiStats.normal} học sinh (${pctNormal}%)</span>
+                        </div>
+                        <div style="height: 6px; background: #f1f5f9; border-radius: 3px;"><div style="width: ${pctNormal}%; height: 100%; background: #10b981; border-radius: 3px;"></div></div>
+                    </div>
+                    
+                    <div onclick="showDrilldownStudents('bmi_underweight', 'Danh sách Học sinh Thiếu cân')" style="cursor: pointer; padding: 6px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px;">
+                            <span style="font-weight: 600; color: #1e293b;">Thiếu cân</span>
+                            <span style="color: #475569;">${bmiStats.underweight} học sinh (${pctUnder}%)</span>
+                        </div>
+                        <div style="height: 6px; background: #f1f5f9; border-radius: 3px;"><div style="width: ${pctUnder}%; height: 100%; background: #3b82f6; border-radius: 3px;"></div></div>
+                    </div>
+
+                    <div onclick="showDrilldownStudents('bmi_overweight', 'Danh sách Học sinh Thừa cân')" style="cursor: pointer; padding: 6px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px;">
+                            <span style="font-weight: 600; color: #1e293b;">Thừa cân</span>
+                            <span style="color: #475569;">${bmiStats.overweight} học sinh (${pctOver}%)</span>
+                        </div>
+                        <div style="height: 6px; background: #f1f5f9; border-radius: 3px;"><div style="width: ${pctOver}%; height: 100%; background: #f59e0b; border-radius: 3px;"></div></div>
+                    </div>
+
+                    <div onclick="showDrilldownStudents('bmi_obese', 'Danh sách Học sinh Béo phì')" style="cursor: pointer; padding: 6px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px;">
+                            <span style="font-weight: 600; color: #1e293b;">Béo phì</span>
+                            <span style="color: #475569;">${bmiStats.obese} học sinh (${pctObese}%)</span>
+                        </div>
+                        <div style="height: 6px; background: #f1f5f9; border-radius: 3px;"><div style="width: ${pctObese}%; height: 100%; background: #ef4444; border-radius: 3px;"></div></div>
+                    </div>
+                </div>
+            </div>
+            ${col2Html}`;
             </div>`;
     } catch (e) {
         grid.innerHTML = `<div style="grid-column:span 2; color:red; text-align:center; padding: 20px;">Lỗi tính toán dữ liệu: ${e.message}</div>`;
@@ -1660,226 +1784,20 @@ async function printStudentExamResult(recordId) {
     if (!r) return alert("Không tìm thấy dữ liệu phiếu khám!");
 
     const campaign = examCampaignsCache.find(c => c.id === r.campaignId);
-
-    let gender = "Chưa xác định";
-    let studentCode = "--";
-    let age = "N/A";
+    let stData = null;
 
     try {
         const stSnap = await db.collection('yt_students').doc(r.studentId).get();
-        if (stSnap.exists) {
-            const stData = stSnap.data();
-            gender = stData.gender || "Chưa xác định";
-            studentCode = stData.studentCode || stData.code || "--";
-            
-            const dob = stData.dob || r.dob || "";
-            if (dob) {
-                let birthYear = NaN;
-                if (dob.includes('-')) birthYear = parseInt(dob.split('-')[0]);
-                else if (dob.includes('/')) {
-                    let parts = dob.split('/');
-                    if (parts[2] && parts[2].length === 4) birthYear = parseInt(parts[2]);
-                    else if (parts[0] && parts[0].length === 4) birthYear = parseInt(parts[0]);
-                }
-                if (!isNaN(birthYear)) {
-                    age = new Date().getFullYear() - birthYear;
-                }
-            }
-        }
+        if (stSnap.exists) stData = stSnap.data();
     } catch (err) {
         console.warn("Không thể tải bổ sung thông tin từ hồ sơ gốc:", err);
     }
 
-    let bmiVal = "--";
-    let bmiClass = "Chưa có chỉ số";
-    if (r.height && r.weight) {
-        let h = parseFloat(r.height) / 100;
-        let w = parseFloat(r.weight);
-        if (h > 0 && w > 0) {
-            let bmi = w / (h * h);
-            bmiVal = bmi.toFixed(1);
-            if (bmi < 18.5) bmiClass = "Thiếu cân";
-            else if (bmi < 25.0) bmiClass = "Bình thường";
-            else if (bmi < 30.0) bmiClass = "Thừa cân";
-            else bmiClass = "Béo phì";
-        }
-    }
-
-    // Thiết kế cấu trúc HTML A5 cao cấp, hiện đại
-    const htmlContent = `
-        <div style="width: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.35; box-sizing: border-box; background: white;">
-            
-            <!-- ĐƯỜNG VIỀN ĐẦU TRANG -->
-            <div style="height: 4px; background: #2563eb; width: 100%; border-radius: 2px; margin-bottom: 12px;"></div>
-
-            <!-- TIÊU ĐỀ ĐẦU TRANG -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 6px;">
-                <div style="line-height: 1.3;">
-                    <div style="font-size: 8pt; font-weight: 800; color: #1e293b; text-transform: uppercase; margin-top: 1px;">Trường THPT Võ Thị Sáu- BRVT</div>
-                    <div style="font-size: 7pt; font-weight: 600; color: #64748b; text-transform: uppercase;">Phòng Y Tế</div>
-                </div>
-                <div style="text-align: right; line-height: 1.3;">
-                    <div style="font-size: 8pt; font-weight: bold; color: #2563eb; font-family: monospace;">MÃ PHIẾU: ${r.id}</div>
-		    <img src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${r.id}&scale=2&height=6&includetext=false" alt="Barcode" style="height: 18px; max-width: 150px; opacity: 0.85;">
-                </div>
-            </div>
-
-            <!-- TIÊU ĐỀ LỚN CHÍNH -->
-            <div style="text-align: center; margin-bottom: 15px; margin-top: 5px;">
-                <h1 style="margin: 0 0 3px 0; font-size: 13pt; font-weight: 800; color: #1e3a8a; letter-spacing: 0.5px;">PHIẾU KẾT QUẢ KHÁM SỨC KHỎE</h1>
-            </div>
-
-            <!-- MỤC 1: THÔNG TIN ĐỢT KHÁM -->
-            <div style="margin-bottom: 10px;">
-                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.3px;">1. Thông tin đợt khám</div>
-                <table style="width: 100%; font-size: 8pt; border-collapse: collapse;">
-                    <tr>
-                        <td style="width: 18%; color: #64748b; padding: 2.5px 0;">Đợt khám:</td>
-                        <td style="width: 47%; font-weight: 600; color: #0f172a; padding: 2.5px 0;">${campaign ? campaign.name : 'Khám định kỳ học sinh'}</td>
-                        <td style="width: 15%; color: #64748b; padding: 2.5px 0;">Ngày khám:</td>
-                        <td style="width: 20%; font-weight: 600; color: #0f172a; padding: 2.5px 0;">${r.examDate ? new Date(r.examDate).toLocaleDateString('vi-VN') : '--'}</td>
-                    </tr>
-                    <tr>
-                        <td style="color: #64748b; padding: 2.5px 0;">Cơ sở y tế:</td>
-                        <td style="font-weight: 600; color: #0f172a; padding: 2.5px 0;">${r.facility || '--'}</td>
-                        <td style="color: #64748b; padding: 2.5px 0;">Ngày lập:</td>
-                        <td style="font-weight: 600; color: #0f172a; padding: 2.5px 0;">${r.reportDate ? new Date(r.reportDate).toLocaleDateString('vi-VN') : '--'}</td>
-                    </tr>
-                </table>
-            </div>
-
-            <!-- MỤC 2: THÔNG TIN HỌC SINH (CARD PROFILE THIẾT KẾ ĐẸP) -->
-            <div style="margin-bottom: 10px;">
-                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.3px;">2. Thông tin học sinh</div>
-                <table style="width: 100%; font-size: 8pt; border-collapse: collapse; margin-bottom: 4px;">
-                    <tr>
-                        <td style="width: 18%; color: #64748b; padding: 2.5px 0;">Họ và tên:</td>
-                        <td style="width: 47%; font-weight: 700; font-size: 9.5pt; color: #1e3a8a; padding: 2.5px 0;">${r.name}</td>
-                        <td style="width: 15%; color: #64748b; padding: 2.5px 0;">Lớp:</td>
-                        <td style="width: 20%; font-weight: 700; color: #2563eb; padding: 2.5px 0;">${r.class}</td>
-                    </tr>
-                    <tr>
-                        <td style="color: #64748b; padding: 2.5px 0;">Giới tính:</td>
-                        <td style="font-weight: 600; color: #0f172a; padding: 2.5px 0;">${gender}</td>
-                        <td style="color: #64748b; padding: 2.5px 0;">Tuổi:</td>
-                        <td style="font-weight: 600; color: #0f172a; padding: 2.5px 0;">${age}</td>
-                    </tr>
-                    <tr>
-                        <td style="color: #64748b; padding: 2.5px 0;">Mã Y tế:</td>
-                        <td style="font-weight: 600; color: #0f172a; padding: 2.5px 0; font-family: monospace;">${r.studentId}</td>
-                        <td style="color: #64748b; padding: 2.5px 0;">Mã HS:</td>
-                        <td style="font-weight: 600; color: #0f172a; padding: 2.5px 0;">${studentCode}</td>
-                    </tr>
-                </table>
-            </div>
-
-            <!-- MỤC 3: THÔNG TIN THỂ LỰC -->
-            <div style="margin-bottom: 10px;">
-                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.3px;">3. Thông tin thể lực</div>
-                <table style="width: 100%; font-size: 8pt; border-collapse: collapse;">
-                    <tr>
-                        <td style="width: 18%; color: #64748b; padding: 2.5px 0;">Cân nặng:</td>
-                        <td style="width: 32%; font-weight: 600; color: #0f172a; padding: 2.5px 0;">${r.weight ? r.weight + ' kg' : '--'}</td>
-                        <td style="width: 15%; color: #64748b; padding: 2.5px 0;">Chiều cao:</td>
-                        <td style="width: 35%; font-weight: 600; color: #0f172a; padding: 2.5px 0;">${r.height ? r.height + ' cm' : '--'}</td>
-                    </tr>
-                    <tr>
-                        <td style="color: #64748b; padding: 2.5px 0;">Chỉ số BMI:</td>
-                        <td style="font-weight: 600; color: #0f172a; padding: 2.5px 0;">${bmiVal}</td>
-                        <td style="color: #64748b; padding: 2.5px 0;">Đánh giá:</td>
-                        <td style="font-weight: 700; color: #10b981; padding: 2.5px 0;">${bmiClass}</td>
-                    </tr>
-                </table>
-            </div>
-
-            <!-- MỤC 4: KẾT QUẢ CHUYÊN KHOA (THIẾT KẾ DẠNG BẢNG KHÔNG VIỀN NGOÀI HIỆN ĐẠI) -->
-            <div style="margin-bottom: 10px;">
-                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.3px;">4. Kết quả chuyên khoa</div>
-                <table style="width: 100%; font-size: 8pt; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden;">
-                    <thead>
-                        <tr style="background-color: #f1f5f9; border-bottom: 1.5px solid #cbd5e1;">
-                            <th style="width: 35%; border-right: 1px solid #e2e8f0; padding: 5px; text-align: left; font-weight: 700; color: #475569;">Chuyên khoa</th>
-                            <th style="width: 65%; padding: 5px; text-align: left; font-weight: 700; color: #475569;">Kết quả khám lâm sàng</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr style="border-bottom: 1px solid #e2e8f0;">
-                            <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Mắt / Thị lực</td>
-                            <td style="padding: 4px 6px; color: #0f172a;">${r.eyes || 'Bình thường'}</td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid #e2e8f0;">
-                            <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Răng Hàm Mặt</td>
-                            <td style="padding: 4px 6px; color: #0f172a;">${r.dental || 'Bình thường'}</td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid #e2e8f0;">
-                            <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Tai Mũi Họng</td>
-                            <td style="padding: 4px 6px; color: #0f172a;">${r.ent || 'Bình thường'}</td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid #e2e8f0;">
-                            <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Nội khoa</td>
-                            <td style="padding: 4px 6px; color: #0f172a;">${r.internalMedicine || 'Bình thường'}</td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid #e2e8f0;">
-                            <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Ngoại khoa / Xương khớp</td>
-                            <td style="padding: 4px 6px; color: #0f172a;">${r.surgery || 'Bình thường'}</td>
-                        </tr>
-                        <tr>
-                            <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Tâm lý / Tâm thần</td>
-                            <td style="padding: 4px 6px; color: #0f172a;">${r.mentalHealth || 'Bình thường'}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- MỤC 5: TỔNG KẾT ĐÁNH GIÁ & MÃ QR TRA CỨU (LỒNG NỘI DUNG, TRÁNH TRÀN TRANG) -->
-            <div style="margin-bottom: 6px; background: #fffbeb; padding: 6px 8px; border-radius: 6px; border: 1px solid #fde68a; display: flex; gap: 8px; align-items: center;">
-                
-                <!-- CỘT TRÁI: THÔNG TIN TỔNG KẾT -->
-                <div style="flex: 1; min-width: 0;">
-                    <div style="font-size: 8pt; font-weight: 800; color: #b45309; border-bottom: 1px dashed #fcd34d; padding-bottom: 2px; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.3px;">5. Tổng kết đánh giá chung</div>
-                    <table style="width: 100%; font-size: 7.5pt; border-collapse: collapse; line-height: 1.3;">
-                        <tr>
-                            <td style="width: 32%; color: #92400e; padding: 1px 0; vertical-align: top;">Phát triển thể chất:</td>
-                            <td style="width: 68%; font-weight: 600; color: #1e293b; padding: 1px 0;">${r.summary.physicalDev || 'Bình thường'}</td>
-                        </tr>
-                        <tr>
-                            <td style="color: #92400e; padding: 1px 0; vertical-align: top;">Tâm thần vận động:</td>
-                            <td style="font-weight: 600; color: #1e293b; padding: 1px 0;">${r.summary.mentalDev || 'Bình thường'}</td>
-                        </tr>
-                        <tr>
-                            <td style="color: #92400e; padding: 1px 0; vertical-align: top;">Sức khỏe chung:</td>
-                            <td style="font-weight: 600; color: #1e293b; padding: 1px 0;">${r.summary.healthStatus || 'Đủ sức khỏe học tập'}</td>
-                        </tr>
-                        <tr>
-                            <td style="color: #b91c1c; padding: 1px 0; vertical-align: top; font-weight: bold;">Bệnh lý lưu ý:</td>
-                            <td style="color: #b91c1c; padding: 1px 0; font-weight: bold;">${r.summary.notes || 'Không phát hiện bất thường'}</td>
-                        </tr>
-                        <tr>
-                            <td style="color: #92400e; padding: 1px 0; vertical-align: top;">Yêu cầu theo dõi:</td>
-                            <td style="font-style: italic; color: #1e293b; padding: 1px 0;">${r.summary.advice || 'Tự theo dõi sức khỏe tại phòng y tế'}</td>
-                        </tr>
-                    </table>
-                </div>
-
-                <div style="width: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; padding: 4px; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.06); text-align: center;">
-                    <span style="font-size: 5.5pt; font-weight: 800; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px;">Quét tra cứu</span>
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://yteso-thptvothisaubrvt.netlify.app/student" alt="QR" style="width: 56px; height: 56px; display: block;">
-                </div>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 4px; margin-top: 4px; font-size: 6.5pt; color: #64748b; font-style: italic;">
-                <div>Dữ liệu được lưu trữ bảo mật và xuất tự động từ Hệ thống Y tế số - Trường THPT Võ Thị Sáu- Bà Rịa - Vũng Tàu</div>
-                <div style="font-weight: 600; color: #2563eb;">Hỗ trợ: yte.thptvothisaubrvt@gmail.com</div>
-            </div>
-
-        </div>
-    `;
+    const htmlContent = generateSingleExamResultHtml(r, campaign, stData);
 
     const iframeId = 'silent-print-iframe';
     let iframe = document.getElementById(iframeId);
-    if (iframe) {
-        document.body.removeChild(iframe);
-    }
+    if (iframe) document.body.removeChild(iframe);
 
     iframe = document.createElement('iframe');
     iframe.id = iframeId;
@@ -1899,21 +1817,11 @@ async function printStudentExamResult(recordId) {
         <head>
             <title>In Phiếu Sức Khỏe - THPT Võ Thị Sáu</title>
             <style>
-                @page {
-                    size: A5 portrait;
-                    margin: 5mm 10mm 7mm 10mm;
-                }
-                body {
-                    margin: 0;
-                    padding: 0;
-                    background: white;
-                    color: #1e293b;
-                }
+                @page { size: A5 portrait; margin: 5mm 10mm 7mm 10mm; }
+                body { margin: 0; padding: 0; background: white; color: #1e293b; }
             </style>
         </head>
-        <body>
-            ${htmlContent}
-        </body>
+        <body>${htmlContent}</body>
         </html>
     `);
     doc.close();
@@ -1932,33 +1840,52 @@ function showDrilldownStudents(type, categoryName) {
     titleElem.innerText = categoryName;
     tbodyElem.innerHTML = '';
 
-    // Tiến hành lọc dữ liệu từ cache theo tham số truyền vào
+    const isRecord2026 = (v) => v.templateType === '2026' || v.healthClassification !== undefined;
+    const hasVal26 = (val) => {
+        const s = String(val || '').trim().toLowerCase();
+        return s !== '' && s !== 'không' && s !== 'bình thường' && s !== 'none' && s !== '--';
+    };
+
     const filtered = currentStatsResultsCache.filter(item => {
         let heightVal = parseFloat(item.height) / 100;
         let weightVal = parseFloat(item.weight);
         let bmi = (heightVal > 0 && weightVal > 0) ? (weightVal / (heightVal * heightVal)) : null;
 
         switch (type) {
-            case 'bmi_underweight':
-                return bmi !== null && bmi < 18.5;
-            case 'bmi_normal':
-                return bmi !== null && bmi >= 18.5 && bmi < 25.0;
-            case 'bmi_overweight':
-                return bmi !== null && bmi >= 25.0 && bmi < 30.0;
-            case 'bmi_obese':
-                return bmi !== null && bmi >= 30.0;
-            case 'eyes':
-                return item.eyes && item.eyes !== 'Bình thường';
-            case 'dental':
-                return item.dental && item.dental !== 'Bình thường';
-            case 'ent':
-                return item.ent && item.ent !== 'Bình thường';
-            case 'surgery':
-                return item.surgery && item.surgery !== 'Bình thường';
-            case 'mental':
-                return item.mentalHealth && item.mentalHealth !== 'Bình thường';
-            default:
-                return false;
+            case 'bmi_underweight': return bmi !== null && bmi < 18.5;
+            case 'bmi_normal': return bmi !== null && bmi >= 18.5 && bmi < 25.0;
+            case 'bmi_overweight': return bmi !== null && bmi >= 25.0 && bmi < 30.0;
+            case 'bmi_obese': return bmi !== null && bmi >= 30.0;
+            case 'eyes': return item.eyes && item.eyes !== 'Bình thường';
+            case 'dental': return item.dental && item.dental !== 'Bình thường';
+            case 'ent': return item.ent && item.ent !== 'Bình thường';
+            case 'surgery': return item.surgery && item.surgery !== 'Bình thường';
+            case 'mental': return item.mentalHealth && item.mentalHealth !== 'Bình thường';
+
+            // --- CÁC NHÓM MẪU MỚI 2026 ---
+            case '2026_class1': {
+                if (!isRecord2026(item)) return false;
+                const c = String(item.healthClassification || '').trim().toLowerCase();
+                return c === 'loại i' || c === 'loại 1' || c === 'i' || c === '1';
+            }
+            case '2026_class2': {
+                if (!isRecord2026(item)) return false;
+                const c = String(item.healthClassification || '').trim().toLowerCase();
+                return c === 'loại ii' || c === 'loại 2' || c === 'ii' || c === '2';
+            }
+            case '2026_class3plus': {
+                if (!isRecord2026(item)) return false;
+                const c = String(item.healthClassification || '').trim().toLowerCase();
+                return c !== '' && !['loại i', 'loại 1', 'i', '1', 'loại ii', 'loại 2', 'ii', '2'].includes(c);
+            }
+            case '2026_abnormal': {
+                if (!isRecord2026(item)) return false;
+                const st = String(item.healthStatus || '').trim().toLowerCase();
+                return st !== '' && st !== 'bình thường' && st !== 'đủ sức khỏe';
+            }
+            case '2026_prelim_icd': return isRecord2026(item) && hasVal26(item.preliminaryDiagnosis);
+            case '2026_confirm_icd': return isRecord2026(item) && hasVal26(item.confirmedDiagnosis);
+            default: return false;
         }
     });
 
@@ -1982,6 +1909,14 @@ function showDrilldownStudents(type, categoryName) {
                 detail = item.surgery;
             } else if (type === 'mental') {
                 detail = item.mentalHealth;
+            } else if (type.startsWith('2026_class')) {
+                detail = `${item.healthClassification || '--'}${item.advice ? ' - ' + item.advice : ''}`;
+            } else if (type === '2026_abnormal') {
+                detail = item.healthStatus || '--';
+            } else if (type === '2026_prelim_icd') {
+                detail = item.preliminaryDiagnosis || '--';
+            } else if (type === '2026_confirm_icd') {
+                detail = item.confirmedDiagnosis || '--';
             }
 
             tbodyElem.innerHTML += `
@@ -2036,7 +1971,17 @@ async function openBulkPrintModal(cid, event) {
 
             activeCampaignResults = [];
             snap.forEach(doc => {
-                activeCampaignResults.push({ id: doc.id, ...doc.data() });
+                const d = doc.data();
+                activeCampaignResults.push({
+                    id: doc.id,
+                    ...d,
+                    name: d.name ? decryptField(d.name) : '',
+                    class: d.class ? decryptField(d.class) : '',
+                    dob: d.dob ? decryptField(d.dob) : '',
+                    ward: d.ward ? decryptField(d.ward) : '',
+                    height: d.height ? decryptField(d.height) : '',
+                    weight: d.weight ? decryptField(d.weight) : ''
+                });
             });
             activeCampaignId = cid; // Đồng bộ ID đợt khám hoạt động hiện tại
 
@@ -2425,7 +2370,143 @@ function generateSingleExamResultHtml(r, campaign, stData) {
             else { bmiClass = "Béo phì"; bmiColor = "#ef4444"; }
         }
     }
+const is2026 = r.templateType === '2026' || r.healthClassification !== undefined;
+    if (is2026) {
+        const decWard = r.ward ? (typeof decryptField === 'function' ? decryptField(r.ward) : r.ward) : (stData?.ward || '--');
+        return `
+        <div style="width: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.35; box-sizing: border-box; background: white;">
+            <div style="height: 4px; background: #2563eb; width: 100%; border-radius: 2px; margin-bottom: 12px;"></div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 6px;">
+                <div style="line-height: 1.3;">
+                    <div style="font-size: 8pt; font-weight: 800; color: #1e293b; text-transform: uppercase;">Trường THPT Võ Thị Sáu- BRVT</div>
+                    <div style="font-size: 7pt; font-weight: 600; color: #64748b; text-transform: uppercase;">Phòng Y Tế</div>
+                </div>
+                <div style="text-align: right; line-height: 1.3;">
+                    <div style="font-size: 8pt; font-weight: bold; color: #2563eb; font-family: monospace;">MÃ PHIẾU: ${r.id}</div>
+                    <img src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${r.id}&scale=2&height=6&includetext=false" alt="Barcode" style="height: 18px; max-width: 150px; opacity: 0.85;">
+                </div>
+            </div>
+            <div style="text-align: center; margin-bottom: 12px;">
+                <h1 style="margin: 0; font-size: 13pt; font-weight: 800; color: #1e3a8a;">PHIẾU KẾT QUẢ KHÁM SỨC KHỎE</h1>
+            </div>
 
+            <!-- 1. THÔNG TIN ĐỢT KHÁM -->
+            <div style="margin-bottom: 8px;">
+                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 4px; text-transform: uppercase;">1. Thông tin đợt khám</div>
+                <table style="width: 100%; font-size: 8pt; border-collapse: collapse;">
+                    <tr>
+                        <td style="width: 18%; color: #64748b; padding: 2px 0;">Đợt khám:</td>
+                        <td style="width: 47%; font-weight: 600;">${campaign ? campaign.name : 'Khám sức khỏe học sinh'}</td>
+                        <td style="width: 15%; color: #64748b;">Ngày khám:</td>
+                        <td style="width: 20%; font-weight: 600;">${r.examDate ? new Date(r.examDate).toLocaleDateString('vi-VN') : '--'}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #64748b; padding: 2px 0;">Đơn vị khám:</td>
+                        <td colspan="3" style="font-weight: 600;">${r.facility || '--'}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- 2. THÔNG TIN HỌC SINH -->
+            <div style="margin-bottom: 8px;">
+                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 4px; text-transform: uppercase;">2. Thông tin học sinh</div>
+                <table style="width: 100%; font-size: 8pt; border-collapse: collapse;">
+                    <tr>
+                        <td style="width: 18%; color: #64748b; padding: 2px 0;">Họ và tên:</td>
+                        <td style="width: 47%; font-weight: 700; font-size: 9.5pt; color: #1e3a8a;">${r.name}</td>
+                        <td style="width: 15%; color: #64748b;">Lớp:</td>
+                        <td style="width: 20%; font-weight: 700; color: #2563eb;">${r.class}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #64748b; padding: 2px 0;">Giới tính:</td>
+                        <td style="font-weight: 600;">${r.gender || gender}</td>
+                        <td style="color: #64748b;">Tuổi:</td>
+                        <td style="font-weight: 600;">${age}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #64748b; padding: 2px 0;">Phường/Xã:</td>
+                        <td style="font-weight: 600;">${decWard}</td>
+                        <td style="color: #64748b;">Mã HS / YT:</td>
+                        <td style="font-weight: 600; font-family: monospace;">${studentCode} / ${r.studentId}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- 3. THÔNG TIN THỂ LỰC & SINH HIỆU -->
+            <div style="margin-bottom: 8px;">
+                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 4px; text-transform: uppercase;">3. Thể lực & Chỉ số sinh hiệu</div>
+                <table style="width: 100%; font-size: 8pt; border-collapse: collapse;">
+                    <tr>
+                        <td style="width: 18%; color: #64748b; padding: 2px 0;">Chiều cao:</td>
+                        <td style="width: 32%; font-weight: 600;">${r.height ? r.height + ' cm' : '--'}</td>
+                        <td style="width: 18%; color: #64748b;">Cân nặng:</td>
+                        <td style="width: 32%; font-weight: 600;">${r.weight ? r.weight + ' kg' : '--'}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #64748b; padding: 2px 0;">Chỉ số BMI:</td>
+                        <td style="font-weight: 600;">${bmiVal} (<span style="color:${bmiColor}; font-weight:700;">${bmiClass}</span>)</td>
+                        <td style="color: #64748b;">Mạch:</td>
+                        <td style="font-weight: 600;">${r.pulse ? r.pulse + ' lần/phút' : '--'}</td>
+                    </tr>
+                    <tr>
+                        <td style="color: #64748b; padding: 2px 0;">Huyết áp:</td>
+                        <td style="font-weight: 600;">${r.bloodPressure ? r.bloodPressure + ' mmHg' : '--'}</td>
+                        <td style="color: #64748b;">Nhịp thở:</td>
+                        <td style="font-weight: 600;">${r.respiratoryRate ? r.respiratoryRate + ' lần/phút' : '--'}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- 4. KẾT QUẢ KHÁM & CHẨN ĐOÁN ICD -->
+            <div style="margin-bottom: 8px;">
+                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 4px; text-transform: uppercase;">4. Tình trạng sức khỏe & Chẩn đoán</div>
+                <table style="width: 100%; font-size: 8pt; border-collapse: collapse; border: 1px solid #e2e8f0;">
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="width: 35%; border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Tình trạng sức khỏe</td>
+                        <td style="padding: 4px 6px;">${r.healthStatus || 'Bình thường'}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Chẩn đoán sơ bộ - ICD</td>
+                        <td style="padding: 4px 6px;">${r.preliminaryDiagnosis || 'Không'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Chẩn đoán xác định - ICD</td>
+                        <td style="padding: 4px 6px; font-weight: 600; color: #b91c1c;">${r.confirmedDiagnosis || 'Không'}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- 5. TỔNG KẾT & MÃ QR -->
+            <div style="margin-bottom: 6px; background: #fffbeb; padding: 6px 8px; border-radius: 6px; border: 1px solid #fde68a; display: flex; gap: 8px; align-items: center;">
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-size: 8pt; font-weight: 800; color: #b45309; border-bottom: 1px dashed #fcd34d; padding-bottom: 2px; margin-bottom: 3px; text-transform: uppercase;">5. Phân loại & Tư vấn</div>
+                    <table style="width: 100%; font-size: 7.5pt; border-collapse: collapse; line-height: 1.3;">
+                        <tr>
+                            <td style="width: 30%; color: #92400e; padding: 1px 0; vertical-align: top;">Phân loại sức khỏe:</td>
+                            <td style="width: 70%; font-weight: 700; color: #1e293b;">${r.healthClassification || '--'}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #92400e; padding: 1px 0; vertical-align: top;">Đề nghị / Tư vấn:</td>
+                            <td style="font-style: italic; color: #1e293b;">${r.advice || 'Tự theo dõi sức khỏe tại phòng y tế'}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #92400e; padding: 1px 0; vertical-align: top;">Khác (ghi rõ):</td>
+                            <td style="color: #1e293b;">${r.otherNotes || 'Không'}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="width: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; padding: 4px; border-radius: 6px; border: 1px solid #cbd5e1; text-align: center;">
+                    <span style="font-size: 5.5pt; font-weight: 800; color: #1e3a8a; text-transform: uppercase; margin-bottom: 2px;">Quét tra cứu</span>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://yteso-thptvothisaubrvt.netlify.app/student" alt="QR" style="width: 56px; height: 56px; display: block;">
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 4px; margin-top: 4px; font-size: 6.5pt; color: #64748b; font-style: italic;">
+                <div>Dữ liệu được lưu trữ bảo mật và xuất tự động từ Hệ thống Y tế số - Trường THPT Võ Thị Sáu- Bà Rịa - Vũng Tàu</div>
+                <div style="font-weight: 600; color: #2563eb;">Hỗ trợ: yte.thptvothisaubrvt@gmail.com</div>
+            </div>
+        </div>`;
+    }
     return `
         <div style="width: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.35; box-sizing: border-box; background: white;">
             
@@ -2595,143 +2676,6 @@ function generateSingleExamResultHtml(r, campaign, stData) {
 
         </div>
     `;
-	const is2026 = r.templateType === '2026' || r.healthClassification !== undefined;
-    if (is2026) {
-        const decWard = r.ward ? (typeof decryptField === 'function' ? decryptField(r.ward) : r.ward) : (stData?.ward || '--');
-        return `
-        <div style="width: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.35; box-sizing: border-box; background: white;">
-            <div style="height: 4px; background: #2563eb; width: 100%; border-radius: 2px; margin-bottom: 12px;"></div>
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 6px;">
-                <div style="line-height: 1.3;">
-                    <div style="font-size: 8pt; font-weight: 800; color: #1e293b; text-transform: uppercase;">Trường THPT Võ Thị Sáu- BRVT</div>
-                    <div style="font-size: 7pt; font-weight: 600; color: #64748b; text-transform: uppercase;">Phòng Y Tế</div>
-                </div>
-                <div style="text-align: right; line-height: 1.3;">
-                    <div style="font-size: 8pt; font-weight: bold; color: #2563eb; font-family: monospace;">MÃ PHIẾU: ${r.id}</div>
-                    <img src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${r.id}&scale=2&height=6&includetext=false" alt="Barcode" style="height: 18px; max-width: 150px; opacity: 0.85;">
-                </div>
-            </div>
-            <div style="text-align: center; margin-bottom: 12px;">
-                <h1 style="margin: 0; font-size: 13pt; font-weight: 800; color: #1e3a8a;">PHIẾU KẾT QUẢ KHÁM SỨC KHỎE</h1>
-            </div>
-
-            <!-- 1. THÔNG TIN ĐỢT KHÁM -->
-            <div style="margin-bottom: 8px;">
-                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 4px; text-transform: uppercase;">1. Thông tin đợt khám</div>
-                <table style="width: 100%; font-size: 8pt; border-collapse: collapse;">
-                    <tr>
-                        <td style="width: 18%; color: #64748b; padding: 2px 0;">Đợt khám:</td>
-                        <td style="width: 47%; font-weight: 600;">${campaign ? campaign.name : 'Khám sức khỏe học sinh'}</td>
-                        <td style="width: 15%; color: #64748b;">Ngày khám:</td>
-                        <td style="width: 20%; font-weight: 600;">${r.examDate ? new Date(r.examDate).toLocaleDateString('vi-VN') : '--'}</td>
-                    </tr>
-                    <tr>
-                        <td style="color: #64748b; padding: 2px 0;">Đơn vị khám:</td>
-                        <td colspan="3" style="font-weight: 600;">${r.facility || '--'}</td>
-                    </tr>
-                </table>
-            </div>
-
-            <!-- 2. THÔNG TIN HỌC SINH -->
-            <div style="margin-bottom: 8px;">
-                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 4px; text-transform: uppercase;">2. Thông tin học sinh</div>
-                <table style="width: 100%; font-size: 8pt; border-collapse: collapse;">
-                    <tr>
-                        <td style="width: 18%; color: #64748b; padding: 2px 0;">Họ và tên:</td>
-                        <td style="width: 47%; font-weight: 700; font-size: 9.5pt; color: #1e3a8a;">${r.name}</td>
-                        <td style="width: 15%; color: #64748b;">Lớp:</td>
-                        <td style="width: 20%; font-weight: 700; color: #2563eb;">${r.class}</td>
-                    </tr>
-                    <tr>
-                        <td style="color: #64748b; padding: 2px 0;">Giới tính:</td>
-                        <td style="font-weight: 600;">${r.gender || gender}</td>
-                        <td style="color: #64748b;">Tuổi:</td>
-                        <td style="font-weight: 600;">${age}</td>
-                    </tr>
-                    <tr>
-                        <td style="color: #64748b; padding: 2px 0;">Phường/Xã:</td>
-                        <td style="font-weight: 600;">${decWard}</td>
-                        <td style="color: #64748b;">Mã HS / YT:</td>
-                        <td style="font-weight: 600; font-family: monospace;">${studentCode} / ${r.studentId}</td>
-                    </tr>
-                </table>
-            </div>
-
-            <!-- 3. THÔNG TIN THỂ LỰC & SINH HIỆU -->
-            <div style="margin-bottom: 8px;">
-                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 4px; text-transform: uppercase;">3. Thể lực & Chỉ số sinh hiệu</div>
-                <table style="width: 100%; font-size: 8pt; border-collapse: collapse;">
-                    <tr>
-                        <td style="width: 18%; color: #64748b; padding: 2px 0;">Chiều cao:</td>
-                        <td style="width: 32%; font-weight: 600;">${r.height ? r.height + ' cm' : '--'}</td>
-                        <td style="width: 18%; color: #64748b;">Cân nặng:</td>
-                        <td style="width: 32%; font-weight: 600;">${r.weight ? r.weight + ' kg' : '--'}</td>
-                    </tr>
-                    <tr>
-                        <td style="color: #64748b; padding: 2px 0;">Chỉ số BMI:</td>
-                        <td style="font-weight: 600;">${bmiVal} (<span style="color:${bmiColor}; font-weight:700;">${bmiClass}</span>)</td>
-                        <td style="color: #64748b;">Mạch:</td>
-                        <td style="font-weight: 600;">${r.pulse ? r.pulse + ' lần/phút' : '--'}</td>
-                    </tr>
-                    <tr>
-                        <td style="color: #64748b; padding: 2px 0;">Huyết áp:</td>
-                        <td style="font-weight: 600;">${r.bloodPressure ? r.bloodPressure + ' mmHg' : '--'}</td>
-                        <td style="color: #64748b;">Nhịp thở:</td>
-                        <td style="font-weight: 600;">${r.respiratoryRate ? r.respiratoryRate + ' lần/phút' : '--'}</td>
-                    </tr>
-                </table>
-            </div>
-
-            <!-- 4. KẾT QUẢ KHÁM & CHẨN ĐOÁN ICD -->
-            <div style="margin-bottom: 8px;">
-                <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 4px; text-transform: uppercase;">4. Tình trạng sức khỏe & Chẩn đoán</div>
-                <table style="width: 100%; font-size: 8pt; border-collapse: collapse; border: 1px solid #e2e8f0;">
-                    <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="width: 35%; border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Tình trạng sức khỏe</td>
-                        <td style="padding: 4px 6px;">${r.healthStatus || 'Bình thường'}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Chẩn đoán sơ bộ - ICD</td>
-                        <td style="padding: 4px 6px;">${r.preliminaryDiagnosis || 'Không'}</td>
-                    </tr>
-                    <tr>
-                        <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Chẩn đoán xác định - ICD</td>
-                        <td style="padding: 4px 6px; font-weight: 600; color: #b91c1c;">${r.confirmedDiagnosis || 'Không'}</td>
-                    </tr>
-                </table>
-            </div>
-
-            <!-- 5. TỔNG KẾT & MÃ QR -->
-            <div style="margin-bottom: 6px; background: #fffbeb; padding: 6px 8px; border-radius: 6px; border: 1px solid #fde68a; display: flex; gap: 8px; align-items: center;">
-                <div style="flex: 1; min-width: 0;">
-                    <div style="font-size: 8pt; font-weight: 800; color: #b45309; border-bottom: 1px dashed #fcd34d; padding-bottom: 2px; margin-bottom: 3px; text-transform: uppercase;">5. Phân loại & Tư vấn</div>
-                    <table style="width: 100%; font-size: 7.5pt; border-collapse: collapse; line-height: 1.3;">
-                        <tr>
-                            <td style="width: 30%; color: #92400e; padding: 1px 0; vertical-align: top;">Phân loại sức khỏe:</td>
-                            <td style="width: 70%; font-weight: 700; color: #1e293b;">${r.healthClassification || '--'}</td>
-                        </tr>
-                        <tr>
-                            <td style="color: #92400e; padding: 1px 0; vertical-align: top;">Đề nghị / Tư vấn:</td>
-                            <td style="font-style: italic; color: #1e293b;">${r.advice || 'Tự theo dõi sức khỏe tại phòng y tế'}</td>
-                        </tr>
-                        <tr>
-                            <td style="color: #92400e; padding: 1px 0; vertical-align: top;">Khác (ghi rõ):</td>
-                            <td style="color: #1e293b;">${r.otherNotes || 'Không'}</td>
-                        </tr>
-                    </table>
-                </div>
-                <div style="width: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; padding: 4px; border-radius: 6px; border: 1px solid #cbd5e1; text-align: center;">
-                    <span style="font-size: 5.5pt; font-weight: 800; color: #1e3a8a; text-transform: uppercase; margin-bottom: 2px;">Quét tra cứu</span>
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://yteso-thptvothisaubrvt.netlify.app/student" alt="QR" style="width: 56px; height: 56px; display: block;">
-                </div>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 4px; margin-top: 4px; font-size: 6.5pt; color: #64748b; font-style: italic;">
-                <div>Dữ liệu được lưu trữ bảo mật và xuất tự động từ Hệ thống Y tế số - Trường THPT Võ Thị Sáu- Bà Rịa - Vũng Tàu</div>
-                <div style="font-weight: 600; color: #2563eb;">Hỗ trợ: yte.thptvothisaubrvt@gmail.com</div>
-            </div>
-        </div>`;
-    }
 }
 // Hàm phụ trợ tách tên tiếng Việt: Trích xuất tên chính và phần họ đệm riêng biệt
 function getVietnameseNameParts(fullName) {

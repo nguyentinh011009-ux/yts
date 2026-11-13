@@ -858,8 +858,8 @@ async function handleExcelExamUpload2026(event) {
                     templateType: '2026',
                     campaignId: activeCampaignId,
                     studentId: student.id,
-                    name: encryptField(student.name ? decryptField(student.name) : name),
-                    class: encryptField(student.class ? decryptField(student.class) : className),
+                    name: encryptField(matched.decName || name),
+					class: encryptField(matched.decClass || className),
                     dob: dob ? encryptField(dob) : '',
                     gender: gender || student.gender || '',
                     ward: ward ? encryptField(ward) : '',
@@ -1075,18 +1075,18 @@ function loadExamResultsForCampaign(cid, searchQuery = "") {
 	        .onSnapshot(snap => {
 	            activeCampaignResults = [];
 	            snap.forEach(doc => {
-                const v = doc.data();
-                results.push({
-                    id: doc.id,
-                    ...v,
-                    name: v.name ? decryptField(v.name) : '',
-                    class: v.class ? decryptField(v.class) : '',
-                    dob: v.dob ? decryptField(v.dob) : '',
-                    ward: v.ward ? decryptField(v.ward) : '',
-                    height: v.height ? decryptField(v.height) : '',
-                    weight: v.weight ? decryptField(v.weight) : ''
+                    const v = doc.data();
+                    activeCampaignResults.push({
+                        id: doc.id,
+                        ...v,
+                        name: v.name ? decryptField(v.name) : '',
+                        class: v.class ? decryptField(v.class) : '',
+                        dob: v.dob ? decryptField(v.dob) : '',
+                        ward: v.ward ? decryptField(v.ward) : '',
+                        height: v.height ? decryptField(v.height) : '',
+                        weight: v.weight ? decryptField(v.weight) : ''
+                    });
                 });
-            });
 	            renderCampaignStudentsTable(searchQuery);
 	        });
 }
@@ -1773,7 +1773,6 @@ async function viewCampaignStats(cid, event) {
                 </div>
             </div>
             ${col2Html}`;
-            </div>`;
     } catch (e) {
         grid.innerHTML = `<div style="grid-column:span 2; color:red; text-align:center; padding: 20px;">Lỗi tính toán dữ liệu: ${e.message}</div>`;
     }
@@ -2372,7 +2371,7 @@ function generateSingleExamResultHtml(r, campaign, stData) {
     }
 const is2026 = r.templateType === '2026' || r.healthClassification !== undefined;
     if (is2026) {
-        const decWard = r.ward ? (typeof decryptField === 'function' ? decryptField(r.ward) : r.ward) : (stData?.ward || '--');
+        const decWard = r.ward || (stData?.ward || '--');
         return `
         <div style="width: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.35; box-sizing: border-box; background: white;">
             <div style="height: 4px; background: #2563eb; width: 100%; border-radius: 2px; margin-bottom: 12px;"></div>

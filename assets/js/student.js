@@ -199,28 +199,40 @@ async function loadHistory() {
 
         let timelineItems = [];
 
+        // Hàm lấy số mili-giây chuẩn xác cho mọi kiểu ngày/Timestamp
+        const getMillisFromVisit = (data) => {
+            if (data.timestamp && typeof data.timestamp.toMillis === 'function') return data.timestamp.toMillis();
+            if (data.timestamp && typeof data.timestamp.seconds === 'number') return data.timestamp.seconds * 1000;
+            if (data.date) return safeParseDate(data.date).getTime();
+            return 0;
+        };
+
         // Nạp lịch sử tiếp nhận
         visitsSnap.forEach(doc => {
             const data = doc.data();
+            const ms = getMillisFromVisit(data);
             timelineItems.push({
+                ...data,
                 type: 'visit',
-                date: data.timestamp ? new Date(data.timestamp.seconds * 1000) : new Date(),
-                timestamp: data.timestamp?.seconds || 0,
-                ...data
+                date: ms > 0 ? new Date(ms) : new Date(0),
+                sortTime: ms
             });
         });
 
-        // Nạp lịch sử khám định kỳ sử dụng safeParseDate chống lỗi iOS
+        // Nạp lịch sử khám định kỳ
         examsSnap.forEach(doc => {
             const data = doc.data();
-            let examDateObj = safeParseDate(data.examDate);
+            const rawDateStr = data.examDate || data.reportDate || '';
+            const examDateObj = rawDateStr ? safeParseDate(rawDateStr) : new Date(0);
+            // Đưa mốc giờ khám định kỳ về cuối ngày (23:59) hoặc giữ đúng ms để so sánh chuẩn theo ngày
+            const ms = examDateObj.getTime();
             timelineItems.push({
+                ...data,
                 id: doc.id,
                 type: 'exam',
                 date: examDateObj,
-                timestamp: examDateObj.getTime() / 1000,
-                campaignName: campaignsMap[data.campaignId] || data.campaignId || "Khám sức khỏe học sinh",
-                ...data
+                sortTime: ms,
+                campaignName: campaignsMap[data.campaignId] || data.campaignId || "Khám sức khỏe học sinh"
             });
         });
 
@@ -233,8 +245,8 @@ async function loadHistory() {
                 </div>`;
         }
 
-        // Sắp xếp thời gian giảm dần
-        timelineItems.sort((a, b) => b.timestamp - a.timestamp);
+        // Sắp xếp trộn lẫn cả visit và exam theo đúng dòng thời gian giảm dần (Mới nhất lên đầu)
+        timelineItems.sort((a, b) => b.sortTime - a.sortTime);
 
         let html = '';
         timelineItems.forEach(item => {
@@ -307,7 +319,83 @@ async function openExamDetailModal(recordId) {
                 else bmiClass = "Béo phì";
             }
         }
+		const dec = (v) => (typeof decryptField === 'function' && v) ? decryptField(v) : (v || '');
+        const decName = dec(r.name);
+        const decClass = dec(r.class);
+        const decHeight = dec(r.height);
+        const decWeight = dec(r.weight);
+        const decWard = dec(r.ward);
 
+        let bmiVal = "--";
+        let bmiClass = "Chưa rõ";
+        if (decHeight && decWeight) {
+            let h = parseFloat(decHeight) / 100;
+            let w = parseFloat(decWeight);
+            if (h > 0 && w > 0) {
+                let bmi = w / (h * h);
+                bmiVal = bmi.toFixed(1);
+                if (bmi < 18.5) bmiClass = "Thiếu cân";
+                else if (bmi < 24.9) bmiClass = "Bình thường";
+                else if (bmi < 29.9) bmiClass = "Thừa cân";
+                else bmiClass = "Béo phì";
+            }
+        }
+
+        const is2026 = r.templateType === '2026' || r.healthClassification !== undefined;
+        const div = document.getElementById('st-exam-detail-content');
+
+        if (is2026) {
+            div.innerHTML = `
+                <div style="border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 20px;">
+                    <span style="font-size: 0.75rem; color: #0284c7; font-weight: bold; text-transform: uppercase;">KẾT QUẢ SỨC KHỎE (MẪU 2026)</span>
+                    <h3 style="margin: 5px 0 0; color: #1e1b4b; font-size: 1.2rem; font-weight: 700;">${campName}</h3>
+                    <div style="font-size: 0.85rem; color: #64748b; margin-top: 5px;">
+                        Học sinh: <strong>${decName}</strong> | Lớp: <strong>${decClass}</strong> | Phường/Xã: <strong>${decWard || '--'}</strong>
+                    </div>
+                    <div style="font-size: 0.82rem; color: #64748b; margin-top: 4px;">
+                        Đơn vị khám: <strong>${r.facility || '--'}</strong> | Ngày khám: <strong>${r.examDate ? safeParseDate(r.examDate).toLocaleDateString('vi-VN') : '--'}</strong>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 15px; font-size: 0.9rem;">
+                    <div style="background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center;">
+                        <div><div style="color:#64748b; font-size:0.75rem; font-weight:bold;">CHIỀU CAO</div><strong>${decHeight ? decHeight + ' cm' : '--'}</strong></div>
+                        <div><div style="color:#64748b; font-size:0.75rem; font-weight:bold;">CÂN NẶNG</div><strong>${decWeight ? decWeight + ' kg' : '--'}</strong></div>
+                        <div><div style="color:#64748b; font-size:0.75rem; font-weight:bold;">BMI</div><strong style="color:#8b5cf6;">${bmiVal} (${bmiClass})</strong></div>
+                        <div><div style="color:#64748b; font-size:0.75rem; font-weight:bold;">MẠCH</div><strong>${r.pulse ? r.pulse + ' l/p' : '--'}</strong></div>
+                        <div><div style="color:#64748b; font-size:0.75rem; font-weight:bold;">HUYẾT ÁP</div><strong>${r.bloodPressure ? r.bloodPressure + ' mmHg' : '--'}</strong></div>
+                        <div><div style="color:#64748b; font-size:0.75rem; font-weight:bold;">NHỊP THỞ</div><strong>${r.respiratoryRate ? r.respiratoryRate + ' l/p' : '--'}</strong></div>
+                    </div>
+
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 15px; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:4px;">
+                            <span style="color:#64748b;">Tình trạng sức khỏe:</span><strong>${r.healthStatus || 'Bình thường'}</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:4px;">
+                            <span style="color:#64748b;">Chẩn đoán sơ bộ - ICD:</span><strong>${r.preliminaryDiagnosis || 'Không'}</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between;">
+                            <span style="color:#64748b;">Chẩn đoán xác định - ICD:</span><strong style="color:#b91c1c;">${r.confirmedDiagnosis || 'Không'}</strong>
+                        </div>
+                    </div>
+
+                    <div style="background: #fffbeb; padding: 15px; border-radius: 10px; border: 1px solid #fde68a; display: flex; flex-direction: column; gap: 8px;">
+                        <div><span style="color:#92400e; font-size:0.75rem; font-weight:bold; display:block;">PHÂN LOẠI SỨC KHỎE:</span><strong>${r.healthClassification || '--'}</strong></div>
+                        <div><span style="color:#92400e; font-size:0.75rem; font-weight:bold; display:block;">ĐỀ NGHỊ / TƯ VẤN:</span><span>${r.advice || 'Tự theo dõi thêm tại nhà'}</span></div>
+                        <div><span style="color:#92400e; font-size:0.75rem; font-weight:bold; display:block;">KHÁC (GHI RÕ):</span><span>${r.otherNotes || 'Không'}</span></div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 25px; border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: right; display: flex; justify-content: flex-end; gap: 10px;">
+                    <button onclick="printStudentExamFromModal('${recordId}')" class="btn-modern" style="background: #10b981; color: white; border: none; font-weight: bold; padding: 10px 20px; font-size: 0.9rem; border-radius: 8px; cursor: pointer;">
+                        <i class="fas fa-print"></i> Tải kết quả (Lưu PDF)
+                    </button>
+                    <button onclick="closeStExamDetailModal()" class="btn-modern" style="background: #e2e8f0; color: #475569; padding: 10px 15px; font-size: 0.9rem; border-radius: 8px; border: none; cursor: pointer;">Đóng</button>
+                </div>
+            `;
+            document.getElementById('st-exam-detail-modal').style.display = 'flex';
+            return;
+        }
         const div = document.getElementById('st-exam-detail-content');
         div.innerHTML = `
             <div style="border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 20px;">

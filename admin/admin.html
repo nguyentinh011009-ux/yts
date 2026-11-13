@@ -1140,7 +1140,7 @@
         <h2 style="margin: 0; color: #1e293b;"><i class="fas fa-file-medical"></i> Khám Sức Khỏe Định Kỳ</h2>
         <div style="display: flex; gap: 12px; align-items: center;">
             <select id="exam-template-download-type" class="pharma-input" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 600;">
-                <option value="legacy">Mẫu 2025)</option>
+                <option value="legacy">Mẫu 2025</option>
                 <option value="2026">Mẫu 2026</option>
             </select>
             <button onclick="downloadExcelTemplateByChoice()" class="btn btn-secondary" style="background:#e2e8f0; font-weight: bold;"><i class="fas fa-download"></i> Tải file Excel mẫu</button>
@@ -1269,7 +1269,7 @@
                     <input type="text" id="exam-student-class" readonly style="background:#f1f5f9;">
                 </div>
             </div>
-
+            <div id="manual-form-legacy">
             <!-- Khung thông số khám chi tiết -->
             <div style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap:15px; margin-bottom:20px;">
                 <div class="input-group"><label>Cơ sở khám</label><input type="text" id="ex-facility" placeholder="VD: Bệnh viện Đất Đỏ"></div>
@@ -1356,7 +1356,6 @@
                     <div class="input-group" style="grid-column: span 2;"><label>Đề nghị / Yêu cầu theo dõi chuyên khoa</label><input type="text" id="ex-sum-advice" placeholder="Nhập kết quả..."></div>
                 </div>
             </div>
-
             <button onclick="saveManualPhysicalExam()" class="btn btn-success" style="width:100%; justify-content:center; height:50px; font-size:1.1rem;"><i class="fas fa-save"></i> LƯU PHIẾU KHÁM HỌC SINH</button>
         </div>
     </div>
@@ -1371,6 +1370,33 @@
             
             <div id="view-exam-content" style="display: flex; flex-direction: column; gap: 15px;">
                 <!-- JS sẽ tự động đổ thiết kế thẻ khám sức khỏe chi tiết -->
+            </div>
+        </div>
+    </div>
+    <!-- [POPUP 6]: BÁO CÁO LỖI CHI TIẾT KHI IMPORT EXCEL MẪU 2026 -->
+    <div id="exam-import-error-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 10015; align-items: center; justify-content: center; padding: 20px;">
+        <div class="form-card fade-in" style="width: 100%; max-width: 900px; max-height: 85vh; position: relative; padding: 25px; border-radius: 16px; border-top: 6px solid #ef4444; display: flex; flex-direction: column; background: white;">
+            <button onclick="document.getElementById('exam-import-error-modal').style.display='none'" style="position:absolute; top:18px; right:18px; border:none; background:#f1f5f9; width:34px; height:34px; border-radius:50%; font-size:1.3rem; cursor:pointer; color:#64748b;">&times;</button>
+            <h3 style="color: #ef4444; margin: 0 0 8px 0;"><i class="fas fa-exclamation-triangle"></i> Chi tiết kết quả & Các trường hợp không khớp dữ liệu</h3>
+            <p id="exam-import-error-summary" style="color: #475569; font-size: 0.92rem; margin-bottom: 15px;"></p>
+            <div style="flex: 1; overflow-y: auto; border: 1px solid #fecaca; border-radius: 10px;">
+                <table class="admin-table" style="margin: 0;">
+                    <thead style="position: sticky; top: 0; background: #fef2f2; z-index: 2;">
+                        <tr>
+                            <th>Dòng / STT</th>
+                            <th>Họ và tên trẻ</th>
+                            <th>Lớp</th>
+                            <th>Giới tính</th>
+                            <th>Ngày sinh</th>
+                            <th>Phường/Xã</th>
+                            <th>Chi tiết lỗi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="exam-import-error-tbody"></tbody>
+                </table>
+            </div>
+            <div style="margin-top: 15px; text-align: right;">
+                <button onclick="document.getElementById('exam-import-error-modal').style.display='none'" class="btn btn-primary" style="background: #475569;">Đóng</button>
             </div>
         </div>
     </div>
@@ -1432,33 +1458,6 @@
 <div class="ai-section-divider">
     <span><i class="fas fa-chart-bar"></i> Thống Kê Dữ Liệu Khám Thủ Công & Bộ Lọc</span>
 </div>
-<!-- [POPUP 6]: BÁO CÁO LỖI CHI TIẾT KHI IMPORT EXCEL MẪU 2026 -->
-    <div id="exam-import-error-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 10015; align-items: center; justify-content: center; padding: 20px;">
-        <div class="form-card fade-in" style="width: 100%; max-width: 900px; max-height: 85vh; position: relative; padding: 25px; border-radius: 16px; border-top: 6px solid #ef4444; display: flex; flex-direction: column; background: white;">
-            <button onclick="document.getElementById('exam-import-error-modal').style.display='none'" style="position:absolute; top:18px; right:18px; border:none; background:#f1f5f9; width:34px; height:34px; border-radius:50%; font-size:1.3rem; cursor:pointer; color:#64748b;">&times;</button>
-            <h3 style="color: #ef4444; margin: 0 0 8px 0;"><i class="fas fa-exclamation-triangle"></i> Chi tiết kết quả & Các trường hợp không khớp dữ liệu</h3>
-            <p id="exam-import-error-summary" style="color: #475569; font-size: 0.92rem; margin-bottom: 15px;"></p>
-            <div style="flex: 1; overflow-y: auto; border: 1px solid #fecaca; border-radius: 10px;">
-                <table class="admin-table" style="margin: 0;">
-                    <thead style="position: sticky; top: 0; background: #fef2f2; z-index: 2;">
-                        <tr>
-                            <th>Dòng / STT</th>
-                            <th>Họ và tên trẻ</th>
-                            <th>Lớp</th>
-                            <th>Giới tính</th>
-                            <th>Ngày sinh</th>
-                            <th>Phường/Xã</th>
-                            <th>Chi tiết lỗi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="exam-import-error-tbody"></tbody>
-                </table>
-            </div>
-            <div style="margin-top: 15px; text-align: right;">
-                <button onclick="document.getElementById('exam-import-error-modal').style.display='none'" class="btn btn-primary" style="background: #475569;">Đóng</button>
-            </div>
-        </div>
-    </div>
 <!-- ========================================================================= -->
 <!-- POPUP CHI TIẾT BẢN DỰ BÁO AI (DRILL-DOWN MODAL) -->
 <!-- ========================================================================= -->

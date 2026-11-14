@@ -1600,12 +1600,79 @@ async function viewCampaignStats(cid, event) {
         // Dựng nội dung Cột 2 tùy theo loại mẫu của đợt khám
         let col2Html = '';
         if (stats2026.total2026 > 0 && totalLegacy === 0) {
-            // Đợt khám hoàn toàn dùng Mẫu mới 2026
+            // Thống kê dành cho Mẫu mới 2026
+        let stats2026 = {
+            total2026: 0,
+            class1: 0,       // Loại I
+            class2: 0,       // Loại II
+            class3: 0,       // Loại III
+            class4: 0,       // Loại IV
+            class5: 0,       // Loại V
+            hasPrelimICD: 0, // Có chẩn đoán sơ bộ ICD
+            hasConfirmICD: 0 // Có chẩn đoán xác định ICD
+        };
+
+        const isRecord2026 = (v) => v.templateType === '2026' || v.healthClassification !== undefined;
+
+        results.forEach(v => {
+            // 1. Thống kê BMI (dùng chung cho cả mẫu cũ và mẫu 2026)
+            if (v.height && v.weight) {
+                const h = parseFloat(v.height) / 100;
+                const w = parseFloat(v.weight);
+                if (h > 0 && w > 0) {
+                    const bmi = w / (h * h);
+                    if (bmi < 18.5) bmiStats.underweight++;
+                    else if (bmi < 25.0) bmiStats.normal++;
+                    else if (bmi < 30.0) bmiStats.overweight++;
+                    else bmiStats.obese++;
+                }
+            }
+
+            // 2. Phân tách thống kê chuyên khoa (Mẫu cũ) vs Phân loại I-V & ICD (Mẫu 2026)
+            if (isRecord2026(v)) {
+                stats2026.total2026++;
+                const clsNum = normalizeHealthClass2026(v.healthClassification);
+                if (clsNum === '1') stats2026.class1++;
+                else if (clsNum === '2') stats2026.class2++;
+                else if (clsNum === '3') stats2026.class3++;
+                else if (clsNum === '4') stats2026.class4++;
+                else if (clsNum === '5') stats2026.class5++;
+
+                if (parseICDCodes2026(v.preliminaryDiagnosis).length > 0) stats2026.hasPrelimICD++;
+                if (parseICDCodes2026(v.confirmedDiagnosis).length > 0) stats2026.hasConfirmICD++;
+            } else {
+                if (v.eyes && v.eyes !== "Bình thường") diseaseStats.eyes++;
+                if (v.dental && v.dental !== "Bình thường") diseaseStats.dental++;
+                if (v.mentalHealth && v.mentalHealth !== "Bình thường") diseaseStats.mental++;
+                if (v.ent && v.ent !== "Bình thường") diseaseStats.ent++;
+                if (v.surgery && v.surgery !== "Bình thường") diseaseStats.surgery++;
+                if (v.internalMedicine && v.internalMedicine !== "Bình thường") diseaseStats.internal++;
+            }
+        });
+
+        const getPercent = (count, base = total) => base > 0 ? ((count / base) * 100).toFixed(1) : "0.0";
+
+        const pctNormal = getPercent(bmiStats.normal);
+        const pctUnder = getPercent(bmiStats.underweight);
+        const pctOver = getPercent(bmiStats.overweight);
+        const pctObese = getPercent(bmiStats.obese);
+
+        const totalLegacy = total - stats2026.total2026;
+        const pctEyes = getPercent(diseaseStats.eyes, totalLegacy || total);
+        const pctDental = getPercent(diseaseStats.dental, totalLegacy || total);
+        const pctMental = getPercent(diseaseStats.mental, totalLegacy || total);
+        const pctEnt = getPercent(diseaseStats.ent, totalLegacy || total);
+        const pctSurgery = getPercent(diseaseStats.surgery, totalLegacy || total);
+
+        // Dựng nội dung Cột 2 tùy theo loại mẫu của đợt khám
+        let col2Html = '';
+        if (stats2026.total2026 > 0 && totalLegacy === 0) {
             const base26 = stats2026.total2026;
             const pC1 = getPercent(stats2026.class1, base26);
             const pC2 = getPercent(stats2026.class2, base26);
-            const pC3 = getPercent(stats2026.class3Plus, base26);
-            const pAbn = getPercent(stats2026.abnormalStatus, base26);
+            const pC3 = getPercent(stats2026.class3, base26);
+            const pC4 = getPercent(stats2026.class4, base26);
+            const pC5 = getPercent(stats2026.class5, base26);
             const pPre = getPercent(stats2026.hasPrelimICD, base26);
             const pConf = getPercent(stats2026.hasConfirmICD, base26);
 
@@ -1614,53 +1681,63 @@ async function viewCampaignStats(cid, event) {
                 <h4 style="color: #0f172a; margin-top: 0; margin-bottom: 6px; font-size: 1.1rem; font-weight: 700;">Phân loại sức khỏe & Bệnh lý ICD (Mẫu 2026)</h4>
                 <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 20px 0;">Tổng hợp trên ${base26} học sinh (bấm vào từng dòng để xem chi tiết)</p>
 
-                <div style="display: flex; flex-direction: column; gap: 14px;">
-                    <div onclick="showDrilldownStudents('2026_class1', 'Học sinh Phân loại sức khỏe: Loại I')" style="cursor: pointer; padding: 8px; border-radius: 8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div onclick="showDrilldownStudents('2026_class1', 'Phân loại sức khỏe: Loại I')" style="cursor: pointer; padding: 7px 8px; border-radius: 8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
                         <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
                             <span style="font-weight: 600; color: #1e293b;">Phân loại sức khỏe: Loại I</span>
                             <span style="font-weight: bold; color: #10b981;">${stats2026.class1} HS (${pC1}%)</span>
                         </div>
-                        <div style="height: 10px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pC1}%; height: 100%; background: #10b981; border-radius: 5px;"></div></div>
+                        <div style="height: 8px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pC1}%; height: 100%; background: #10b981; border-radius: 5px;"></div></div>
                     </div>
 
-                    <div onclick="showDrilldownStudents('2026_class2', 'Học sinh Phân loại sức khỏe: Loại II')" style="cursor: pointer; padding: 8px; border-radius: 8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                    <div onclick="showDrilldownStudents('2026_class2', 'Phân loại sức khỏe: Loại II')" style="cursor: pointer; padding: 7px 8px; border-radius: 8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
                         <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
                             <span style="font-weight: 600; color: #1e293b;">Phân loại sức khỏe: Loại II</span>
                             <span style="font-weight: bold; color: #3b82f6;">${stats2026.class2} HS (${pC2}%)</span>
                         </div>
-                        <div style="height: 10px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pC2}%; height: 100%; background: #3b82f6; border-radius: 5px;"></div></div>
+                        <div style="height: 8px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pC2}%; height: 100%; background: #3b82f6; border-radius: 5px;"></div></div>
                     </div>
 
-                    <div onclick="showDrilldownStudents('2026_class3plus', 'Học sinh Phân loại: Loại III trở lên / Khác')" style="cursor: pointer; padding: 8px; border-radius: 8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                    <div onclick="showDrilldownStudents('2026_class3', 'Phân loại sức khỏe: Loại III')" style="cursor: pointer; padding: 7px 8px; border-radius: 8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
                         <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
-                            <span style="font-weight: 600; color: #1e293b;">Phân loại: Loại III trở lên / Khác</span>
-                            <span style="font-weight: bold; color: #f59e0b;">${stats2026.class3Plus} HS (${pC3}%)</span>
+                            <span style="font-weight: 600; color: #1e293b;">Phân loại sức khỏe: Loại III</span>
+                            <span style="font-weight: bold; color: #f59e0b;">${stats2026.class3} HS (${pC3}%)</span>
                         </div>
-                        <div style="height: 10px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pC3}%; height: 100%; background: #f59e0b; border-radius: 5px;"></div></div>
+                        <div style="height: 8px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pC3}%; height: 100%; background: #f59e0b; border-radius: 5px;"></div></div>
                     </div>
 
-                    <div onclick="showDrilldownStudents('2026_abnormal', 'Học sinh có Tình trạng sức khỏe cần lưu ý')" style="cursor: pointer; padding: 8px; border-radius: 8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                    <div onclick="showDrilldownStudents('2026_class4', 'Phân loại sức khỏe: Loại IV')" style="cursor: pointer; padding: 7px 8px; border-radius: 8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
                         <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
-                            <span style="font-weight: 600; color: #1e293b;">Tình trạng sức khỏe bất thường</span>
-                            <span style="font-weight: bold; color: #8b5cf6;">${stats2026.abnormalStatus} ca (${pAbn}%)</span>
+                            <span style="font-weight: 600; color: #1e293b;">Phân loại sức khỏe: Loại IV</span>
+                            <span style="font-weight: bold; color: #8b5cf6;">${stats2026.class4} HS (${pC4}%)</span>
                         </div>
-                        <div style="height: 10px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pAbn}%; height: 100%; background: #8b5cf6; border-radius: 5px;"></div></div>
+                        <div style="height: 8px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pC4}%; height: 100%; background: #8b5cf6; border-radius: 5px;"></div></div>
                     </div>
 
-                    <div onclick="showDrilldownStudents('2026_prelim_icd', 'Danh sách có Chẩn đoán sơ bộ - ICD')" style="cursor: pointer; padding: 8px; border-radius: 8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                    <div onclick="showDrilldownStudents('2026_class5', 'Phân loại sức khỏe: Loại V')" style="cursor: pointer; padding: 7px 8px; border-radius: 8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
                         <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
-                            <span style="font-weight: 600; color: #1e293b;">Có Chẩn đoán sơ bộ (ICD)</span>
+                            <span style="font-weight: 600; color: #1e293b;">Phân loại sức khỏe: Loại V</span>
+                            <span style="font-weight: bold; color: #64748b;">${stats2026.class5} HS (${pC5}%)</span>
+                        </div>
+                        <div style="height: 8px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pC5}%; height: 100%; background: #64748b; border-radius: 5px;"></div></div>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 2px 0;">
+
+                    <div onclick="showICDBreakdownModal('preliminary')" style="cursor: pointer; padding: 7px 8px; border-radius: 8px;" onmouseover="this.style.background='#fff7ed'" onmouseout="this.style.background='transparent'">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
+                            <span style="font-weight: 600; color: #1e293b;">Có Chẩn đoán sơ bộ (ICD) <i class="fas fa-chevron-right" style="font-size:0.75rem; color:#94a3b8; margin-left:4px;"></i></span>
                             <span style="font-weight: bold; color: #ea580c;">${stats2026.hasPrelimICD} ca (${pPre}%)</span>
                         </div>
-                        <div style="height: 10px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pPre}%; height: 100%; background: #ea580c; border-radius: 5px;"></div></div>
+                        <div style="height: 8px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pPre}%; height: 100%; background: #ea580c; border-radius: 5px;"></div></div>
                     </div>
 
-                    <div onclick="showDrilldownStudents('2026_confirm_icd', 'Danh sách có Chẩn đoán xác định - ICD')" style="cursor: pointer; padding: 8px; border-radius: 8px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                    <div onclick="showICDBreakdownModal('confirmed')" style="cursor: pointer; padding: 7px 8px; border-radius: 8px;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
                         <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;">
-                            <span style="font-weight: 600; color: #1e293b;">Có Chẩn đoán xác định (ICD)</span>
+                            <span style="font-weight: 600; color: #1e293b;">Có Chẩn đoán xác định (ICD) <i class="fas fa-chevron-right" style="font-size:0.75rem; color:#94a3b8; margin-left:4px;"></i></span>
                             <span style="font-weight: bold; color: #ef4444;">${stats2026.hasConfirmICD} ca (${pConf}%)</span>
                         </div>
-                        <div style="height: 10px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pConf}%; height: 100%; background: #ef4444; border-radius: 5px;"></div></div>
+                        <div style="height: 8px; background: #f1f5f9; border-radius: 5px;"><div style="width: ${pConf}%; height: 100%; background: #ef4444; border-radius: 5px;"></div></div>
                     </div>
                 </div>
             </div>`;
@@ -1831,20 +1908,166 @@ async function printStudentExamResult(recordId) {
         iframe.contentWindow.print();
     }, 1500);
 }
-// HÀM DRILL-DOWN: HIỂN THỊ DANH SÁCH CHI TIẾT THEO TỪNG DANH MỤC THỐNG KÊ
-function showDrilldownStudents(type, categoryName) {
+function normalizeHealthClass2026(raw) {
+    const s = String(raw || '').trim().toLowerCase();
+    if (!s) return '';
+    // Kiểm tra iii, iv trước ii, v, i để tránh khớp nhầm chuỗi con
+    if (/(^|[\s:_-])(loại\s*)?(iii|3)([\s.,;):-]|$)/.test(s)) return '3';
+    if (/(^|[\s:_-])(loại\s*)?(iv|4)([\s.,;):-]|$)/.test(s)) return '4';
+    if (/(^|[\s:_-])(loại\s*)?(ii|2)([\s.,;):-]|$)/.test(s)) return '2';
+    if (/(^|[\s:_-])(loại\s*)?(v|5)([\s.,;):-]|$)/.test(s)) return '5';
+    if (/(^|[\s:_-])(loại\s*)?(i|1)([\s.,;):-]|$)/.test(s)) return '1';
+    return '';
+}
+
+// Tách danh sách mã bệnh ICD từ 1 ô dữ liệu (bỏ qua "Không", "Bình thường"...)
+function parseICDCodes2026(rawStr) {
+    const raw = String(rawStr || '').trim();
+    if (!raw) return [];
+    const ignoreSet = new Set(['không', 'bình thường', 'bt', 'none', 'chưa phát hiện', 'không có', '--', '-', '0']);
+    if (ignoreSet.has(raw.toLowerCase())) return [];
+    return raw
+        .split(/[;\n]+|,\s*(?=[A-Z]\d{2})/)
+        .map(part => part.trim())
+        .filter(part => part && !ignoreSet.has(part.toLowerCase()));
+}
+
+// Bộ nhớ tạm cho danh sách nhóm mã ICD khi đang mở modal
+let currentICDGroupsCache = [];
+let currentICDMode = 'preliminary';
+
+// CẤP 1: Hiện bảng thống kê chi tiết theo từng mã ICD
+function showICDBreakdownModal(mode) {
+    currentICDMode = mode;
+    const isPrelim = mode === 'preliminary';
     const titleElem = document.getElementById('drilldown-modal-title');
     const tbodyElem = document.getElementById('drilldown-students-tbody');
-    if (!titleElem || !tbodyElem) return;
+    const modal = document.getElementById('exam-stats-drilldown-modal');
+    const thead = modal ? modal.querySelector('thead') : null;
+    if (!titleElem || !tbodyElem || !thead) return;
+
+    titleElem.innerHTML = isPrelim
+        ? '<i class="fas fa-notes-medical" style="color:#ea580c;"></i> Thống kê theo mã ICD — Chẩn đoán sơ bộ'
+        : '<i class="fas fa-stethoscope" style="color:#ef4444;"></i> Thống kê theo mã ICD — Chẩn đoán xác định';
+
+    thead.innerHTML = `
+        <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+            <th style="text-align: center; padding: 12px; width: 60px; font-weight: bold; color: #475569;">STT</th>
+            <th style="text-align: left; padding: 12px; font-weight: bold; color: #475569;">Mã ICD / Chẩn đoán</th>
+            <th style="text-align: right; padding: 12px; width: 130px; font-weight: bold; color: #475569;">Số ca (%)</th>
+        </tr>`;
+
+    const groupMap = new Map();
+    let totalCasesWithICD = 0;
+
+    currentStatsResultsCache.forEach(item => {
+        if (!(item.templateType === '2026' || item.healthClassification !== undefined)) return;
+        const fieldVal = isPrelim ? item.preliminaryDiagnosis : item.confirmedDiagnosis;
+        const codes = parseICDCodes2026(fieldVal);
+        if (codes.length === 0) return;
+
+        totalCasesWithICD++;
+        const seenInStudent = new Set();
+        codes.forEach(codeLabel => {
+            const key = codeLabel.toLowerCase().replace(/\s+/g, ' ');
+            if (seenInStudent.has(key)) return; // Tránh đếm trùng 1 mã trong cùng 1 HS
+            seenInStudent.add(key);
+
+            if (!groupMap.has(key)) {
+                groupMap.set(key, { label: codeLabel, students: [] });
+            }
+            groupMap.get(key).students.push(item);
+        });
+    });
+
+    currentICDGroupsCache = Array.from(groupMap.values())
+        .sort((a, b) => b.students.length - a.students.length);
+
+    if (currentICDGroupsCache.length === 0) {
+        tbodyElem.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #64748b; padding: 24px;">Không có ca chẩn đoán ICD nào được ghi nhận.</td></tr>';
+    } else {
+        const total2026 = currentStatsResultsCache.filter(v => v.templateType === '2026' || v.healthClassification !== undefined).length || 1;
+        tbodyElem.innerHTML = currentICDGroupsCache.map((grp, idx) => {
+            const pct = ((grp.students.length / total2026) * 100).toFixed(1);
+            return `
+                <tr onclick="showStudentsByICD(${idx})" style="border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: 0.15s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'">
+                    <td style="padding: 12px; text-align: center; color: #64748b; font-weight: 600;">${idx + 1}</td>
+                    <td style="padding: 12px; font-weight: 600; color: #1e293b;">
+                        ${grp.label}
+                        <span style="font-size: 0.78rem; color: #2563eb; margin-left: 6px; font-weight: normal;">(Xem DS →)</span>
+                    </td>
+                    <td style="padding: 12px; text-align: right; white-space: nowrap;">
+                        <span style="background: #fef2f2; color: #dc2626; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.85rem;">${grp.students.length} ca (${pct}%)</span>
+                    </td>
+                </tr>`;
+        }).join('');
+    }
+
+    modal.style.display = 'flex';
+}
+
+// CẤP 2: Bấm vào 1 mã bệnh ICD để xem danh sách học sinh chi tiết
+function showStudentsByICD(groupIdx) {
+    const grp = currentICDGroupsCache[groupIdx];
+    if (!grp) return;
+
+    const titleElem = document.getElementById('drilldown-modal-title');
+    const tbodyElem = document.getElementById('drilldown-students-tbody');
+    const modal = document.getElementById('exam-stats-drilldown-modal');
+    const thead = modal ? modal.querySelector('thead') : null;
+    if (!titleElem || !tbodyElem || !thead) return;
+
+    const isPrelim = currentICDMode === 'preliminary';
+    titleElem.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <button onclick="showICDBreakdownModal('${currentICDMode}')" class="btn-sm" style="background: #e2e8f0; color: #334155; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem;">
+                <i class="fas fa-arrow-left"></i> Quay lại mã ICD
+            </button>
+            <span>${grp.label} (${grp.students.length} HS)</span>
+        </div>`;
+
+    thead.innerHTML = `
+        <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+            <th style="text-align: left; padding: 12px; font-weight: bold; color: #475569;">Họ và tên</th>
+            <th style="text-align: left; padding: 12px; width: 25%; font-weight: bold; color: #475569;">Lớp</th>
+            <th style="text-align: left; padding: 12px; font-weight: bold; color: #475569;">Chi tiết ghi nhận</th>
+        </tr>`;
+
+    tbodyElem.innerHTML = grp.students.map(item => {
+        const fullDiag = isPrelim ? item.preliminaryDiagnosis : item.confirmedDiagnosis;
+        return `
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 12px; font-weight: 600; color: #1e293b;">${item.name}</td>
+                <td style="padding: 12px;"><span class="badge" style="background:#eff6ff; color:#2563eb; padding: 4px 8px; border-radius: 6px; font-weight:bold; font-size:0.8rem;">${item.class}</span></td>
+                <td style="padding: 12px; color: #b91c1c; font-size: 0.9rem; font-weight: 500;">${fullDiag || '--'}</td>
+            </tr>`;
+    }).join('');
+}
+
+// HÀM DRILL-DOWN: HIỂN THỊ DANH SÁCH CHI TIẾT THEO TỪNG DANH MỤC THỐNG KÊ
+function showDrilldownStudents(type, categoryName) {
+    // Nếu gọi loại ICD thì chuyển sang bảng thống kê mã ICD (Cấp 1)
+    if (type === '2026_prelim_icd') return showICDBreakdownModal('preliminary');
+    if (type === '2026_confirm_icd') return showICDBreakdownModal('confirmed');
+
+    const titleElem = document.getElementById('drilldown-modal-title');
+    const tbodyElem = document.getElementById('drilldown-students-tbody');
+    const modal = document.getElementById('exam-stats-drilldown-modal');
+    const thead = modal ? modal.querySelector('thead') : null;
+    if (!titleElem || !tbodyElem || !thead) return;
+
+    // Khôi phục lại tiêu đề bảng 3 cột chuẩn
+    thead.innerHTML = `
+        <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+            <th style="text-align: left; padding: 12px; font-weight: bold; color: #475569;">Họ và tên</th>
+            <th style="text-align: left; padding: 12px; width: 25%; font-weight: bold; color: #475569;">Lớp</th>
+            <th style="text-align: left; padding: 12px; font-weight: bold; color: #475569;">Chi tiết ghi nhận</th>
+        </tr>`;
 
     titleElem.innerText = categoryName;
     tbodyElem.innerHTML = '';
 
     const isRecord2026 = (v) => v.templateType === '2026' || v.healthClassification !== undefined;
-    const hasVal26 = (val) => {
-        const s = String(val || '').trim().toLowerCase();
-        return s !== '' && s !== 'không' && s !== 'bình thường' && s !== 'none' && s !== '--';
-    };
 
     const filtered = currentStatsResultsCache.filter(item => {
         let heightVal = parseFloat(item.height) / 100;
@@ -1862,29 +2085,12 @@ function showDrilldownStudents(type, categoryName) {
             case 'surgery': return item.surgery && item.surgery !== 'Bình thường';
             case 'mental': return item.mentalHealth && item.mentalHealth !== 'Bình thường';
 
-            // --- CÁC NHÓM MẪU MỚI 2026 ---
-            case '2026_class1': {
-                if (!isRecord2026(item)) return false;
-                const c = String(item.healthClassification || '').trim().toLowerCase();
-                return c === 'loại i' || c === 'loại 1' || c === 'i' || c === '1';
-            }
-            case '2026_class2': {
-                if (!isRecord2026(item)) return false;
-                const c = String(item.healthClassification || '').trim().toLowerCase();
-                return c === 'loại ii' || c === 'loại 2' || c === 'ii' || c === '2';
-            }
-            case '2026_class3plus': {
-                if (!isRecord2026(item)) return false;
-                const c = String(item.healthClassification || '').trim().toLowerCase();
-                return c !== '' && !['loại i', 'loại 1', 'i', '1', 'loại ii', 'loại 2', 'ii', '2'].includes(c);
-            }
-            case '2026_abnormal': {
-                if (!isRecord2026(item)) return false;
-                const st = String(item.healthStatus || '').trim().toLowerCase();
-                return st !== '' && st !== 'bình thường' && st !== 'đủ sức khỏe';
-            }
-            case '2026_prelim_icd': return isRecord2026(item) && hasVal26(item.preliminaryDiagnosis);
-            case '2026_confirm_icd': return isRecord2026(item) && hasVal26(item.confirmedDiagnosis);
+            // --- PHÂN LOẠI SỨC KHỎE LOẠI I -> V (MẪU 2026) ---
+            case '2026_class1': return isRecord2026(item) && normalizeHealthClass2026(item.healthClassification) === '1';
+            case '2026_class2': return isRecord2026(item) && normalizeHealthClass2026(item.healthClassification) === '2';
+            case '2026_class3': return isRecord2026(item) && normalizeHealthClass2026(item.healthClassification) === '3';
+            case '2026_class4': return isRecord2026(item) && normalizeHealthClass2026(item.healthClassification) === '4';
+            case '2026_class5': return isRecord2026(item) && normalizeHealthClass2026(item.healthClassification) === '5';
             default: return false;
         }
     });
@@ -1911,12 +2117,6 @@ function showDrilldownStudents(type, categoryName) {
                 detail = item.mentalHealth;
             } else if (type.startsWith('2026_class')) {
                 detail = `${item.healthClassification || '--'}${item.advice ? ' - ' + item.advice : ''}`;
-            } else if (type === '2026_abnormal') {
-                detail = item.healthStatus || '--';
-            } else if (type === '2026_prelim_icd') {
-                detail = item.preliminaryDiagnosis || '--';
-            } else if (type === '2026_confirm_icd') {
-                detail = item.confirmedDiagnosis || '--';
             }
 
             tbodyElem.innerHTML += `
@@ -1928,7 +2128,7 @@ function showDrilldownStudents(type, categoryName) {
         });
     }
 
-    document.getElementById('exam-stats-drilldown-modal').style.display = 'flex';
+    modal.style.display = 'flex';
 }
 // =====================================================================
 // KHU VỰC QUẢN LÝ VÀ PHÂN TÍCH LOGIC IN HÀNG LOẠT (2 PHIẾU A5 DỌC TRÊN 1 TỜ A4 NGANG)

@@ -1523,83 +1523,6 @@ async function viewCampaignStats(cid, event) {
         let total = results.length;
         let bmiStats = { underweight: 0, normal: 0, overweight: 0, obese: 0 };
         let diseaseStats = { eyes: 0, dental: 0, mental: 0, ent: 0, surgery: 0, internal: 0 };
-
-        // Thống kê dành cho Mẫu mới 2026
-        let stats2026 = {
-            total2026: 0,
-            class1: 0,       // Loại I
-            class2: 0,       // Loại II
-            class3Plus: 0,   // Loại III, IV, V hoặc phân loại khác
-            abnormalStatus: 0, // Tình trạng sức khỏe khác "Bình thường"
-            hasPrelimICD: 0,   // Có chẩn đoán sơ bộ ICD
-            hasConfirmICD: 0   // Có chẩn đoán xác định ICD
-        };
-
-        const isRecord2026 = (v) => v.templateType === '2026' || v.healthClassification !== undefined;
-        const hasValue = (val) => {
-            const s = String(val || '').trim().toLowerCase();
-            return s !== '' && s !== 'không' && s !== 'bình thường' && s !== 'none' && s !== '--';
-        };
-
-        results.forEach(v => {
-            // 1. Thống kê BMI (dùng chung cho cả mẫu cũ và mẫu 2026)
-            if (v.height && v.weight) {
-                const h = parseFloat(v.height) / 100;
-                const w = parseFloat(v.weight);
-                if (h > 0 && w > 0) {
-                    const bmi = w / (h * h);
-                    if (bmi < 18.5) bmiStats.underweight++;
-                    else if (bmi < 25.0) bmiStats.normal++;
-                    else if (bmi < 30.0) bmiStats.overweight++;
-                    else bmiStats.obese++;
-                }
-            }
-
-            // 2. Phân tách thống kê chuyên khoa (Mẫu cũ) vs Phân loại & ICD (Mẫu 2026)
-            if (isRecord2026(v)) {
-                stats2026.total2026++;
-                const cls = String(v.healthClassification || '').trim().toLowerCase();
-                if (cls === 'loại i' || cls === 'loại 1' || cls === 'i' || cls === '1') {
-                    stats2026.class1++;
-                } else if (cls === 'loại ii' || cls === 'loại 2' || cls === 'ii' || cls === '2') {
-                    stats2026.class2++;
-                } else if (cls !== '') {
-                    stats2026.class3Plus++;
-                }
-
-                const hStatus = String(v.healthStatus || '').trim().toLowerCase();
-                if (hStatus !== '' && hStatus !== 'bình thường' && hStatus !== 'đủ sức khỏe') {
-                    stats2026.abnormalStatus++;
-                }
-                if (hasValue(v.preliminaryDiagnosis)) stats2026.hasPrelimICD++;
-                if (hasValue(v.confirmedDiagnosis)) stats2026.hasConfirmICD++;
-            } else {
-                if (v.eyes && v.eyes !== "Bình thường") diseaseStats.eyes++;
-                if (v.dental && v.dental !== "Bình thường") diseaseStats.dental++;
-                if (v.mentalHealth && v.mentalHealth !== "Bình thường") diseaseStats.mental++;
-                if (v.ent && v.ent !== "Bình thường") diseaseStats.ent++;
-                if (v.surgery && v.surgery !== "Bình thường") diseaseStats.surgery++;
-                if (v.internalMedicine && v.internalMedicine !== "Bình thường") diseaseStats.internal++;
-            }
-        });
-
-        const getPercent = (count, base = total) => base > 0 ? ((count / base) * 100).toFixed(1) : "0.0";
-
-        const pctNormal = getPercent(bmiStats.normal);
-        const pctUnder = getPercent(bmiStats.underweight);
-        const pctOver = getPercent(bmiStats.overweight);
-        const pctObese = getPercent(bmiStats.obese);
-
-        const totalLegacy = total - stats2026.total2026;
-        const pctEyes = getPercent(diseaseStats.eyes, totalLegacy || total);
-        const pctDental = getPercent(diseaseStats.dental, totalLegacy || total);
-        const pctMental = getPercent(diseaseStats.mental, totalLegacy || total);
-        const pctEnt = getPercent(diseaseStats.ent, totalLegacy || total);
-        const pctSurgery = getPercent(diseaseStats.surgery, totalLegacy || total);
-
-        // Dựng nội dung Cột 2 tùy theo loại mẫu của đợt khám
-        let col2Html = '';
-        if (stats2026.total2026 > 0 && totalLegacy === 0) {
             // Thống kê dành cho Mẫu mới 2026
         let stats2026 = {
             total2026: 0,
@@ -1742,7 +1665,6 @@ async function viewCampaignStats(cid, event) {
                 </div>
             </div>`;
         } else {
-            // Đợt khám Mẫu cũ (hoặc trộn: hiển thị biểu đồ mẫu cũ + ghi chú nếu có phiếu 2026)
             col2Html = `
             <div style="background: white; border: 1px solid #e2e8f0; padding: 26px; border-radius: 12px;">
                 <h4 style="color: #0f172a; margin-top: 0; margin-bottom: 6px; font-size: 1.1rem; font-weight: 700;">Biểu đồ bệnh lý phát hiện</h4>

@@ -333,7 +333,7 @@ async function openExamDetailModal(recordId) {
         if (is2026) {
             div.innerHTML = `
                 <div style="border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 20px;">
-                    <span style="font-size: 0.75rem; color: #0284c7; font-weight: bold; text-transform: uppercase;">KẾT QUẢ SỨC KHỎE (MẪU 2026)</span>
+                    <span style="font-size: 0.75rem; color: #0284c7; font-weight: bold; text-transform: uppercase;">KẾT QUẢ SỨC KHỎE</span>
                     <h3 style="margin: 5px 0 0; color: #1e1b4b; font-size: 1.2rem; font-weight: 700;">${campName}</h3>
                     <div style="font-size: 0.85rem; color: #64748b; margin-top: 5px;">
                         Học sinh: <strong>${decName}</strong> | Lớp: <strong>${decClass}</strong> | Phường/Xã: <strong>${decWard || '--'}</strong>

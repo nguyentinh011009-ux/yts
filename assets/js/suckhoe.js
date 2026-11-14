@@ -806,7 +806,7 @@ async function handleExcelExamUpload2026(event) {
                 const nDob = dob;
                 const nWard = normStr2026(ward);
 
-                // --- QUÁ TRÌNH SO KHỚP 3 LẦN ---
+                // --- QUÁ TRÌNH SO KHỚP 4 LẦN ---
                 // Lần 1: Họ tên (không phân biệt hoa/thường) + Lớp + Giới tính + Ngày sinh
                 let matched = normalizedStudents.find(s =>
                     s.nName === nName && s.nClass === nClass && s.nGender === nGender && s.nDob === nDob &&
@@ -829,10 +829,24 @@ async function handleExcelExamUpload2026(event) {
                     );
                 }
 
+                // Lần 4: Họ tên + Giới tính (Chỉ nạp nếu duy nhất 1 học sinh; trùng >= 2 học sinh thì báo lỗi)
+                let duplicateErrorReason = '';
+                if (!matched && nGender !== '') {
+                    const candidates4 = normalizedStudents.filter(s =>
+                        s.nName === nName && s.nGender === nGender
+                    );
+                    if (candidates4.length === 1) {
+                        matched = candidates4[0];
+                    } else if (candidates4.length > 1) {
+                        const dupList = candidates4.map(c => `${c.decClass || 'Chưa rõ lớp'} (${c.raw.id})`).join(', ');
+                        duplicateErrorReason = `Trùng ${candidates4.length} học sinh cùng Họ tên & Giới tính trong hệ thống: [${dupList}]. Không tự động nạp để tránh ghi nhầm.`;
+                    }
+                }
+
                 if (!matched) {
                     errors.push({
                         rowNum: r + 1, stt, name, className, gender, dob, ward,
-                        reason: 'Không tìm thấy học sinh khớp trong hệ thống sau 3 lần đối chiếu (Tên+Lớp+GT+NS / Tên+GT+Xã+NS / Tên+GT+Xã)'
+                        reason: duplicateErrorReason || 'Không tìm thấy học sinh khớp trong hệ thống sau 4 lần đối chiếu (Tên+Lớp+GT+NS / Tên+GT+Xã+NS / Tên+GT+Xã / Tên+GT)'
                     });
                     continue;
                 }

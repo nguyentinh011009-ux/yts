@@ -305,21 +305,7 @@ async function openExamDetailModal(recordId) {
             console.warn("Lỗi tải thông tin đợt khám từ máy chủ:", e);
         }
 
-        let bmiVal = "--";
-        let bmiClass = "Chưa rõ";
-        if (r.height && r.weight) {
-            let h = parseFloat(r.height) / 100;
-            let w = parseFloat(r.weight);
-            if (h > 0 && w > 0) {
-                let bmi = w / (h * h);
-                bmiVal = bmi.toFixed(1);
-                if (bmi < 18.5) bmiClass = "Thiếu cân";
-                else if (bmi < 24.9) bmiClass = "Bình thường";
-                else if (bmi < 29.9) bmiClass = "Thừa cân";
-                else bmiClass = "Béo phì";
-            }
-        }
-		const dec = (v) => (typeof decryptField === 'function' && v) ? decryptField(v) : (v || '');
+        const dec = (v) => (typeof decryptField === 'function' && v) ? decryptField(v) : (v || '');
         const decName = dec(r.name);
         const decClass = dec(r.class);
         const decHeight = dec(r.height);
@@ -396,23 +382,23 @@ async function openExamDetailModal(recordId) {
             document.getElementById('st-exam-detail-modal').style.display = 'flex';
             return;
         }
-        const div = document.getElementById('st-exam-detail-content');
+
         div.innerHTML = `
             <div style="border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 20px;">
                 <span style="font-size: 0.75rem; color: #8b5cf6; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">KẾT QUẢ SỨC KHỎE</span>
                 <h3 style="margin: 5px 0 0; color: #1e1b4b; font-size: 1.2rem; font-weight: 700;">${campName}</h3>
-                <div style="font-size: 0.85rem; color: #64748b; margin-top: 5px;">Học sinh: <strong>${r.name}</strong> | Lớp: <strong>${r.class}</strong></div>
+                <div style="font-size: 0.85rem; color: #64748b; margin-top: 5px;">Học sinh: <strong>${decName}</strong> | Lớp: <strong>${decClass}</strong></div>
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 15px; font-size: 0.9rem;">
                 <div style="background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; text-align: center;">
                     <div>
                         <div style="color: #64748b; font-size: 0.75rem; font-weight: bold; margin-bottom: 4px;">CHIỀU CAO</div>
-                        <strong style="color: #1e293b; font-size: 1.1rem;">${r.height ? r.height + ' cm' : '--'}</strong>
+                        <strong style="color: #1e293b; font-size: 1.1rem;">${decHeight ? decHeight + ' cm' : '--'}</strong>
                     </div>
                     <div>
                         <div style="color: #64748b; font-size: 0.75rem; font-weight: bold; margin-bottom: 4px;">CÂN NẶNG</div>
-                        <strong style="color: #1e293b; font-size: 1.1rem;">${r.weight ? r.weight + ' kg' : '--'}</strong>
+                        <strong style="color: #1e293b; font-size: 1.1rem;">${decWeight ? decWeight + ' kg' : '--'}</strong>
                     </div>
                     <div>
                         <div style="color: #64748b; font-size: 0.75rem; font-weight: bold; margin-bottom: 4px;">BMI KẾT LUẬN</div>
@@ -516,22 +502,168 @@ async function printStudentExamFromModal(recordId) {
             }
         }
 
+        const dec = (v) => (typeof decryptField === 'function' && v) ? decryptField(v) : (v || '');
+        const decName = dec(r.name);
+        const decClass = dec(r.class);
+        const decHeight = dec(r.height);
+        const decWeight = dec(r.weight);
+        const decWard = dec(r.ward) || currentStudent.ward || '--';
+
         let bmiVal = "--";
         let bmiClass = "Chưa rõ";
-        if (r.height && r.weight) {
-            let h = parseFloat(r.height) / 100;
-            let w = parseFloat(r.weight);
+        let bmiColor = "#10b981";
+        if (decHeight && decWeight) {
+            let h = parseFloat(decHeight) / 100;
+            let w = parseFloat(decWeight);
             if (h > 0 && w > 0) {
                 let bmi = w / (h * h);
                 bmiVal = bmi.toFixed(1);
-                if (bmi < 18.5) bmiClass = "Thiếu cân";
-                else if (bmi < 24.9) bmiClass = "Bình thường";
-                else if (bmi < 29.9) bmiClass = "Thừa cân";
-                else bmiClass = "Béo phì";
+                if (bmi < 18.5) { bmiClass = "Thiếu cân"; bmiColor = "#3b82f6"; }
+                else if (bmi < 24.9) { bmiClass = "Bình thường"; bmiColor = "#10b981"; }
+                else if (bmi < 29.9) { bmiClass = "Thừa cân"; bmiColor = "#f59e0b"; }
+                else { bmiClass = "Béo phì"; bmiColor = "#ef4444"; }
             }
         }
 
-        const htmlContent = `
+        const is2026 = r.templateType === '2026' || r.healthClassification !== undefined;
+        let htmlContent = '';
+
+        if (is2026) {
+            htmlContent = `
+            <div style="width: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b; line-height: 1.35; box-sizing: border-box; background: white;">
+                <div style="height: 4px; background: #2563eb; width: 100%; border-radius: 2px; margin-bottom: 12px;"></div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 6px;">
+                    <div style="line-height: 1.3;">
+                        <div style="font-size: 8pt; font-weight: 800; color: #1e293b; text-transform: uppercase;">Trường THPT Võ Thị Sáu- Bà Rịa- Vũng Tàu</div>
+                        <div style="font-size: 7pt; font-weight: 600; color: #64748b; text-transform: uppercase;">Phòng Y Tế</div>
+                    </div>
+                    <div style="text-align: right; line-height: 1.3;">
+                        <div style="font-size: 8pt; font-weight: bold; color: #2563eb; font-family: monospace;">MÃ PHIẾU: ${doc.id}</div>
+                        <img src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${doc.id}&scale=2&height=6&includetext=false" alt="Barcode" style="height: 18px; max-width: 150px; opacity: 0.85;">
+                    </div>
+                </div>
+                <div style="text-align: center; margin-bottom: 12px;">
+                    <h1 style="margin: 0; font-size: 13.5pt; font-weight: 800; color: #1e3a8a;">PHIẾU KẾT QUẢ KHÁM SỨC KHỎE</h1>
+                </div>
+
+                <!-- 1. THÔNG TIN ĐỢT KHÁM -->
+                <div style="margin-bottom: 8px;">
+                    <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 4px; text-transform: uppercase;">1. Thông tin đợt khám</div>
+                    <table style="width: 100%; font-size: 8pt; border-collapse: collapse;">
+                        <tr>
+                            <td style="width: 18%; color: #64748b; padding: 2px 0;">Đợt khám:</td>
+                            <td style="width: 47%; font-weight: 600;">${campName}</td>
+                            <td style="width: 15%; color: #64748b;">Ngày khám:</td>
+                            <td style="width: 20%; font-weight: 600;">${r.examDate ? safeParseDate(r.examDate).toLocaleDateString('vi-VN') : '--'}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #64748b; padding: 2px 0;">Đơn vị khám:</td>
+                            <td colspan="3" style="font-weight: 600;">${r.facility || '--'}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- 2. THÔNG TIN HỌC SINH -->
+                <div style="margin-bottom: 8px;">
+                    <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 4px; text-transform: uppercase;">2. Thông tin học sinh</div>
+                    <table style="width: 100%; font-size: 8pt; border-collapse: collapse;">
+                        <tr>
+                            <td style="width: 18%; color: #64748b; padding: 2px 0;">Họ và tên:</td>
+                            <td style="width: 47%; font-weight: 700; font-size: 9.5pt; color: #1e3a8a;">${decName}</td>
+                            <td style="width: 15%; color: #64748b;">Lớp:</td>
+                            <td style="width: 20%; font-weight: 700; color: #2563eb;">${decClass}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #64748b; padding: 2px 0;">Giới tính:</td>
+                            <td style="font-weight: 600;">${r.gender || currentStudent.gender || 'Chưa xác định'}</td>
+                            <td style="color: #64748b;">Tuổi:</td>
+                            <td style="font-weight: 600;">${age}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #64748b; padding: 2px 0;">Phường/Xã:</td>
+                            <td style="font-weight: 600;">${decWard}</td>
+                            <td style="color: #64748b;">Mã HS / YT:</td>
+                            <td style="font-weight: 600; font-family: monospace;">${currentStudent.studentCode || '--'} / ${r.studentId}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- 3. THỂ LỰC & SINH HIỆU -->
+                <div style="margin-bottom: 8px;">
+                    <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 4px; text-transform: uppercase;">3. Thể lực & Chỉ số sinh hiệu</div>
+                    <table style="width: 100%; font-size: 8pt; border-collapse: collapse;">
+                        <tr>
+                            <td style="width: 18%; color: #64748b; padding: 2px 0;">Chiều cao:</td>
+                            <td style="width: 32%; font-weight: 600;">${decHeight ? decHeight + ' cm' : '--'}</td>
+                            <td style="width: 18%; color: #64748b;">Cân nặng:</td>
+                            <td style="width: 32%; font-weight: 600;">${decWeight ? decWeight + ' kg' : '--'}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #64748b; padding: 2px 0;">Chỉ số BMI:</td>
+                            <td style="font-weight: 600;">${bmiVal} (<span style="color:${bmiColor}; font-weight:700;">${bmiClass}</span>)</td>
+                            <td style="color: #64748b;">Mạch:</td>
+                            <td style="font-weight: 600;">${r.pulse ? r.pulse + ' lần/phút' : '--'}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #64748b; padding: 2px 0;">Huyết áp:</td>
+                            <td style="font-weight: 600;">${r.bloodPressure ? r.bloodPressure + ' mmHg' : '--'}</td>
+                            <td style="color: #64748b;">Nhịp thở:</td>
+                            <td style="font-weight: 600;">${r.respiratoryRate ? r.respiratoryRate + ' lần/phút' : '--'}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- 4. TÌNH TRẠNG SỨC KHỎE & CHẨN ĐOÁN ICD -->
+                <div style="margin-bottom: 8px;">
+                    <div style="font-size: 8.5pt; font-weight: 800; color: #1e3a8a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 4px; text-transform: uppercase;">4. Tình trạng sức khỏe & Chẩn đoán</div>
+                    <table style="width: 100%; font-size: 8pt; border-collapse: collapse; border: 1px solid #e2e8f0;">
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="width: 35%; border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Tình trạng sức khỏe</td>
+                            <td style="padding: 4px 6px;">${r.healthStatus || 'Bình thường'}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Chẩn đoán sơ bộ - ICD</td>
+                            <td style="padding: 4px 6px;">${r.preliminaryDiagnosis || 'Không'}</td>
+                        </tr>
+                        <tr>
+                            <td style="border-right: 1px solid #e2e8f0; padding: 4px 6px; font-weight: 600; color: #475569;">Chẩn đoán xác định - ICD</td>
+                            <td style="padding: 4px 6px; font-weight: 600; color: #b91c1c;">${r.confirmedDiagnosis || 'Không'}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- 5. PHÂN LOẠI & TƯ VẤN -->
+                <div style="margin-bottom: 10px; background: #fffbeb; padding: 8px 10px; border-radius: 8px; border: 1px solid #fde68a;">
+                    <div style="font-size: 8.5pt; font-weight: 800; color: #b45309; border-bottom: 1px solid #fde68a; padding-bottom: 3px; margin-bottom: 5px; text-transform: uppercase;">5. Phân loại & Tư vấn</div>
+                    <table style="width: 100%; font-size: 8pt; border-collapse: collapse; line-height: 1.4;">
+                        <tr>
+                            <td style="width: 28%; color: #92400e; padding: 2px 0; vertical-align: top;">Phân loại sức khỏe:</td>
+                            <td style="width: 72%; font-weight: 700; color: #1e293b;">${r.healthClassification || '--'}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #92400e; padding: 2px 0; vertical-align: top;">Đề nghị / Tư vấn:</td>
+                            <td style="font-style: italic; color: #1e293b;">${r.advice || 'Tự theo dõi sức khỏe tại phòng y tế học đường'}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #92400e; padding: 2px 0; vertical-align: top;">Khác (ghi rõ):</td>
+                            <td style="color: #1e293b;">${r.otherNotes || 'Không'}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1.5px solid #cbd5e1; padding-top: 6px; margin-top: 8px;">
+                    <div style="font-size: 7pt; color: #64748b; font-style: italic; line-height: 1.35; width: 72%;">
+                        Dữ liệu được trích xuất tự động từ Hệ thống Y tế số điện tử<br>
+                        Trường THPT Võ Thị Sáu - BRVT
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; width: 28%; justify-content: flex-end;">
+                        <span style="font-size: 6.5pt; color: #64748b; text-align: right; line-height: 1.1;">Quét mã tra cứu kết quả</span>
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=https://yteso-thptvothisaubrvt.netlify.app/" alt="QR" style="width: 32px; height: 32px;">
+                    </div>
+                </div>
+            </div>`;
+        } else {
+            htmlContent = `
             <div style="width: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b; line-height: 1.35; box-sizing: border-box; background: white;">
                 <div style="height: 4px; background: #2563eb; width: 100%; border-radius: 2px; margin-bottom: 12px;"></div>
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 6px;">
@@ -569,9 +701,9 @@ async function printStudentExamFromModal(recordId) {
                     <table style="width: 100%; font-size: 8pt; border-collapse: collapse; margin-bottom: 4px;">
                         <tr>
                             <td style="width: 18%; color: #64748b; padding: 2.5px 0;">Họ và tên:</td>
-                            <td style="width: 47%; font-weight: 700; font-size: 9.5pt; color: #1e3a8a; padding: 2.5px 0;">${r.name}</td>
+                            <td style="width: 47%; font-weight: 700; font-size: 9.5pt; color: #1e3a8a; padding: 2.5px 0;">${decName}</td>
                             <td style="width: 15%; color: #64748b; padding: 2.5px 0;">Lớp:</td>
-                            <td style="width: 20%; font-weight: 700; color: #2563eb; padding: 2.5px 0;">${r.class}</td>
+                            <td style="width: 20%; font-weight: 700; color: #2563eb; padding: 2.5px 0;">${decClass}</td>
                         </tr>
                         <tr>
                             <td style="color: #64748b; padding: 2.5px 0;">Giới tính:</td>
@@ -592,15 +724,15 @@ async function printStudentExamFromModal(recordId) {
                     <table style="width: 100%; font-size: 8pt; border-collapse: collapse;">
                         <tr>
                             <td style="width: 18%; color: #64748b; padding: 2.5px 0;">Cân nặng:</td>
-                            <td style="width: 32%; font-weight: 600; color: #0f172a; padding: 2.5px 0;">${r.weight ? r.weight + ' kg' : '--'}</td>
+                            <td style="width: 32%; font-weight: 600; color: #0f172a; padding: 2.5px 0;">${decWeight ? decWeight + ' kg' : '--'}</td>
                             <td style="width: 15%; color: #64748b; padding: 2.5px 0;">Chiều cao:</td>
-                            <td style="width: 35%; font-weight: 600; color: #0f172a; padding: 2.5px 0;">${r.height ? r.height + ' cm' : '--'}</td>
+                            <td style="width: 35%; font-weight: 600; color: #0f172a; padding: 2.5px 0;">${decHeight ? decHeight + ' cm' : '--'}</td>
                         </tr>
                         <tr>
                             <td style="color: #64748b; padding: 2.5px 0;">Chỉ số BMI:</td>
                             <td style="font-weight: 600; color: #0f172a; padding: 2.5px 0;">${bmiVal}</td>
                             <td style="color: #64748b; padding: 2.5px 0;">Đánh giá:</td>
-                            <td style="font-weight: 700; color: #10b981; padding: 2.5px 0;">${bmiClass}</td>
+                            <td style="font-weight: 700; color: ${bmiColor}; padding: 2.5px 0;">${bmiClass}</td>
                         </tr>
                     </table>
                 </div>
@@ -646,23 +778,23 @@ async function printStudentExamFromModal(recordId) {
                     <table style="width: 100%; font-size: 8pt; border-collapse: collapse; line-height: 1.4;">
                         <tr>
                             <td style="width: 25%; color: #92400e; padding: 2px 0; vertical-align: top;">Phát triển thể chất:</td>
-                            <td style="width: 75%; font-weight: 600; color: #1e293b; padding: 2px 0;">${r.summary.physicalDev || 'Bình thường'}</td>
+                            <td style="width: 75%; font-weight: 600; color: #1e293b; padding: 2px 0;">${r.summary?.physicalDev || 'Bình thường'}</td>
                         </tr>
                         <tr>
                             <td style="color: #92400e; padding: 2px 0; vertical-align: top;">Tâm thần vận động:</td>
-                            <td style="font-weight: 600; color: #1e293b; padding: 2px 0;">${r.summary.mentalDev || 'Bình thường'}</td>
+                            <td style="font-weight: 600; color: #1e293b; padding: 2px 0;">${r.summary?.mentalDev || 'Bình thường'}</td>
                         </tr>
                         <tr>
                             <td style="color: #92400e; padding: 2px 0; vertical-align: top;">Sức khỏe chung:</td>
-                            <td style="font-weight: 600; color: #1e293b; padding: 2px 0;">${r.summary.healthStatus || 'Đủ sức khỏe học tập'}</td>
+                            <td style="font-weight: 600; color: #1e293b; padding: 2px 0;">${r.summary?.healthStatus || 'Đủ sức khỏe học tập'}</td>
                         </tr>
                         <tr>
                             <td style="color: #b91c1c; padding: 2px 0; vertical-align: top; font-weight: bold;">Bệnh lý lưu ý:</td>
-                            <td style="color: #b91c1c; padding: 2px 0; font-weight: bold;">${r.summary.notes || 'Không phát hiện bất thường'}</td>
+                            <td style="color: #b91c1c; padding: 2px 0; font-weight: bold;">${r.summary?.notes || 'Không phát hiện bất thường'}</td>
                         </tr>
                         <tr>
                             <td style="color: #92400e; padding: 2px 0; vertical-align: top;">Yêu cầu theo dõi:</td>
-                            <td style="font-style: italic; color: #1e293b; padding: 2px 0;">${r.summary.advice || 'Tự theo dõi sức khỏe tại phòng y tế học đường'}</td>
+                            <td style="font-style: italic; color: #1e293b; padding: 2px 0;">${r.summary?.advice || 'Tự theo dõi sức khỏe tại phòng y tế học đường'}</td>
                         </tr>
                     </table>
                 </div>
@@ -676,8 +808,8 @@ async function printStudentExamFromModal(recordId) {
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=https://yteso-thptvothisaubrvt.netlify.app/" alt="QR" style="width: 32px; height: 32px;">
                     </div>
                 </div>
-            </div>
-        `;
+            </div>`;
+        }
 
         const iframeId = 'silent-print-iframe-student';
         let iframe = document.getElementById(iframeId);

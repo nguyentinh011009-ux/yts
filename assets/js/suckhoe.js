@@ -1505,6 +1505,7 @@ async function viewCampaignStats(cid, event) {
                     id: doc.id,
                     ...v,
                     name: v.name ? decryptField(v.name) : '',
+					ward: v.ward ? decryptField(v.ward) : '',
                     class: v.class ? decryptField(v.class) : '',
                     dob: v.dob ? decryptField(v.dob) : '',
                     height: v.height ? decryptField(v.height) : '',

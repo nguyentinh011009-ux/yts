@@ -7,6 +7,7 @@ let examStudentCache = null;
 let activeCampaignResults = [];
 let currentStatsResultsCache = [];
 let examResultsListener = null;
+let examResultsCacheByCampaign = {};
 
 // Khởi tạo và lắng nghe các đợt khám khi tab hoạt động
 window.addEventListener('DOMContentLoaded', () => {
@@ -211,6 +212,7 @@ async function saveManualPhysicalExam() {
         }
 
         await batch.commit();
+		delete examResultsCacheByCampaign[activeCampaignId];
         alert("✅ Đã lưu phiếu khám và cập nhật thể trạng học sinh gốc thành công!");
         resetManualExamForm();
         closeManualEntryModal();
@@ -610,6 +612,7 @@ async function handleExcelExamUpload(event) {
             for (let b of batches) {
                 await b.commit();
             }
+			delete examResultsCacheByCampaign[activeCampaignId];
 
             if (btn) {
                 btn.innerHTML = originalText;
@@ -917,6 +920,7 @@ async function handleExcelExamUpload2026(event) {
             if (opCount > 0) batches.push(currentBatch);
             if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu dữ liệu lên hệ thống...';
             for (const b of batches) await b.commit();
+			delete examResultsCacheByCampaign[activeCampaignId];
 
             if (btn) {
                 btn.innerHTML = originalText;
@@ -1102,6 +1106,7 @@ function loadExamResultsForCampaign(cid, searchQuery = "") {
                     });
                 });
 	            renderCampaignStudentsTable(searchQuery);
+				examResultsCacheByCampaign[cid] = activeCampaignResults;
 	        });
 }
 
@@ -1419,6 +1424,7 @@ async function deleteStudentExamRecord(recordId) {
     if (confirm(`Xác nhận xóa kết quả khám sức khỏe của học sinh: ${r.name} trong đợt này?`)) {
         try {
             await db.collection('yt_exam_results').doc(recordId).delete();
+			delete examResultsCacheByCampaign[activeCampaignId];
             alert("✅ Đã xóa bản ghi phiếu khám thành công!");
         } catch (e) {
             alert("Lỗi khi xóa bản ghi: " + e.message);
@@ -1484,6 +1490,11 @@ async function deleteExamCampaign(cid, event) {
 			const unexSnap = await db.collection('yt_exam_unexamined').where('campaignId', '==', cid).get();
             unexSnap.forEach(doc => batch.delete(doc.ref));
             await batch.commit();
+			delete examResultsCacheByCampaign[cid];
+            if (activeCampaignId === cid) {
+                activeCampaignId = null;
+                activeCampaignResults = [];
+            }
             alert("✅ Đã xóa đợt khám thành công!");
         } catch (e) {
             alert("Lỗi: " + e.message);
@@ -1492,9 +1503,9 @@ async function deleteExamCampaign(cid, event) {
 }
 
 // 10. THỐNG KÊ CHI TIẾT CHỈ SỐ SỨC KHỎE ĐỢT KHÁM
-async function viewCampaignStats(cid, event) {
+async function viewCampaignStats(cid, event, forceRefresh = false) {
     if (event) event.stopPropagation();
-	activeStatsCampaignId = cid;
+    activeStatsCampaignId = cid;
 
     const campaign = examCampaignsCache.find(c => c.id === cid);
     document.getElementById('stats-campaign-title').innerText = `Thống kê kết quả: ${campaign ? campaign.name : cid}`;
@@ -1506,8 +1517,12 @@ async function viewCampaignStats(cid, event) {
     try {
         let results = [];
 
-        if (activeCampaignId === cid && activeCampaignResults && activeCampaignResults.length > 0) {
+        if (!forceRefresh && activeCampaignId === cid && activeCampaignResults && activeCampaignResults.length > 0) {
             results = activeCampaignResults;
+            examResultsCacheByCampaign[cid] = results;
+        } else if (!forceRefresh && examResultsCacheByCampaign[cid] && examResultsCacheByCampaign[cid].length > 0) {
+            // Đọc thẳng từ RAM Cache -> 0 request Firestore
+            results = examResultsCacheByCampaign[cid];
         } else {
             const snap = await db.collection('yt_exam_results').where('campaignId', '==', cid).get();
             if (snap.empty) {
@@ -1521,13 +1536,15 @@ async function viewCampaignStats(cid, event) {
                     id: doc.id,
                     ...v,
                     name: v.name ? decryptField(v.name) : '',
-					ward: v.ward ? decryptField(v.ward) : '',
+                    ward: v.ward ? decryptField(v.ward) : '',
                     class: v.class ? decryptField(v.class) : '',
                     dob: v.dob ? decryptField(v.dob) : '',
                     height: v.height ? decryptField(v.height) : '',
                     weight: v.weight ? decryptField(v.weight) : ''
                 });
             });
+            examResultsCacheByCampaign[cid] = results;
+			if (activeCampaignId === cid) activeCampaignResults = results;
         }
 
         if (results.length === 0) {
@@ -2100,8 +2117,12 @@ async function openBulkPrintModal(cid, event) {
 
     // KIỂM TRA BỘ ĐỆM: Nếu trùng khớp campaign đang hoạt động và đã có kết quả trong cache
     if (activeCampaignId === cid && activeCampaignResults && activeCampaignResults.length > 0) {
-        renderBulkPrintStudentsTable();
-    } else {
+	     renderBulkPrintStudentsTable();
+	 } else if (examResultsCacheByCampaign[cid] && examResultsCacheByCampaign[cid].length > 0) {
+	     activeCampaignResults = examResultsCacheByCampaign[cid];
+	     activeCampaignId = cid;
+	     renderBulkPrintStudentsTable();
+	 } else {
         try {
             const snap = await db.collection('yt_exam_results')
                 .where('campaignId', '==', cid)
@@ -3078,8 +3099,10 @@ async function initializeUnexaminedStudents() {
         const allStudents = await getStudentsListCached();
         let examDocs = [];
         if (activeCampaignId === cid && activeCampaignResults && activeCampaignResults.length > 0) {
-            examDocs = activeCampaignResults;
-        } else {
+         examDocs = activeCampaignResults;
+     		} else if (examResultsCacheByCampaign[cid] && examResultsCacheByCampaign[cid].length > 0) {
+         		examDocs = examResultsCacheByCampaign[cid];
+    		} else {
             const examSnap = await db.collection('yt_exam_results').where('campaignId', '==', cid).get();
             examSnap.forEach(doc => examDocs.push(doc.data()));
         }

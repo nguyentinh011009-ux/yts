@@ -3214,3 +3214,250 @@ async function initializeUnexaminedStudents() {
         }
     }
 }
+// 6. Xuất file PDF chi tiết danh sách học sinh chưa khám theo từng lớp
+async function exportUnexaminedStudentsPDF() {
+    const cid = activeStatsCampaignId;
+    if (!cid || !currentUnexaminedMeta) {
+        return alert("Chưa có dữ liệu! Vui lòng bấm nút Khởi tạo trước khi xuất PDF.");
+    }
+
+    const classes = currentUnexaminedMeta.classes || [];
+    if (classes.length === 0 || (currentUnexaminedMeta.unexaminedCount || 0) === 0) {
+        return alert("Không có học sinh nào chưa khám trong đợt này để xuất PDF!");
+    }
+
+    const btnExport = document.getElementById('btn-export-unexamined-pdf');
+    const originalBtnHtml = btnExport ? btnExport.innerHTML : '';
+    if (btnExport) {
+        btnExport.disabled = true;
+        btnExport.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tạo PDF...';
+    }
+
+    try {
+        // Kiểm tra xem có lớp nào chưa được nạp vào RAM cache không; nếu có thì tải 1 lần từ Firestore
+        const hasMissingClass = classes.some(c => !unexaminedClassStudentsCache[c.docId]);
+        if (hasMissingClass) {
+            const snap = await db.collection('yt_exam_unexamined')
+                .where('campaignId', '==', cid)
+                .where('type', '==', 'class')
+                .get();
+
+            snap.forEach(doc => {
+                const data = doc.data();
+                const clsName = data.className || '';
+                const list = (data.students || []).map(st => ({
+                    id: st.id || '--',
+                    studentCode: safeDecryptExamField(st.studentCode) || '--',
+                    name: safeDecryptExamField(st.name),
+                    class: clsName,
+                    gender: safeDecryptExamField(st.gender) || '--',
+                    dob: safeDecryptExamField(st.dob) || ''
+                }));
+                sortStudentsByClassAndName(list);
+                unexaminedClassStudentsCache[doc.id] = list;
+            });
+        }
+
+        const campaign = examCampaignsCache.find(c => c.id === cid);
+        const campaignName = campaign ? campaign.name : cid;
+        const initTimeStr = currentUnexaminedMeta.lastInitializedAt && currentUnexaminedMeta.lastInitializedAt.toDate
+            ? currentUnexaminedMeta.lastInitializedAt.toDate().toLocaleString('vi-VN', {
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                day: '2-digit', month: '2-digit', year: 'numeric'
+            })
+            : new Date().toLocaleString('vi-VN');
+
+        const formatDobVN = (dob) => {
+            if (!dob) return '--';
+            const parts = String(dob).split(/[\/\-]/);
+            if (parts.length === 3 && parts[0].length === 4) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            return dob;
+        };
+
+        // Dựng bảng tổng hợp nhanh theo lớp
+        const summaryRows = classes.map((c, i) => `
+            <tr>
+                <td style="text-align:center;">${i + 1}</td>
+                <td style="font-weight:bold;">Lớp ${c.className}</td>
+                <td style="text-align:center;">${c.totalInClass}</td>
+                <td style="text-align:center; font-weight:bold; color:#c2410c;">${c.count}</td>
+            </tr>
+        `).join('');
+
+        // Dựng danh sách chi tiết từng học sinh theo từng lớp
+        let classSectionsHtml = '';
+        classes.forEach(cls => {
+            const students = unexaminedClassStudentsCache[cls.docId] || [];
+            const studentRows = students.map((st, idx) => `
+                <tr>
+                    <td style="text-align:center;">${idx + 1}</td>
+                    <td style="font-family:monospace;">${st.id}</td>
+                    <td style="font-family:monospace;">${st.studentCode}</td>
+                    <td style="font-weight:600;">${st.name}</td>
+                    <td style="text-align:center;">${st.gender}</td>
+                    <td style="text-align:center;">${formatDobVN(st.dob)}</td>
+                </tr>
+            `).join('');
+
+            classSectionsHtml += `
+                <div class="class-section">
+                    <div class="class-header">
+                        <span>LỚP ${cls.className}</span>
+                        <span>Chưa khám: ${cls.count} / ${cls.totalInClass} học sinh</span>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px; text-align:center;">STT</th>
+                                <th style="width: 110px;">Mã Y Tế</th>
+                                <th style="width: 100px;">Mã HS</th>
+                                <th>Họ và Tên</th>
+                                <th style="width: 75px; text-align:center;">Giới tính</th>
+                                <th style="width: 95px; text-align:center;">Ngày sinh</th>
+                            </tr>
+                        </thead>
+                        <tbody>${studentRows}</tbody>
+                    </table>
+                </div>
+            `;
+        });
+
+        const htmlContent = `
+            <div class="report-header">
+                <div>
+                    <div style="font-size:10pt; font-weight:800; text-transform:uppercase;">TRƯỜNG THPT VÕ THỊ SÁU - BRVT</div>
+                    <div style="font-size:9pt; font-weight:600; color:#475569;">PHÒNG Y TẾ HỌC ĐƯỜNG</div>
+                </div>
+                <div style="text-align:right; font-size:8.5pt; color:#475569;">
+                    <div>Mã đợt: <strong>${cid}</strong></div>
+                    <div>Cập nhật lúc: <strong>${initTimeStr}</strong></div>
+                </div>
+            </div>
+
+            <div style="text-align:center; margin: 14px 0 16px 0;">
+                <h1 style="margin:0 0 4px 0; font-size:15pt; font-weight:800; color:#1e3a8a; text-transform:uppercase;">
+                    DANH SÁCH HỌC SINH CHƯA KHÁM SỨC KHỎE
+                </h1>
+                <div style="font-size:10.5pt; font-weight:600; color:#334155;">Đợt khám: ${campaignName}</div>
+                <div style="font-size:9.5pt; color:#475569; margin-top:4px;">
+                    Tổng số học sinh: <strong>${currentUnexaminedMeta.totalStudents || 0}</strong> &nbsp;|&nbsp;
+                    Đã khám: <strong style="color:#15803d;">${currentUnexaminedMeta.examinedCount || 0}</strong> &nbsp;|&nbsp;
+                    Chưa khám: <strong style="color:#c2410c;">${currentUnexaminedMeta.unexaminedCount || 0}</strong>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 18px;">
+                <div style="font-size:10pt; font-weight:800; color:#1e3a8a; margin-bottom:6px; text-transform:uppercase;">
+                    I. Tổng hợp số lượng chưa khám theo lớp (${classes.length} lớp)
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:50px; text-align:center;">STT</th>
+                            <th>Lớp</th>
+                            <th style="width:120px; text-align:center;">Sĩ số lớp</th>
+                            <th style="width:150px; text-align:center;">Số HS chưa khám</th>
+                        </tr>
+                    </thead>
+                    <tbody>${summaryRows}</tbody>
+                </table>
+            </div>
+
+            <div>
+                <div style="font-size:10pt; font-weight:800; color:#1e3a8a; margin-bottom:8px; text-transform:uppercase;">
+                    II. Danh sách chi tiết học sinh chưa có dữ liệu khám
+                </div>
+                ${classSectionsHtml}
+            </div>
+        `;
+
+        const iframeId = 'unexamined-print-iframe';
+        let iframe = document.getElementById(iframeId);
+        if (iframe) document.body.removeChild(iframe);
+
+        iframe = document.createElement('iframe');
+        iframe.id = iframeId;
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        doc.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Danh sách học sinh chưa khám - ${campaignName}</title>
+                <style>
+                    @page { size: A4 portrait; margin: 12mm; }
+                    body {
+                        margin: 0;
+                        padding: 0;
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                        color: #1e293b;
+                        font-size: 9.5pt;
+                    }
+                    .report-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        border-bottom: 2px solid #2563eb;
+                        padding-bottom: 8px;
+                    }
+                    .class-section {
+                        margin-bottom: 16px;
+                    }
+                    .class-header {
+                        display: flex;
+                        justify-content: space-between;
+                        background: #fff7ed;
+                        border: 1px solid #fed7aa;
+                        border-left: 4px solid #ea580c;
+                        padding: 6px 10px;
+                        font-weight: 700;
+                        color: #9a3412;
+                        margin-bottom: 4px;
+                        page-break-after: avoid;
+                    }
+                    .data-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-size: 9pt;
+                    }
+                    .data-table thead { display: table-header-group; }
+                    .data-table tr { page-break-inside: avoid; }
+                    .data-table th, .data-table td {
+                        border: 1px solid #cbd5e1;
+                        padding: 5px 7px;
+                        text-align: left;
+                    }
+                    .data-table th {
+                        background: #f1f5f9;
+                        font-weight: 700;
+                        color: #334155;
+                    }
+                </style>
+            </head>
+            <body>${htmlContent}</body>
+            </html>
+        `);
+        doc.close();
+
+        setTimeout(() => {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+        }, 500);
+    } catch (err) {
+        console.error("Lỗi xuất PDF học sinh chưa khám:", err);
+        alert("Lỗi khi tạo file PDF: " + err.message);
+    } finally {
+        if (btnExport) {
+            btnExport.disabled = false;
+            btnExport.innerHTML = originalBtnHtml;
+        }
+    }
+}

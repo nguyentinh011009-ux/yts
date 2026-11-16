@@ -1187,7 +1187,12 @@
     <div id="exam-stats-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 10006; align-items: center; justify-content: center; padding: 20px;">
         <div class="form-card fade-in" style="width: 100%; max-width: 1150px; position: relative; padding: 30px; border-radius: 16px; border-top: 6px solid #8b5cf6; max-height: 90vh; overflow-y: auto;">
             <button onclick="document.getElementById('exam-stats-modal').style.display='none'" style="position:absolute; top:20px; right:20px; border:none; background:#f1f5f9; width:35px; height:35px; border-radius:50%; font-size:1.5rem; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;">&times;</button>
-            <h3 id="stats-campaign-title" style="color: #8b5cf6; margin-top: 0; margin-bottom: 20px; font-size: 1.4rem;">Thống kê đợt khám</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 20px; padding-right: 45px; flex-wrap: wrap;">
+                <h3 id="stats-campaign-title" style="color: #8b5cf6; margin: 0; font-size: 1.4rem;">Thống kê đợt khám</h3>
+                <button onclick="openUnexaminedModal()" class="btn" style="background: #fff7ed; color: #ea580c; border: 1.5px solid #fed7aa; font-weight: bold; padding: 8px 16px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-user-clock"></i> Học sinh chưa khám
+                </button>
+            </div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" id="stats-render-grid">
                 <!-- JS tự động đổ biểu đồ thống kê -->
@@ -1421,6 +1426,32 @@
             </div>
             <div style="margin-top: 15px; text-align: right;">
                 <button onclick="document.getElementById('exam-import-error-modal').style.display='none'" class="btn btn-primary" style="background: #475569;">Đóng</button>
+            </div>
+        </div>
+    </div>
+    <!-- [POPUP 7]: DANH SÁCH LỚP & HỌC SINH CHƯA KHÁM TRONG ĐỢT -->
+    <div id="exam-unexamined-modal" class="modal" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 10012; align-items: center; justify-content: center; padding: 20px;">
+        <div class="form-card fade-in" style="width: 100%; max-width: 850px; max-height: 88vh; position: relative; padding: 25px; border-radius: 16px; border-top: 6px solid #ea580c; display: flex; flex-direction: column; background: white;">
+            <button onclick="document.getElementById('exam-unexamined-modal').style.display='none'" style="position:absolute; top:18px; right:18px; border:none; background:#f1f5f9; width:34px; height:34px; border-radius:50%; font-size:1.3rem; cursor:pointer; color:#64748b;">&times;</button>
+
+            <h3 id="unexamined-modal-title" style="color: #ea580c; margin: 0 0 12px 0; padding-right: 40px;">
+                <i class="fas fa-user-clock"></i> Học sinh chưa khám trong đợt
+            </h3>
+
+            <!-- Thanh điều khiển: Thời gian khởi tạo & Nút Khởi tạo -->
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #fff7ed; border: 1px solid #fed7aa; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+                <div style="font-size: 0.88rem; color: #7c2d12; line-height: 1.5;">
+                    <div id="unexamined-last-init"><i class="far fa-clock"></i> Thời gian khởi tạo lần cuối: <strong>Chưa khởi tạo</strong></div>
+                    <div id="unexamined-summary-text" style="font-size: 0.82rem; color: #9a3412;"></div>
+                </div>
+                <button id="btn-init-unexamined" onclick="initializeUnexaminedStudents()" class="btn btn-primary" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border: none; font-weight: bold; padding: 9px 18px; border-radius: 10px;">
+                    <i class="fas fa-sync-alt"></i> Khởi tạo
+                </button>
+            </div>
+
+            <!-- Khu vực hiển thị: Cấp 1 (Danh sách lớp) hoặc Cấp 2 (Chi tiết HS của lớp) -->
+            <div id="unexamined-content-area" style="flex: 1; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; background: #f8fafc;">
+                <div style="text-align: center; padding: 40px; color: #64748b;">Đang tải dữ liệu...</div>
             </div>
         </div>
     </div>

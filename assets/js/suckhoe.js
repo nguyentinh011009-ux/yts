@@ -3326,7 +3326,7 @@ async function exportUnexaminedStudentsPDF() {
             <div class="report-header">
                 <div>
                     <div style="font-size:10pt; font-weight:800; text-transform:uppercase;">TRƯỜNG THPT VÕ THỊ SÁU - BRVT</div>
-                    <div style="font-size:9pt; font-weight:600; color:#475569;">PHÒNG Y TẾ HỌC ĐƯỜNG</div>
+                    <div style="font-size:9pt; font-weight:600; color:#475569;">PHÒNG Y TẾ</div>
                 </div>
                 <div style="text-align:right; font-size:8.5pt; color:#475569;">
                     <div>Mã đợt: <strong>${cid}</strong></div>
@@ -3336,7 +3336,7 @@ async function exportUnexaminedStudentsPDF() {
 
             <div style="text-align:center; margin: 14px 0 16px 0;">
                 <h1 style="margin:0 0 4px 0; font-size:15pt; font-weight:800; color:#1e3a8a; text-transform:uppercase;">
-                    DANH SÁCH HỌC SINH CHƯA KHÁM SỨC KHỎE
+                    DANH SÁCH HỌC SINH CHƯA CÓ DỮ LIỆU KHÁM SỨC KHỎE
                 </h1>
                 <div style="font-size:10.5pt; font-weight:600; color:#334155;">Đợt khám: ${campaignName}</div>
                 <div style="font-size:9.5pt; color:#475569; margin-top:4px;">
@@ -3348,7 +3348,7 @@ async function exportUnexaminedStudentsPDF() {
 
             <div style="margin-bottom: 18px;">
                 <div style="font-size:10pt; font-weight:800; color:#1e3a8a; margin-bottom:6px; text-transform:uppercase;">
-                    I. Tổng hợp số lượng chưa khám theo lớp (${classes.length} lớp)
+                    I. Tổng hợp số lượng chưa có dữ liệu khám theo lớp (${classes.length} lớp)
                 </div>
                 <table class="data-table">
                     <thead>

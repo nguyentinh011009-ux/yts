@@ -1449,9 +1449,14 @@
                     <div id="unexamined-last-init"><i class="far fa-clock"></i> Thời gian khởi tạo lần cuối: <strong>Chưa khởi tạo</strong></div>
                     <div id="unexamined-summary-text" style="font-size: 0.82rem; color: #9a3412;"></div>
                 </div>
-                <button id="btn-init-unexamined" onclick="initializeUnexaminedStudents()" class="btn btn-primary" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border: none; font-weight: bold; padding: 9px 18px; border-radius: 10px;">
-                    <i class="fas fa-sync-alt"></i> Khởi tạo
-                </button>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button id="btn-init-unexamined" onclick="initializeUnexaminedStudents()" class="btn btn-primary" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border: none; font-weight: bold; padding: 9px 18px; border-radius: 10px;">
+                        <i class="fas fa-sync-alt"></i> Khởi tạo
+                    </button>
+                    <button id="btn-export-unexamined-pdf" onclick="exportUnexaminedStudentsPDF()" class="btn" style="background: #10b981; color: white; border: none; font-weight: bold; padding: 9px 16px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-file-pdf"></i> Xuất PDF
+                    </button>
+                </div>
             </div>
 
             <!-- Khu vực hiển thị: Cấp 1 (Danh sách lớp) hoặc Cấp 2 (Chi tiết HS của lớp) -->

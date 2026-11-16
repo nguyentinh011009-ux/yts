@@ -1189,9 +1189,14 @@
             <button onclick="document.getElementById('exam-stats-modal').style.display='none'" style="position:absolute; top:20px; right:20px; border:none; background:#f1f5f9; width:35px; height:35px; border-radius:50%; font-size:1.5rem; cursor:pointer; color:#64748b; display:flex; align-items:center; justify-content:center;">&times;</button>
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 20px; padding-right: 45px; flex-wrap: wrap;">
                 <h3 id="stats-campaign-title" style="color: #8b5cf6; margin: 0; font-size: 1.4rem;">Thống kê đợt khám</h3>
-                <button onclick="openUnexaminedModal()" class="btn" style="background: #fff7ed; color: #ea580c; border: 1.5px solid #fed7aa; font-weight: bold; padding: 8px 16px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
-                    <i class="fas fa-user-clock"></i> Học sinh chưa khám
-                </button>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button onclick="viewCampaignStats(activeStatsCampaignId, null, true)" class="btn" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-weight: bold; padding: 8px 14px; border-radius: 10px; cursor: pointer;" title="Tải lại dữ liệu mới nhất từ máy chủ">
+                        <i class="fas fa-sync-alt"></i> Làm mới
+                    </button>
+                    <button onclick="openUnexaminedModal()" class="btn" style="background: #fff7ed; color: #ea580c; border: 1.5px solid #fed7aa; font-weight: bold; padding: 8px 16px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-user-clock"></i> Học sinh chưa khám
+                    </button>
+                </div>
             </div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" id="stats-render-grid">

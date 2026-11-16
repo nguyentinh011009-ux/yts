@@ -1470,7 +1470,7 @@ async function createNewExamCampaign() {
 // 9. XÓA ĐỢT KHÁM
 async function deleteExamCampaign(cid, event) {
     if (event) event.stopPropagation(); 
-
+	
     const campaign = examCampaignsCache.find(c => c.id === cid);
     const displayName = campaign ? campaign.name : cid;
 
@@ -1481,7 +1481,8 @@ async function deleteExamCampaign(cid, event) {
 
             const resultsSnap = await db.collection('yt_exam_results').where('campaignId', '==', cid).get();
             resultsSnap.forEach(doc => batch.delete(doc.ref));
-
+			const unexSnap = await db.collection('yt_exam_unexamined').where('campaignId', '==', cid).get();
+            unexSnap.forEach(doc => batch.delete(doc.ref));
             await batch.commit();
             alert("✅ Đã xóa đợt khám thành công!");
         } catch (e) {
@@ -1493,6 +1494,7 @@ async function deleteExamCampaign(cid, event) {
 // 10. THỐNG KÊ CHI TIẾT CHỈ SỐ SỨC KHỎE ĐỢT KHÁM
 async function viewCampaignStats(cid, event) {
     if (event) event.stopPropagation();
+	activeStatsCampaignId = cid;
 
     const campaign = examCampaignsCache.find(c => c.id === cid);
     document.getElementById('stats-campaign-title').innerText = `Thống kê kết quả: ${campaign ? campaign.name : cid}`;
@@ -2844,4 +2846,348 @@ function sortStudentsByClassAndName(records) {
         // 3. Nếu trùng Tên chính, đối chiếu tiếp đến phần Họ và Tên đệm
         return partsA.restName.localeCompare(partsB.restName, 'vi');
     });
+}
+// =====================================================================
+// THỐNG KÊ HỌC SINH CHƯA KHÁM THEO ĐỢT (LƯU SNAPSHOT & XÓA CŨ KHI KHỞI TẠO)
+// =====================================================================
+let activeStatsCampaignId = null;
+let currentUnexaminedMeta = null;
+let unexaminedClassStudentsCache = {};
+
+// Hàm giải mã an toàn (tránh lỗi nếu field chưa mã hóa)
+function safeDecryptExamField(val) {
+    if (!val) return '';
+    if (typeof decryptField !== 'function') return String(val);
+    try {
+        const res = decryptField(val);
+        return res ? String(res) : String(val);
+    } catch (e) {
+        return String(val);
+    }
+}
+
+// 1. Mở popup Học sinh chưa khám và tự động đọc dữ liệu đã lưu (nếu có)
+async function openUnexaminedModal() {
+    if (!activeStatsCampaignId) return alert("Không xác định được đợt khám!");
+
+    const campaign = examCampaignsCache.find(c => c.id === activeStatsCampaignId);
+    const titleEl = document.getElementById('unexamined-modal-title');
+    if (titleEl) {
+        titleEl.innerHTML = `<i class="fas fa-user-clock"></i> Học sinh chưa khám: ${campaign ? campaign.name : activeStatsCampaignId}`;
+    }
+
+    unexaminedClassStudentsCache = {};
+    document.getElementById('exam-unexamined-modal').style.display = 'flex';
+    await loadSavedUnexaminedData(activeStatsCampaignId);
+}
+
+// 2. Tải dữ liệu đã khởi tạo từ Firestore (nếu có)
+async function loadSavedUnexaminedData(cid) {
+    const area = document.getElementById('unexamined-content-area');
+    const timeEl = document.getElementById('unexamined-last-init');
+    const summaryEl = document.getElementById('unexamined-summary-text');
+    const btnInit = document.getElementById('btn-init-unexamined');
+
+    area.innerHTML = '<div style="text-align:center; padding:40px; color:#64748b;"><i class="fas fa-spinner fa-spin fa-2x"></i><br><br>Đang kiểm tra dữ liệu đã lưu...</div>';
+
+    try {
+        const metaDoc = await db.collection('yt_exam_unexamined').doc(`${cid}__META`).get();
+
+        if (!metaDoc.exists) {
+            currentUnexaminedMeta = null;
+            timeEl.innerHTML = '<i class="far fa-clock"></i> Thời gian khởi tạo lần cuối: <strong style="color:#dc2626;">Chưa khởi tạo</strong>';
+            summaryEl.innerText = 'Bấm nút "Khởi tạo" để quét và lưu danh sách học sinh chưa khám tại thời điểm hiện tại.';
+            if (btnInit) btnInit.innerHTML = '<i class="fas fa-play-circle"></i> Khởi tạo';
+            area.innerHTML = `
+                <div style="text-align:center; padding:45px 20px; color:#64748b; background:white; border-radius:10px; border:1px dashed #cbd5e1;">
+                    <i class="fas fa-database fa-3x" style="color:#cbd5e1; margin-bottom:12px;"></i>
+                    <div style="font-weight:600; color:#334155; margin-bottom:6px;">Chưa có dữ liệu học sinh chưa khám</div>
+                    <div style="font-size:0.88rem;">Nhấn nút <strong>Khởi tạo</strong> ở góc trên để hệ thống tổng hợp và lưu danh sách vào cơ sở dữ liệu.</div>
+                </div>`;
+            return;
+        }
+
+        const meta = metaDoc.data();
+        currentUnexaminedMeta = meta;
+
+        const initTimeStr = meta.lastInitializedAt && meta.lastInitializedAt.toDate
+            ? meta.lastInitializedAt.toDate().toLocaleString('vi-VN', {
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                day: '2-digit', month: '2-digit', year: 'numeric'
+            })
+            : 'Vừa xong';
+
+        timeEl.innerHTML = `<i class="far fa-clock"></i> Thời gian khởi tạo lần cuối: <strong style="color:#0f172a;">${initTimeStr}</strong>`;
+        summaryEl.innerHTML = `Tổng số học sinh: <strong>${meta.totalStudents || 0}</strong> | Đã khám: <strong style="color:#16a34a;">${meta.examinedCount || 0}</strong> | Chưa khám: <strong style="color:#dc2626;">${meta.unexaminedCount || 0}</strong>`;
+        if (btnInit) btnInit.innerHTML = '<i class="fas fa-sync-alt"></i> Khởi tạo lại';
+
+        renderUnexaminedClassList();
+    } catch (err) {
+        console.error("Lỗi tải dữ liệu học sinh chưa khám:", err);
+        area.innerHTML = `<div style="color:#dc2626; text-align:center; padding:30px;">Lỗi tải dữ liệu: ${err.message}</div>`;
+    }
+}
+
+// 3. Hiển thị danh sách các lớp có học sinh chưa khám (Cấp 1)
+function renderUnexaminedClassList() {
+    const area = document.getElementById('unexamined-content-area');
+    if (!currentUnexaminedMeta) return;
+
+    const classes = currentUnexaminedMeta.classes || [];
+    if (classes.length === 0) {
+        area.innerHTML = `
+            <div style="text-align:center; padding:45px 20px; background:white; border-radius:10px; border:1px solid #bbf7d0; color:#15803d;">
+                <i class="fas fa-check-circle fa-3x" style="margin-bottom:12px;"></i>
+                <div style="font-weight:700; font-size:1.05rem;">100% học sinh đã có dữ liệu khám trong đợt này!</div>
+            </div>`;
+        return;
+    }
+
+    let html = `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px;">`;
+    classes.forEach(cls => {
+        const safeName = cls.className.replace(/'/g, "\\'");
+        html += `
+            <div onclick="openUnexaminedClassDetail('${cls.docId}', '${safeName}')"
+                 style="background: white; border: 1px solid #e2e8f0; border-left: 4px solid #f97316; border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center;"
+                 onmouseover="this.style.background='#fff7ed'; this.style.borderColor='#fdba74'"
+                 onmouseout="this.style.background='white'; this.style.borderColor='#e2e8f0'">
+                <div>
+                    <div style="font-weight: 700; font-size: 1.05rem; color: #1e293b;">Lớp ${cls.className}</div>
+                    <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">Sĩ số: ${cls.totalInClass} HS</div>
+                </div>
+                <div style="text-align: right;">
+                    <span style="background: #ffedd5; color: #c2410c; font-weight: 800; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem;">
+                        ${cls.count} HS
+                    </span>
+                </div>
+            </div>`;
+    });
+    html += `</div>`;
+    area.innerHTML = html;
+}
+
+// 4. Bấm vào từng lớp để xem danh sách chi tiết học sinh chưa khám (Cấp 2)
+async function openUnexaminedClassDetail(classDocId, className) {
+    const area = document.getElementById('unexamined-content-area');
+    area.innerHTML = '<div style="text-align:center; padding:40px; color:#64748b;"><i class="fas fa-spinner fa-spin fa-2x"></i><br><br>Đang tải danh sách học sinh...</div>';
+
+    try {
+        let students = unexaminedClassStudentsCache[classDocId];
+        if (!students) {
+            const docSnap = await db.collection('yt_exam_unexamined').doc(classDocId).get();
+            if (!docSnap.exists) {
+                area.innerHTML = '<div style="text-align:center; padding:30px; color:#dc2626;">Không tìm thấy dữ liệu lớp. Vui lòng bấm Khởi tạo lại!</div>';
+                return;
+            }
+            const rawList = docSnap.data().students || [];
+            students = rawList.map(st => ({
+                id: st.id || '--',
+                studentCode: safeDecryptExamField(st.studentCode) || '--',
+                name: safeDecryptExamField(st.name),
+                class: className,
+                gender: safeDecryptExamField(st.gender) || '--',
+                dob: safeDecryptExamField(st.dob) || ''
+            }));
+            sortStudentsByClassAndName(students);
+            unexaminedClassStudentsCache[classDocId] = students;
+        }
+
+        let rowsHtml = students.map((st, idx) => {
+            let dobFmt = '--';
+            if (st.dob) {
+                const parts = String(st.dob).split(/[\/\-]/);
+                if (parts.length === 3 && parts[0].length === 4) {
+                    dobFmt = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                } else {
+                    dobFmt = st.dob;
+                }
+            }
+            return `
+                <tr style="border-bottom: 1px solid #e2e8f0; background: white;">
+                    <td style="padding: 10px; text-align: center; color: #64748b;">${idx + 1}</td>
+                    <td style="padding: 10px; font-family: monospace; color: #2563eb; font-weight: 600;">${st.id}</td>
+                    <td style="padding: 10px; font-family: monospace; color: #475569;">${st.studentCode}</td>
+                    <td style="padding: 10px; font-weight: 600; color: #1e293b;">${st.name}</td>
+                    <td style="padding: 10px;">${st.gender}</td>
+                    <td style="padding: 10px;">${dobFmt}</td>
+                </tr>`;
+        }).join('');
+
+        area.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                <button onclick="renderUnexaminedClassList()" class="btn-sm" style="background: #e2e8f0; color: #334155; border: none; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    <i class="fas fa-arrow-left"></i> Quay lại danh sách lớp
+                </button>
+                <div style="font-weight: 700; color: #c2410c; font-size: 1rem;">
+                    Lớp ${className} — ${students.length} học sinh chưa có dữ liệu khám
+                </div>
+            </div>
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                <table class="admin-table" style="margin: 0; width: 100%;">
+                    <thead>
+                        <tr style="background: #f1f5f9;">
+                            <th style="width: 50px; text-align: center;">STT</th>
+                            <th>Mã Y Tế</th>
+                            <th>Mã HS</th>
+                            <th>Họ và Tên</th>
+                            <th>Giới tính</th>
+                            <th>Ngày sinh</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rowsHtml}</tbody>
+                </table>
+            </div>`;
+    } catch (err) {
+        console.error(err);
+        area.innerHTML = `<div style="color:#dc2626; text-align:center; padding:30px;">Lỗi tải chi tiết lớp: ${err.message}</div>`;
+    }
+}
+
+// 5. Khởi tạo mới: Xóa dữ liệu cũ trên database -> Quét & Lưu snapshot mới
+async function initializeUnexaminedStudents() {
+    const cid = activeStatsCampaignId;
+    if (!cid) return;
+
+    const btnInit = document.getElementById('btn-init-unexamined');
+    const area = document.getElementById('unexamined-content-area');
+    const originalBtnHtml = btnInit ? btnInit.innerHTML : '';
+
+    if (btnInit) {
+        btnInit.disabled = true;
+        btnInit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang khởi tạo...';
+    }
+    area.innerHTML = '<div style="text-align:center; padding:45px; color:#ea580c;"><i class="fas fa-spinner fa-spin fa-2x"></i><br><br>Đang xóa dữ liệu cũ và đối chiếu danh sách học sinh...</div>';
+
+    try {
+        const oldSnap = await db.collection('yt_exam_unexamined').where('campaignId', '==', cid).get();
+        if (!oldSnap.empty) {
+            let delBatch = db.batch();
+            let delCount = 0;
+            for (const d of oldSnap.docs) {
+                delBatch.delete(d.ref);
+                delCount++;
+                if (delCount >= 400) {
+                    await delBatch.commit();
+                    delBatch = db.batch();
+                    delCount = 0;
+                }
+            }
+            if (delCount > 0) await delBatch.commit();
+        }
+
+        const allStudents = await getStudentsListCached();
+        let examDocs = [];
+        if (activeCampaignId === cid && activeCampaignResults && activeCampaignResults.length > 0) {
+            examDocs = activeCampaignResults;
+        } else {
+            const examSnap = await db.collection('yt_exam_results').where('campaignId', '==', cid).get();
+            examSnap.forEach(doc => examDocs.push(doc.data()));
+        }
+
+        const examinedSet = new Set();
+        examDocs.forEach(item => {
+            if (item.studentId) examinedSet.add(item.studentId);
+        });
+
+        const classTotalMap = new Map();
+        const unexaminedByClass = new Map();
+        let unexaminedCount = 0;
+
+        allStudents.forEach(st => {
+            const decClass = (safeDecryptExamField(st.class) || 'Chưa xếp lớp').trim().toUpperCase();
+            classTotalMap.set(decClass, (classTotalMap.get(decClass) || 0) + 1);
+
+            if (!examinedSet.has(st.id)) {
+                unexaminedCount++;
+                if (!unexaminedByClass.has(decClass)) {
+                    unexaminedByClass.set(decClass, []);
+                }
+                const decName = safeDecryptExamField(st.name);
+                const decCode = safeDecryptExamField(st.studentCode || st.code || '');
+                const decGender = safeDecryptExamField(st.gender || '');
+                const decDob = safeDecryptExamField(st.dob || '');
+
+                unexaminedByClass.get(decClass).push({
+                    id: st.id,
+                    name: decName,
+                    class: decClass,
+                    studentCode: decCode,
+                    gender: decGender,
+                    dob: decDob
+                });
+            }
+        });
+
+        const sortedClassNames = Array.from(unexaminedByClass.keys()).sort((a, b) =>
+            a.localeCompare(b, 'vi', { numeric: true })
+        );
+
+        let writeBatch = db.batch();
+        let writeCount = 0;
+        const classesMeta = [];
+
+        for (let idx = 0; idx < sortedClassNames.length; idx++) {
+            const clsName = sortedClassNames[idx];
+            const list = unexaminedByClass.get(clsName);
+            sortStudentsByClassAndName(list);
+
+            const classDocId = `${cid}__CLS__${idx}`;
+            classesMeta.push({
+                docId: classDocId,
+                className: clsName,
+                count: list.length,
+                totalInClass: classTotalMap.get(clsName) || list.length
+            });
+
+            const encryptedStudents = list.map(s => ({
+                id: s.id,
+                studentCode: s.studentCode ? encryptField(s.studentCode) : '',
+                name: s.name ? encryptField(s.name) : '',
+                gender: s.gender ? encryptField(s.gender) : '',
+                dob: s.dob ? encryptField(s.dob) : ''
+            }));
+
+            const clsRef = db.collection('yt_exam_unexamined').doc(classDocId);
+            writeBatch.set(clsRef, {
+                campaignId: cid,
+                type: 'class',
+                className: clsName,
+                students: encryptedStudents
+            });
+            writeCount++;
+
+            if (writeCount >= 400) {
+                await writeBatch.commit();
+                writeBatch = db.batch();
+                writeCount = 0;
+            }
+        }
+
+        const metaRef = db.collection('yt_exam_unexamined').doc(`${cid}__META`);
+        writeBatch.set(metaRef, {
+            campaignId: cid,
+            type: 'meta',
+            lastInitializedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            totalStudents: allStudents.length,
+            examinedCount: allStudents.length - unexaminedCount,
+            unexaminedCount: unexaminedCount,
+            classes: classesMeta
+        });
+        await writeBatch.commit();
+
+        unexaminedClassStudentsCache = {};
+        if (typeof writeAuditLog === 'function') {
+            writeAuditLog("INIT_UNEXAMINED", "yt_exam_unexamined", cid, `Khởi tạo danh sách chưa khám: ${unexaminedCount}/${allStudents.length} HS.`);
+        }
+
+        await loadSavedUnexaminedData(cid);
+    } catch (err) {
+        console.error("Lỗi khởi tạo danh sách chưa khám:", err);
+        area.innerHTML = `<div style="color:#dc2626; text-align:center; padding:30px;">Lỗi khởi tạo dữ liệu: ${err.message}</div>`;
+    } finally {
+        if (btnInit) {
+            btnInit.disabled = false;
+            if (!currentUnexaminedMeta) btnInit.innerHTML = originalBtnHtml;
+        }
+    }
 }
